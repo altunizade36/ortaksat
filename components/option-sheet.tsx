@@ -24,7 +24,8 @@ export function OptionSheet({
   value,
   onSelect,
   onClose,
-  searchable
+  searchable,
+  allowClear = true
 }: {
   visible: boolean;
   title: string;
@@ -34,6 +35,7 @@ export function OptionSheet({
   onClose: () => void;
   /** Belirtilmezse 12+ seçenekte arama kutusu otomatik açılır. */
   searchable?: boolean;
+  allowClear?: boolean;
 }) {
   const { language } = useLanguage();
   const [query, setQuery] = useState("");
@@ -92,7 +94,7 @@ export function OptionSheet({
           ) : null}
 
           <ScrollView keyboardShouldPersistTaps="handled" style={{ paddingHorizontal: 8 }}>
-            {value ? (
+            {value && allowClear ? (
               <Pressable
                 accessibilityRole="button"
                 onPress={() => { onSelect(""); close(); }}
@@ -114,6 +116,7 @@ export function OptionSheet({
                 <Pressable
                   key={o}
                   accessibilityRole="button"
+                  accessibilityLabel={o}
                   accessibilityState={{ selected: on }}
                   onPress={() => { onSelect(o); close(); }}
                   style={({ pressed }) => ({

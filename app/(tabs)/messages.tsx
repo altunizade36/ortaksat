@@ -1,5 +1,15 @@
+import { conversationGroup } from "@/lib/inbox-model";
+import { ConversationListingStrip } from "@/components/conversation-listing-strip";
+import { ConversationOfferCard } from "@/components/conversation-offer-card";
+import { ConversationListingActions } from "@/components/conversation-listing-actions";
+import { ListingCommission } from "@/components/listing-commission";
+import { Accordion } from "@/components/accordion";
+import { CompactFooter } from "@/components/compact-footer";
+import { displayListingTitle } from "@/lib/listing-title";
+import { UserAvatar } from "@/components/user-avatar";
+import { isMobileApp } from "@/lib/mobile-app";
+import { MobileMessages } from "@/components/mobile/messages";
 import { MaterialCommunityIcons } from "@/components/icons";
-import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
 import { Link, useLocalSearchParams, type Href } from "expo-router";
 
@@ -13,8 +23,8 @@ import { openUrlSafe } from "@/lib/link";
 
 import { colors } from "@/components/colors";
 import { AuthRequired } from "@/components/auth-gate";
-import { EmptyState } from "@/components/ui";
-import { commissionAmount, localToday, money } from "@/lib/format";
+import { EmptyState, PressLink } from "@/components/ui";
+import { commissionAmount, localToday, moneyIn } from "@/lib/format";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { useNativeRefresh } from "@/lib/use-native-refresh";
 import { useForegroundRefresh } from "@/lib/use-foreground-refresh";
@@ -29,7 +39,7 @@ import type { Conversation, Lead, Message, Partnership } from "@/lib/types";
 import { useInboxPrefs } from "@/lib/inbox-prefs";
 import { useStore } from "@/lib/use-store";
 
-type InboxFilter = "all" | "unread" | "action" | "sales" | "partner";
+type InboxFilter = "all" | "unread" | "action" | "sales" | "buyers" | "sellers" | "partner";
 
 // Mesaj zaman damgasi "YYYY-MM-DD HH:MM" formatinda; sadece saati goster.
 function msgTime(createdAt: string) {
@@ -64,9 +74,11 @@ function msgDay(createdAt: string) {
 function dayHeader(day: string) {
   const today = localToday();
   if (day === today) return "Bugün";
-  const d = new Date(day);
-  if (Number.isNaN(d.getTime())) return day;
-  return `${String(d.getDate()).padStart(2, "0")} ${["Oca", "Şub", "Mar", "Nis", "May", "Haz", "Tem", "Ağu", "Eyl", "Eki", "Kas", "Ara"][d.getMonth()]} ${d.getFullYear()}`;
+  // "YYYY-MM-DD" doğrudan ayrıştırılır: new Date("YYYY-MM-DD") UTC gece yarısıdır →
+  // UTC'nin gerisindeki saat dilimlerinde başlık bir gün ÖNCEYİ gösterirdi.
+  const [y, mo, d] = day.split("-").map(Number);
+  if (!y || !d || !MONTHS_SHORT_TR[mo - 1]) return day;
+  return `${String(d).padStart(2, "0")} ${MONTHS_SHORT_TR[mo - 1]} ${y}`;
 }
 const MONTHS_TR = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
 function longDateTr(value: string) {
@@ -120,12 +132,14 @@ function MessagesScreenInner() {
   const isWideWeb = useIsWideWeb();
   const contentWidth = useContentWidth();
   // Orta genişlikte (tablet/yatay telefon) 3. panel sohbeti sıkıştırır; ≥1040px'te göster.
-  const roomForContextPanel = contentWidth >= 1040;
+  const roomForContextPanel = contentWidth >= 1200;
   const params = useLocalSearchParams<{ c?: string }>();
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<InboxFilter>("all");
   const [activeId, setActiveId] = useState<string | null>(params.c ?? null);
-  const [draft, setDraft] = useState("");
+  const [drafts, setDrafts] = useState<Record<string, string>>({});
+  const [showDetails, setShowDetails] = useState(true);
+  const [showTools, setShowTools] = useState(false);
   const [attaching, setAttaching] = useState(false);
   const [lightboxUri, setLightboxUri] = useState<string | null>(null);
   // Yıldız / takip / arşiv artık kullanıcıya göre kalıcı (web localStorage).
@@ -136,35 +150,19 @@ function MessagesScreenInner() {
   const deskNearBottomRef = useRef(true);
   const sendingDraftRef = useRef(false); // çift-gönderim (hızlı Enter) koruması
 
-  // Bir ilandan/sohbet bağlantısından gelen konuşmayı seçili aç.
+  const handledConversationParam = useRef<string | undefined>(undefined);
   useEffect(() => {
-    if (params.c) {
-      setActiveId(params.c);
-      markConversationRead(params.c);
+    if (params.c && handledConversationParam.current !== params.c) {
+      handledConversationParam.current = params.c;
+      setActiveId(params.c);setQuery("");setFilter("all");setShowArchived(archivedIds.includes(params.c));
     }
-  }, [params.c, markConversationRead]);
+  }, [params.c, archivedIds]);
 
-  // Acik konusmaya realtime yeni mesaj geldiginde otomatik okundu isaretle.
-  useEffect(() => {
-    if (activeId) markConversationRead(activeId);
-  }, [activeId, messages.length, markConversationRead]);
-
-  // Konuşma değişince (masaüstü 3-panel) dibe inmeye izin ver + aşağı kaydır.
-  useEffect(() => {
-    deskNearBottomRef.current = true;
-    deskScrollRef.current?.scrollToEnd({ animated: false });
-  }, [activeId]);
   // PERF: memo'lu → composer/arama tuş vuruşlarında (draft/query) yeniden hesaplanmaz.
   const myConversations = useMemo(() => conversations
     .filter((conversation) => conversation.participantIds.includes(currentUser.id))
     .sort((a, b) => b.lastMessageAt.localeCompare(a.lastMessageAt)), [conversations, currentUser.id]);
 
-  // Masaüstünde ilk konuşmayı varsayılan seçili yap ("yazıyor…" ve okundu için).
-  useEffect(() => {
-    if (isWideWeb && !activeId && myConversations[0]) setActiveId(myConversations[0].id);
-  }, [isWideWeb, activeId, myConversations]);
-
-  const { otherTyping, notifyTyping } = useTypingIndicator(activeId ?? undefined, currentUser.id);
   const unreadMessages = useMemo(() => messages.filter((item) => item.receiverId === currentUser.id && !item.read), [messages, currentUser.id]);
   const tokens = useMemo(() => searchKey(query).split(" ").filter(Boolean), [query]);
 
@@ -184,7 +182,7 @@ function MessagesScreenInner() {
     if (filter === "unread" && unreadCount === 0) return false;
     if (filter === "action" && !context.needsAction) return false;
     if (filter === "sales" && conversation.partnerId) return false;
-    if (filter === "partner" && !conversation.partnerId) return false;
+    if (["buyers", "sellers", "partner"].includes(filter) && conversationGroup(conversation, currentUser.id) !== filter) return false;
     if (tokens.length === 0) return true;
 
     const haystack = searchKey(
@@ -205,10 +203,34 @@ function MessagesScreenInner() {
   }).sort((a, b) => conversationPriority(b, currentUser.id, messages, ctxById.get(b.id)!) - conversationPriority(a, currentUser.id, messages, ctxById.get(a.id)!)), [myConversations, ctxById, messages, archivedIds, showArchived, filter, tokens, currentUser.id, findListing, findUser]);
   const actionCount = myConversations.reduce((n, conversation) => n + (ctxById.get(conversation.id)!.needsAction ? 1 : 0), 0);
 
+  // Keep the explicitly opened unread thread after its unread badge disappears.
+  // Never fall through to the next unread thread and mark an entire inbox read.
+  const selectedConversation = visibleConversations.find((c) => c.id === activeId) ??
+    (filter === "unread" && !query.trim() ? myConversations.find((c) => c.id === activeId && archivedIds.includes(c.id) === showArchived) : undefined);
+  useEffect(() => {
+    if (isWideWeb && !activeId && filter === "all" && !query.trim() && !showArchived && myConversations[0]) setActiveId(myConversations[0].id);
+  }, [isWideWeb, activeId, filter, query, showArchived, myConversations]);
+  const selectedId = isWideWeb ? selectedConversation?.id : undefined;
+  const draft = selectedId ? drafts[selectedId] ?? "" : "";
+  const setDraft = (value: string | ((previous: string) => string)) => {
+    if (!selectedId) return;
+    setDrafts((previous) => ({ ...previous, [selectedId]: typeof value === "function" ? value(previous[selectedId] ?? "") : value }));
+  };
+  const { otherTyping, notifyTyping } = useTypingIndicator(selectedId, currentUser.id);
+  const selectedHasUnread = Boolean(selectedId && messages.some((message) => message.conversationId === selectedId && message.receiverId === currentUser.id && !message.read));
+  useEffect(() => {
+    if (selectedId && selectedHasUnread) markConversationRead(selectedId);
+  }, [selectedId, selectedHasUnread, markConversationRead]);
+  useEffect(() => {
+    deskNearBottomRef.current = true;
+    deskScrollRef.current?.scrollToEnd({ animated: false });
+  }, [selectedId]);
+
   if (isWideWeb) {
-    const activeConversation = visibleConversations.find((c) => c.id === activeId) ?? visibleConversations[0] ?? myConversations[0];
+    const activeConversation = selectedConversation;
     const activeListing = activeConversation ? findListing(activeConversation.listingId) : undefined;
     const activeOtherId = activeConversation?.participantIds.find((id) => id !== currentUser.id);
+    const activeClosed = activeConversation?.status !== "open";
     const activeBlocked = activeOtherId ? isUserBlocked(activeOtherId) : false; // masaüstünde de engelleme (mobil paritesi)
     const activeOther = activeOtherId ? findUser(activeOtherId) : undefined;
     // Eskiden yeniye sırala. `messages` dizisi yeni→eski tutulur (başa eklenir);
@@ -266,61 +288,35 @@ function MessagesScreenInner() {
       }
     };
     const insertPriceOffer = () => {
-      const base = activeListing ? money(activeListing.price) : "";
+      const base = activeListing ? moneyIn(activeListing.price, activeListing.currency) : "";
       setDraft((d) => (d.trim() ? d : `Fiyat teklifim: ${base ? base.replace(/[0-9.,]+/, "___") : "₺___"} — uygun olur mu?`));
     };
 
     const filters: Array<{ key: InboxFilter; label: string; count: number }> = [
       { key: "all", label: translateCopy("Tümü", language), count: myConversations.length },
-      { key: "unread", label: translateCopy("Okunmamış", language), count: unreadMessages.length },
-      { key: "action", label: translateCopy("Yanıt bekleyen", language), count: actionCount },
-      { key: "sales", label: translateCopy("Satış konuşmaları", language), count: myConversations.filter((c) => !c.partnerId).length },
-      { key: "partner", label: translateCopy("Ortak satış", language), count: myConversations.filter((c) => c.partnerId).length }
+      { key: "buyers", label: translateCopy("Alıcı", language), count: 0 },
+      { key: "sellers", label: translateCopy("Satıcı", language), count: 0 },
+      { key: "partner", label: translateCopy("Ortaklık", language), count: 0 }
     ];
     const activeIsPartner = Boolean(activeConversation?.partnerId);
-    const activePhotoCount = activeListing ? (activeListing.adAssets?.length ?? 0) + 1 : 0;
+    const activePhotoCount = activeListing ? [...new Set([activeListing.image, ...(activeListing.adAssets ?? [])].filter(Boolean))].length : 0;
     const activeListingNo = activeListing ? activeListing.id.replace(/[^0-9]/g, "").slice(-10) || activeListing.id : "";
-    const activeRisk = scanMessageRisk([...activeMessages.map((m) => m.body), draft].filter(Boolean).join(" "));
     const draftRisk = scanMessageRisk(draft);
     const estimatedCommission = activeListing ? commissionAmount(activeListing) : 0;
     const safeDealDraft = activeListing
-      ? `Ödeme, teslimat ve komisyon koşullarını OrtakSat mesaj kaydında netleştirelim. İlan: ${displayText(activeListing.title)} - Fiyat: ${money(activeListing.price)}${estimatedCommission ? ` - Tahmini komisyon: ${money(estimatedCommission)}` : ""}.`
+      ? `Ödeme, teslimat ve komisyon koşullarını OrtakSat mesaj kaydında netleştirelim. İlan: ${displayListingTitle(activeListing.title)} - Fiyat: ${moneyIn(activeListing.price, activeListing.currency)}${estimatedCommission ? ` - Komisyon: ${moneyIn(estimatedCommission, activeListing.currency)}` : ""}.`
       : "Ödeme, teslimat ve komisyon koşullarını OrtakSat mesaj kaydında netleştirelim.";
 
     const respRate = activeOther?.responseRate ?? 0;
-    const statCards = [
-      { icon: "email-outline" as const, tint: colors.primarySoft, color: colors.primaryDark, value: unreadMessages.length, label: translateCopy("Okunmamış", language), sub: translateCopy("Yeni mesajınız var", language) },
-      { icon: "clock-outline" as const, tint: colors.goldSoft, color: colors.gold, value: actionCount, label: translateCopy("Yanıt bekleyen", language), sub: translateCopy("Yanıt bekleyen mesajlar", language) },
-      { icon: "message-text-outline" as const, tint: colors.infoSoft, color: colors.info, value: myConversations.filter((c) => !c.partnerId).length, label: translateCopy("Satış konuşması", language), sub: translateCopy("Aktif görüşmeler", language) },
-      { icon: "handshake-outline" as const, tint: colors.primarySoft, color: colors.primaryDark, value: myConversations.filter((c) => c.partnerId).length, label: translateCopy("Aktif ortak satış", language), sub: translateCopy("Devam eden ortaklıklar", language) }
-    ];
     return (
-      <View style={{ backgroundColor: colors.background, flex: 1, gap: 14, paddingHorizontal: 20, paddingVertical: 16 }}>
-        {/* Üst: 4 istatistik kartı */}
-        <View style={{ flexDirection: "row", gap: 12, marginHorizontal: "auto", maxWidth: 1280, width: "100%" }}>
-          {statCards.map((s) => (
-            <View key={s.label} style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 14, borderWidth: 1, flex: 1, flexDirection: "row", gap: 12, paddingHorizontal: 16, paddingVertical: 13 }}>
-              <View style={{ alignItems: "center", backgroundColor: s.tint, borderRadius: 12, height: 44, justifyContent: "center", width: 44 }}>
-                <MaterialCommunityIcons name={s.icon} size={22} color={s.color} />
-              </View>
-              <View style={{ flex: 1, gap: 1, minWidth: 0 }}>
-                <View style={{ alignItems: "baseline", flexDirection: "row", gap: 6 }}>
-                  <Text style={{ color: colors.ink, fontSize: 20, fontWeight: "900" }}>{s.value}</Text>
-                  <Text numberOfLines={1} style={{ color: colors.ink, flex: 1, fontSize: 12.5, fontWeight: "800" }}>{s.label}</Text>
-                </View>
-                <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 11, fontWeight: "600" }}>{s.sub}</Text>
-              </View>
-            </View>
-          ))}
-        </View>
-
+      <View testID="web-inbox" style={{ backgroundColor: colors.background, flex: 1, gap: 12, paddingHorizontal: 20, paddingVertical: 14, minHeight: 0 }}>
         {/* 3 panel */}
         <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 14, borderWidth: 1, flex: 1, flexDirection: "row", marginHorizontal: "auto", maxWidth: 1280, minHeight: 0, overflow: "hidden", width: "100%" }}>
           {/* SOL: liste */}
-          <View style={{ borderRightColor: colors.line, borderRightWidth: 1, width: 320 }}>
+          <View style={{ borderRightColor: colors.line, borderRightWidth: 1, width: 280 }}>
             <View style={{ gap: 10, padding: 16 }}>
-              <Text style={{ color: colors.ink, fontSize: 21, fontWeight: "900" }}>{translateCopy("Mesajlar", language)}</Text>
-              <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600", lineHeight: 17 }}>{translateCopy("Alıcı, satıcı ve ortak satış görüşmelerini tek yerden yönet.", language)}</Text>
+
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 7 }}><Text style={{ color: colors.ink, fontSize: 18, fontWeight: "700", flex: 1 }}>{translateCopy("Mesajlarım", language)}</Text>{unreadMessages.length > 0 ? <Text style={{ backgroundColor: colors.primaryDark, color: "white", borderRadius: 12, paddingHorizontal: 7, paddingVertical: 3, fontSize: 11 }}>{unreadMessages.length}</Text> : null}<Pressable accessibilityRole="button" accessibilityLabel={translateCopy("Okunmamış", language)} accessibilityState={{ selected: filter === "unread" }} onPress={() => { setActiveId(null);setFilter(filter === "unread" ? "all" : "unread"); }} style={{ height: 36, width: 32, alignItems: "center", justifyContent: "center" }}><MaterialCommunityIcons name="email-mark-as-unread" size={18} color={filter === "unread" ? colors.primaryDark : colors.muted}/></Pressable><Link href="/explore" asChild><Pressable accessibilityLabel={translateCopy("Yeni görüşme için ilan bul", language)} style={{ width: 32, height: 36, alignItems: "center", justifyContent: "center" }}><MaterialCommunityIcons name="plus" size={22} color={colors.primaryDark}/></Pressable></Link></View>
               <View style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 8, paddingHorizontal: 14 }}>
                 <MaterialCommunityIcons name="magnify" size={18} color={colors.muted} />
                 <TextInput value={query} onChangeText={setQuery} accessibilityLabel={translateCopy("Görüşmelerde ara", language)} placeholder={translateCopy("Görüşmelerde ara", language)} placeholderTextColor={colors.muted} style={{ color: colors.ink, flex: 1, fontSize: 13.5, minHeight: 40, paddingVertical: 6 }} />
@@ -329,18 +325,19 @@ function MessagesScreenInner() {
                 {filters.map((f) => {
                   const on = filter === f.key;
                   return (
-                    <Pressable key={f.key} accessibilityRole="button" accessibilityState={{ selected: on }} accessibilityLabel={f.label} hitSlop={6} onPress={() => setFilter(f.key)} style={{ alignItems: "center", backgroundColor: on ? colors.primary : colors.surfaceAlt, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 5, paddingHorizontal: 11, paddingVertical: 6 }}>
-                      <Text style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 11.5, fontWeight: "800" }}>{f.label}</Text>
-                      {f.count > 0 ? <View style={{ alignItems: "center", backgroundColor: on ? "rgba(255,255,255,0.24)" : colors.primary, borderRadius: 999, justifyContent: "center", minWidth: 16, paddingHorizontal: 4 }}><Text style={{ color: "#FFFFFF", fontSize: 10, fontWeight: "900" }}>{f.count}</Text></View> : null}
+                    <Pressable key={f.key} accessibilityRole="button" accessibilityState={{ selected: on }} accessibilityLabel={f.label} hitSlop={6} onPress={() => { setActiveId(null); setFilter(f.key); }} style={{ alignItems: "center", backgroundColor: on ? colors.primary : colors.surfaceAlt, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 5, paddingHorizontal: 10, paddingVertical: 8 }}>
+                      <Text style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 11, fontWeight: "600" }}>{f.label}</Text>
+
                     </Pressable>
                   );
                 })}
               </View>
             </View>
             <View style={{ backgroundColor: colors.line, height: 1 }} />
-            <ScrollView showsVerticalScrollIndicator={false} style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 8 }}>
+            <ScrollView showsVerticalScrollIndicator={false} style={{ flex: 1 }} contentContainerStyle={{ flexGrow: 1, paddingBottom: 8 }}>
               {visibleConversations.length === 0 ? (
-                <View style={{ padding: 16 }}><EmptyState title={showArchived ? translateCopy("Arşiv boş", language) : t("noConversation")} body={showArchived ? translateCopy("Arşivlenen görüşme yok.", language) : t("noConversationBody")} /></View>
+                // Arama/filtre aktifken "Henüz konuşma yok" YANLIŞ olur (konuşma var, eşleşme yok).
+                <View style={{ padding: 16 }}><EmptyState title={showArchived ? translateCopy("Arşiv boş", language) : myConversations.length > 0 && (filter !== "all" || query.trim()) ? t("noResults") : t("noConversation")} body={showArchived ? translateCopy("Arşivlenen görüşme yok.", language) : myConversations.length > 0 && (filter !== "all" || query.trim()) ? t("searchOrFilterAgain") : t("noConversationBody")} /></View>
               ) : null}
               {visibleConversations.map((conversation) => {
                 const listing = findListing(conversation.listingId);
@@ -350,37 +347,27 @@ function MessagesScreenInner() {
                 const last = convMessages[0];
                 const unread = convMessages.filter((m) => m.receiverId === currentUser.id && !m.read).length;
                 const on = activeConversation?.id === conversation.id;
-                const ctx = ctxById.get(conversation.id)!;
+
                 return (
-                  <Pressable key={conversation.id} dataSet={{ vrow: "1" }} onPress={() => selectConversation(conversation.id)} style={({ pressed }) => ({ backgroundColor: on ? colors.primarySoft : pressed ? colors.surfaceAlt : "transparent", borderLeftColor: on ? colors.primary : "transparent", borderLeftWidth: 3, flexDirection: "row", gap: 11, paddingHorizontal: 13, paddingVertical: 12 })}>
-                    {listing ? (
-                      <SafeRemoteImage uri={listing.image} accessibilityLabel={displayText(listing.title)} contentFit="cover" style={{ backgroundColor: colors.line, borderRadius: 10, height: 48, width: 48 }} />
-                    ) : (
-                      <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 10, height: 48, justifyContent: "center", width: 48 }}><MaterialCommunityIcons name="account" size={22} color={colors.primaryDark} /></View>
-                    )}
+                  <Pressable accessibilityRole="button" accessibilityLabel={`${otherUser?.name ?? t("user")} ile sohbet`} accessibilityState={{ selected: on }} key={conversation.id} dataSet={{ vrow: "1" }} onPress={() => selectConversation(conversation.id)} style={({ pressed }) => ({ backgroundColor: on ? colors.primarySoft : pressed ? colors.surfaceAlt : "transparent", borderLeftColor: on ? colors.primary : "transparent", borderLeftWidth: 3, flexDirection: "row", gap: 11, paddingHorizontal: 13, paddingVertical: 12 })}>
+                    <UserAvatar uri={otherUser?.avatar} size={42} />
                     <View style={{ flex: 1, gap: 2, minWidth: 0 }}>
                       <View style={{ alignItems: "center", flexDirection: "row", gap: 6 }}>
-                        <Text numberOfLines={1} style={{ color: colors.ink, flex: 1, fontSize: 13.5, fontWeight: "900" }}>{listing ? displayText(listing.title) : t("listingConversation")}</Text>
+                        <Text numberOfLines={1} style={{ color: colors.ink, flex: 1, fontSize: 13.5, fontWeight: "700" }}>{otherUser?.name ?? t("user")}</Text>
                         <Text style={{ color: colors.subtle, fontSize: 10.5, fontWeight: "700" }}>{last ? inboxTime(last.createdAt) : ""}</Text>
                       </View>
-                      <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 11.5, fontWeight: "700" }}>{otherUser?.name ?? t("user")}</Text>
+                      <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 11.5, fontWeight: "700" }}>{conversation.partnerId ? translateCopy("Ortaklık · ", language) : ""}{listing ? displayListingTitle(listing.title) : t("listingConversation")}</Text>
                       <View style={{ alignItems: "center", flexDirection: "row", gap: 6 }}>
                         <Text numberOfLines={1} style={{ color: unread ? colors.ink : colors.muted, flex: 1, fontSize: 12, fontWeight: unread ? "800" : "500" }}>{last ? `${last.senderId === currentUser.id ? translateCopy("Sen: ", language) : ""}${messagePreview(last)}` : t("conversationStarted")}</Text>
-                        {unread ? <View style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 999, height: 18, justifyContent: "center", minWidth: 18, paddingHorizontal: 5 }}><Text style={{ color: "#FFFFFF", fontSize: 10, fontWeight: "900" }}>{unread > 9 ? "9+" : unread}</Text></View> : null}
+                        {unread ? <View style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 999, height: 18, justifyContent: "center", minWidth: 18, paddingHorizontal: 5 }}><Text style={{ color: "#FFFFFF", fontSize: 10, fontWeight: "700" }}>{unread > 9 ? "9+" : unread}</Text></View> : null}
                       </View>
-                      {/* Durum etiketi: görüşmenin nerede olduğunu (stok/fiyat/komisyon…) tek bakışta göster. */}
-                      {ctx.status ? (
-                        <View style={{ alignItems: "center", alignSelf: "flex-start", backgroundColor: ctx.needsAction ? colors.accentSoft : colors.surfaceAlt, borderRadius: 999, flexDirection: "row", gap: 4, paddingHorizontal: 8, paddingVertical: 2 }}>
-                          {ctx.needsAction ? <View style={{ backgroundColor: colors.accent, borderRadius: 999, height: 5, width: 5 }} /> : null}
-                          <Text numberOfLines={1} style={{ color: ctx.needsAction ? colors.accent : colors.subtle, fontSize: 10, fontWeight: "800" }}>{ctx.status}</Text>
-                        </View>
-                      ) : null}
+
                     </View>
                   </Pressable>
                 );
               })}
             </ScrollView>
-            <Pressable accessibilityRole="button" accessibilityLabel={translateCopy("Arşivlenen konuşmaları göster", language)} onPress={() => setShowArchived((v) => !v)} style={({ pressed }) => ({ alignItems: "center", backgroundColor: pressed ? colors.surfaceAlt : colors.surface, borderTopColor: colors.line, borderTopWidth: 1, flexDirection: "row", gap: 8, justifyContent: "center", paddingVertical: 13 })}>
+            <Pressable accessibilityRole="button" accessibilityLabel={translateCopy("Arşivlenen konuşmaları göster", language)} onPress={() => { setActiveId(null); setShowArchived((v) => !v); }} style={({ pressed }) => ({ alignItems: "center", backgroundColor: pressed ? colors.surfaceAlt : colors.surface, borderTopColor: colors.line, borderTopWidth: 1, flexDirection: "row", gap: 8, justifyContent: "center", paddingVertical: 13 })}>
               <MaterialCommunityIcons name={showArchived ? "inbox-arrow-down-outline" : "archive-outline"} size={17} color={colors.muted} />
               <Text style={{ color: colors.ink, fontSize: 12.5, fontWeight: "800" }}>{showArchived ? translateCopy("Gelen kutusuna dön", language) : translateCopy("Arşivlenen konuşmaları göster", language)}</Text>
             </Pressable>
@@ -391,23 +378,23 @@ function MessagesScreenInner() {
             {activeConversation && activeContext ? (
               <>
                 <View style={{ alignItems: "center", backgroundColor: colors.surface, borderBottomColor: colors.line, borderBottomWidth: 1, flexDirection: "row", gap: 12, paddingHorizontal: 18, paddingVertical: 11 }}>
-                  {activeListing ? <SafeRemoteImage uri={activeListing.image} accessibilityLabel={displayText(activeListing.title)} contentFit="cover" style={{ borderRadius: 10, height: 44, width: 44 }} /> : null}
+                  <UserAvatar uri={activeOther?.avatar} size={38} />
                   <View style={{ flex: 1, minWidth: 0 }}>
-                    <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 15, fontWeight: "900" }}>{activeListing ? displayText(activeListing.title) : t("listingConversation")}</Text>
+                    <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 14, fontWeight: "700" }}>{activeOther?.name ?? t("user")}</Text>
                     {otherTyping ? (
                       <Text numberOfLines={1} style={{ color: colors.primary, fontSize: 12, fontWeight: "800" }}>{translateCopy("yazıyor…", language)}</Text>
                     ) : (
-                      <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 12, fontWeight: "700" }}>{activeListing ? money(activeListing.price) : ""}{activeOther ? `  ·  ${activeOther.name}` : ""}</Text>
+                      <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 12, fontWeight: "700" }}>{translateCopy(activeIsPartner ? "Ortaklık görüşmesi" : "İlan görüşmesi", language)}</Text>
                     )}
                   </View>
-                  <View style={{ alignItems: "center", backgroundColor: activeIsPartner ? colors.primarySoft : colors.surfaceAlt, borderColor: activeIsPartner ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 5, paddingHorizontal: 10, paddingVertical: 5 }}>
-                    <MaterialCommunityIcons name={activeIsPartner ? "handshake-outline" : "tag-outline"} size={13} color={activeIsPartner ? colors.primaryDark : colors.muted} />
-                    <Text style={{ color: activeIsPartner ? colors.primaryDark : colors.muted, fontSize: 11.5, fontWeight: "800" }}>{activeIsPartner ? translateCopy("Ortak satış", language) : translateCopy("Satış konuşması", language)}</Text>
-                  </View>
-                  {activeOther?.id ? (
+                  {roomForContextPanel ? <Pressable accessibilityRole="button" accessibilityLabel={translateCopy("İlan ayrıntıları", language)} accessibilityState={{ expanded: showDetails }} onPress={() => setShowDetails((v) => !v)} style={{ width: 40, height: 40, alignItems: "center", justifyContent: "center", borderRadius: 10, backgroundColor: showDetails ? colors.primarySoft : colors.surfaceAlt }}><MaterialCommunityIcons name="information-outline" size={20} color={colors.primaryDark} /></Pressable> : null}
+                  {activeOther?.id && activeListing?.contactMethod !== "message" ? (
                     // Telefon feed'de taşınmaz; arama anında (girişli kullanıcı) çekilir.
                     <Pressable accessibilityRole="button" hitSlop={8} accessibilityLabel={translateCopy("Ara", language)} onPress={async () => { const p = activeOther.phone || (await fetchSellerPhone(activeOther.id)); const tel = p.replace(/[^0-9+]/g, ""); if (tel) void openUrlSafe(`tel:${tel}`); }} style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 999, borderWidth: 1, height: 34, justifyContent: "center", width: 34 }}><MaterialCommunityIcons name="phone-outline" size={16} color={colors.muted} /></Pressable>
                   ) : null}
+                  <Pressable accessibilityRole="button" accessibilityLabel={translateCopy("Sohbet seçenekleri", language)} accessibilityState={{ expanded: showTools }} onPress={() => setShowTools((v) => !v)} style={{ width: 38, height: 38, alignItems: "center", justifyContent: "center" }}><MaterialCommunityIcons name="dots-horizontal" size={21} color={colors.muted}/></Pressable>
+                </View>
+                {showTools ? <View style={{ backgroundColor: colors.surface, borderBottomColor: colors.line, borderBottomWidth: 1, paddingHorizontal: 18, paddingVertical: 8, flexDirection: "row", justifyContent: "flex-end", gap: 8 }}>
                   <Pressable accessibilityRole="button" hitSlop={8} accessibilityLabel={translateCopy("Önemli işaretle", language)} onPress={() => toggleStar(activeConversation.id)} style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 999, borderWidth: 1, height: 34, justifyContent: "center", width: 34 }}><MaterialCommunityIcons name={starred[activeConversation.id] ? "star" : "star-outline"} size={16} color={starred[activeConversation.id] ? colors.gold : colors.muted} /></Pressable>
                   <Pressable accessibilityRole="button" hitSlop={8} accessibilityLabel={translateCopy("Arşivle", language)} onPress={() => toggleArchive(activeConversation.id)} style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 999, borderWidth: 1, height: 34, justifyContent: "center", width: 34 }}><MaterialCommunityIcons name="archive-outline" size={16} color={colors.muted} /></Pressable>
                   {/* Engelle/kaldır — masaüstünde eksikti (mobil paritesi). Engellenince composer banner'a döner. */}
@@ -425,7 +412,8 @@ function MessagesScreenInner() {
                       <MaterialCommunityIcons name={activeBlocked ? "account-cancel" : "account-cancel-outline"} size={16} color={activeBlocked ? colors.accent : colors.muted} />
                     </Pressable>
                   ) : null}
-                </View>
+                </View> : null}
+                <ConversationListingStrip listing={activeListing} />
 
                 <ScrollView ref={deskScrollRef} scrollEventThrottle={16} onScroll={(e) => { const { contentOffset, contentSize, layoutMeasurement } = e.nativeEvent; deskNearBottomRef.current = contentSize.height - (contentOffset.y + layoutMeasurement.height) < 120; }} onContentSizeChange={() => { if (deskNearBottomRef.current) deskScrollRef.current?.scrollToEnd({ animated: false }); }} showsVerticalScrollIndicator={false} style={{ backgroundColor: colors.background, flex: 1 }} contentContainerStyle={{ flexGrow: 1, justifyContent: activeMessages.length === 0 ? "center" : "flex-start", padding: 22 }}>
                   {activeMessages.length === 0 ? <EmptyState title={translateCopy("Henüz mesaj yok", language)} body={translateCopy("İlk mesajı yaz ve konuşmayı başlat.", language)} mascot="mobile" /> : null}
@@ -446,23 +434,26 @@ function MessagesScreenInner() {
                         <View style={{ alignItems: "flex-end", flexDirection: "row", gap: 8, justifyContent: mine ? "flex-end" : "flex-start" }}>
                           {!mine ? (
                             lastOfGroup ? (
-                              <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 999, height: 28, justifyContent: "center", width: 28 }}><MaterialCommunityIcons name="account" size={16} color={colors.primaryDark} /></View>
-                            ) : <View style={{ width: 28 }} />
+                              <UserAvatar uri={activeOther?.avatar} size={25} />
+                            ) : <View style={{ width: 25 }} />
                           ) : null}
-                          <View style={{ backgroundColor: mine ? colors.primary : colors.surface, borderColor: mine ? colors.primary : colors.line, borderTopLeftRadius: 14, borderTopRightRadius: 14, borderBottomLeftRadius: mine ? 14 : 4, borderBottomRightRadius: mine ? 4 : 14, borderWidth: 1, maxWidth: "64%", overflow: "hidden", paddingHorizontal: m.attachmentType === "image" ? 4 : 13, paddingVertical: m.attachmentType === "image" ? 4 : 9 }}>
+                          {/* Balon + "tekrar dene" DİKEY yığın: eskiden tekrar-dene balonun YANINDA (satırda)
+                              duruyordu → uzun mesajda %78 balon + etiket satırı taşırıyordu. */}
+                          <View style={{ alignItems: mine ? "flex-end" : "flex-start", flexShrink: 1, maxWidth: "78%", minWidth: 0 }}>
+                          <View style={{ backgroundColor: mine ? colors.primary : colors.surface, borderColor: mine ? colors.primary : colors.line, borderTopLeftRadius: 14, borderTopRightRadius: 14, borderBottomLeftRadius: mine ? 14 : 4, borderBottomRightRadius: mine ? 4 : 14, borderWidth: 1, maxWidth: "100%", overflow: "hidden", paddingHorizontal: m.attachmentType === "image" ? 4 : 13, paddingVertical: m.attachmentType === "image" ? 4 : 9 }}>
                             {m.attachmentType === "image" && m.attachmentUrl ? (
-                              <Pressable accessibilityRole="imagebutton" accessibilityLabel={translateCopy("Görseli büyüt", language)} onPress={() => m.attachmentUrl && setLightboxUri(m.attachmentUrl)}><SafeRemoteImage uri={m.attachmentUrl} accessibilityLabel={translateCopy("Sohbet görseli", language)} contentFit="cover" style={{ backgroundColor: colors.line, borderRadius: 10, height: 190, width: 240 }} /></Pressable>
+                              <Pressable accessibilityRole="imagebutton" accessibilityLabel={translateCopy("Görseli büyüt", language)} onPress={() => m.attachmentUrl && setLightboxUri(m.attachmentUrl)}><SafeRemoteImage uri={m.attachmentUrl} accessibilityLabel={translateCopy("Sohbet görseli", language)} contentFit="cover" style={{ backgroundColor: colors.line, borderRadius: 10, height: 190, maxWidth: "100%", width: 240 }} /></Pressable>
                             ) : null}
                             {m.attachmentType === "file" && m.attachmentUrl ? (
-                              <Pressable accessibilityRole="button" accessibilityLabel={`Dosyayı aç: ${m.attachmentName ?? "Dosya"}`} onPress={() => m.attachmentUrl && void openUrlSafe(m.attachmentUrl)} style={{ alignItems: "center", flexDirection: "row", gap: 8, paddingVertical: 2 }}><MaterialCommunityIcons name="file-document-outline" size={22} color={mine ? "#FFFFFF" : colors.primary} /><Text numberOfLines={1} style={{ color: mine ? "#FFFFFF" : colors.ink, fontSize: 12.5, fontWeight: "700", maxWidth: 180 }}>{m.attachmentName ?? "Dosya"}</Text></Pressable>
+                              <Pressable accessibilityRole="button" accessibilityLabel={`Dosyayı aç: ${m.attachmentName ?? "Dosya"}`} onPress={() => m.attachmentUrl && void openUrlSafe(m.attachmentUrl)} style={{ alignItems: "center", flexDirection: "row", gap: 8, paddingVertical: 2 }}><MaterialCommunityIcons name="file-document-outline" size={22} color={mine ? "#FFFFFF" : colors.primaryDark} /><Text numberOfLines={1} style={{ color: mine ? "#FFFFFF" : colors.ink, flexShrink: 1, fontSize: 12.5, fontWeight: "700", maxWidth: 180 }}>{m.attachmentName ?? "Dosya"}</Text></Pressable>
                             ) : null}
                             {m.body ? <Text style={{ color: mine ? "#FFFFFF" : colors.ink, fontSize: 13.5, fontWeight: "500", lineHeight: 19, paddingHorizontal: m.attachmentType === "image" ? 9 : 0, paddingTop: m.attachmentType === "image" ? 5 : 0 }}>{m.body}</Text> : null}
                             {lastOfGroup ? (
                               <View style={{ alignItems: "center", alignSelf: "flex-end", flexDirection: "row", gap: 3, marginTop: 3, paddingHorizontal: m.attachmentType === "image" ? 9 : 0, paddingBottom: m.attachmentType === "image" ? 4 : 0 }}>
-                                <Text style={{ color: mine ? "#E6FBF7" : colors.subtle, fontSize: 10, fontWeight: "700" }}>{msgTime(m.createdAt)}</Text>
+                                <Text style={{ color: mine ? "#DCE7F7" : colors.muted, fontSize: 10, fontWeight: "700" }}>{msgTime(m.createdAt)}</Text>
                                 {mine ? (m.status === "failed"
                                   ? <MaterialCommunityIcons name="alert-circle" size={13} color="#FFD9D0" />
-                                  : <MaterialCommunityIcons name={m.read ? "check-all" : "check"} size={13} color={m.read ? "#E6FBF7" : "rgba(255,255,255,0.7)"} />) : null}
+                                  : <MaterialCommunityIcons name={m.read ? "check-all" : "check"} size={13} color={m.read ? "#FFFFFF" : "#C7D5EC"} />) : null}
                               </View>
                             ) : null}
                           </View>
@@ -472,10 +463,12 @@ function MessagesScreenInner() {
                               <Text style={{ color: colors.accent, fontSize: 11, fontWeight: "800" }}>{translateCopy("Gönderilemedi · tekrar dene", language)}</Text>
                             </Pressable>
                           ) : null}
+                          </View>
                         </View>
                       </View>
                     );
                   })}
+                  <ConversationOfferCard key={activeConversation.id} conversation={activeConversation} listing={activeListing} />
                 </ScrollView>
 
                 {/* Temiz composer (WhatsApp/Sahibinden tarzı): ekle · yaz · gönder.
@@ -487,18 +480,18 @@ function MessagesScreenInner() {
                       <Text style={{ color: colors.ink, flex: 1, fontSize: 11.5, fontWeight: "700", lineHeight: 16 }}>{translateCopy("Bu mesajda hassas ödeme veya site dışı iletişim ifadesi var. Görüşmeyi kayıtlı mesaj içinde net tutun.", language)}</Text>
                     </View>
                   ) : null}
-                  {activeBlocked ? (
+                  {activeBlocked || activeClosed ? (
                     <View style={{ alignItems: "center", backgroundColor: colors.accentSoft, borderColor: colors.accent, borderRadius: 12, borderWidth: 1, flexDirection: "row", gap: 10, paddingHorizontal: 14, paddingVertical: 12 }}>
-                      <MaterialCommunityIcons name="account-cancel" size={18} color={colors.accent} />
-                      <Text style={{ color: colors.ink, flex: 1, fontSize: 12.5, fontWeight: "700" }}>{translateCopy("Bu kişiyi engelledin. Mesajlaşma iki yönlü kapalı.", language)}</Text>
-                      <Pressable accessibilityRole="button" onPress={() => activeOtherId && void unblockUser(activeOtherId)} style={({ pressed }) => ({ backgroundColor: colors.surface, borderColor: colors.accent, borderRadius: 999, borderWidth: 1, opacity: pressed ? 0.8 : 1, paddingHorizontal: 14, paddingVertical: 8 })}>
-                        <Text style={{ color: colors.accent, fontSize: 12.5, fontWeight: "900" }}>{translateCopy("Engeli Kaldır", language)}</Text>
-                      </Pressable>
+                      {activeBlocked ? <MaterialCommunityIcons name="account-cancel" size={18} color={colors.accent} /> : <MaterialCommunityIcons name="lock-outline" size={18} color={colors.accent} />}
+                      <Text style={{ color: colors.ink, flex: 1, fontSize: 12.5, fontWeight: "700" }}>{translateCopy(activeBlocked ? "Bu kişiyi engelledin. Mesajlaşma iki yönlü kapalı." : "Bu konuşma kapatılmış. Mesaj geçmişini görüntüleyebilirsin.", language)}</Text>
+                      {activeBlocked ? <Pressable accessibilityRole="button" onPress={() => activeOtherId && void unblockUser(activeOtherId)} style={({ pressed }) => ({ backgroundColor: colors.surface, borderColor: colors.accent, borderRadius: 999, borderWidth: 1, opacity: pressed ? 0.8 : 1, paddingHorizontal: 14, paddingVertical: 8 })}>
+                        <Text style={{ color: colors.accent, fontSize: 12.5, fontWeight: "700" }}>{translateCopy("Engeli Kaldır", language)}</Text>
+                      </Pressable> : null}
                     </View>
                   ) : (
                   <View style={{ alignItems: "flex-end", flexDirection: "row", gap: 8 }}>
                     <Pressable accessibilityRole="button" hitSlop={8} accessibilityLabel={translateCopy("Görsel ekle", language)} onPress={() => void attachImage()} disabled={attaching} style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 999, borderWidth: 1, height: 44, justifyContent: "center", opacity: pressed ? 0.7 : 1, width: 44 })}><MaterialCommunityIcons name={attaching ? "loading" : "paperclip"} size={20} color={attaching ? colors.primary : colors.muted} /></Pressable>
-                    <TextInput value={draft} onChangeText={(text) => { setDraft(text); notifyTyping(); }} multiline accessibilityLabel={translateCopy("Mesaj yaz…", language)} placeholder={translateCopy("Mesaj yaz…", language)} placeholderTextColor={colors.muted} onKeyPress={onComposerKeyPress} style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 22, borderWidth: 1, color: colors.ink, flex: 1, fontSize: 14, maxHeight: 120, minHeight: 44, paddingHorizontal: 16, paddingVertical: 12 }} />
+                    <TextInput testID="message-composer" maxLength={4000} value={draft} onChangeText={(text) => { setDraft(text); notifyTyping(); }} multiline numberOfLines={1} accessibilityLabel={translateCopy("Mesaj yaz…", language)} placeholder={translateCopy("Mesaj yaz…", language)} placeholderTextColor={colors.muted} onKeyPress={onComposerKeyPress} style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 22, borderWidth: 1, color: colors.ink, flex: 1, fontSize: 14, maxHeight: 120, minHeight: 44, minWidth: 0, paddingHorizontal: 16, paddingVertical: 12 }} />
                     <Pressable accessibilityRole="button" hitSlop={8} accessibilityLabel={translateCopy("Mesajı gönder", language)} disabled={!draft.trim()} onPress={sendDraft} style={({ pressed }) => ({ alignItems: "center", backgroundColor: draft.trim() ? colors.primary : colors.line, borderRadius: 999, height: 44, justifyContent: "center", opacity: pressed ? 0.8 : 1, width: 44 })}><MaterialCommunityIcons name="send" size={19} color="#FFFFFF" /></Pressable>
                   </View>
                   )}
@@ -516,75 +509,63 @@ function MessagesScreenInner() {
           </View>
 
           {/* SAĞ: İlan Detayları */}
-          {activeConversation && activeContext && roomForContextPanel ? (
-            <View style={{ borderLeftColor: colors.line, borderLeftWidth: 1, width: 320 }}>
-            <ScrollView style={{ flex: 1 }} contentContainerStyle={{ gap: 14, padding: 16 }} showsVerticalScrollIndicator={false}>
+          {activeConversation && activeContext && roomForContextPanel && showDetails ? (
+            <View testID="conversation-details" style={{ borderLeftColor: colors.line, borderLeftWidth: 1, width: 280 }}>
+            <ScrollView style={{ flex: 1 }} contentContainerStyle={{ flexGrow: 1, gap: 14, padding: 16 }} showsVerticalScrollIndicator={false}>
               <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
-                <Text style={{ color: colors.ink, flex: 1, fontSize: 15.5, fontWeight: "900" }}>{translateCopy("İlan Detayları", language)}</Text>
-                {activeListing ? <View style={{ backgroundColor: colors.successSoft, borderRadius: 999, paddingHorizontal: 9, paddingVertical: 3 }}><Text style={{ color: colors.success, fontSize: 10.5, fontWeight: "900" }}>{translateCopy("Aktif ilan", language)}</Text></View> : null}
+                <Text style={{ color: colors.ink, flex: 1, fontSize: 15.5, fontWeight: "700" }}>{translateCopy("İlan bilgileri", language)}</Text>
+                {activeListing ? <View style={{ backgroundColor: activeListing.status === "active" ? colors.successSoft : colors.surfaceAlt, borderRadius: 999, paddingHorizontal: 9, paddingVertical: 3 }}><Text style={{ color: activeListing.status === "active" ? colors.success : colors.muted, fontSize: 10.5, fontWeight: "700" }}>{translateCopy(activeListing.status === "active" ? "Yayında" : "Yayında değil", language)}</Text></View> : null}
               </View>
 
               {activeListing ? (
                 <>
                   <View style={{ borderRadius: 12, overflow: "hidden" }}>
-                    <SafeRemoteImage uri={activeListing.image} accessibilityLabel={displayText(activeListing.title)} contentFit="cover" style={{ backgroundColor: colors.line, height: 150, width: "100%" }} />
+                    <SafeRemoteImage uri={activeListing.image} accessibilityLabel={displayListingTitle(activeListing.title)} contentFit="cover" style={{ backgroundColor: colors.line, height: 150, width: "100%" }} />
                     {activePhotoCount > 1 ? <View style={{ alignItems: "center", backgroundColor: "rgba(0,0,0,0.6)", borderRadius: 999, bottom: 8, flexDirection: "row", gap: 4, paddingHorizontal: 8, paddingVertical: 3, position: "absolute", right: 8 }}><MaterialCommunityIcons name="camera" size={12} color="#FFFFFF" /><Text style={{ color: "#FFFFFF", fontSize: 10.5, fontWeight: "800" }}>{activePhotoCount}</Text></View> : null}
                   </View>
                   <View style={{ gap: 5 }}>
-                    <Text numberOfLines={2} style={{ color: colors.ink, fontSize: 14.5, fontWeight: "900", lineHeight: 19 }}>{displayText(activeListing.title)}</Text>
-                    <Text style={{ color: colors.primaryDark, fontSize: 20, fontWeight: "900" }}>{money(activeListing.price)}</Text>
+                    <Text numberOfLines={2} style={{ color: colors.ink, fontSize: 14.5, fontWeight: "700", lineHeight: 19 }}>{displayListingTitle(activeListing.title)}</Text>
+                    <Text style={{ color: colors.primaryDark, fontSize: 20, fontWeight: "700" }}>{moneyIn(activeListing.price, activeListing.currency)}</Text>
                     <View style={{ alignItems: "center", flexDirection: "row", gap: 5 }}><MaterialCommunityIcons name="map-marker-outline" size={14} color={colors.muted} /><Text numberOfLines={1} style={{ color: colors.muted, flex: 1, fontSize: 12, fontWeight: "700" }}>{activeListing.location}</Text></View>
                   </View>
-                  <View style={{ backgroundColor: colors.surfaceAlt, borderRadius: 12, gap: 7, padding: 12 }}>
-                    <DeskInfoRow label={translateCopy("İlan No", language)} value={activeListingNo || "-"} />
-                    <DeskInfoRow label={translateCopy("İlan Tarihi", language)} value={longDateTr(activeListing.createdAt)} />
-                    <DeskInfoRow label={translateCopy("Kategori", language)} value={displayText(activeListing.category)} />
-                    <DeskInfoRow label={translateCopy("Stok", language)} value={`${activeListing.stockCount} adet`} />
-                    <DeskInfoRow label={translateCopy("Görüşme tipi", language)} value={activeIsPartner ? translateCopy("Ortak satış", language) : translateCopy("Satış", language)} />
-                    {estimatedCommission ? <DeskInfoRow label={translateCopy("Tahmini komisyon", language)} value={money(estimatedCommission)} /> : null}
-                  </View>
-
-                  <ConversationTrustCard context={activeContext} risk={activeRisk} responseRate={respRate} isPartner={activeIsPartner} />
+                  <ConversationListingActions key={activeConversation.id} listing={activeListing} conversation={activeConversation} />
+                  {activeListing.partnershipMode !== "none" ? <ListingCommission listing={activeListing} compact /> : null}
 
                   {/* Satıcı kartı */}
                   <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 12, borderWidth: 1, gap: 10, padding: 12 }}>
                     <View style={{ alignItems: "center", flexDirection: "row", gap: 10 }}>
-                      {activeOther?.avatar && isImageAvatar(activeOther.avatar) ? (
-                        <Image source={{ uri: activeOther.avatar }} accessibilityLabel={activeOther.name} contentFit="cover" style={{ borderRadius: 999, height: 40, width: 40 }} />
-                      ) : (
-                        <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 999, height: 40, justifyContent: "center", width: 40 }}><MaterialCommunityIcons name="account" size={22} color={colors.primaryDark} /></View>
-                      )}
+                      <UserAvatar uri={activeOther?.avatar} size={40} />
                       <View style={{ flex: 1, minWidth: 0 }}>
                         <View style={{ alignItems: "center", flexDirection: "row", gap: 4 }}>
-                          <Text numberOfLines={1} style={{ color: colors.ink, flex: 1, fontSize: 14, fontWeight: "900" }}>{activeOther?.name ?? t("user")}</Text>
+                          <Text numberOfLines={1} style={{ color: colors.ink, flex: 1, fontSize: 14, fontWeight: "700" }}>{activeOther?.name ?? t("user")}</Text>
                           {activeOther?.verifiedIdentity ? <MaterialCommunityIcons name="check-decagram" size={15} color={colors.success} /> : null}
                         </View>
-                        <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "700" }}>%{respRate} yanıt oranı</Text>
+                        <Text style={{ color: colors.muted, fontSize: 11.5 }}>{activeOther?.rating && activeOther.rating > 0 ? `★ ${activeOther.rating.toFixed(1)} · ${translateCopy("Kullanıcı değerlendirmesi", language)}` : translateCopy("Henüz değerlendirme yok", language)}</Text>
                       </View>
                     </View>
                     <View style={{ flexDirection: "row", gap: 7 }}>
                       {activeOtherId ? (
-                        <Link href={{ pathname: "/store/[id]", params: { id: activeOtherId } }} asChild><Pressable style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 9, flex: 1, paddingVertical: 9 }}><Text style={{ color: "#FFFFFF", fontSize: 11.5, fontWeight: "900" }}>{translateCopy("Profili Gör", language)}</Text></Pressable></Link>
+                        <Link href={{ pathname: "/store/[id]", params: { id: activeOtherId } }} asChild><Pressable style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 9, flex: 1, paddingVertical: 9 }}><Text style={{ color: "#FFFFFF", fontSize: 11.5, fontWeight: "700" }}>{translateCopy("Profili Gör", language)}</Text></Pressable></Link>
                       ) : null}
-                      <Link href={{ pathname: "/listing/[id]", params: { id: activeListing.id } }} asChild><Pressable style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 9, borderWidth: 1, flex: 1, paddingVertical: 9 }}><Text style={{ color: colors.ink, fontSize: 11.5, fontWeight: "900" }}>{translateCopy("İlanı Gör", language)}</Text></Pressable></Link>
-                      <Pressable accessibilityRole="button" onPress={() => toggleFollow(activeOtherId ?? "")} style={{ alignItems: "center", backgroundColor: following[activeOtherId ?? ""] ? colors.primarySoft : colors.surface, borderColor: following[activeOtherId ?? ""] ? colors.primary : colors.line, borderRadius: 9, borderWidth: 1, paddingHorizontal: 11, paddingVertical: 9 }}><Text style={{ color: colors.primaryDark, fontSize: 11.5, fontWeight: "900" }}>{following[activeOtherId ?? ""] ? translateCopy("Takipte", language) : translateCopy("+ Takip", language)}</Text></Pressable>
+                      <Link href={{ pathname: "/listing/[id]", params: { id: activeListing.id } }} asChild><Pressable style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 9, borderWidth: 1, flex: 1, paddingVertical: 9 }}><Text style={{ color: colors.ink, fontSize: 11.5, fontWeight: "700" }}>{translateCopy("İlanı Gör", language)}</Text></Pressable></Link>
+                      <Pressable accessibilityRole="button" onPress={() => toggleFollow(activeOtherId ?? "")} style={{ alignItems: "center", backgroundColor: following[activeOtherId ?? ""] ? colors.primarySoft : colors.surface, borderColor: following[activeOtherId ?? ""] ? colors.primary : colors.line, borderRadius: 9, borderWidth: 1, paddingHorizontal: 11, paddingVertical: 9 }}><Text style={{ color: colors.primaryDark, fontSize: 11.5, fontWeight: "700" }}>{following[activeOtherId ?? ""] ? translateCopy("Takipte", language) : translateCopy("+ Takip", language)}</Text></Pressable>
                     </View>
                   </View>
 
                   {/* Aksiyonlar */}
-                  <View style={{ gap: 2 }}>
-                    <DeskActionRow icon="handshake-outline" title={translateCopy("Ortaklık öner", language)} sub={translateCopy("Bu ilan için ortaklık teklifi gönder", language)} onPress={() => setDraft(translateCopy("Bu ürün için ortak satış yapmak istiyorum; komisyon ve şartları konuşabilir miyiz?", language))} />
+                  <Accordion title={translateCopy("Diğer işlemler", language)} icon="dots-horizontal">
+                    <DeskActionRow icon="handshake-outline" title={translateCopy("Ortaklık öner", language)} sub={translateCopy("Ortaklık için mesaj taslağı hazırla", language)} onPress={() => setDraft(translateCopy("Bu ürün için ortak satış yapmak istiyorum; komisyon ve şartları konuşabilir miyiz?", language))} />
                     <DeskActionRow icon="shield-check-outline" title={translateCopy("Güvenli anlaşma taslağı", language)} sub={translateCopy("Ödeme/teslimat/komisyon şartlarını mesajda netleştir", language)} onPress={() => setDraft(safeDealDraft)} />
-                    <DeskActionRow icon="tag-outline" title={translateCopy("Fiyat teklifi gönder", language)} sub={translateCopy("Composer'a teklif taslağı ekler", language)} onPress={insertPriceOffer} />
+                    <DeskActionRow icon="tag-outline" title={translateCopy("Mesajda fiyat öner", language)} sub={translateCopy("Mesaja fiyat önerisi ekle", language)} onPress={insertPriceOffer} />
                     <DeskActionRow icon="archive-outline" title={archivedIds.includes(activeConversation.id) ? translateCopy("Arşivden çıkar", language) : translateCopy("Sohbeti arşivle", language)} sub={translateCopy("Görüşmeyi gelen kutusundan gizle", language)} onPress={() => toggleArchive(activeConversation.id)} />
-                    <DeskActionRow icon="flag-outline" title={translateCopy("Şikayet et", language)} sub={translateCopy("Bu ilanı veya kullanıcıyı bildir", language)} href="/trust" />
-                  </View>
+                    <DeskActionRow icon="flag-outline" title={translateCopy("Şikayet et", language)} sub={translateCopy("Bu ilanı veya kullanıcıyı bildir", language)} href={{ pathname: "/report", params: { listingId: activeListing.id, userId: activeOtherId } } as Href} />
+                  </Accordion>
                 </>
               ) : (
                 <View style={{ backgroundColor: colors.surfaceAlt, borderRadius: 12, gap: 6, padding: 14 }}>
                   <MaterialCommunityIcons name="tag-off-outline" size={22} color={colors.muted} />
-                  <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "800" }}>{translateCopy("İlan yayından kaldırıldı", language)}</Text>
-                  <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600", lineHeight: 16 }}>{translateCopy("Bu görüşmenin ilanı artık yayında değil, ancak mesajlaşma geçmişin burada kalır.", language)}</Text>
+                  <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "800" }}>{translateCopy("İlan bilgileri görüntülenemiyor", language)}</Text>
+                  <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600", lineHeight: 16 }}>{translateCopy("İlan ayrıntılarına şu anda ulaşılamıyor. Mesajlaşma geçmişin burada kalır.", language)}</Text>
                 </View>
               )}
             </ScrollView>
@@ -604,12 +585,14 @@ function MessagesScreenInner() {
   }
 
   const mobileFilters: Array<{ key: InboxFilter; label: string; count: number }> = [
-    { key: "all", label: t("all"), count: myConversations.length },
-    { key: "unread", label: t("unread"), count: unreadMessages.length },
-    { key: "action", label: t("followUp"), count: actionCount }
+    { key: "all", label: translateCopy("Tümü", language), count: 0 },
+    { key: "buyers", label: translateCopy("Alıcı", language), count: 0 },
+    { key: "sellers", label: translateCopy("Satıcı", language), count: 0 },
+    { key: "partner", label: translateCopy("Ortaklık", language), count: 0 }
   ];
   return (
-    <View style={{ backgroundColor: colors.background, flex: 1 }}>
+    <View testID="web-inbox" style={{ backgroundColor: colors.background, flex: 1, minHeight: 0 }}>
+      <View style={{ backgroundColor: colors.surface, paddingHorizontal: 14, paddingTop: 14, flexDirection: "row", alignItems: "center", gap: 8 }}><Text style={{ color: colors.ink, fontSize: 19, fontWeight: "700", flex: 1 }}>{translateCopy("Mesajlar", language)}</Text><Pressable accessibilityRole="button" accessibilityLabel={translateCopy("Okunmamış", language)} accessibilityState={{ selected: filter === "unread" }} onPress={() => setFilter(filter === "unread" ? "all" : "unread")} style={{ width: 38, height: 38, alignItems: "center", justifyContent: "center" }}><MaterialCommunityIcons name="email-mark-as-unread" size={19} color={filter === "unread" ? colors.primaryDark : colors.muted}/></Pressable><Link href="/explore" asChild><Pressable accessibilityLabel={translateCopy("Yeni görüşme için ilan bul", language)} style={{ width: 38, height: 38, alignItems: "center", justifyContent: "center" }}><MaterialCommunityIcons name="plus" size={22} color={colors.primaryDark}/></Pressable></Link></View>
       {/* Temiz üst başlık: arama + filtre (WhatsApp/Sahibinden mesaj tarzı) */}
       <View style={{ backgroundColor: colors.surface, borderBottomColor: colors.line, borderBottomWidth: 1, gap: 10, paddingBottom: 10, paddingHorizontal: 12, paddingTop: 12 }}>
         <View style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 8, paddingHorizontal: 14 }}>
@@ -617,24 +600,24 @@ function MessagesScreenInner() {
           <TextInput value={query} onChangeText={setQuery} accessibilityLabel={t("searchMessagesPlaceholder")} placeholder={t("searchMessagesPlaceholder")} placeholderTextColor={colors.muted} style={{ color: colors.ink, flex: 1, fontSize: 14.5, minHeight: 44, paddingVertical: 8 }} />
           {query ? <Pressable onPress={() => setQuery("")} hitSlop={10}><MaterialCommunityIcons name="close-circle" size={19} color={colors.muted} /></Pressable> : null}
         </View>
-        <View style={{ flexDirection: "row", gap: 7 }}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0 }} contentContainerStyle={{ gap: 7 }}>
           {mobileFilters.map((f) => {
             const on = filter === f.key;
             return (
-              <Pressable key={f.key} onPress={() => setFilter(f.key)} style={{ alignItems: "center", backgroundColor: on ? colors.primary : colors.surfaceAlt, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 5, paddingHorizontal: 13, paddingVertical: 7 }}>
+              <Pressable accessibilityRole="button" accessibilityLabel={f.label} accessibilityState={{ selected: on }} key={f.key} onPress={() => { setActiveId(null); setFilter(f.key); }} style={{ alignItems: "center", backgroundColor: on ? colors.primary : colors.surfaceAlt, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 5, paddingHorizontal: 13, paddingVertical: 7 }}>
                 <Text style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 12.5, fontWeight: "800" }}>{f.label}</Text>
-                {f.count > 0 ? <View style={{ alignItems: "center", backgroundColor: on ? "rgba(255,255,255,0.24)" : colors.primary, borderRadius: 999, justifyContent: "center", minWidth: 17, paddingHorizontal: 4 }}><Text style={{ color: "#FFFFFF", fontSize: 10, fontWeight: "900" }}>{f.count}</Text></View> : null}
+                {f.count > 0 ? <View style={{ alignItems: "center", backgroundColor: on ? "rgba(255,255,255,0.24)" : colors.primary, borderRadius: 999, justifyContent: "center", minWidth: 17, paddingHorizontal: 4 }}><Text style={{ color: "#FFFFFF", fontSize: 10, fontWeight: "700" }}>{f.count}</Text></View> : null}
               </Pressable>
             );
           })}
-        </View>
+        </ScrollView>
       </View>
 
       {/* keyboardShouldPersistTaps: yoksa isimle filtreleyip sonuca basınca İLK dokunuş
           yalnız klavyeyi kapatıyor (çift dokunuş gerekiyordu). seller/favorites'ta zaten var. */}
-      <ScrollView keyboardShouldPersistTaps="handled" contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ paddingBottom: Platform.OS === "web" ? 28 : 96 }} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} colors={[colors.primary]} />}>
+      <ScrollView keyboardShouldPersistTaps="handled" contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ flexGrow: 1, paddingBottom: 0 }} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} colors={[colors.primary]} />}>
       {myConversations.length === 0 ? <View style={{ padding: 24 }}><EmptyState title={t("noConversation")} body={t("noConversationBody")} action={{ label: "Ürünleri keşfet", href: "/explore", icon: "compass-outline" }} mascot="mobile" /></View> : null}
-      {myConversations.length > 0 && visibleConversations.length === 0 ? <View style={{ padding: 24 }}><EmptyState title={t("noResults")} body={t("searchOrFilterAgain")} mascot="thinking" /></View> : null}
+      {myConversations.length > 0 && visibleConversations.length === 0 ? <View style={{ padding: 24 }}>{showArchived && filter === "all" && !query.trim() ? <EmptyState title={translateCopy("Arşiv boş", language)} body={translateCopy("Arşivlenen görüşme yok.", language)} /> : <EmptyState title={t("noResults")} body={t("searchOrFilterAgain")} mascot="thinking" />}</View> : null}
 
       {visibleConversations.map((conversation) => {
         const listing = findListing(conversation.listingId);
@@ -643,21 +626,15 @@ function MessagesScreenInner() {
         const conversationMessages = messages.filter((item) => item.conversationId === conversation.id).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
         const lastMessage = conversationMessages[0];
         const unreadCount = conversationMessages.filter((item) => item.receiverId === currentUser.id && !item.read).length;
-        const rowRisk = scanMessageRisk(conversationMessages.map((item) => item.body).join(" "));
+
 
         const isPartner = Boolean(conversation.partnerId);
-        const ctx = ctxById.get(conversation.id)!;
+
         return (
           <Link key={conversation.id} href={{ pathname: "/chat/[id]", params: { id: conversation.id } }} asChild>
             <Pressable dataSet={{ vrow: "1" }} style={{ alignItems: "center", backgroundColor: colors.surface, borderBottomColor: colors.line, borderBottomWidth: 1, flexDirection: "row", gap: 12, paddingHorizontal: 14, paddingVertical: 12 }}>
               <View>
-                {listing ? (
-                  <SafeRemoteImage uri={listing.image} accessibilityLabel={displayText(listing.title)} contentFit="cover" style={{ backgroundColor: colors.line, borderRadius: 12, height: 56, width: 56 }} />
-                ) : (
-                  <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 12, height: 56, justifyContent: "center", width: 56 }}>
-                    <MaterialCommunityIcons name="account" size={26} color={colors.primaryDark} />
-                  </View>
-                )}
+                <UserAvatar uri={otherUser?.avatar} size={44} />
                 {isPartner ? (
                   <View style={{ alignItems: "center", backgroundColor: colors.primary, borderColor: colors.surface, borderRadius: 999, borderWidth: 2, bottom: -3, height: 22, justifyContent: "center", position: "absolute", right: -3, width: 22 }}>
                     <MaterialCommunityIcons name="handshake" size={11} color="#FFFFFF" />
@@ -667,7 +644,7 @@ function MessagesScreenInner() {
 
               <View style={{ flex: 1, gap: 3, minWidth: 0 }}>
                 <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
-                  <Text numberOfLines={1} style={{ color: colors.ink, flex: 1, fontSize: 15, fontWeight: "900" }}>{otherUser?.name ?? t("user")}</Text>
+                  <Text numberOfLines={1} style={{ color: colors.ink, flex: 1, fontSize: 14, fontWeight: "700" }}>{otherUser?.name ?? t("user")}</Text>
                   <Text style={{ color: unreadCount ? colors.primary : colors.subtle, fontSize: 11, fontWeight: unreadCount ? "900" : "700" }}>{lastMessage ? inboxTime(lastMessage.createdAt) : ""}</Text>
                 </View>
                 <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
@@ -676,29 +653,32 @@ function MessagesScreenInner() {
                   </Text>
                   {unreadCount > 0 ? (
                     <View style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 999, height: 20, justifyContent: "center", minWidth: 20, paddingHorizontal: 6 }}>
-                      <Text style={{ color: "#FFFFFF", fontSize: 11, fontWeight: "900" }}>{unreadCount > 9 ? "9+" : unreadCount}</Text>
+                      <Text style={{ color: "#FFFFFF", fontSize: 11, fontWeight: "700" }}>{unreadCount > 9 ? "9+" : unreadCount}</Text>
                     </View>
                   ) : null}
                 </View>
                 {listing ? (
                   <View style={{ alignItems: "center", flexDirection: "row", gap: 4 }}>
                     <MaterialCommunityIcons name="tag-outline" size={12} color={colors.subtle} />
-                    <Text numberOfLines={1} style={{ color: colors.subtle, flex: 1, fontSize: 11.5, fontWeight: "700" }}>{displayText(listing.title)}</Text>
-                    {rowRisk.hasRisk ? <MaterialCommunityIcons name="shield-alert-outline" size={13} color={colors.warning} /> : null}
+                    <Text numberOfLines={1} style={{ color: colors.subtle, flex: 1, fontSize: 11.5, fontWeight: "700" }}>{displayListingTitle(listing.title)}</Text>
+
                   </View>
                 ) : null}
-                {/* Durum etiketi: görüşme nerede (stok/fiyat/komisyon…) — tek bakışta. */}
-                {ctx.status ? (
-                  <View style={{ alignItems: "center", alignSelf: "flex-start", backgroundColor: ctx.needsAction ? colors.accentSoft : colors.surfaceAlt, borderRadius: 999, flexDirection: "row", gap: 4, marginTop: 1, paddingHorizontal: 8, paddingVertical: 2 }}>
-                    {ctx.needsAction ? <View style={{ backgroundColor: colors.accent, borderRadius: 999, height: 5, width: 5 }} /> : null}
-                    <Text numberOfLines={1} style={{ color: ctx.needsAction ? colors.accent : colors.subtle, fontSize: 10.5, fontWeight: "800" }}>{ctx.status}</Text>
-                  </View>
-                ) : null}
+
               </View>
             </Pressable>
           </Link>
         );
       })}
+      {/* Arşiv geçişi — dar (mobil/tablet web) düzende YOKTU: masaüstünde arşivlenen görüşmeler
+          telefonda erişilemez kalıyor, hepsi arşivliyse liste "sonuç yok" çıkmazına düşüyordu. */}
+      {showArchived || myConversations.some((conversation) => archivedIds.includes(conversation.id)) ? (
+        <Pressable accessibilityRole="button" accessibilityLabel={showArchived ? translateCopy("Gelen kutusuna dön", language) : translateCopy("Arşivlenen konuşmaları göster", language)} onPress={() => { setActiveId(null); setShowArchived((v) => !v); }} style={{ alignItems: "center", backgroundColor: colors.surface, borderBottomColor: colors.line, borderBottomWidth: 1, flexDirection: "row", gap: 8, justifyContent: "center", minHeight: 48, paddingHorizontal: 14 }}>
+          <MaterialCommunityIcons name={showArchived ? "inbox-arrow-down-outline" : "archive-outline"} size={17} color={colors.muted} />
+          <Text numberOfLines={1} style={{ color: colors.ink, flexShrink: 1, fontSize: 13, fontWeight: "800" }}>{showArchived ? translateCopy("Gelen kutusuna dön", language) : translateCopy("Arşivlenen konuşmaları göster", language)}</Text>
+        </Pressable>
+      ) : null}
+      <CompactFooter />
       </ScrollView>
     </View>
   );
@@ -790,57 +770,6 @@ function saleStatusText(status: string, t: (key: string) => string) {
   return t("salesTracking");
 }
 
-function DeskInfoRow({ label, value }: { label: string; value: string }) {
-  return (
-    <View style={{ alignItems: "center", flexDirection: "row", gap: 8, justifyContent: "space-between" }}>
-      <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "700" }}>{label}</Text>
-      <Text numberOfLines={1} style={{ color: colors.ink, flex: 1, fontSize: 12, fontWeight: "800", textAlign: "right" }}>{value}</Text>
-    </View>
-  );
-}
-
-function ConversationTrustCard({
-  context,
-  isPartner,
-  responseRate,
-  risk
-}: {
-  context: { channel: string; needsAction: boolean; source: string; status: string };
-  isPartner: boolean;
-  responseRate: number;
-  risk: { hasRisk: boolean; matches: string[] };
-}) {
-  const { language } = useLanguage();
-  const rows = [
-    { icon: "message-lock-outline" as const, label: translateCopy("Mesaj kaydı", language), value: translateCopy("Platform içinde", language) },
-    { icon: "account-check-outline" as const, label: translateCopy("Yanıt oranı", language), value: `%${responseRate}` },
-    { icon: isPartner ? ("handshake-outline" as const) : ("tag-outline" as const), label: translateCopy("Görüşme tipi", language), value: isPartner ? translateCopy("Ortak satış", language) : translateCopy("Satış", language) },
-    { icon: "source-branch" as const, label: translateCopy("Kaynak", language), value: context.channel },
-    { icon: risk.hasRisk ? ("shield-alert-outline" as const) : ("shield-check-outline" as const), label: translateCopy("Güven kontrolü", language), value: risk.hasRisk ? risk.matches.join(", ") : translateCopy("Risk sinyali yok", language) }
-  ];
-  return (
-    <View style={{ backgroundColor: risk.hasRisk ? colors.warningSoft : colors.successSoft, borderColor: risk.hasRisk ? colors.warning : colors.success, borderRadius: 12, borderWidth: 1, gap: 10, padding: 12 }}>
-      <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
-        <MaterialCommunityIcons name={risk.hasRisk ? "shield-alert-outline" : "shield-check-outline"} size={18} color={risk.hasRisk ? colors.warning : colors.success} />
-        <Text style={{ color: colors.ink, flex: 1, fontSize: 13.5, fontWeight: "900" }}>{translateCopy("Görüşme güveni", language)}</Text>
-      </View>
-      <View style={{ gap: 7 }}>
-        {rows.map((row) => (
-          <View key={row.label} style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
-            <MaterialCommunityIcons name={row.icon} size={14} color={colors.muted} />
-            <Text style={{ color: colors.muted, flex: 1, fontSize: 11.5, fontWeight: "700" }}>{row.label}</Text>
-            <Text numberOfLines={1} style={{ color: colors.ink, flex: 1, fontSize: 11.5, fontWeight: "900", textAlign: "right" }}>{row.value}</Text>
-          </View>
-        ))}
-      </View>
-    </View>
-  );
-}
-
-function isImageAvatar(value: string) {
-  return value.startsWith("http://") || value.startsWith("https://") || value.startsWith("file:");
-}
-
 function DeskActionRow({ icon, title, sub, onPress, href }: { icon: keyof typeof MaterialCommunityIcons.glyphMap; title: string; sub: string; onPress?: () => void; href?: Href }) {
   const inner = (
     <View style={{ alignItems: "center", flexDirection: "row", gap: 11, paddingVertical: 10 }}>
@@ -855,12 +784,17 @@ function DeskActionRow({ icon, title, sub, onPress, href }: { icon: keyof typeof
     </View>
   );
   if (href) {
-    return <Link href={href} asChild><Pressable style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}>{inner}</Pressable></Link>;
+    // Link asChild + fonksiyon-style Pressable web anchor'da stili düşürür → PressLink.
+    return <PressLink href={href} style={{}} pressedOpacity={0.7}>{inner}</PressLink>;
   }
   return <Pressable onPress={onPress} style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}>{inner}</Pressable>;
 }
 
 export default function MessagesScreen() {
+  return isMobileApp ? <MobileMessages /> : <MessagesScreenLegacy />;
+}
+
+function MessagesScreenLegacy() {
   const auth = useStore();
   const { language } = useLanguage();
   const mounted = useMounted();

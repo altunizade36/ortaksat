@@ -49,16 +49,16 @@ function AField({ field, value, onChange }: { field: FieldDef; value: AttrValue 
           {(field.options ?? []).map((opt) => {
             const on = selected.includes(opt);
             return (
-              <Pressable key={opt} onPress={() => onChange(on ? selected.filter((x) => x !== opt) : [...selected, opt])} style={{ alignItems: "center", backgroundColor: on ? colors.primarySoft : colors.surfaceAlt, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 4, paddingHorizontal: 11, paddingVertical: 7 }}>
+              <Pressable key={opt} onPress={() => onChange(on ? selected.filter((x) => x !== opt) : [...selected, opt])} style={{ alignItems: "center", backgroundColor: on ? colors.primarySoft : colors.surfaceAlt, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 5, minHeight: 44, paddingHorizontal: 13, paddingVertical: 8 }}>
                 {on ? <MaterialCommunityIcons name="check" size={13} color={colors.primaryDark} /> : null}
-                <Text style={{ color: on ? colors.primaryDark : colors.ink, fontSize: 12, fontWeight: on ? "800" : "600" }}>{opt}</Text>
+                <Text style={{ color: on ? colors.primaryDark : colors.ink, flexShrink: 1, fontSize: 12.5, fontWeight: on ? "800" : "600" }}>{opt}</Text>
               </Pressable>
             );
           })}
         </View>
       ) : field.type === "bool" ? (
-        <Pressable onPress={() => onChange(!(value === true))} style={{ alignItems: "center", flexDirection: "row", gap: 9 }}>
-          <View style={{ alignItems: value === true ? "flex-end" : "flex-start", backgroundColor: value === true ? colors.primary : colors.line, borderRadius: 999, height: 26, justifyContent: "center", paddingHorizontal: 3, width: 48 }}><View style={{ backgroundColor: "#FFFFFF", borderRadius: 999, height: 20, width: 20 }} /></View>
+        <Pressable accessibilityRole="switch" accessibilityState={{ checked: value === true }} onPress={() => onChange(!(value === true))} style={{ alignItems: "center", flexDirection: "row", gap: 10, minHeight: 44 }}>
+          <View style={{ alignItems: value === true ? "flex-end" : "flex-start", backgroundColor: value === true ? colors.primary : colors.line, borderRadius: 999, height: 30, justifyContent: "center", paddingHorizontal: 3, width: 54 }}><View style={{ backgroundColor: "#FFFFFF", borderRadius: 999, height: 24, width: 24 }} /></View>
           <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "700" }}>{value === true ? translateCopy("Evet", language) : translateCopy("Hayır", language)}</Text>
         </Pressable>
       ) : field.type === "select" ? (

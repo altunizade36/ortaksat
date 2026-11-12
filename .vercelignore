@@ -1,0 +1,15 @@
+# Keep credentials and local test artifacts out of deployments.
+.env
+.env.*
+node_modules/
+.expo/
+.git/
+audit/
+dist*/
+web-build/
+playwright-report/
+test-results/
+e2e-artifacts/
+*.log
+android/
+ios/

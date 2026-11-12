@@ -14,6 +14,7 @@ export type LocationValue = {
   provinceId?: number;
   districtId?: number;
   neighborhood?: string;
+  neighborhoodId?: number;
   addressLine?: string;
 };
 
@@ -45,12 +46,16 @@ export function LocationSelector({
 }) {
   const nbRequired = neighborhoodRequired ?? required;
   const { language } = useLanguage();
-  const districtList = useMemo(() => districtsOfProvince(value.provinceId), [value.provinceId]);
   const provinceLabel = provinces.find((p) => p.id === value.provinceId)?.name;
+  const validProvinceId = provinceLabel ? value.provinceId : undefined;
+  const districtList = useMemo(() => districtsOfProvince(validProvinceId), [validProvinceId]);
   const districtLabel = districtList.find((d) => d.id === value.districtId)?.name;
+  const validDistrictId = districtLabel ? value.districtId : undefined;
+  const invalidSelection = value.provinceId != null && !provinceLabel || value.districtId != null && !districtLabel;
 
   return (
     <View style={{ gap: 12, zIndex: 5 }}>
+      {invalidSelection ? <Text accessibilityRole="alert" style={{ color: colors.accent, fontSize: 12, lineHeight: 18 }}>{translateCopy("Kayıtlı konumdaki il veya ilçe artık geçerli değil. İl ve ilçeni yeniden seç.", language)}</Text> : null}
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
         <View style={{ flex: 1, minWidth: 180, zIndex: 30 }}>
           <ComboBox
@@ -58,25 +63,24 @@ export function LocationSelector({
             placeholder={mode === "filter" ? translateCopy("Tüm iller", language) : translateCopy("İl seçin", language)}
             valueLabel={provinceLabel}
             search={(q) => searchProvinces(q).map((p) => ({ id: p.id, label: p.name }))}
-            onSelect={(id) => onChange({ provinceId: id, districtId: undefined, neighborhood: undefined, addressLine: value.addressLine })}
+            onSelect={(id) => { if (id !== value.provinceId || value.districtId != null && !districtLabel) onChange({ provinceId: id }); }}
             onClear={mode === "filter" ? () => onChange({}) : undefined}
           />
         </View>
         <View style={{ flex: 1, minWidth: 180, zIndex: 20 }}>
           <ComboBox
             label={`${translateCopy("İlçe", language)}${required ? " *" : ""}`}
-            placeholder={value.provinceId ? (mode === "filter" ? translateCopy("Tüm ilçeler", language) : translateCopy("İlçe seçin", language)) : translateCopy("Önce il seçin", language)}
+            placeholder={validProvinceId ? (mode === "filter" ? translateCopy("Tüm ilçeler", language) : translateCopy("İlçe seçin", language)) : translateCopy("Önce il seçin", language)}
             valueLabel={districtLabel}
-            disabled={!value.provinceId}
-            search={(q) => searchDistricts(value.provinceId, q).map((d) => ({ id: d.id, label: d.name }))}
-            onSelect={(id) => onChange({ ...value, districtId: id, neighborhood: undefined })}
-            onClear={mode === "filter" ? () => onChange({ ...value, districtId: undefined, neighborhood: undefined }) : undefined}
+            disabled={!validProvinceId}
+            search={(q) => searchDistricts(validProvinceId, q).map((d) => ({ id: d.id, label: d.name }))}
+            onSelect={(id) => { if (id !== value.districtId) onChange({ ...value, districtId: id, neighborhood: undefined, neighborhoodId: undefined, addressLine: undefined }); }}
+            onClear={mode === "filter" ? () => onChange({ ...value, districtId: undefined, neighborhood: undefined, neighborhoodId: undefined, addressLine: undefined }) : undefined}
           />
         </View>
         {showNeighborhood ? (
           <View style={{ flex: 1, minWidth: 180, zIndex: 10 }}>
-            <FieldLabel text={`${translateCopy("Mahalle / Köy", language)}${nbRequired ? " *" : ""}`} />
-            <NeighborhoodField districtId={value.districtId} value={value.neighborhood} onChange={(n) => onChange({ ...value, neighborhood: n })} />
+            <NeighborhoodField key={`${validProvinceId ?? "none"}:${validDistrictId ?? "none"}`} districtId={validDistrictId} value={validDistrictId ? value.neighborhood : undefined} required={nbRequired} onChange={(name, id) => onChange({ ...value, neighborhood: name, neighborhoodId: id })} />
           </View>
         ) : null}
       </View>
@@ -112,76 +116,37 @@ function FieldLabel({ text }: { text: string }) {
  * Mahalle alanı: Supabase'de mahalle verisi varsa aranabilir gerçek liste;
  * yoksa (veya "listede yok") serbest metin + öneri akışı. İlçe değişince sıfırlanır.
  */
-function NeighborhoodField({ districtId, value, onChange }: { districtId?: number; value?: string; onChange: (n: string) => void }) {
+function NeighborhoodField({ districtId, value, required, onChange }: { districtId?: number; value?: string; required?: boolean; onChange: (name: string, id?: number) => void }) {
   const { language } = useLanguage();
+  const copy = (s: string) => translateCopy(s, language);
   const [list, setList] = useState<Neighborhood[]>([]);
-  const [open, setOpen] = useState(false);
-  const [query, setQuery] = useState("");
   const [manual, setManual] = useState(false);
-  const { ref: nbAnchorRef, rect: nbAnchorRect, measure: measureNb } = useAnchor(open);
-
+  const [loading, setLoading] = useState(!!districtId);
+  const [failed, setFailed] = useState(false);
+  const [retry, setRetry] = useState(0);
+  const label = `${copy("Mahalle / Köy")}${required ? " *" : ""}`;
   useEffect(() => {
     let active = true;
-    setList([]);
-    setManual(false);
-    if (districtId == null) return;
-    fetchNeighborhoods(districtId).then((rows) => { if (active) setList(rows); }).catch(() => undefined);
+    if (!districtId) { setLoading(false); return; }
+    setLoading(true); setFailed(false);
+    fetchNeighborhoods(districtId, true).then(rows => { if (active) setList(rows); })
+      .catch(() => { if (active) setFailed(true); })
+      .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
-  }, [districtId]);
-
-  const hasData = list.length > 0;
-  // Mahalle sayısı ilçeye göre yüzlerce olabilir; 40'lık kırpma "mahalleler eksik"e yol
-  // açıyordu. Üst sınır performans için kaldı ama listenin tamamına yakınını kapsıyor.
-  const results = open ? list.filter((n) => locKey(n.name).includes(locKey(query))).slice(0, 500) : [];
-
-  // (Eski "açılınca sayfayı listeye kaydır" hack'i KALDIRILDI — liste artık çapalı
-  //  katmanda açılıyor, kaydırmaya gerek yok.)
-
-  // Veri yoksa veya kullanıcı "listede yok" dediyse: serbest metin
-  if (!hasData || manual) {
-    return (
-      <View>
-        <View style={{ alignItems: "center", backgroundColor: districtId ? colors.surfaceAlt : colors.background, borderColor: colors.line, borderRadius: 11, borderWidth: 1, flexDirection: "row", gap: 8, opacity: districtId ? 1 : 0.55, paddingHorizontal: 12 }}>
-          <MaterialCommunityIcons name="map-marker-outline" size={18} color={colors.muted} />
-          <TextInput editable={!!districtId} value={value ?? ""} onChangeText={onChange} placeholder={districtId ? translateCopy("Mahalle yazın", language) : translateCopy("Önce ilçe seçin", language)} placeholderTextColor={colors.subtle} style={{ color: colors.ink, flex: 1, fontSize: 13.5, minHeight: 44, paddingVertical: 8 }} />
-          {hasData ? <Pressable accessibilityRole="button" accessibilityLabel={translateCopy("Listeden seç", language)} onPress={() => { setManual(false); }} hitSlop={8}><MaterialCommunityIcons name="format-list-bulleted" size={17} color={colors.muted} /></Pressable> : null}
-        </View>
-        {districtId && (value?.trim().length ?? 0) > 1 ? (
-          <Text style={{ color: colors.muted, fontSize: 11, fontWeight: "600", marginTop: 4 }}>{translateCopy("Mahalleniz listede yoksa yazdığınız ad öneri olarak kaydedilir, ekibimiz inceler.", language)}</Text>
-        ) : null}
-      </View>
-    );
-  }
-
-  // Gerçek mahalle listesi (Supabase) — çapalı katmanda açılır (akışı itmez, kırpılmaz).
-  return (
-    <View style={{ gap: 4 }}>
-      <View ref={nbAnchorRef} collapsable={false} onLayout={measureNb}>
-        <Pressable onPress={() => { if (open) { setOpen(false); return; } measureNb(); setQuery(""); setOpen(true); }} style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: open ? colors.primary : colors.line, borderRadius: 11, borderWidth: 1, flexDirection: "row", gap: 8, minHeight: 46, paddingHorizontal: 12 }}>
-          <MaterialCommunityIcons name="map-marker-outline" size={18} color={value ? colors.primary : colors.muted} />
-          <Text numberOfLines={1} style={{ color: value ? colors.ink : colors.subtle, flex: 1, fontSize: 13.5, fontWeight: value ? "700" : "500" }}>{value || translateCopy("Mahalle seçin", language)}</Text>
-          <MaterialCommunityIcons name={open ? "chevron-up" : "chevron-down"} size={18} color={colors.muted} />
-        </Pressable>
-      </View>
-      <AnchoredDropdown visible={open} anchor={nbAnchorRect} onClose={() => setOpen(false)} maxHeight={340} minWidth={220}>
-        <View style={{ alignItems: "center", borderBottomColor: colors.line, borderBottomWidth: 1, flexDirection: "row", gap: 8, paddingHorizontal: 12 }}>
-          <MaterialCommunityIcons name="magnify" size={17} color={colors.muted} />
-          <TextInput value={query} onChangeText={setQuery} autoFocus placeholder={translateCopy("Mahalle ara…", language)} placeholderTextColor={colors.subtle} style={{ color: colors.ink, flex: 1, fontSize: 13.5, minHeight: 42, paddingVertical: 8 }} />
-        </View>
-        <ScrollView nestedScrollEnabled keyboardShouldPersistTaps="handled">
-          {results.map((n) => (
-            <Pressable key={n.id} onPress={() => { onChange(n.name); setOpen(false); }} style={({ pressed }) => ({ backgroundColor: pressed ? colors.surfaceAlt : "transparent", paddingHorizontal: 14, paddingVertical: 10 })}>
-              <Text style={{ color: colors.ink, fontSize: 13.5, fontWeight: "600" }}>{n.name}</Text>
-            </Pressable>
-          ))}
-          <Pressable onPress={() => { setManual(true); setOpen(false); }} style={{ alignItems: "center", borderTopColor: colors.line, borderTopWidth: 1, flexDirection: "row", gap: 7, paddingHorizontal: 14, paddingVertical: 11 }}>
-            <MaterialCommunityIcons name="plus-circle-outline" size={16} color={colors.primaryDark} />
-            <Text style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Mahallem listede yok", language)}</Text>
-          </Pressable>
-        </ScrollView>
-      </AnchoredDropdown>
-    </View>
-  );
+  }, [districtId, retry]);
+  if (loading) return <View><FieldLabel text={label} /><Text accessibilityRole="progressbar" style={{ color: colors.muted, minHeight: 46, paddingVertical: 12 }}>{copy("Mahalleler yükleniyor…")}</Text></View>;
+  return <View style={{ gap: 7 }}>
+    {list.length > 0 && !manual ? <>
+      <ComboBox label={label} placeholder={copy("Mahalle seçin")} valueLabel={value} search={query => list.filter(n => locKey(n.name).includes(locKey(query))).map(n => ({ id: n.id, label: n.name }))} onSelect={id => { const item = list.find(n => n.id === id); if (item) onChange(item.name, item.id); }} onClear={() => onChange("")} />
+      <Pressable accessibilityRole="button" onPress={() => setManual(true)} style={{ minHeight: 44, justifyContent: "center" }}><Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "700" }}>{copy("Mahallem listede yok")}</Text></Pressable>
+    </> : <>
+      <FieldLabel text={label} />
+      <TextInput accessibilityLabel={copy("Mahalle / Köy")} editable={!!districtId} value={value ?? ""} onChangeText={text => onChange(text)} maxLength={100} placeholder={districtId ? copy("Mahalle / köy adını yaz") : copy("Önce ilçe seçin")} placeholderTextColor={colors.subtle} style={{ color: colors.ink, backgroundColor: colors.surfaceAlt, borderWidth: 1, borderColor: colors.line, borderRadius: 11, paddingHorizontal: 12, fontSize: 13.5, minHeight: 46, opacity: districtId ? 1 : 0.55 }} />
+      {districtId && <Text style={{ color: colors.muted, fontSize: 11, lineHeight: 17 }}>{copy(failed ? "Mahalle listesi yüklenemedi. Tekrar deneyebilir veya mahalle adını yazabilirsin." : "Mahalleni listede bulamazsan adını kendin yazabilirsin.")}</Text>}
+      {list.length > 0 && <Pressable accessibilityRole="button" onPress={() => setManual(false)} style={{ minHeight: 44, justifyContent: "center" }}><Text style={{ color: colors.primaryDark, fontSize: 12 }}>{copy("Listeden seç")}</Text></Pressable>}
+    </>}
+    {failed && <Pressable accessibilityRole="button" onPress={() => setRetry(n => n + 1)} style={{ minHeight: 44, justifyContent: "center" }}><Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "700" }}>{copy("Mahalleleri yeniden yükle")}</Text></Pressable>}
+  </View>;
 }
 
 function ComboBox({
@@ -226,6 +191,10 @@ function ComboBox({
       <FieldLabel text={label} />
       <View ref={anchorRef} collapsable={false} onLayout={measure}>
         <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`${label}: ${valueLabel || placeholder}`}
+          accessibilityState={{ disabled: !!disabled, expanded: open }}
+          disabled={disabled}
           onPress={() => (open ? setOpen(false) : openList())}
           style={{ alignItems: "center", backgroundColor: disabled ? colors.background : colors.surfaceAlt, borderColor: open ? colors.primary : colors.line, borderRadius: 11, borderWidth: 1, flexDirection: "row", gap: 8, minHeight: 46, opacity: disabled ? 0.55 : 1, paddingHorizontal: 12 }}
         >
@@ -234,7 +203,7 @@ function ComboBox({
             {valueLabel ?? placeholder}
           </Text>
           {valueLabel && onClear ? (
-            <Pressable accessibilityRole="button" accessibilityLabel={translateCopy("Temizle", language)} onPress={() => { onClear(); setOpen(false); }} hitSlop={8}><MaterialCommunityIcons name="close-circle" size={16} color={colors.muted} /></Pressable>
+            <Pressable accessibilityRole="button" accessibilityLabel={translateCopy("Temizle", language)} onPress={event => { event.stopPropagation(); onClear(); setOpen(false); }} hitSlop={8}><MaterialCommunityIcons name="close-circle" size={16} color={colors.muted} /></Pressable>
           ) : (
             <MaterialCommunityIcons name={open ? "chevron-up" : "chevron-down"} size={18} color={colors.muted} />
           )}
@@ -243,7 +212,7 @@ function ComboBox({
 
       {/* DAR EKRAN (native + telefon tarayıcısı): alttan açılan seçim sayfası + arama
           (81 il / ilçeler tam görünür, klavye açılınca liste sıçramaz). */}
-      {useSheet ? (
+      {useSheet ? (open ? (
         <OptionSheet
           visible={open}
           title={label}
@@ -256,8 +225,9 @@ function ComboBox({
           }}
           onClose={() => setOpen(false)}
           searchable
+          allowClear={!!onClear}
         />
-      ) : (
+      ) : null) : (
         <AnchoredDropdown visible={open} anchor={anchorRect} onClose={() => setOpen(false)} maxHeight={340} minWidth={220}>
           <View style={{ alignItems: "center", borderBottomColor: colors.line, borderBottomWidth: 1, flexDirection: "row", gap: 8, paddingHorizontal: 12 }}>
             <MaterialCommunityIcons name="magnify" size={17} color={colors.muted} />
@@ -275,7 +245,7 @@ function ComboBox({
               <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "600", padding: 14 }}>{translateCopy("Sonuç yok.", language)}</Text>
             ) : null}
             {results.map((r) => (
-              <Pressable key={r.id} onPress={() => { onSelect(r.id); setOpen(false); }} style={({ pressed }) => ({ backgroundColor: pressed ? colors.surfaceAlt : "transparent", paddingHorizontal: 14, paddingVertical: 11 })}>
+              <Pressable key={r.id} accessibilityRole="button" accessibilityState={{ selected: r.label === valueLabel }} onPress={() => { onSelect(r.id); setOpen(false); }} style={({ pressed }) => ({ backgroundColor: pressed ? colors.surfaceAlt : "transparent", paddingHorizontal: 14, paddingVertical: 11 })}>
                 <Text style={{ color: colors.ink, fontSize: 13.5, fontWeight: "600" }}>{r.label}</Text>
               </Pressable>
             ))}

@@ -10,7 +10,8 @@ import { ScreenSkeleton } from "@/components/screen-skeleton";
 import { PrimaryButton } from "@/components/ui";
 import { WebFooter } from "@/components/web-landing";
 import { translateCopy, useLanguage } from "@/lib/i18n";
-import { responsiveGrid, useMounted } from "@/lib/layout";
+import { useMounted } from "@/lib/layout";
+import { marketplaceCardGrid } from "@/lib/card-layout";
 import { fetchListingsBySellers } from "@/lib/supabase-data";
 import type { Listing, User } from "@/lib/types";
 import { useNativeRefresh } from "@/lib/use-native-refresh";
@@ -42,7 +43,7 @@ function FollowingInner() {
 
   const gap = 8;
   const horizontalPadding = 12;
-  const cardWidth = responsiveGrid({ available: width - horizontalPadding * 2, gap, minCardWidth: 168, minColumns: 2 /* mobilde 2 sütun: 3 zorlarken 106px kartta fiyat kırpılıyordu */ }).cardWidth;
+  const cardWidth = marketplaceCardGrid({ available: width - horizontalPadding * 2, gap, minCardWidth: 142, maxCardWidth: 210, minColumns: 2, maxColumns: 4 }).cardWidth;
 
   // Takip edilen satıcıların aktif ilanlarını sunucudan getir (bellek penceresinde
   // olmayabilir → beslemesi eksik kalmasın). Yerel listelerle birleştirilir.

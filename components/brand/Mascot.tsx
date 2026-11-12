@@ -5,8 +5,8 @@ import { useIsWideWeb } from "@/lib/layout";
 import { mascotSource } from "@/lib/mascot-source";
 import { MASCOT_ALT, type MascotName } from "@/lib/mascots";
 
-// OrtakSat maskot bileşeni. Görseller şeffaf zeminli; turkuaz alanlarda `panel` ile
-// açık bir daire arkalık gösterilir (kullanıcı isteği: maskot beyaz/#F0FDFF daire içinde).
+// OrtakSat maskot bileşeni. Görseller şeffaf zeminli; mavi alanlarda `panel` ile
+// açık bir daire arkalık gösterilir (kullanıcı isteği: maskot beyaz daire içinde).
 // Masaüstünde 1024, mobilde 512 WebP yüklenir. Aynı ekranda birden çok BÜYÜK maskot gösterme.
 export function Mascot({
   name,
@@ -47,7 +47,7 @@ export function Mascot({
           borderRadius: 999,
           height: disc,
           position: "absolute",
-          shadowColor: "#0B3A44",
+          shadowColor: "#001449",
           shadowOffset: { width: 0, height: 8 },
           shadowOpacity: 0.14,
           shadowRadius: 22,

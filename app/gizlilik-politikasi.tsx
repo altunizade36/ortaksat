@@ -5,7 +5,7 @@ const SECTIONS: LegalSection[] = [
   {
     heading: "Veri Sorumlusu ve Kapsam",
     paragraphs: [
-      "Bu Gizlilik Politikası, OrtakSat platformunu (web ve mobil uygulama) kullanırken kişisel verilerinizin nasıl işlendiğini açıklar. Veri sorumlusu OrtakSat'tır; her türlü başvuru ve iletişim destek@ortaksat.com üzerinden yapılır.",
+      "Bu Gizlilik Politikası, OrtakSat platformunu (web ve mobil uygulama) kullanırken kişisel verilerinizin nasıl işlendiğini açıklar. Platformun marka adı OrtakSat'tır; başvuru ve iletişim için destek@ortaksat.com adresi kullanılır.",
       "OrtakSat aracı bir ilan ve iletişim platformudur; ödeme almaz, para tutmaz, komisyon kesmez, kargo yapmaz. Bu politika, platformu kullanmanız sırasında topladığımız verilerle sınırlıdır."
     ]
   },
@@ -99,7 +99,7 @@ export default function GizlilikPolitikasi() {
     <LegalDoc
       title="Gizlilik Politikası"
       path="/gizlilik-politikasi"
-      updated="11 Temmuz 2026"
+      updated="24 Ekim 2026"
       seoDescription="OrtakSat Gizlilik Politikası: hangi verileri topladığımız, nasıl kullandığımız, üçüncü taraf hizmetler ve KVKK kapsamındaki haklarınız."
       intro="Gizliliğiniz bizim için önemlidir. Bu politika, OrtakSat'ı kullanırken kişisel verilerinizin nasıl toplandığını, işlendiğini ve korunduğunu açıklar."
       sections={SECTIONS}

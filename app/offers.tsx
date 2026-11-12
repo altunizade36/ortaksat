@@ -1,3 +1,6 @@
+import { displayListingTitle } from "@/lib/listing-title";
+import {isMobileApp} from "@/lib/mobile-app";
+import {MobileOffers} from "@/components/mobile/offers";
 import { MaterialCommunityIcons } from "@/components/icons";
 import { useRouter } from "expo-router";
 import { useMemo, useState } from "react";
@@ -13,6 +16,7 @@ import { moneyIn } from "@/lib/format";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { useMounted } from "@/lib/layout";
 import { shortDate } from "@/lib/locale";
+import { showToast } from "@/lib/toast";
 import type { Offer } from "@/lib/types";
 import { useNativeRefresh } from "@/lib/use-native-refresh";
 import { useStore } from "@/lib/use-store";
@@ -51,11 +55,19 @@ function OffersInner() {
   const act = async (id: string, action: "withdrawn" | "accept_counter" | "reject_counter") => {
     if (busy) return;
     setBusy(id);
-    await buyerOfferAction(id, action);
-    setBusy(null);
+    // try/finally: RPC atarsa `busy` sonsuza dek takılı kalıp TÜM teklif butonlarını kilitliyordu;
+    // başarısızlıkta da kullanıcıya hiçbir geri bildirim yoktu.
+    try {
+      const ok = await buyerOfferAction(id, action);
+      if (!ok) showToast(translateCopy("İşlem yapılamadı. Tekrar dene.", language), "info");
+    } catch {
+      showToast(translateCopy("İşlem yapılamadı. Tekrar dene.", language), "info");
+    } finally {
+      setBusy(null);
+    }
   };
 
-  const Row = ({ o }: { o: Offer }) => {
+  const renderRow = (o: Offer) => {
     const l = findListing(o.listingId);
     const seller = findUser(o.sellerId);
     const t = TONE[o.status];
@@ -64,7 +76,7 @@ function OffersInner() {
     // NÖTR kart (eskiden tüm satır durum-renginde boyanıyordu → renk çorbası). Durum
     // artık ikon çipi + pill ile taşınır; kart beyaz kalır (app kart deseniyle uyumlu).
     return (
-      <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 12, borderWidth: 1, gap: 8, padding: 12 }}>
+      <View key={o.id} style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 12, borderWidth: 1, gap: 8, padding: 12 }}>
         <Pressable
           accessibilityRole="link"
           onPress={() => router.push({ pathname: "/listing/[id]", params: { id: o.listingId } })}
@@ -74,9 +86,9 @@ function OffersInner() {
             <MaterialCommunityIcons name={t.icon} size={18} color={t.ink} />
           </View>
           <Text numberOfLines={1} style={{ color: colors.ink, flex: 1, fontSize: 13.5, fontWeight: "900", minWidth: 0 }}>
-            {l?.title ?? translateCopy("İlan", language)}
+            {displayListingTitle(l?.title, translateCopy("İlan", language))}
           </Text>
-          <Text style={{ color: t.ink, fontSize: 15, fontWeight: "900" }}>{moneyIn(shown, l?.currency)}</Text>
+          <Text style={{ color: t.ink, flexShrink: 0, fontSize: 15, fontWeight: "900" }}>{moneyIn(shown, l?.currency)}</Text>
         </Pressable>
 
         <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 7 }}>
@@ -94,8 +106,9 @@ function OffersInner() {
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
             <Pressable
               accessibilityRole="button"
+              disabled={busy !== null}
               onPress={() => void act(o.id, "accept_counter")}
-              style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.success, borderRadius: 9, flexDirection: "row", gap: 6, opacity: pressed ? 0.85 : 1, paddingHorizontal: 14, paddingVertical: 9 })}
+              style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.success, borderRadius: 9, flexDirection: "row", gap: 6, opacity: busy !== null ? 0.5 : pressed ? 0.85 : 1, paddingHorizontal: 14, paddingVertical: 9 })}
             >
               <MaterialCommunityIcons name="check" size={15} color="#FFFFFF" />
               <Text style={{ color: "#FFFFFF", fontSize: 12.5, fontWeight: "900" }}>
@@ -104,8 +117,9 @@ function OffersInner() {
             </Pressable>
             <Pressable
               accessibilityRole="button"
+              disabled={busy !== null}
               onPress={() => void act(o.id, "reject_counter")}
-              style={({ pressed }) => ({ alignItems: "center", borderColor: colors.line, borderRadius: 9, borderWidth: 1, opacity: pressed ? 0.85 : 1, paddingHorizontal: 14, paddingVertical: 9 })}
+              style={({ pressed }) => ({ alignItems: "center", borderColor: colors.line, borderRadius: 9, borderWidth: 1, opacity: busy !== null ? 0.5 : pressed ? 0.85 : 1, paddingHorizontal: 14, paddingVertical: 9 })}
             >
               <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Reddet", language)}</Text>
             </Pressable>
@@ -115,9 +129,10 @@ function OffersInner() {
         {o.status === "pending" ? (
           <Pressable
             accessibilityRole="button"
+            disabled={busy !== null}
             onPress={() => void act(o.id, "withdrawn")}
             hitSlop={6}
-            style={({ pressed }) => ({ alignSelf: "flex-start", opacity: pressed ? 0.7 : 1 })}
+            style={({ pressed }) => ({ alignSelf: "flex-start", opacity: busy !== null ? 0.5 : pressed ? 0.7 : 1 })}
           >
             <Text style={{ color: colors.accent, fontSize: 12, fontWeight: "900" }}>{translateCopy("Teklifi geri çek", language)}</Text>
           </Pressable>
@@ -129,6 +144,7 @@ function OffersInner() {
             onPress={() => {
               const c = startConversation(o.listingId, o.sellerId, "Teklifim kabul edildi, teslimatı konuşalım.");
               if (c) router.push({ pathname: "/chat/[id]", params: { id: c.id } });
+              else showToast(translateCopy("Mesaj başlatılamadı. İlanın veya hesabın durumunu kontrol et.", language), "info");
             }}
             style={({ pressed }) => ({ alignItems: "center", alignSelf: "flex-start", backgroundColor: colors.primary, borderRadius: 9, flexDirection: "row", gap: 6, opacity: pressed ? 0.85 : 1, paddingHorizontal: 14, paddingVertical: 9 })}
           >
@@ -174,14 +190,14 @@ function OffersInner() {
           {open.length > 0 ? (
             <Card>
               <SectionTitle title="Süren teklifler" action={`${open.length}`} />
-              <View style={{ gap: 10 }}>{open.map((o) => <Row key={o.id} o={o} />)}</View>
+              <View style={{ gap: 10 }}>{open.map(renderRow)}</View>
             </Card>
           ) : null}
 
           {closed.length > 0 ? (
             <Card>
               <SectionTitle title="Geçmiş" action={`${closed.length}`} />
-              <View style={{ gap: 10 }}>{closed.map((o) => <Row key={o.id} o={o} />)}</View>
+              <View style={{ gap: 10 }}>{closed.map(renderRow)}</View>
             </Card>
           ) : null}
         </View>
@@ -210,5 +226,5 @@ export default function OffersScreen() {
   if (!mounted) return <ScreenSkeleton />; // hidrasyon-gate (#418)
   if (!auth.authReady) return <ScreenSkeleton />; // oturum geri-yüklenene kadar bekle (auth-flash önle)
   if (!auth.isAuthenticated) return <AuthRequired title={translateCopy("Tekliflerin için giriş yapın", language)} />;
-  return <OffersInner />;
+  return isMobileApp?<MobileOffers/>:<OffersInner />;
 }

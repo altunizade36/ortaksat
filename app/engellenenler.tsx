@@ -1,17 +1,20 @@
+import { UserAvatar } from "@/components/user-avatar";
 import { MaterialCommunityIcons } from "@/components/icons";
 import { useCallback, useEffect, useState } from "react";
-import { Pressable, RefreshControl, ScrollView, Text, View } from "react-native";
+import { Platform, Pressable, RefreshControl, ScrollView, Text, View } from "react-native";
 
 import { AuthRequired } from "@/components/auth-gate";
 import { colors } from "@/components/colors";
-import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { ScreenSkeleton } from "@/components/screen-skeleton";
 import { PrimaryButton } from "@/components/ui";
 import { WebFooter } from "@/components/web-landing";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { fetchBlockedProfiles, type BlockedProfile } from "@/lib/live-service";
-import { useMounted } from "@/lib/layout";
+import { useIsWideWeb, useMounted } from "@/lib/layout";
+import { showToast } from "@/lib/toast";
 import { useStore } from "@/lib/use-store";
+import { isMobileApp } from "@/lib/mobile-app";
+import { MobileBlockedUsers } from "@/components/mobile/blocked-users";
 
 type Row = { id: string; name: string; avatar?: string; role?: string };
 
@@ -41,7 +44,7 @@ export default function BlockedUsersScreen() {
       />
     );
   }
-  return <BlockedUsersInner />;
+  return isMobileApp?<MobileBlockedUsers/>:<BlockedUsersInner />;
 }
 
 function BlockedUsersInner() {
@@ -50,20 +53,34 @@ function BlockedUsersInner() {
   const [profiles, setProfiles] = useState<BlockedProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const isWideWeb = useIsWideWeb();
+
+  // Engel kaldırma: çift dokunuşu kilitle + başarısızlıkta kullanıcıya söyle (eskiden sessizdi).
+  async function unblock(id: string) {
+    if (busyId) return;
+    setBusyId(id);
+    try {
+      const ok = await unblockUser(id);
+      showToast(translateCopy(ok ? "Engel kaldırıldı" : "Engel kaldırılamadı. Tekrar dene.", language));
+    } catch {
+      showToast(translateCopy("Engel kaldırılamadı. Tekrar dene.", language));
+    } finally {
+      setBusyId(null);
+    }
+  }
 
   const load = useCallback(async () => {
     if (backendMode !== "supabase") { setProfiles([]); setLoading(false); return; }
-    const res = await fetchBlockedProfiles();
-    setProfiles(res);
-    setLoading(false);
+    // Profil zenginleştirmesi başarısız olsa da iskelet takılı kalmasın (liste id'lerden yine çizilir).
+    try { setProfiles(await fetchBlockedProfiles()); } catch { /* yoksay */ } finally { setLoading(false); }
   }, [backendMode]);
 
   useEffect(() => { void load(); }, [load]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await load();
-    setRefreshing(false);
+    try { await load(); } finally { setRefreshing(false); }
   }, [load]);
 
   // blockedUserIds sürücü kaynak (engel kaldırınca anında güncellenir); profiller zenginleştirir.
@@ -78,13 +95,13 @@ function BlockedUsersInner() {
     <ScrollView
       style={{ backgroundColor: colors.background, flex: 1 }}
       contentContainerStyle={{ backgroundColor: colors.background, flexGrow: 1, paddingBottom: 0 }}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
+      refreshControl={Platform.OS === "web" ? undefined : <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} colors={[colors.primary]} />}
     >
-      <View style={{ alignSelf: "center", gap: 14, maxWidth: 1280, paddingHorizontal: 12, paddingTop: 16, width: "100%" }}>
+      <View style={{ alignSelf: "center", gap: 14, maxWidth: 1280, paddingHorizontal: isWideWeb ? 20 : 12, paddingTop: 16, width: "100%" }}>
         <View style={{ gap: 4 }}>
           <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
             <MaterialCommunityIcons name="account-cancel-outline" size={24} color={colors.primaryDark} />
-            <Text style={{ color: colors.ink, fontSize: 24, fontWeight: "900" }}>{translateCopy("Engellenen Kullanıcılar", language)}</Text>
+            <Text style={{ color: colors.ink, flex: 1, fontSize: isWideWeb ? 24 : 21, fontWeight: "900", minWidth: 0 }}>{translateCopy("Engellenen Kullanıcılar", language)}</Text>
           </View>
           <Text style={{ color: colors.muted, fontSize: 14, fontWeight: "600" }}>
             {rows.length > 0
@@ -116,7 +133,7 @@ function BlockedUsersInner() {
               >
                 <View style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderRadius: 999, height: 44, justifyContent: "center", overflow: "hidden", width: 44 }}>
                   {row.avatar && /^https?:\/\//.test(row.avatar) ? (
-                    <SafeRemoteImage full uri={row.avatar} contentFit="cover" style={{ height: 44, width: 44 }} />
+                    <UserAvatar uri={row.avatar} size={44} accessibilityLabel={row.name} />
                   ) : (
                     <MaterialCommunityIcons name="account" size={24} color={colors.muted} />
                   )}
@@ -130,8 +147,10 @@ function BlockedUsersInner() {
                 <Pressable
                   accessibilityRole="button"
                   accessibilityLabel={translateCopy("Engeli kaldır", language)}
-                  onPress={() => void unblockUser(row.id)}
-                  style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 6, opacity: pressed ? 0.7 : 1, paddingHorizontal: 14, paddingVertical: 8 })}
+                  disabled={busyId !== null}
+                  accessibilityState={{ disabled: busyId !== null }}
+                  onPress={() => void unblock(row.id)}
+                  style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", flexShrink: 0, gap: 6, minHeight: 36, opacity: busyId === row.id ? 0.5 : pressed ? 0.7 : 1, paddingHorizontal: 14, paddingVertical: 8 })}
                 >
                   <MaterialCommunityIcons name="account-check-outline" size={15} color={colors.primaryDark} />
                   <Text style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Engeli kaldır", language)}</Text>

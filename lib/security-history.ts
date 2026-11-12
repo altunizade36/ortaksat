@@ -55,7 +55,7 @@ export function parseOS(ua: string | null | undefined): string {
 }
 
 /** Kullanıcının son giriş/oturum olaylarını getirir (en yeni önce). */
-export async function fetchLoginHistory(userId: string, limit = 15): Promise<LoginEvent[]> {
+export async function fetchLoginHistory(userId: string, limit = 15, strict = false): Promise<LoginEvent[]> {
   if (!supabase || !userId) return [];
   try {
     const { data, error } = await supabase
@@ -65,7 +65,7 @@ export async function fetchLoginHistory(userId: string, limit = 15): Promise<Log
       .in("action", ["sign_in", "sign_up", "sign_out", "account_deletion_request"])
       .order("created_at", { ascending: false })
       .limit(limit);
-    if (error || !data) return [];
+    if (error || !data) {if(strict)throw error||new Error("History unavailable");return [];}
     const currentUA = typeof navigator !== "undefined" ? navigator.userAgent : "";
     return data.map((row, idx) => ({
       id: String(row.id),
@@ -76,7 +76,8 @@ export async function fetchLoginHistory(userId: string, limit = 15): Promise<Log
       // En yeni sign_in ve aynı user-agent = bu cihaz (yaklaşık).
       isCurrent: idx === 0 && !!currentUA && (row.user_agent as string | null) === currentUA
     }));
-  } catch {
+  } catch (error) {
+    if(strict)throw error;
     return [];
   }
 }

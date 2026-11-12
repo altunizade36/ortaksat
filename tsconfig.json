@@ -23,6 +23,7 @@
   // klasörlerini veya build çıktısını (dist-web/dist-check-android) tip-kontrolüne
   // sürükler → IDE'de hayalet hatalar. (Yalnız tip-kontrolünü etkiler; build ayrı.)
   "exclude": [
+    "supabase/functions",
     "node_modules",
     "dist-web",
     "dist-check-android",

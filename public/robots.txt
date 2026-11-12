@@ -10,5 +10,13 @@ Disallow: /favorites
 Disallow: /notifications
 Disallow: /chat/
 Disallow: /listing-edit/
+Disallow: /account-settings
+Disallow: /account-security
+Disallow: /notification-settings
+Disallow: /messages
+Disallow: /offers
+Disallow: /engellenenler
+Disallow: /listing-stats/
+Disallow: /partnership-request/
 
 Sitemap: https://www.ortaksat.com/sitemap.xml

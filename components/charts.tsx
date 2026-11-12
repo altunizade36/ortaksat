@@ -19,7 +19,7 @@ export function KpiDeltaTile({ label, value, delta, icon, tint, accent, money: i
   const v = typeof value === "number" ? (isMoney ? money(value) : fmt(value)) : value;
   const up = (delta ?? 0) >= 0;
   return (
-    <View style={{ backgroundColor: tint, borderRadius: 16, flexBasis: 158, flexGrow: 1, gap: 9, minWidth: 146, overflow: "hidden", padding: 15, shadowColor: "#0B3A44", shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.14, shadowRadius: 10 }}>
+    <View style={{ backgroundColor: tint, borderRadius: 16, flexBasis: 158, flexGrow: 1, gap: 9, minWidth: 146, overflow: "hidden", padding: 15, shadowColor: "#001449", shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.14, shadowRadius: 10 }}>
       <View style={{ alignItems: "center", flexDirection: "row", justifyContent: "space-between" }}>
         <View style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.22)", borderRadius: 10, height: 34, justifyContent: "center", width: 34 }}>
           <MaterialCommunityIcons name={icon} size={18} color="#FFFFFF" />
@@ -136,7 +136,7 @@ export function GroupedBarChart({ groups, series, height = 200, valueFmt }: { gr
 // ---- ÇİZGİ + ALAN grafiği (referans: lead generation / visits per month) ----
 export function LineAreaChart({ points, color = CAT[0], height = 190, width = 560, valueFmt }: { points: Array<{ label: string; value: number }>; color?: string; height?: number; width?: number; valueFmt?: (n: number) => string }) {
   const [hover, setHover] = useState<number | null>(null);
-  const max = niceMax(Math.max(1, ...points.map((p) => p.value)));
+  const max = niceMax(Math.max(4, ...points.map((p) => p.value)));
   const padL = 38, padB = 22, padT = 8, padR = 8;
   const plotW = width - padL - padR, plotH = height - padB - padT;
   const n = points.length;
@@ -154,7 +154,7 @@ export function LineAreaChart({ points, color = CAT[0], height = 190, width = 56
   const hx = hover != null ? x(hover) : 0;
   const tipLeft = hover != null ? Math.max(0, Math.min(width - 116, hx - 58)) : 0;
   return (
-    <View style={{ position: "relative" }} {...({ onMouseMove: onMove, onMouseLeave: () => setHover(null) } as Record<string, unknown>)}>
+    <View style={{ position: "relative" }} onTouchStart={onMove} onTouchMove={onMove} {...({ onMouseMove: onMove, onMouseLeave: () => setHover(null) } as Record<string, unknown>)}>
       <Svg width={width} height={height}>
         <Defs>
           <LinearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">

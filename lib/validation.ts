@@ -1,3 +1,5 @@
+import { parseListingMoney, LISTING_MONEY_ERROR } from "./listing-numbers";
+import { LISTING_TITLE_LIMITS, validateListingTitle } from "./listing-title";
 /**
  * Merkezi form doğrulama. Tüm formlar (ilan ver, kayıt, giriş, mesaj, destek)
  * buradaki kuralları kullanır; böylece uzunluk/format kuralları tek yerde durur
@@ -12,7 +14,7 @@ export type ValidationResult = { ok: boolean; errors: FieldError[] };
 // Alan uzunluk sınırları (DB ile uyumlu, makul üst sınırlar).
 export const LIMITS = {
   name: { min: 2, max: 80 },
-  title: { min: 10, max: 70 },
+  title: LISTING_TITLE_LIMITS,
   description: { min: 20, max: 4000 },
   price: { min: 1, max: 999_999_999_999 },
   message: { min: 1, max: 2000 },
@@ -60,16 +62,16 @@ export function validateListing(input: {
   location?: string;
 }): ValidationResult & { clean: { title: string; description: string; price: number } } {
   const errors: FieldError[] = [];
-  const title = sanitizeLine(input.title, LIMITS.title.max);
+  const titleCheck = validateListingTitle(input.title);
+  const title = titleCheck.title;
   const description = sanitizeMultiline(input.description, LIMITS.description.max);
-  const price = typeof input.price === "string" ? parseTrPrice(input.price) : input.price;
+  const price = parseListingMoney(input.price);
 
-  const te = lenError("title", title, LIMITS.title.min, LIMITS.title.max, "Başlık");
-  if (te) errors.push(te);
+  if (titleCheck.error) errors.push({ field: "title", message: titleCheck.error });
   const de = lenError("description", description, LIMITS.description.min, LIMITS.description.max, "Açıklama");
   if (de) errors.push(de);
   if (!Number.isFinite(price) || price < LIMITS.price.min) {
-    errors.push({ field: "price", message: "Geçerli bir fiyat girin." });
+    errors.push({ field: "price", message: LISTING_MONEY_ERROR });
   } else if (price > LIMITS.price.max) {
     errors.push({ field: "price", message: "Fiyat çok yüksek görünüyor." });
   }

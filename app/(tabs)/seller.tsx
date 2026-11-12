@@ -1,3 +1,8 @@
+import { HorizontalScroll } from "@/components/horizontal-scroll";
+import { CompactFooter } from "@/components/compact-footer";
+import { displayListingTitle } from "@/lib/listing-title";
+import { isMobileApp } from "@/lib/mobile-app";
+import { MobileMyListings } from "@/components/mobile/my-listings";
 ﻿import { MaterialCommunityIcons } from "@/components/icons";
 import { Image } from "expo-image";
 import { useLocalSearchParams, useRouter, type Href } from "expo-router";
@@ -64,7 +69,10 @@ const saleIsOwed = (s: { status: SaleStatus }) => s.status !== "paid" && s.statu
 export default function SellerScreen() {
   // Hidrasyon-gate (#418): SSG-verisiz ↔ istemci-veri uyuşmazlığı için mount'a
   // kadar iskelet.
-  return useMounted() ? <SellerScreenInner /> : <ScreenSkeleton />;
+  const mounted = useMounted();
+  const params = useLocalSearchParams<{ view?: string }>();
+  if (!mounted) return <ScreenSkeleton />;
+  return isMobileApp && params.view !== "advanced" ? <MobileMyListings /> : <SellerScreenInner />;
 }
 
 function SellerScreenInner() {
@@ -336,7 +344,7 @@ function SellerScreenInner() {
 
   return (
     <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={{ flex: 1 }}>
-    <ScrollView contentInsetAdjustmentBehavior="automatic" keyboardShouldPersistTaps="handled" contentContainerStyle={{ gap: 14, padding: 12, paddingBottom: Platform.OS === "web" ? 28 : 96 }} refreshControl={Platform.OS === "web" ? undefined : <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} colors={[colors.primary]} />}>
+    <ScrollView contentInsetAdjustmentBehavior="automatic" keyboardShouldPersistTaps="handled" contentContainerStyle={{ flexGrow: 1, gap: 14, padding: 12, paddingBottom: 0 }} refreshControl={Platform.OS === "web" ? undefined : <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} colors={[colors.primary]} />}>
       <WebContainer max={1280} padding={0} style={{ gap: 14 }}>
       <Card>
         <View style={{ alignItems: "center", flexDirection: "row", gap: 14 }}>
@@ -426,7 +434,7 @@ function SellerScreenInner() {
                 <View key={o.id} style={{ backgroundColor: colors.goldSoft, borderColor: colors.gold, borderRadius: 12, borderWidth: 1, gap: 8, padding: 12 }}>
                   <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
                     <MaterialCommunityIcons name="handshake" size={17} color={colors.goldInk} />
-                    <Text numberOfLines={1} style={{ color: colors.ink, flex: 1, fontSize: 13.5, fontWeight: "900" }}>{l?.title ?? translateCopy("İlan", language)}</Text>
+                    <Text numberOfLines={1} style={{ color: colors.ink, flex: 1, fontSize: 13.5, fontWeight: "900" }}>{displayListingTitle(l?.title, translateCopy("İlan", language))}</Text>
                     <Text style={{ color: colors.goldInk, fontSize: 15, fontWeight: "900" }}>{moneyIn(o.amount, l?.currency)}</Text>
                   </View>
                   <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "700" }}>
@@ -538,7 +546,7 @@ function SellerScreenInner() {
                 <View key={o.id} style={{ backgroundColor: colors.successSoft, borderColor: colors.success, borderRadius: 12, borderWidth: 1, gap: 8, padding: 12 }}>
                   <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
                     <MaterialCommunityIcons name="check-decagram" size={17} color={colors.success} />
-                    <Text numberOfLines={1} style={{ color: colors.ink, flex: 1, fontSize: 13.5, fontWeight: "900" }}>{l?.title ?? translateCopy("İlan", language)}</Text>
+                    <Text numberOfLines={1} style={{ color: colors.ink, flex: 1, fontSize: 13.5, fontWeight: "900" }}>{displayListingTitle(l?.title, translateCopy("İlan", language))}</Text>
                     <Text style={{ color: colors.success, fontSize: 15, fontWeight: "900" }}>{moneyIn(o.amount, l?.currency)}</Text>
                   </View>
                   <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "700" }}>
@@ -638,7 +646,7 @@ function SellerScreenInner() {
             </View>
             {rejectedListings.map((l) => (
               <View key={l.id} style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 10, borderWidth: 1, gap: 8, padding: 10 }}>
-                <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 13.5, fontWeight: "800" }}>{displayText(l.title)}</Text>
+                <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 13.5, fontWeight: "800" }}>{displayListingTitle(l.title)}</Text>
                 <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600", lineHeight: 17 }}>{displayText(l.rejectionReason || translateCopy("İncelemede uygun bulunmadı.", language))}</Text>
                 <PrimaryButton tone="secondary" icon="pencil-outline" href={`/listing-edit/${l.id}` as Href}>{translateCopy("Düzenle & yeniden gönder", language)}</PrimaryButton>
               </View>
@@ -661,7 +669,7 @@ function SellerScreenInner() {
             </Pressable>
           ) : null}
         </View>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingRight: 8 }}>
+        <HorizontalScroll  showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingRight: 8 }}>
           <PanelFilterChip active={filter === "all"} icon="view-grid" label="Tümü" onPress={() => setFilter("all")} />
           <PanelFilterChip active={filter === "needsAction"} icon="alert-circle-outline" label="Aksiyon" onPress={() => setFilter("needsAction")} />
           <PanelFilterChip active={filter === "active"} icon="check-circle-outline" label="Aktif" onPress={() => setFilter("active")} />
@@ -669,7 +677,7 @@ function SellerScreenInner() {
           <PanelFilterChip active={filter === "withLeads"} icon="account-clock-outline" label="Talepli" onPress={() => setFilter("withLeads")} />
           <PanelFilterChip active={filter === "payments"} icon="cash-clock" label="Ödeme" onPress={() => setFilter("payments")} />
           <PanelFilterChip active={filter === "lowStock"} icon="package-variant" label="Az stok" onPress={() => setFilter("lowStock")} />
-        </ScrollView>
+        </HorizontalScroll>
         {visibleListings.length > 0 ? (
           (() => {
             const visibleIds = visibleListings.map((item) => item.id);
@@ -711,7 +719,7 @@ function SellerScreenInner() {
             return (
               <View key={application.id} style={{ backgroundColor: colors.surfaceAlt, borderRadius: 8, gap: 8, padding: 12 }}>
                 <Text selectable style={{ color: colors.ink, fontSize: 15, fontWeight: "900" }}>
-                  {displayText(partner?.name, translateCopy("Kullanıcı", language))} · {displayText(listing?.title)}
+                  {displayText(partner?.name, translateCopy("Kullanıcı", language))} · {displayListingTitle(listing?.title)}
                 </Text>
                 {/* Başvuru formu KALDIRILDI → not/kanal/erişim artık toplanmıyor. Satıcı,
                     başvuranın PROFİLİNE (puan/güven/başarılı satış) bakıp karar verir. Eski
@@ -734,10 +742,10 @@ function SellerScreenInner() {
                 <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
                   <Metric label="Ortak puanı" value={`${partner?.rating ?? 0}`} />
                   <Metric label="Başarılı satış" value={`${partner?.successfulSales ?? 0}`} />
-                  <Metric label="Ortak güveni" value={partnerTrust ? `%${partnerTrust.score}` : "-"} />
+                  <Metric label="Ortak güveni" value={partnerTrust?.score == null ? "Henüz karne yok" : `%${partnerTrust.score}`} />
                 </View>
                 <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
-                  {partnerTrust ? <StatusPill label={partnerTrust.label} tone={partnerTrust.score >= 70 ? "success" : "warning"} /> : null}
+                  {partnerTrust ? <StatusPill label={partnerTrust.label} tone={(partnerTrust.score ?? 0) >= 70 ? "success" : "warning"} /> : null}
                   {partner?.verifiedPhone ? <StatusPill label="Telefon doğrulandı" tone="success" /> : null}
                   {partner?.verifiedIdentity ? <StatusPill label="Kimlik doğrulandı" tone="success" /> : null}
                   {listing?.minPartnerRating ? <StatusPill label={`Min. puan: ${listing.minPartnerRating}`} tone="warning" /> : null}
@@ -753,7 +761,7 @@ function SellerScreenInner() {
                 <PrimaryButton
                   tone="secondary"
                   icon="message-text-outline"
-                  onPress={() => openConversation(application.listingId, application.partnerId, `${displayText(listing?.title)} ortaklık başvurun hakkında konuşalım.`)}
+                  onPress={() => openConversation(application.listingId, application.partnerId, `${displayListingTitle(listing?.title)} ortaklık başvurun hakkında konuşalım.`)}
                 >
                   Ortağa mesaj yaz
                 </PrimaryButton>
@@ -804,11 +812,11 @@ function SellerScreenInner() {
               >
                 <MaterialCommunityIcons name={selectedIds.has(listing.id) ? "checkbox-marked" : "checkbox-blank-outline"} size={22} color={selectedIds.has(listing.id) ? colors.primary : colors.muted} />
               </Pressable>
-              <Image source={{ uri: listing.image }} accessibilityLabel={displayText(listing.title)} contentFit="cover" style={{ backgroundColor: colors.line, borderRadius: 10, height: 88, width: 88 }} />
+              <Image source={{ uri: listing.image }} accessibilityLabel={displayListingTitle(listing.title)} contentFit="cover" style={{ backgroundColor: colors.line, borderRadius: 10, height: 88, width: 88 }} />
               <View style={{ flex: 1, gap: 4, minWidth: 0 }}>
                 <View style={{ alignItems: "flex-start", flexDirection: "row", gap: 8 }}>
                   <Text selectable numberOfLines={2} style={{ color: colors.ink, flex: 1, fontSize: 16, fontWeight: "900", lineHeight: 20 }}>
-                    {displayText(listing.title)}
+                    {displayListingTitle(listing.title)}
                   </Text>
                   <StatusPill label={listing.status === "active" ? (listing.stockCount <= 0 ? "Tükendi" : "Aktif") : listing.status === "pending_review" ? "İncelemede" : listing.status === "paused" ? "Pasif" : listing.status === "sold" ? "Satıldı" : listing.status === "draft" ? "Taslak" : listing.status} tone={listing.status === "active" ? (listing.stockCount <= 0 ? "danger" : "success") : listing.status === "pending_review" ? "info" : listing.status === "paused" || listing.status === "sold" ? "neutral" : "warning"} />
                 </View>
@@ -1033,7 +1041,7 @@ function SellerScreenInner() {
                             <Text style={{ color: "#FFFFFF", fontSize: 12, fontWeight: "900" }}>{translateCopy(canSell ? categoryConversion(listing.category).sellerVerb : (listing.stockCount <= 0 ? "Stok yok" : "İlan pasif"), language)}</Text>
                           </Pressable>
                           <Pressable
-                            onPress={() => setCommissionTarget({ partnershipId: p.id, partnerName, currency: listing.currency, defaultLabel: listing.commissionType === "rate" ? `%${listing.commissionValue}` : moneyIn(listing.commissionValue, listing.currency), currentType: p.commissionOverrideType, currentValue: p.commissionOverrideValue })}
+                            onPress={() => setCommissionTarget({ partnershipId: p.id, partnerName, currency: listing.currency, defaultLabel: (p.agreedCommissionType??listing.commissionType) === "rate" ? `%${p.agreedCommissionValue??listing.commissionValue}` : moneyIn(p.agreedCommissionValue??listing.commissionValue, listing.currency), currentType: p.commissionOverrideType, currentValue: p.commissionOverrideValue })}
                             style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 8, borderWidth: 1, flexDirection: "row", gap: 5, justifyContent: "center", opacity: pressed ? 0.85 : 1, paddingHorizontal: 12, paddingVertical: 9 })}
                           >
                             <MaterialCommunityIcons name="cash-edit" size={15} color={colors.primaryDark} />
@@ -1049,7 +1057,7 @@ function SellerScreenInner() {
                             </Pressable>
                           ) : null}
                           <Pressable
-                            onPress={() => openConversation(listing.id, p.partnerId, `${displayText(listing.title)} ortaklığın hakkında konuşalım.`)}
+                            onPress={() => openConversation(listing.id, p.partnerId, `${displayListingTitle(listing.title)} ortaklığın hakkında konuşalım.`)}
                             style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 8, borderWidth: 1, flexDirection: "row", gap: 5, justifyContent: "center", opacity: pressed ? 0.85 : 1, paddingHorizontal: 12, paddingVertical: 9 })}
                           >
                             <MaterialCommunityIcons name="message-text-outline" size={15} color={colors.primaryDark} />
@@ -1182,8 +1190,8 @@ function SellerScreenInner() {
         currentType={commissionTarget?.currentType}
         currentValue={commissionTarget?.currentValue}
         onClose={() => setCommissionTarget(null)}
-        onSubmit={(type, value) => { if (commissionTarget) setPartnershipCommission(commissionTarget.partnershipId, type, value); }}
-        onClear={() => { if (commissionTarget) setPartnershipCommission(commissionTarget.partnershipId); }}
+        onSubmit={async(type,value)=>commissionTarget?await setPartnershipCommission(commissionTarget.partnershipId,type,value):false}
+        onClear={async()=>commissionTarget?await setPartnershipCommission(commissionTarget.partnershipId):false}
       />
       <RecordSaleModal
         visible={saleTarget !== null}
@@ -1230,6 +1238,7 @@ function SellerScreenInner() {
           }
         }}
       />
+      {!isWideWeb && <CompactFooter />}
     </ScrollView>
     </KeyboardAvoidingView>
   );

@@ -8,7 +8,9 @@ import { Platform, useWindowDimensions } from "react-native";
 export const SHELL_MAX_WIDTH = 1440;
 
 /** Breakpoint at/above which the web UI switches to its desktop layout. */
-export const WIDE_WEB_BREAKPOINT = 760;
+// A full desktop header and sidebar need room for navigation and readable cards.
+// Portrait tablets retain the compact web layout rather than overflowing at 768px.
+export const WIDE_WEB_BREAKPOINT = 1024;
 
 /**
  * Window width clamped to the shell. On desktop web the window can be far wider

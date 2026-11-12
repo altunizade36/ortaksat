@@ -554,6 +554,11 @@ const IS_YAN_HAK = ["Yemek Kartı", "Yol / Servis", "Özel Sağlık Sigortası",
 const DERS_SINAV = ["YKS / TYT-AYT", "LGS", "KPSS", "ALES", "DGS", "YDS / YÖKDİL", "IELTS", "TOEFL", "SAT", "Okul Dersleri", "Sınav Yok"];
 const HAYVAN_UYGUN = ["Çocuklu Eve Uygun", "Apartman Dairesine Uygun", "Bahçeli Ev Gerekir", "Diğer Hayvanlarla Uyumlu", "Deneyimli Sahip Arıyor", "Sadece Ev İçi", "Alerjik Dostu"];
 const YARDIMCI_GOREV = ["Çocuk Bakımı", "Yaşlı Bakımı", "Hasta Bakımı", "Ev Temizliği", "Yemek Yapma", "Ütü / Çamaşır", "Alışveriş", "Şoförlük", "Bahçe Bakımı", "Evcil Hayvan Bakımı"];
+const IS_BECERI = ["MS Office", "Excel", "CRM", "Ön Muhasebe", "Satış", "Müşteri İletişimi", "Sosyal Medya", "İngilizce", "SRC", "Hijyen Belgesi", "Ustalık Belgesi", "Sertifika"];
+const BASVURU_YONTEMI = ["Platform mesajı", "Telefon", "WhatsApp", "E-posta", "Form / link", "Yüz yüze görüşme"];
+const YARDIMCI_EV_DURUMU = ["Yatılı oda var", "Evde evcil hayvan var", "Kamera sistemi var", "Sigara içilmeyen ev", "Bahçeli ev", "Apartman dairesi", "Asansör var", "Hafta sonu gerekebilir"];
+const HAYVAN_BELGE = ["Aşı karnesi", "Pasaport", "Mikroçip kaydı", "Sağlık raporu", "Pedigri / şecere", "Sahiplendirme sözleşmesi", "Mama / aksesuar dahil"];
+const TALEP_ONCELIK = ["Acil", "Fiyat önemli", "Temizlik / kondisyon önemli", "Garantili olsun", "Faturalı olsun", "Konum yakın olsun", "Takas olabilir", "Toplu alım"];
 
 const MODA_SEZON: FieldDef = { key: "sezon", label: "Sezon", type: "select", options: ["İlkbahar / Yaz", "Sonbahar / Kış", "4 Mevsim"] };
 const MODA_DESEN: FieldDef = { key: "desen", label: "Desen", type: "select", options: ["Düz", "Çizgili", "Kareli", "Çiçekli", "Desenli", "Baskılı", "Ekose"] };
@@ -1529,7 +1534,12 @@ export const formSchemas: Record<string, FormSchema> = {
       { key: "positionLevel", label: "Pozisyon seviyesi", type: "select", group: "Pozisyon", options: ["Stajyer", "Uzman Yardımcısı", "Uzman", "Kıdemli Uzman", "Takım Lideri", "Müdür", "Direktör"] },
 
       { key: "salary", label: "Maaş aralığı", type: "text", group: "Ücret & Haklar", placeholder: "ör. 45.000 - 60.000 ₺" },
+      { key: "salaryPeriod", label: "Maaş periyodu", type: "select", group: "Ücret & Haklar", options: ["Aylık", "Haftalık", "Günlük", "Saatlik", "Proje bazlı", "Belirtilmedi"] },
       { key: "benefits", label: "Yan haklar (serbest metin)", type: "text", group: "Ücret & Haklar" },
+      { key: "openings", label: "Alınacak kişi sayısı", type: "number", group: "Pozisyon" },
+      { key: "startDate", label: "Başlangıç tarihi", type: "text", group: "Pozisyon", placeholder: "ör. hemen / 01.09.2026" },
+      { key: "deadline", label: "Son başvuru tarihi", type: "text", group: "Başvuru" },
+      { key: "applicationMethod", label: "Başvuru yöntemi", type: "select", group: "Başvuru", options: BASVURU_YONTEMI },
 
       { key: "experience", label: "Deneyim seviyesi", type: "select", group: "Aranan Nitelikler", options: ["Deneyimsiz", "1-3 yıl", "3-5 yıl", "5-10 yıl", "10+ yıl"] },
       { key: "education", label: "Eğitim seviyesi", type: "select", group: "Aranan Nitelikler", options: ["Fark etmez", "Lise", "Önlisans", "Lisans", "Yüksek Lisans", "Doktora"] },
@@ -1537,6 +1547,7 @@ export const formSchemas: Record<string, FormSchema> = {
       { key: "military", label: "Askerlik durumu", type: "select", group: "Aranan Nitelikler", options: ["Fark etmez", "Yapılmış", "Muaf", "Tecilli"] },
       { key: "license", label: "Ehliyet", type: "select", group: "Aranan Nitelikler", options: ["Gerekmez", "B", "C", "D", "E", "SRC"] },
 
+      { key: "skills", label: "Beklenen beceri / belge", type: "multiselect", options: IS_BECERI },
       { key: "benefitList", label: "Sunulan yan haklar", type: "multiselect", options: IS_YAN_HAK },
       F.desc
     ]
@@ -1551,15 +1562,19 @@ export const formSchemas: Record<string, FormSchema> = {
       { key: "schedule", label: "Gün / saat bilgisi", type: "text", group: "Talep" },
       { key: "personCount", label: "Bakılacak kişi sayısı", type: "number", group: "Talep" },
       { key: "ageRange", label: "Yaş aralığı (bakılacak)", type: "text", group: "Talep", placeholder: "ör. 3-6 yaş" },
+      { key: "homeInfo", label: "Ev / ortam bilgisi", type: "multiselect", group: "Talep", options: YARDIMCI_EV_DURUMU },
 
       { key: "salary", label: "Maaş / ücret", type: "number", suffix: "₺", group: "Ücret & Şartlar" },
       { key: "salaryType", label: "Ücret tipi", type: "select", group: "Ücret & Şartlar", options: ["Aylık", "Haftalık", "Günlük", "Saatlik"] },
       { key: "insurance", label: "Sigorta yapılacak", type: "bool", group: "Ücret & Şartlar" },
+      { key: "transportAllowance", label: "Yol ücreti verilecek", type: "bool", group: "Ücret & Şartlar" },
+      { key: "mealIncluded", label: "Yemek dahil", type: "bool", group: "Ücret & Şartlar" },
 
       { key: "experience", label: "Deneyim beklentisi", type: "text", group: "Aranan Nitelikler" },
       { key: "reference", label: "Referans şart", type: "bool", group: "Aranan Nitelikler" },
       { key: "driving", label: "Ehliyet şart", type: "bool", group: "Aranan Nitelikler" },
       { key: "language", label: "Dil beklentisi", type: "text", group: "Aranan Nitelikler" },
+      { key: "certificate", label: "Sertifika / eğitim belgesi", type: "bool", group: "Aranan Nitelikler" },
 
       { key: "duties", label: "Beklenen görevler", type: "multiselect", options: YARDIMCI_GOREV },
       F.desc
@@ -1582,7 +1597,9 @@ export const formSchemas: Record<string, FormSchema> = {
       { key: "microchip", label: "Mikroçip takılı", type: "bool", group: "Sağlık & Belge" },
       { key: "healthReport", label: "Sağlık raporu var", type: "bool", group: "Sağlık & Belge" },
       { key: "pedigree", label: "Pedigri / şecere belgesi", type: "bool", group: "Sağlık & Belge" },
+      { key: "documents", label: "Belge / dahil olanlar", type: "multiselect", group: "Sağlık & Belge", options: HAYVAN_BELGE },
       { key: "training", label: "Eğitim durumu", type: "select", group: "Sağlık & Belge", options: ["Eğitimsiz", "Tuvalet eğitimli", "Temel itaat", "İleri eğitim"] },
+      { key: "deliveryTerms", label: "Teslim / sahiplendirme şartı", type: "text", group: "Teslim & Şartlar", placeholder: "ör. sözleşme ile, yerinde teslim" },
 
       { key: "price", label: "Ücret (varsa)", type: "number", suffix: "₺" },
       { key: "suitableFor", label: "Uygun olduğu ortam", type: "multiselect", options: HAYVAN_UYGUN },
@@ -1600,12 +1617,15 @@ export const formSchemas: Record<string, FormSchema> = {
       { key: "wantedCondition", label: "İstenen durum", type: "select", group: "Aradığın", options: ["Fark etmez", "Sıfır", "İkinci el", "Yenilenmiş"] },
       { key: "quantity", label: "Adet", type: "number", group: "Aradığın" },
       { key: "prefs", label: "Tercih edilen özellikler", type: "textarea", group: "Aradığın", placeholder: "Marka, model, durum, konum vb." },
+      { key: "mustHave", label: "Olmazsa olmazlar", type: "text", group: "Aradığın", placeholder: "ör. otomatik vites, faturalı, garantili" },
 
       { key: "budgetMin", label: "Bütçe (en az)", type: "number", suffix: "₺", group: "Bütçe & Zaman" },
       { key: "budgetMax", label: "Bütçe (en çok)", type: "number", suffix: "₺", group: "Bütçe & Zaman" },
       { key: "urgency", label: "Aciliyet", type: "select", group: "Bütçe & Zaman", options: ["Acil", "Bu hafta", "Bu ay", "Fark etmez"] },
       { key: "deliveryPref", label: "Teslim tercihi", type: "select", group: "Bütçe & Zaman", options: ["Kargo", "Elden teslim", "Fark etmez"] },
       { key: "swapOffer", label: "Takas teklif edebilirim", type: "bool", group: "Bütçe & Zaman" },
+      { key: "finderReward", label: "Bulana ödül / komisyon", type: "number", suffix: "₺", group: "Bütçe & Zaman" },
+      { key: "priorities", label: "Öncelikler", type: "multiselect", options: TALEP_ONCELIK },
       F.desc
     ]
   },
@@ -2706,6 +2726,13 @@ function key(value: string) {
 // Manual hints so common product words land on the right path even if the word
 // isn't a category label (e.g. "araba" → Vasıta > Otomobil).
 const HINTS: Array<{ words: string[]; path: string[] }> = [
+  { words: ["is ariyorum", "iş arıyorum", "eleman ariyorum", "eleman arıyorum", "usta ariyorum", "usta arıyorum", "bakici ariyorum", "bakıcı arıyorum", "aranıyor"], path: ["Arayanlar / Talep İlanları", "İş & Eleman Talebi"] },
+  { words: ["is ilani", "iş ilanı", "personel araniyor", "personel aranıyor", "eleman lazim", "eleman lazım", "ise aliyorum", "işe alıyorum"], path: ["İş İlanları"] },
+  { words: ["bakici", "bakıcı", "yardimci", "yardımcı", "temizlikci", "temizlikçi", "hasta bakimi", "hasta bakımı", "yasli bakimi", "yaşlı bakımı", "cocuk bakimi", "çocuk bakımı"], path: ["Yardımcı Arayanlar"] },
+  { words: ["oto parca", "oto parça", "yedek parca", "yedek parça", "far", "tampon", "motor parcasi", "motor parçası", "jant lastik"], path: ["Yedek Parça, Aksesuar, Donanım & Tuning"] },
+  { words: ["ozel ders", "özel ders", "matematik dersi", "ingilizce dersi", "lgs dersi", "yks dersi", "kurs"], path: ["Özel Ders & Eğitim"] },
+  { words: ["hizmet", "usta", "boya badana", "tesisat", "elektrikci", "elektrikçi", "nakliye", "tamir", "tadilat"], path: ["Ustalar & Hizmetler"] },
+  { words: ["talep", "ariyorum", "arıyorum", "almak istiyorum", "kiralamak istiyorum", "bulana komisyon"], path: ["Arayanlar / Talep İlanları"] },
   { words: ["iphone", "telefon", "samsung", "xiaomi", "cep telefonu"], path: ["İkinci El & Sıfır Alışveriş", "Telefon & Aksesuar", "Cep Telefonu"] },
   { words: ["arac ici kamera", "arac kamerasi", "dashcam"], path: ["Yedek Parça, Aksesuar, Donanım & Tuning", "Otomotiv Ekipmanları", "Ses & Görüntü Sistemleri", "Kamera & Park Sensörü"] },
   { words: ["araba", "otomobil", "araç", "arac"], path: ["Vasıta", "Otomobil"] },
@@ -2737,6 +2764,46 @@ function pathByLabels(labels: string[]): CategoryNode[] {
   return out;
 }
 
+function editDistanceWithin(a: string, b: string, max: number) {
+  if (Math.abs(a.length - b.length) > max) return false;
+  const prev = Array.from({ length: b.length + 1 }, (_, i) => i);
+  for (let i = 1; i <= a.length; i++) {
+    let best = i;
+    let last = i - 1;
+    prev[0] = i;
+    for (let j = 1; j <= b.length; j++) {
+      const old = prev[j];
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      const next = Math.min(prev[j] + 1, prev[j - 1] + 1, last + cost);
+      prev[j] = next;
+      last = old;
+      if (next < best) best = next;
+    }
+    if (best > max) return false;
+  }
+  return prev[b.length] <= max;
+}
+
+function fuzzyLabelMatch(queryKey: string, labelKey: string) {
+  if (labelKey.includes(queryKey) || (labelKey.length >= 4 && queryKey.includes(labelKey))) return true;
+  const rawQWords = queryKey.split(/\s+/).filter(Boolean);
+  const labelWords = labelKey.split(/\s+/).filter(Boolean);
+  const shortQWords = rawQWords.filter((w) => w.length >= 2 && w.length < 4);
+  const qWords = rawQWords.filter((w) => w.length >= 4);
+  const lWords = labelWords.filter((w) => w.length >= 4);
+  if (!qWords.length || !lWords.length) return false;
+  const fuzzyMatches = qWords.filter((qw) => lWords.some((lw) => editDistanceWithin(qw, lw, qw.length >= 7 ? 2 : 1))).length;
+  const exactShortMatches = shortQWords.filter((qw) => labelWords.includes(qw)).length;
+  const needed = rawQWords.length === 1 ? 1 : Math.min(2, rawQWords.length);
+  return fuzzyMatches + exactShortMatches >= needed;
+}
+
+function hintMatches(queryKey: string, hintWord: string) {
+  const wk = key(hintWord);
+  if (queryKey.includes(wk) || wk.includes(queryKey)) return true;
+  return fuzzyLabelMatch(queryKey, wk);
+}
+
 /** Search the tree for matching leaf/branch paths. */
 export function suggestCategories(query: string, limit = 8): SuggestHit[] {
   const k = key(query);
@@ -2758,13 +2825,13 @@ export function suggestCategories(query: string, limit = 8): SuggestHit[] {
   };
 
   for (const hint of HINTS) {
-    if (hint.words.some((w) => k.includes(w) || w.includes(k))) pushPath(pathByLabels(hint.path));
+    if (hint.words.some((w) => hintMatches(k, w))) pushPath(pathByLabels(hint.path));
   }
 
   const walk = (nodes: CategoryNode[], trail: CategoryNode[]) => {
     for (const n of nodes) {
       const path = [...trail, n];
-      if (key(n.label).includes(k)) pushPath(path);
+      if (fuzzyLabelMatch(k, key(n.label))) pushPath(path);
       if (n.children) walk(n.children, path);
     }
   };

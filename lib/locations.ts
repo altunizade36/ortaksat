@@ -48,13 +48,22 @@ export function searchDistricts(provinceId: number | null | undefined, query: st
 /** Human-readable location string at a given visibility level. */
 export type AddressVisibility = "city_only" | "district_only" | "neighborhood" | "full_address_private";
 
+/** Validate the relationship as well as the presence of location IDs (including restored drafts). */
+export function validateListingLocation(input: { provinceId?: number; districtId?: number; neighborhood?: string }): string | null {
+  if (!getProvince(input.provinceId)) return "Geçerli bir il seç.";
+  if (!getDistrict(input.districtId) || getDistrict(input.districtId)?.provinceId !== input.provinceId) return "Seçtiğin ile ait bir ilçe seç.";
+  if ((input.neighborhood?.trim().length || 0) > 100) return "Mahalle / köy adı en fazla 100 karakter olabilir.";
+  if (/[\u0000-\u001f\u007f\u200b-\u200f\u202a-\u202e\u2060-\u206f]/.test(input.neighborhood || "")) return "Mahalle / köy adındaki görünmez karakterleri kaldır.";
+  return null;
+}
+
 export function formatLocation(input: { provinceId?: number | null; districtId?: number | null; neighborhood?: string | null }, visibility: AddressVisibility = "neighborhood"): string {
   const province = getProvince(input.provinceId);
   const district = getDistrict(input.districtId);
   const parts: string[] = [];
   if (province) parts.push(province.name);
-  if (visibility !== "city_only" && district) parts.push(district.name);
-  if (visibility === "neighborhood" && input.neighborhood?.trim()) parts.push(input.neighborhood.trim());
+  if (visibility !== "city_only" && district && district.provinceId === province?.id) parts.push(district.name);
+  if (visibility === "neighborhood" && district && district.provinceId === province?.id && input.neighborhood?.trim()) parts.push(input.neighborhood.trim());
   return parts.join(" / ");
 }
 

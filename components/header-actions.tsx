@@ -1,7 +1,7 @@
 import { MaterialCommunityIcons } from "@/components/icons";
 import { Link } from "expo-router";
-import { useState } from "react";
-import { Pressable, Text, View } from "react-native";
+import { useEffect, useState } from "react";
+import { Pressable, Text, View, useWindowDimensions } from "react-native";
 
 import { colors } from "@/components/colors";
 import { translateCopy, useLanguage } from "@/lib/i18n";
@@ -10,7 +10,11 @@ import { useStore } from "@/lib/use-store";
 export function HeaderActions() {
   const { language } = useLanguage();
   const { isAuthenticated, currentUser, messages, notifications, offers } = useStore();
+  const { width } = useWindowDimensions();
   const [pressed, setPressed] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
+  const compact = mounted && width < 360;
   // OKUNMAMIŞ AKTİVİTE ROZETİ (hesap ikonu) — mesaj + bildirim + bekleyen (karşı-teklif) toplamı.
   // Ayrı mesaj/bildirim ikonları KALDIRILMIŞTI (header sade + İlan Ver öne çıksın) ama hesap ikonu
   // EVRENSEL "benim hesabım" girişi → aktivite BURADA da görünmeli (hamburger'daki rozetin ikizi;
@@ -21,24 +25,26 @@ export function HeaderActions() {
       + offers.filter((o) => o.buyerId === currentUser.id && o.status === "countered").length
     : 0;
   return (
-    <View style={{ alignItems: "center", flexDirection: "row", gap: 6, zIndex: 2 }}>
+    <View style={{ alignItems: "center", flexDirection: "row", gap: compact ? 4 : 6, zIndex: 2 }}>
       <Link href="/create" asChild>
         <Pressable
           accessibilityRole="link"
           accessibilityLabel={translateCopy("Ücretsiz İlan Ver", language)}
           onPressIn={() => setPressed(true)}
           onPressOut={() => setPressed(false)}
-          style={{ alignItems: "center", backgroundColor: colors.accent, borderRadius: 999, elevation: 2, flexDirection: "row", gap: 5, minHeight: 40, opacity: pressed ? 0.85 : 1, paddingHorizontal: 12, shadowColor: colors.accent, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.3, shadowRadius: 6 }}
+          style={{ alignItems: "center", backgroundColor: colors.accent, borderRadius: 999, elevation: 2, flexDirection: "row", gap: 5, minHeight: 44, minWidth: compact ? 44 : undefined, opacity: pressed ? 0.85 : 1, paddingHorizontal: compact ? 0 : 12, shadowColor: colors.accent, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.3, shadowRadius: 6 }}
         >
           <MaterialCommunityIcons name="plus-box" size={19} color="#FFFFFF" />
-          {/* 2-satır: küçük "ÜCRETSİZ" etiketi + "İlan Ver" — genişlik artmadan "ücretsiz" vurgusu (mobilde tam metin logoyu sıkıştırıyordu). */}
-          <View style={{ gap: 0 }}>
-            <Text numberOfLines={1} style={{ color: "#FFFFFF", fontSize: 7.5, fontWeight: "900", letterSpacing: 0.6, lineHeight: 9 }}>{translateCopy("ÜCRETSİZ", language)}</Text>
-            <Text numberOfLines={1} style={{ color: "#FFFFFF", fontSize: 12.5, fontWeight: "900", lineHeight: 15 }}>{translateCopy("İlan Ver", language)}</Text>
-          </View>
+          {!compact ? (
+            // 2-satır: küçük "ÜCRETSİZ" etiketi + "İlan Ver" — genişlik artmadan "ücretsiz" vurgusu.
+            <View style={{ gap: 0 }}>
+              <Text numberOfLines={1} style={{ color: "#FFFFFF", fontSize: 7.5, fontWeight: "900", letterSpacing: 0.6, lineHeight: 9 }}>{translateCopy("ÜCRETSİZ", language)}</Text>
+              <Text numberOfLines={1} style={{ color: "#FFFFFF", fontSize: 12.5, fontWeight: "900", lineHeight: 15 }}>{translateCopy("İlan Ver", language)}</Text>
+            </View>
+          ) : null}
         </Pressable>
       </Link>
-      <HeaderAction href="/(tabs)/profile" icon="account-circle-outline" label={badgeTotal > 0 ? `${translateCopy("Profil", language)} — ${badgeTotal} ${translateCopy("okunmamış", language)}` : translateCopy("Profil", language)} badge={badgeTotal} primary />
+      {!isAuthenticated ? <Link href="/auth" asChild><Pressable style={{ minHeight: 44, justifyContent: "center", paddingHorizontal: 6 }}><Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "700" }}>{translateCopy("Giriş", language)}</Text></Pressable></Link> : <HeaderAction href="/(tabs)/profile" icon="account-circle-outline" label={badgeTotal > 0 ? `${translateCopy("Profil", language)} — ${badgeTotal} ${translateCopy("okunmamış", language)}` : translateCopy("Profil", language)} badge={badgeTotal} primary />}
     </View>
   );
 }

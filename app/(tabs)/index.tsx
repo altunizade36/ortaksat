@@ -1,3 +1,7 @@
+import { CompactFilterPanel, CompactFilterSection } from "@/components/compact-filter-panel";
+import { listingInCategoryNode, listingRootNode } from "@/lib/category-match";
+import { displayListingTitle } from "@/lib/listing-title";
+import { isMobileApp } from "@/lib/mobile-app";
 import { MaterialCommunityIcons } from "@/components/icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { Link, useRouter, type Href } from "expo-router";
@@ -9,6 +13,7 @@ import { NativeScrollEvent, NativeSyntheticEvent, Platform, Pressable, RefreshCo
 
 import { colors, heroGradient } from "@/components/colors";
 import { HomeDesktop } from "@/components/home-desktop";
+import { HomeMobile } from "@/components/home-mobile";
 import { ListingCard } from "@/components/listing-card";
 import { MarketplaceRetry } from "@/components/marketplace-retry";
 import { SkeletonGrid } from "@/components/skeleton";
@@ -21,7 +26,8 @@ import { WebFooter } from "@/components/web-landing";
 import { getCategoryIcon, getCategoryShortLabel } from "@/lib/categories";
 import { commissionAmount, commissionRatePct, money } from "@/lib/format";
 import { translateCopy, useLanguage } from "@/lib/i18n";
-import { responsiveGrid, useIsWideWeb } from "@/lib/layout";
+import { useIsWideWeb } from "@/lib/layout";
+import { marketplaceCardGrid } from "@/lib/card-layout";
 import { searchKey } from "@/lib/locale";
 import { parseTrPrice } from "@/lib/validation";
 import type { Listing, User } from "@/lib/types";
@@ -36,6 +42,14 @@ const INITIAL_HOME_ITEMS = 18;
 const HOME_PAGE_SIZE = 12;
 
 export default function HomeScreen() {
+  const [mounted, setMounted] = useState(Platform.OS !== "web");
+  useEffect(() => setMounted(true), []);
+  if (!mounted) return <HomeSeoSkeleton />;
+  return isMobileApp ? <HomeMobile /> : <DesktopHomeScreen />;
+}
+
+function DesktopHomeScreen() {
+  const [partnerStepsOpen, setPartnerStepsOpen] = useState(false);
   const { language, t } = useLanguage();
   const { width } = useWindowDimensions();
   const router = useRouter();
@@ -106,7 +120,7 @@ export default function HomeScreen() {
   const horizontalPadding = isWideWeb ? 20 : 12;
   const columnGap = isWideWeb ? 14 : 10;
   const measuredGridWidth = gridWidth || width - horizontalPadding * 2;
-  const { cardWidth } = responsiveGrid({ available: measuredGridWidth, gap: columnGap, minCardWidth: isWideWeb ? 176 : 168 });
+  const { cardWidth } = marketplaceCardGrid({ available: measuredGridWidth, gap: columnGap, minCardWidth: isWideWeb ? 170 : 142, maxCardWidth: 210, minColumns: 2, maxColumns: isWideWeb ? 7 : 6 });
   const activeListings = useMemo(() => listings.filter((listing) => listing.status === "active"), [listings]);
   const categories = useMemo(() => Array.from(new Set(activeListings.map((listing) => listing.category))), [activeListings]);
   // "etiket → kök kategori anahtarı" haritası: gelişmiş filtrede üst-kategoriye göre süzme.
@@ -122,7 +136,7 @@ export default function HomeScreen() {
   // Üst kategori seçenekleri (ilanı olan kökler önce) — gelişmiş filtre açılır listesi.
   const rootCatOptions = useMemo(() => {
     const counts = new Map<string, number>();
-    for (const l of activeListings) { const rk = rootByLabel.get(l.category); if (rk) counts.set(rk, (counts.get(rk) ?? 0) + 1); }
+    for (const l of activeListings) { const rk = listingRootNode(l)?.key; if (rk) counts.set(rk, (counts.get(rk) ?? 0) + 1); }
     return categoryTree
       .map((n) => ({ key: n.key, label: n.label, n: counts.get(n.key) ?? 0 }))
       .sort((a, b) => b.n - a.n || 0);
@@ -159,7 +173,7 @@ export default function HomeScreen() {
       })
       .filter((listing) => {
         // Gelişmiş filtreler (quick-filter üstüne biner).
-        if (catFilter && rootByLabel.get(listing.category) !== catFilter) return false;
+        if (catFilter && listingRootNode(listing)?.key !== catFilter) return false;
         if (listing.price < pMin || listing.price > pMax) return false;
         if (minComm > 0 && commissionAmount(listing) < minComm) return false;
         if (minRate > 0 && commissionRatePct(listing) < minRate) return false;
@@ -270,7 +284,8 @@ export default function HomeScreen() {
           {/* Kompakt turkuaz hero (mobil) — web ile tutarlı: tokalaşma + ürün kümesi */}
           <LinearGradient colors={heroGradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ alignItems: "center", borderRadius: 16, flexDirection: "row", gap: 10, overflow: "hidden", padding: 16 }}>
             <View style={{ flex: 1, gap: 10, minWidth: 0 }}>
-              <Text accessibilityRole="header" {...({ role: "heading", "aria-level": 1 } as Record<string, unknown>)} style={{ color: "#FFFFFF", fontSize: 18, fontWeight: "900", lineHeight: 23 }}>{translateCopy("Ortak satış pazaryeri — ", language)}<Text style={{ color: colors.gold }}>{translateCopy("iki taraf da kazanır", language)}</Text></Text>
+              <Text accessibilityRole="header" {...({ role: "heading", "aria-level": 1 } as Record<string, unknown>)} style={{ color: "#FFFFFF", fontSize: 20, fontWeight: "800", lineHeight: 26 }}>{translateCopy("Birlikte sat, birlikte kazan.", language)}<Text style={{ color: "#DCE9FF", fontSize: 16 }}>{"\n"}{translateCopy("Ortak satış pazaryeri", language)}</Text></Text>
+              <Text style={{ color: "#FFFFFF", fontSize: 13, lineHeight: 20 }}>{translateCopy("Ürününü listele, satış ortağı bul. Ya da alıcı yönlendir; satış gerçekleştiğinde anlaşmana göre komisyon kazan.", language)}</Text>
               {/* İki ayrı yol: satıcı / ortak (mesaj netliği) */}
               <View style={{ gap: 8 }}>
                 {/* STATİK style zorunlu: `<Link asChild>` fonksiyon-style'ı web'de düşürür →
@@ -289,7 +304,7 @@ export default function HomeScreen() {
                   <Pressable style={{ backgroundColor: "rgba(255,255,255,0.16)", borderColor: "rgba(255,255,255,0.55)", borderRadius: 11, borderWidth: 1, gap: 2, paddingHorizontal: 12, paddingVertical: 9 }}>
                     <View style={{ alignItems: "center", flexDirection: "row", gap: 6 }}>
                       <MaterialCommunityIcons name="handshake-outline" size={15} color="#FFFFFF" />
-                      <Text style={{ color: "#FFFFFF", flex: 1, fontSize: 12.5, fontWeight: "900" }}>{translateCopy("Ortağım · Kazanç Fırsatları", language)}</Text>
+                      <Text style={{ color: "#FFFFFF", flex: 1, fontSize: 12.5, fontWeight: "700" }}>{translateCopy("Ortak ol, kazan", language)}</Text>
                       <MaterialCommunityIcons name="arrow-right" size={15} color="#FFFFFF" />
                     </View>
                     <Text style={{ color: "#FFFFFF", fontSize: 10.5, fontWeight: "600", lineHeight: 14 }}>{translateCopy("Paylaş, doğrulanan satıştan kazan.", language)}</Text>
@@ -297,36 +312,148 @@ export default function HomeScreen() {
                 </Link>
               </View>
             </View>
-            <MobileHeroCluster />
+
           </LinearGradient>
+          <View testID="mobile-web-partner-steps" style={{ backgroundColor: "#FFFFFF", borderWidth: 1, borderColor: colors.line, borderRadius: 14, padding: 14, gap: 12 }}>
+            <Pressable accessibilityRole="button" accessibilityLabel={translateCopy("Satış ortağı olarak nasıl kazanırsın?", language)} accessibilityState={{ expanded: partnerStepsOpen }} onPress={() => setPartnerStepsOpen(value => !value)} style={{ flexDirection: "row", gap: 8, alignItems: "center", minHeight: 44 }}><MaterialCommunityIcons name="handshake-outline" size={22} color={colors.primaryDark}/><Text style={{ flex: 1, fontSize: 14, fontWeight: "800", color: colors.ink }}>{translateCopy("Satış ortağı olarak nasıl kazanırsın?", language)}</Text><MaterialCommunityIcons name={partnerStepsOpen ? "chevron-up" : "chevron-down"} size={20} color={colors.primaryDark}/></Pressable>
+            {partnerStepsOpen ? <>
+            {["Ortaklığa açık bir ilan seç.", "Satıcıyla komisyon koşullarında anlaş.", "Alıcı yönlendir, satışa katkı sağla."].map((text, index) => <View key={text} style={{ flexDirection: "row", gap: 10, alignItems: "center" }}><View style={{ width: 24, height: 24, borderRadius: 12, backgroundColor: colors.primarySoft, alignItems: "center", justifyContent: "center" }}><Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "800" }}>{index + 1}</Text></View><Text style={{ flex: 1, color: colors.ink, fontSize: 13, lineHeight: 19 }}>{translateCopy(text, language)}</Text></View>)}
+            <Text style={{ color: colors.muted, fontSize: 12, lineHeight: 18 }}>{translateCopy("Komisyon, gerçekleşen satış ve tarafların anlaşmasına bağlıdır. Ödeme taraflar arasında yapılır.", language)}</Text>
+            <Link href="/nasil-calisir" style={{ color: colors.primaryDark, fontWeight: "700", fontSize: 13, paddingVertical: 10 }}>{translateCopy("Ortak satışı tanı →", language)}</Link>
+            </> : null}
+          </View>
           <CategoryShowcase categoryTree={categoryTree} listings={activeListings} isWideWeb={false} />
+          <View style={{ gap: 7 }}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingRight: 12 }}>
+              {filters.map((item) => (
+                <FilterChip key={item.key} label={item.label} icon={item.icon} active={item.key === filter} onPress={() => setFilter(item.key)} />
+              ))}
+            </ScrollView>
+            <View style={{ alignItems: "center", flexDirection: "row", gap: 10 }}>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingRight: 12 }} style={{ flex: 1 }}>
+                {(Object.keys(sortLabels) as SortMode[]).map((item) => (
+                  <SortChip key={item} active={sortMode === item} label={sortLabels[item]} onPress={() => setSortMode(item)} />
+                ))}
+              </ScrollView>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={translateCopy("Gelişmiş filtre", language)}
+                accessibilityState={{ expanded: advancedOpen }}
+                onPress={() => setAdvancedOpen((v) => !v)}
+                style={{ alignItems: "center", backgroundColor: advancedOpen || hasAdvanced ? colors.primary : colors.surface, borderColor: hasAdvanced ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 5, paddingHorizontal: 13, paddingVertical: 8 }}
+              >
+                <MaterialCommunityIcons name="tune-variant" size={15} color={advancedOpen || hasAdvanced ? "#FFFFFF" : colors.primaryDark} />
+                <Text style={{ color: advancedOpen || hasAdvanced ? "#FFFFFF" : colors.primaryDark, fontSize: 12.5, fontWeight: "900" }}>{translateCopy("Filtrele", language)}</Text>
+                {hasAdvanced ? <View style={{ backgroundColor: advancedOpen ? "#FFFFFF" : colors.accent, borderRadius: 999, height: 7, width: 7 }} /> : null}
+              </Pressable>
+            </View>
+          </View>
+
+          {advancedOpen ? (
+            <CompactFilterPanel onClear={clearAdvanced} onClose={() => setAdvancedOpen(false)} resultLabel={`${filteredListings.length} ${translateCopy("sonucu göster", language)}`}>
+ <CompactFilterSection id="price" label="Fiyat"><View style={{ gap: 7 }}>
+                <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>{translateCopy("Fiyat aralığı (TL)", language)}</Text>
+                <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
+                  <TextInput value={priceMin} onChangeText={setPriceMin} keyboardType="numeric" placeholder={translateCopy("En az", language)} placeholderTextColor={colors.subtle} style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 10, borderWidth: 1, color: colors.ink, flex: 1, fontSize: 16, minHeight: 44, minWidth: 0, paddingHorizontal: 12, paddingVertical: 10 }} />
+                  <Text style={{ color: colors.subtle, fontSize: 14, fontWeight: "800" }}>—</Text>
+                  <TextInput value={priceMax} onChangeText={setPriceMax} keyboardType="numeric" placeholder={translateCopy("En çok", language)} placeholderTextColor={colors.subtle} style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 10, borderWidth: 1, color: colors.ink, flex: 1, fontSize: 16, minHeight: 44, minWidth: 0, paddingHorizontal: 12, paddingVertical: 10 }} />
+                </View>
+                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+                  {([["0", "1000"], ["1000", "5000"], ["5000", "25000"], ["25000", ""]] as Array<[string, string]>).map(([lo, hi]) => {
+                    const on = priceMin === (lo === "0" ? "" : lo) && priceMax === hi;
+                    const label = hi ? `${money(Number(lo))}–${money(Number(hi))}` : `${money(Number(lo))}+`;
+                    return <FilterPill key={lo + hi} active={on} label={label} onPress={() => { setPriceMin(lo === "0" ? "" : lo); setPriceMax(hi); }} />;
+                  })}
+                </View>
+              </View></CompactFilterSection>
+ <CompactFilterSection id="location" label="Konum"><View style={{ gap: 7 }}>
+                <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>{translateCopy("Konum (İl / İlçe)", language)}</Text>
+                <LocationSelector mode="filter" showNeighborhood={false} value={loc} onChange={setLoc} />
+              </View></CompactFilterSection>
+ <CompactFilterSection id="category" label="Kategori">{rootCatOptions.length > 0 ? (
+                <View style={{ gap: 7 }}>
+                  <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>{translateCopy("Kategori", language)}</Text>
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingRight: 8 }}>
+                    <FilterPill active={!catFilter} label={translateCopy("Tümü", language)} onPress={() => setCatFilter(null)} />
+                    {rootCatOptions.map((c) => (
+                      <FilterPill key={c.key} active={catFilter === c.key} icon={getCategoryIcon(c.label)} label={`${translateCopy(getCategoryShortLabel(c.label), language)}${c.n > 0 ? ` (${c.n})` : ""}`} onPress={() => setCatFilter((prev) => (prev === c.key ? null : c.key))} />
+                    ))}
+                  </ScrollView>
+                </View>
+              ) : null}</CompactFilterSection>
+ <CompactFilterSection id="commission" label="Komisyon"><View style={{gap:12}}><View style={{ gap: 7 }}>
+                <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>{translateCopy("En az komisyon oranı (%)", language)}</Text>
+                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+                  {[0, 10, 15, 20, 25].map((r) => (
+                    <FilterPill key={r} active={minRate === r} label={r === 0 ? translateCopy("Tümü", language) : `%${r}+`} onPress={() => setMinRate(r)} />
+                  ))}
+                </View>
+              </View><View style={{ gap: 7 }}>
+                <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>{translateCopy("En az komisyon (₺)", language)}</Text>
+                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+                  {[0, 250, 500, 1000].map((amt) => (
+                    <FilterPill key={amt} active={minComm === amt} label={amt === 0 ? translateCopy("Tümü", language) : `${money(amt)}+`} onPress={() => setMinComm(amt)} />
+                  ))}
+                </View>
+              </View><View style={{ flexDirection: "row", flexWrap: "wrap", gap: 18 }}>
+                <View style={{ gap: 7 }}>
+                  <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>{translateCopy("Komisyon tipi", language)}</Text>
+                  <View style={{ flexDirection: "row", gap: 8 }}>
+                    <FilterPill active={commTypeFilter === "all"} label={translateCopy("Tümü", language)} onPress={() => setCommTypeFilter("all")} />
+                    <FilterPill active={commTypeFilter === "rate"} label={translateCopy("Oran %", language)} onPress={() => setCommTypeFilter("rate")} />
+                    <FilterPill active={commTypeFilter === "fixed"} label={translateCopy("Sabit ₺", language)} onPress={() => setCommTypeFilter("fixed")} />
+                  </View>
+                </View>
+                <View style={{ gap: 7 }}>
+                  <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>{translateCopy("Satıcı puanı", language)}</Text>
+                  <View style={{ flexDirection: "row", gap: 8 }}>
+                    {[0, 4, 4.5].map((r) => (
+                      <FilterPill key={r} active={minRating === r} icon={r > 0 ? "star" : undefined} label={r === 0 ? translateCopy("Tümü", language) : `${r}+`} onPress={() => setMinRating(r)} />
+                    ))}
+                  </View>
+                </View>
+              </View></View></CompactFilterSection>
+ <CompactFilterSection id="other" label="Diğer"><View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+                <FilterPill active={onlyOpenPartner} icon={onlyOpenPartner ? "check-circle" : "flash-outline"} label={translateCopy("Anında ortaklık", language)} onPress={() => setOnlyOpenPartner((v) => !v)} />
+                <FilterPill active={onlyInStock} icon={onlyInStock ? "check-circle" : "package-variant-closed"} label={translateCopy("Stokta olanlar", language)} onPress={() => setOnlyInStock((v) => !v)} />
+                <FilterPill active={onlyFeatured} icon={onlyFeatured ? "check-circle" : "star-outline"} label={translateCopy("Öne çıkanlar", language)} onPress={() => setOnlyFeatured((v) => !v)} />
+                <FilterPill active={onlyVerified} icon={onlyVerified ? "check-circle" : "shield-check-outline"} label={translateCopy("Doğrulanmış satıcı", language)} onPress={() => setOnlyVerified((v) => !v)} />
+              </View></CompactFilterSection>
+ </CompactFilterPanel>
+          ) : null}
+
+          {/* Uygulanan filtre özeti — kaldırılabilir çipler */}
+          {hasAdvanced ? (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingRight: 12 }}>
+              {catFilter ? <ActiveChip label={translateCopy(getCategoryShortLabel(rootCatOptions.find((c) => c.key === catFilter)?.label ?? ""), language)} onRemove={() => setCatFilter(null)} /> : null}
+              {loc.provinceId != null ? <ActiveChip label={translateCopy("Konum", language)} onRemove={() => setLoc({})} /> : null}
+              {(priceMin || priceMax) ? <ActiveChip label={`${priceMin ? money(parseTrPrice(priceMin)) : "0"}–${priceMax ? money(parseTrPrice(priceMax)) : "∞"}`} onRemove={() => { setPriceMin(""); setPriceMax(""); }} /> : null}
+              {minRate > 0 ? <ActiveChip label={`%${minRate}+`} onRemove={() => setMinRate(0)} /> : null}
+              {minComm > 0 ? <ActiveChip label={`${money(minComm)}+`} onRemove={() => setMinComm(0)} /> : null}
+              {commTypeFilter !== "all" ? <ActiveChip label={commTypeFilter === "rate" ? translateCopy("Oran %", language) : translateCopy("Sabit ₺", language)} onRemove={() => setCommTypeFilter("all")} /> : null}
+              {minRating > 0 ? <ActiveChip label={`★ ${minRating}+`} onRemove={() => setMinRating(0)} /> : null}
+              {onlyOpenPartner ? <ActiveChip label={translateCopy("Anında ortaklık", language)} onRemove={() => setOnlyOpenPartner(false)} /> : null}
+              {onlyInStock ? <ActiveChip label={translateCopy("Stokta", language)} onRemove={() => setOnlyInStock(false)} /> : null}
+              {onlyFeatured ? <ActiveChip label={translateCopy("Öne çıkanlar", language)} onRemove={() => setOnlyFeatured(false)} /> : null}
+              {onlyVerified ? <ActiveChip label={translateCopy("Doğrulanmış", language)} onRemove={() => setOnlyVerified(false)} /> : null}
+            </ScrollView>
+          ) : null}
+
+
 
           {/* En çok kazandıran fırsatlar (mobil şerit) */}
-          {topEarn.length > 0 ? (
-            <View style={{ gap: 8 }}>
+          {topEarn.length >= 3 && !advancedOpen && !hasAdvanced && filter === "all" && !query ? (
+            <View testID="top-earning-listing-carousel" style={{ gap: 8 }}>
               <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>{translateCopy("En Çok Kazandıran Fırsatlar", language)}</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingRight: 12 }}>
-                {topEarn.map((l) => (
-                  <Pressable key={l.id} accessibilityRole="button" accessibilityLabel={l.title} onPress={() => router.push(`/listing/${l.id}`)} style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 14, borderWidth: 1, overflow: "hidden", width: 140 }}>
-                    <View style={{ height: 90, width: "100%" }}>
-                      <SafeRemoteImage uri={l.image} alt={l.title} accessibilityLabel={l.title} style={{ height: 90, width: "100%" }} contentFit="cover" />
-                      <View style={{ backgroundColor: colors.gold, borderRadius: 6, left: 7, paddingHorizontal: 6, paddingVertical: 2, position: "absolute", top: 7 }}>
-                        <Text style={{ color: colors.badgeInk, fontSize: 9, fontWeight: "900" }}>{translateCopy("Kazanç", language)} {money(commissionAmount(l))}</Text>
-                      </View>
-                    </View>
-                    <View style={{ gap: 3, padding: 8 }}>
-                      <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 12, fontWeight: "800" }}>{l.title}</Text>
-                      <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "900" }}>{money(l.price)}</Text>
-                    </View>
-                  </Pressable>
-                ))}
+                {topEarn.map((l) => <ListingCard key={l.id} listing={l} owner={findUser(l.ownerId)} width={cardWidth} />)}
               </ScrollView>
             </View>
           ) : null}
 
           {/* ÖNE ÇIKAN ORTAKLAR (mobil) — ortakları platforma çeker; /ortak vitrinine gider. */}
-          {featuredPartners.length > 0 ? (
-            <View style={{ gap: 8 }}>
+          {featuredPartners.length > 0 && !advancedOpen && !hasAdvanced && filter === "all" && !query ? (
+            <View testID="newest-listing-carousel" style={{ gap: 8 }}>
               <View style={{ alignItems: "center", flexDirection: "row", gap: 10 }}>
                 <Text style={{ color: colors.ink, flex: 1, fontSize: 16, fontWeight: "900" }}>{translateCopy("Öne Çıkan Ortaklar", language)}</Text>
                 <Pressable accessibilityRole="button" onPress={() => router.push("/ortaklar" as Href)} style={{ alignItems: "center", flexDirection: "row", gap: 3 }}>
@@ -350,201 +477,25 @@ export default function HomeScreen() {
             </View>
           ) : null}
 
-          {recentListings.length >= 3 ? (
-            <View style={{ gap: 8 }}>
+          {recentListings.length >= 3 && !advancedOpen && !hasAdvanced && filter === "all" && !query ? (
+            <View testID="recent-listing-carousel" style={{ gap: 8 }}>
               <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>{translateCopy("Son Gezdiklerin", language)}</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingRight: 12 }}>
-                {recentListings.map((l) => (
-                  <Pressable key={l.id} accessibilityRole="button" accessibilityLabel={l.title} onPress={() => router.push(`/listing/${l.id}`)} style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 14, borderWidth: 1, overflow: "hidden", width: 140 }}>
-                    <SafeRemoteImage uri={l.image} alt={l.title} accessibilityLabel={l.title} style={{ height: 90, width: "100%" }} contentFit="cover" />
-                    <View style={{ gap: 3, padding: 8 }}>
-                      <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 12, fontWeight: "800" }}>{l.title}</Text>
-                      <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "900" }}>{money(l.price)}</Text>
-                    </View>
-                  </Pressable>
-                ))}
+                {recentListings.map((l) => <ListingCard key={l.id} listing={l} owner={findUser(l.ownerId)} width={cardWidth} />)}
               </ScrollView>
             </View>
           ) : null}
 
-          {newestListings.length >= 4 ? (
-            <View style={{ gap: 8 }}>
+          {newestListings.length >= 4 && !advancedOpen && !hasAdvanced && filter === "all" && !query ? (
+            <View testID="newest-listing-carousel" style={{ gap: 8 }}>
               <View style={{ alignItems: "center", flexDirection: "row", gap: 6 }}>
                 <MaterialCommunityIcons name="new-box" size={17} color={colors.primaryDark} />
                 <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>{translateCopy("En Yeni İlanlar", language)}</Text>
               </View>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingRight: 12 }}>
-                {newestListings.map((l) => (
-                  <Pressable key={l.id} accessibilityRole="button" accessibilityLabel={l.title} onPress={() => router.push(`/listing/${l.id}`)} style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 14, borderWidth: 1, overflow: "hidden", width: 140 }}>
-                    <View style={{ height: 90, width: "100%" }}>
-                      <SafeRemoteImage uri={l.image} alt={l.title} accessibilityLabel={l.title} style={{ height: 90, width: "100%" }} contentFit="cover" />
-                      <View style={{ backgroundColor: colors.primary, borderRadius: 6, left: 7, paddingHorizontal: 6, paddingVertical: 2, position: "absolute", top: 7 }}>
-                        <Text style={{ color: "#FFFFFF", fontSize: 9, fontWeight: "900" }}>{translateCopy("YENİ", language)}</Text>
-                      </View>
-                    </View>
-                    <View style={{ gap: 3, padding: 8 }}>
-                      <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 12, fontWeight: "800" }}>{l.title}</Text>
-                      <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "900" }}>{money(l.price)}</Text>
-                    </View>
-                  </Pressable>
-                ))}
+                {newestListings.map((l) => <ListingCard key={l.id} listing={l} owner={findUser(l.ownerId)} width={cardWidth} />)}
               </ScrollView>
             </View>
-          ) : null}
-
-          <HomeQuickActions currentUserId={currentUser.id} />
-
-          <View style={{ gap: 7 }}>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingRight: 12 }}>
-              {filters.map((item) => (
-                <FilterChip key={item.key} label={item.label} icon={item.icon} active={item.key === filter} onPress={() => setFilter(item.key)} />
-              ))}
-            </ScrollView>
-            <View style={{ alignItems: "center", flexDirection: "row", gap: 10 }}>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingRight: 12 }} style={{ flex: 1 }}>
-                {(Object.keys(sortLabels) as SortMode[]).map((item) => (
-                  <SortChip key={item} active={sortMode === item} label={sortLabels[item]} onPress={() => setSortMode(item)} />
-                ))}
-              </ScrollView>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={translateCopy("Gelişmiş filtre", language)}
-                onPress={() => setAdvancedOpen((v) => !v)}
-                style={{ alignItems: "center", backgroundColor: advancedOpen || hasAdvanced ? colors.primary : colors.surface, borderColor: hasAdvanced ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 5, paddingHorizontal: 13, paddingVertical: 8 }}
-              >
-                <MaterialCommunityIcons name="tune-variant" size={15} color={advancedOpen || hasAdvanced ? "#FFFFFF" : colors.primaryDark} />
-                <Text style={{ color: advancedOpen || hasAdvanced ? "#FFFFFF" : colors.primaryDark, fontSize: 12.5, fontWeight: "900" }}>{translateCopy("Filtrele", language)}</Text>
-                {hasAdvanced ? <View style={{ backgroundColor: advancedOpen ? "#FFFFFF" : colors.accent, borderRadius: 999, height: 7, width: 7 }} /> : null}
-              </Pressable>
-            </View>
-          </View>
-
-          {advancedOpen ? (
-            <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 15, padding: 16 }}>
-              <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
-                <MaterialCommunityIcons name="tune-variant" size={18} color={colors.primaryDark} />
-                <Text style={{ color: colors.ink, fontSize: 15, fontWeight: "900" }}>{translateCopy("Gelişmiş filtre", language)}</Text>
-                {advancedCount > 0 ? (
-                  <View style={{ backgroundColor: colors.primary, borderRadius: 999, minWidth: 18, paddingHorizontal: 6, paddingVertical: 1 }}>
-                    <Text style={{ color: "#FFFFFF", fontSize: 11, fontWeight: "900", textAlign: "center" }}>{advancedCount}</Text>
-                  </View>
-                ) : null}
-                <View style={{ flex: 1 }} />
-                {hasAdvanced ? (
-                  <Pressable accessibilityRole="button" onPress={clearAdvanced} hitSlop={8} style={({ pressed }) => ({ alignItems: "center", flexDirection: "row", gap: 3, opacity: pressed ? 0.7 : 1 })}>
-                    <MaterialCommunityIcons name="close-circle-outline" size={14} color={colors.accent} />
-                    <Text style={{ color: colors.accent, fontSize: 12.5, fontWeight: "900" }}>{translateCopy("Temizle", language)}</Text>
-                  </Pressable>
-                ) : null}
-              </View>
-
-              {/* Kategori (üst kategori) */}
-              {rootCatOptions.length > 0 ? (
-                <View style={{ gap: 7 }}>
-                  <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>{translateCopy("Kategori", language)}</Text>
-                  <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingRight: 8 }}>
-                    <FilterPill active={!catFilter} label={translateCopy("Tümü", language)} onPress={() => setCatFilter(null)} />
-                    {rootCatOptions.map((c) => (
-                      <FilterPill key={c.key} active={catFilter === c.key} icon={getCategoryIcon(c.label)} label={`${translateCopy(getCategoryShortLabel(c.label), language)}${c.n > 0 ? ` (${c.n})` : ""}`} onPress={() => setCatFilter((prev) => (prev === c.key ? null : c.key))} />
-                    ))}
-                  </ScrollView>
-                </View>
-              ) : null}
-
-              {/* Konum (81 il + ilçe) */}
-              <View style={{ gap: 7 }}>
-                <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>{translateCopy("Konum (İl / İlçe)", language)}</Text>
-                <LocationSelector mode="filter" showNeighborhood={false} value={loc} onChange={setLoc} />
-              </View>
-
-              {/* Fiyat aralığı + hızlı presetler */}
-              <View style={{ gap: 7 }}>
-                <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>{translateCopy("Fiyat aralığı (TL)", language)}</Text>
-                <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
-                  <TextInput value={priceMin} onChangeText={setPriceMin} keyboardType="numeric" placeholder={translateCopy("En az", language)} placeholderTextColor={colors.subtle} style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 10, borderWidth: 1, color: colors.ink, flex: 1, fontSize: 14, minWidth: 0, paddingHorizontal: 12, paddingVertical: 10 }} />
-                  <Text style={{ color: colors.subtle, fontSize: 14, fontWeight: "800" }}>—</Text>
-                  <TextInput value={priceMax} onChangeText={setPriceMax} keyboardType="numeric" placeholder={translateCopy("En çok", language)} placeholderTextColor={colors.subtle} style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 10, borderWidth: 1, color: colors.ink, flex: 1, fontSize: 14, minWidth: 0, paddingHorizontal: 12, paddingVertical: 10 }} />
-                </View>
-                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-                  {([["0", "1000"], ["1000", "5000"], ["5000", "25000"], ["25000", ""]] as Array<[string, string]>).map(([lo, hi]) => {
-                    const on = priceMin === (lo === "0" ? "" : lo) && priceMax === hi;
-                    const label = hi ? `${money(Number(lo))}–${money(Number(hi))}` : `${money(Number(lo))}+`;
-                    return <FilterPill key={lo + hi} active={on} label={label} onPress={() => { setPriceMin(lo === "0" ? "" : lo); setPriceMax(hi); }} />;
-                  })}
-                </View>
-              </View>
-
-              {/* Komisyon ORANI (%) — ortakların en çok baktığı */}
-              <View style={{ gap: 7 }}>
-                <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>{translateCopy("En az komisyon oranı (%)", language)}</Text>
-                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-                  {[0, 10, 15, 20, 25].map((r) => (
-                    <FilterPill key={r} active={minRate === r} label={r === 0 ? translateCopy("Tümü", language) : `%${r}+`} onPress={() => setMinRate(r)} />
-                  ))}
-                </View>
-              </View>
-
-              {/* Komisyon tutarı (₺) */}
-              <View style={{ gap: 7 }}>
-                <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>{translateCopy("En az komisyon (₺)", language)}</Text>
-                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-                  {[0, 250, 500, 1000].map((amt) => (
-                    <FilterPill key={amt} active={minComm === amt} label={amt === 0 ? translateCopy("Tümü", language) : `${money(amt)}+`} onPress={() => setMinComm(amt)} />
-                  ))}
-                </View>
-              </View>
-
-              {/* Komisyon tipi + Satıcı puanı */}
-              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 18 }}>
-                <View style={{ gap: 7 }}>
-                  <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>{translateCopy("Komisyon tipi", language)}</Text>
-                  <View style={{ flexDirection: "row", gap: 8 }}>
-                    <FilterPill active={commTypeFilter === "all"} label={translateCopy("Tümü", language)} onPress={() => setCommTypeFilter("all")} />
-                    <FilterPill active={commTypeFilter === "rate"} label={translateCopy("Oran %", language)} onPress={() => setCommTypeFilter("rate")} />
-                    <FilterPill active={commTypeFilter === "fixed"} label={translateCopy("Sabit ₺", language)} onPress={() => setCommTypeFilter("fixed")} />
-                  </View>
-                </View>
-                <View style={{ gap: 7 }}>
-                  <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>{translateCopy("Satıcı puanı", language)}</Text>
-                  <View style={{ flexDirection: "row", gap: 8 }}>
-                    {[0, 4, 4.5].map((r) => (
-                      <FilterPill key={r} active={minRating === r} icon={r > 0 ? "star" : undefined} label={r === 0 ? translateCopy("Tümü", language) : `${r}+`} onPress={() => setMinRating(r)} />
-                    ))}
-                  </View>
-                </View>
-              </View>
-
-              {/* Anahtarlar */}
-              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-                <FilterPill active={onlyOpenPartner} icon={onlyOpenPartner ? "check-circle" : "flash-outline"} label={translateCopy("Anında ortaklık", language)} onPress={() => setOnlyOpenPartner((v) => !v)} />
-                <FilterPill active={onlyInStock} icon={onlyInStock ? "check-circle" : "package-variant-closed"} label={translateCopy("Stokta olanlar", language)} onPress={() => setOnlyInStock((v) => !v)} />
-                <FilterPill active={onlyFeatured} icon={onlyFeatured ? "check-circle" : "star-outline"} label={translateCopy("Öne çıkanlar", language)} onPress={() => setOnlyFeatured((v) => !v)} />
-                <FilterPill active={onlyVerified} icon={onlyVerified ? "check-circle" : "shield-check-outline"} label={translateCopy("Doğrulanmış satıcı", language)} onPress={() => setOnlyVerified((v) => !v)} />
-              </View>
-
-              {/* Sonuçları gör (dar ekranda paneli kapatır) */}
-              <Pressable accessibilityRole="button" onPress={() => { if (!isWideWeb) setAdvancedOpen(false); }} style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.primary, borderRadius: 12, flexDirection: "row", gap: 8, justifyContent: "center", opacity: pressed ? 0.85 : 1, paddingVertical: 13 })}>
-                <MaterialCommunityIcons name="magnify" size={17} color="#FFFFFF" />
-                <Text style={{ color: "#FFFFFF", fontSize: 14, fontWeight: "900" }}>{filteredListings.length} {translateCopy("sonucu göster", language)}</Text>
-              </Pressable>
-            </View>
-          ) : null}
-
-          {/* Uygulanan filtre özeti — kaldırılabilir çipler */}
-          {hasAdvanced ? (
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingRight: 12 }}>
-              {catFilter ? <ActiveChip label={translateCopy(getCategoryShortLabel(rootCatOptions.find((c) => c.key === catFilter)?.label ?? ""), language)} onRemove={() => setCatFilter(null)} /> : null}
-              {loc.provinceId != null ? <ActiveChip label={translateCopy("Konum", language)} onRemove={() => setLoc({})} /> : null}
-              {(priceMin || priceMax) ? <ActiveChip label={`${priceMin ? money(parseTrPrice(priceMin)) : "0"}–${priceMax ? money(parseTrPrice(priceMax)) : "∞"}`} onRemove={() => { setPriceMin(""); setPriceMax(""); }} /> : null}
-              {minRate > 0 ? <ActiveChip label={`%${minRate}+`} onRemove={() => setMinRate(0)} /> : null}
-              {minComm > 0 ? <ActiveChip label={`${money(minComm)}+`} onRemove={() => setMinComm(0)} /> : null}
-              {commTypeFilter !== "all" ? <ActiveChip label={commTypeFilter === "rate" ? translateCopy("Oran %", language) : translateCopy("Sabit ₺", language)} onRemove={() => setCommTypeFilter("all")} /> : null}
-              {minRating > 0 ? <ActiveChip label={`★ ${minRating}+`} onRemove={() => setMinRating(0)} /> : null}
-              {onlyOpenPartner ? <ActiveChip label={translateCopy("Anında ortaklık", language)} onRemove={() => setOnlyOpenPartner(false)} /> : null}
-              {onlyInStock ? <ActiveChip label={translateCopy("Stokta", language)} onRemove={() => setOnlyInStock(false)} /> : null}
-              {onlyFeatured ? <ActiveChip label={translateCopy("Öne çıkanlar", language)} onRemove={() => setOnlyFeatured(false)} /> : null}
-              {onlyVerified ? <ActiveChip label={translateCopy("Doğrulanmış", language)} onRemove={() => setOnlyVerified(false)} /> : null}
-            </ScrollView>
           ) : null}
 
           <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
@@ -760,7 +711,7 @@ function CategoryShowcase({ categoryTree, listings, isWideWeb }: { categoryTree:
     for (const root of categoryTree) walk([root], root.key);
     const c = new Map<string, number>();
     for (const l of listings) {
-      const rk = rootByLabel.get(norm(l.category));
+      const rk = listingRootNode(l)?.key;
       if (rk) c.set(rk, (c.get(rk) ?? 0) + 1);
     }
     return c;

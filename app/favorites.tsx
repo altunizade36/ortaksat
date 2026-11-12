@@ -1,3 +1,11 @@
+import { isPublicPartnershipListing } from "@/lib/listing-actions";
+import { HorizontalScroll } from "@/components/horizontal-scroll";
+import { CompactFooter } from "@/components/compact-footer";
+import { RetryNotice } from "@/components/retry-notice";
+import { displayListingTitle } from "@/lib/listing-title";
+import { isMobileApp } from "@/lib/mobile-app";
+import { MobileFavorites } from "@/components/mobile/favorites";
+import { useLocalSearchParams } from "expo-router";
 ﻿import { MaterialCommunityIcons } from "@/components/icons";
 import { useEffect, useRef, useState } from "react";
 import { Modal, Platform, Pressable, RefreshControl, ScrollView, Text, TextInput, View, useWindowDimensions } from "react-native";
@@ -10,7 +18,8 @@ import { WebFooter } from "@/components/web-landing";
 import { commissionAmount } from "@/lib/format";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { useNativeRefresh } from "@/lib/use-native-refresh";
-import { responsiveGrid, useIsWideWeb, useMounted } from "@/lib/layout";
+import { useIsWideWeb, useMounted } from "@/lib/layout";
+import { marketplaceCardGrid } from "@/lib/card-layout";
 import { ScreenSkeleton } from "@/components/screen-skeleton";
 import { searchKey } from "@/lib/locale";
 import { matchesQuery } from "@/lib/search";
@@ -40,7 +49,7 @@ function FavoritesScreenInner() {
   useEffect(() => { setVisibleCount(PAGE); }, [favTab, catFilter, colFilter, sortMode, query]);
   const horizontalPadding = 12;
   const gap = 8;
-  const cardWidth = responsiveGrid({ available: width - horizontalPadding * 2, gap, minCardWidth: 168, minColumns: 2 /* mobilde 2 sütun: 3 zorlarken 106px kartta fiyat kırpılıyordu */ }).cardWidth;
+  const cardWidth = marketplaceCardGrid({ available: width - horizontalPadding * 2, gap, minCardWidth: 142, maxCardWidth: 210, minColumns: 2, maxColumns: 4 }).cardWidth;
   const tokens = searchKey(query).split(" ").filter(Boolean);
   const myFavs = favorites.filter((favorite) => favorite.userId === currentUser.id);
   // listingId → koleksiyon eşlemesi + kullanıcının koleksiyon adları (distinct, boş hariç).
@@ -54,29 +63,54 @@ function FavoritesScreenInner() {
   const [extraListings, setExtraListings] = useState<Map<string, Listing>>(new Map());
   const [extraUsers, setExtraUsers] = useState<Map<string, User>>(new Map());
   const fetchedRef = useRef<Set<string>>(new Set());
+  const [favoriteFetchLoading, setFavoriteFetchLoading] = useState(false);
+  const [favoriteFetchFailed, setFavoriteFetchFailed] = useState(false);
+  const [favoriteRetry, setFavoriteRetry] = useState(0);
+
   const favIdsKey = myFavs.map((f) => f.listingId).sort().join(",");
   useEffect(() => {
     if (!isSupabaseConfigured) return;
-    const inMemory = new Set(listings.map((l) => l.id));
-    const missing = myFavs.map((f) => f.listingId).filter((id) => !inMemory.has(id) && !fetchedRef.current.has(id));
-    if (missing.length === 0) return;
-    missing.forEach((id) => fetchedRef.current.add(id));
+    const inMemory = new Set(listings.map(l => l.id));
+    const missing = myFavs.map(f => f.listingId).filter(id => !inMemory.has(id) && !fetchedRef.current.has(id));
     let alive = true;
-    fetchListingsByIds(missing).then((res) => {
-      if (!alive || !res) return;
-      if (res.listings.length) setExtraListings((m) => { const n = new Map(m); res.listings.forEach((l) => n.set(l.id, l)); return n; });
-      if (res.users.length) setExtraUsers((m) => { const n = new Map(m); res.users.forEach((u) => n.set(u.id, u)); return n; });
-    }).catch(() => {});
+    setFavoriteFetchFailed(false);
+    setFavoriteFetchLoading(missing.length > 0);
+    if (!missing.length) return;
+    void (async () => {
+      try {
+        // Fetch every batch; the service caps each request at 300 IDs.
+        for (let offset = 0; offset < missing.length; offset += 300) {
+          const batch = missing.slice(offset, offset + 300);
+          const res = await fetchListingsByIds(batch);
+          if (!alive) return;
+          if (!res) throw new Error("Favorites unavailable");
+          batch.forEach(id => fetchedRef.current.add(id));
+          if (res.listings.length) setExtraListings(m => { const n = new Map(m); res.listings.forEach(l => n.set(l.id, l)); return n; });
+          if (res.users.length) setExtraUsers(m => { const n = new Map(m); res.users.forEach(u => n.set(u.id, u)); return n; });
+        }
+      } catch {
+        if (alive) setFavoriteFetchFailed(true);
+      } finally {
+        if (alive) setFavoriteFetchLoading(false);
+      }
+    })();
     return () => { alive = false; };
+    // Only IDs matter; query/sort changes must not refetch the saved listings.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [favIdsKey, listings.length]);
+  }, [favIdsKey, listings.length, favoriteRetry]);
 
   const resolveListing = (id: string): Listing | undefined => listings.find((l) => l.id === id) ?? extraListings.get(id);
   const resolveOwner = (ownerId: string): User | undefined => findUser(ownerId) ?? extraUsers.get(ownerId);
   const favoriteListings = myFavs
     .map((favorite) => resolveListing(favorite.listingId))
     .filter(Boolean);
+  const unavailableFavorites = myFavs.filter(f => fetchedRef.current.has(f.listingId) && !resolveListing(f.listingId)).length;
+  const favoriteResolving = favoriteFetchLoading || !favoriteFetchFailed && myFavs.some(f => !fetchedRef.current.has(f.listingId) && !resolveListing(f.listingId));
+  const favoriteNotice = favoriteFetchFailed ? <RetryNotice message="Bazı favori ilanların yüklenemedi. Kayıtların korunuyor; tekrar deneyebilirsin." onRetry={() => setFavoriteRetry(v => v + 1)} busy={favoriteFetchLoading}/> : favoriteResolving ? <Text accessibilityRole="progressbar" style={{ color: colors.muted, padding: 12 }}>{translateCopy("Favori ilanların yükleniyor…", language)}</Text> : unavailableFavorites > 0 ? <Text style={{ color: colors.muted, fontSize: 13, lineHeight: 20 }}>{unavailableFavorites} {translateCopy("favori ilanı şu anda yayında değil veya erişime kapalı.", language)}</Text> : null;
   // Fiyat düşüşü/artışı göstergesi (spec 75): favoriye eklenen fiyat ile şu anki fiyat.
+  const savedAtById = new Map(myFavs.map(f => [f.listingId, f.createdAt || ""]));
+  const newestSaved = (a: Listing, b: Listing) => (savedAtById.get(b.id) || "").localeCompare(savedAtById.get(a.id) || "");
+  const recentFavorite = (l: Listing) => { const age = Date.now() - new Date(savedAtById.get(l.id) || "").getTime(); return age >= 0 && age < 7 * 86400000; };
   const savedPriceById = new Map(myFavs.map((f) => [f.listingId, f.savedPrice]));
   const priceNoteFor = (listingId: string, currentPrice: number) => {
     const saved = savedPriceById.get(listingId);
@@ -91,7 +125,8 @@ function FavoritesScreenInner() {
   const visibleListings = (() => {
     let base = favoriteListings.filter((l): l is Listing => Boolean(l));
     if (tokens.length) base = base.filter((l) => matchesQuery(l, undefined, tokens));
-    if (favTab === "open") base = base.filter((l) => l.partnershipMode === "open");
+    if (favTab === "open") base = base.filter(isPublicPartnershipListing);
+    else if (favTab === "recent") base = base.filter(recentFavorite);
     else if (favTab === "highcomm") base = base.filter((l) => l.commissionType === "rate" && l.commissionValue >= 15);
     if (catFilter) base = base.filter((l) => l.category === catFilter);
     if (colFilter) base = base.filter((l) => favColMap.get(l.id) === colFilter);
@@ -99,7 +134,7 @@ function FavoritesScreenInner() {
       sortMode === "priceAsc" ? a.price - b.price
         : sortMode === "priceDesc" ? b.price - a.price
           : sortMode === "commission" ? commissionAmount(b) - commissionAmount(a)
-            : b.createdAt.localeCompare(a.createdAt)
+            : newestSaved(a, b)
     );
   })();
 
@@ -114,7 +149,7 @@ function FavoritesScreenInner() {
             </View>
             <View style={{ flex: 1, minWidth: 0 }}>
               <Text style={{ color: colors.ink, fontSize: 15.5, fontWeight: "900" }}>{translateCopy("Koleksiyona ekle", language)}</Text>
-              <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 12, fontWeight: "700" }}>{assignFor ? assignFor.title : ""}</Text>
+              <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 12, fontWeight: "700" }}>{assignFor ? displayListingTitle(assignFor.title) : ""}</Text>
             </View>
           </View>
           {collections.length > 0 ? (
@@ -159,16 +194,16 @@ function FavoritesScreenInner() {
   );
 
   if (isWideWeb) {
-    const myFavs = favoriteListings.filter(Boolean) as Listing[];
-    const base = myFavs; // yalnızca gerçek favoriler — sahte doldurma yok
-    const savedCount = base.length;
+    const base = favoriteListings.filter(Boolean) as Listing[];
+    const savedCount = myFavs.length;
     const highComm = base.filter((l) => l.commissionType === "rate" && l.commissionValue >= 15);
-    const openCount = base.filter((l) => l.partnershipMode === "open").length;
-    const recent = base.slice().sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-    let filtered = favTab === "open" ? base.filter((l) => l.partnershipMode === "open")
+    const openCount = base.filter(isPublicPartnershipListing).length;
+    const recent = base.filter(recentFavorite).sort(newestSaved);
+    let filtered = favTab === "open" ? base.filter(isPublicPartnershipListing)
       : favTab === "highcomm" ? highComm
       : favTab === "recent" ? recent
       : base;
+    if (tokens.length) filtered = filtered.filter(l => matchesQuery(l, undefined, tokens));
     if (catFilter) filtered = filtered.filter((l) => l.category === catFilter);
     if (colFilter) filtered = filtered.filter((l) => favColMap.get(l.id) === colFilter);
     // Sıralama (çalışır — eskiden statik etiketti).
@@ -176,16 +211,16 @@ function FavoritesScreenInner() {
       sortMode === "priceAsc" ? a.price - b.price
       : sortMode === "priceDesc" ? b.price - a.price
       : sortMode === "commission" ? commissionAmount(b) - commissionAmount(a)
-      : b.createdAt.localeCompare(a.createdAt));
+      : newestSaved(a, b));
     const SORT_LABELS: Record<typeof sortMode, string> = { new: "En yeni", priceAsc: "Fiyat: artan", priceDesc: "Fiyat: azalan", commission: "En yüksek komisyon" };
     const SORT_ORDER: Array<typeof sortMode> = ["new", "priceAsc", "priceDesc", "commission"];
     const sidebarWidth = 300;
-    const cardWidth = responsiveGrid({ available: Math.min(width, 1480) - 40 - sidebarWidth - 24, gap: 16, minCardWidth: 210, maxColumns: 4 }).cardWidth;
+    const cardWidth = marketplaceCardGrid({ available: Math.min(width, 1480) - 40 - sidebarWidth - 24, gap: 16, minCardWidth: 170, maxCardWidth: 210, minColumns: 3, maxColumns: 6 }).cardWidth;
     const tabs: Array<{ key: typeof favTab; label: string; count: number }> = [
       { key: "all", label: translateCopy("Tümü", language), count: savedCount },
       { key: "open", label: translateCopy("Ortak satışa açık", language), count: openCount },
       { key: "highcomm", label: translateCopy("Yüksek komisyon (%15+)", language), count: highComm.length },
-      { key: "recent", label: translateCopy("Son eklenenler", language), count: savedCount }
+      { key: "recent", label: translateCopy("Son eklenenler", language), count: recent.length }
     ];
     // Favori kategorilerinden türetilen dinamik listeler (uydurma sayı yok).
     const catCounts = new Map<string, number>();
@@ -212,13 +247,19 @@ function FavoritesScreenInner() {
           <FavStat icon="handshake-outline" tint={colors.goldSoft} color={colors.gold} value={`${openCount}`} title={translateCopy("Ortak satışa açık", language)} sub={translateCopy("Hemen ortak olabileceğin ilan", language)} />
         </View>
 
+        <View style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderWidth: 1, borderRadius: 10, flexDirection: "row", gap: 10, paddingHorizontal: 12 }}>
+          <MaterialCommunityIcons name="magnify" size={21} color={colors.muted} />
+          <TextInput accessibilityLabel={translateCopy("Favorilerde ara", language)} placeholder={translateCopy("Favorilerinde ürün, şehir veya kategori ara", language)} value={query} onChangeText={setQuery} maxLength={120} returnKeyType="search" style={{ color: colors.ink, flex: 1, minWidth: 0, minHeight: 46, fontSize: 14 }} />
+          {!!query && <Pressable accessibilityRole="button" accessibilityLabel={translateCopy("Aramayı temizle", language)} onPress={() => setQuery("")} hitSlop={8}><MaterialCommunityIcons name="close-circle" size={20} color={colors.muted} /></Pressable>}
+        </View>
+
         <View style={{ alignItems: "flex-start", flexDirection: "row", gap: 20 }}>
           <View style={{ flex: 1, gap: 14, minWidth: 0 }}>
             <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
               {tabs.map((t) => {
                 const on = favTab === t.key;
                 return (
-                  <Pressable key={t.key} onPress={() => setFavTab(t.key)} style={{ alignItems: "center", backgroundColor: on ? colors.primary : colors.surface, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 5, paddingHorizontal: 13, paddingVertical: 8 }}>
+                  <Pressable key={t.key} accessibilityRole="button" accessibilityState={{ selected: on }} aria-pressed={on} onPress={() => setFavTab(t.key)} style={{ alignItems: "center", backgroundColor: on ? colors.primary : colors.surface, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 5, paddingHorizontal: 13, paddingVertical: 8 }}>
                     <Text style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 12.5, fontWeight: "800" }}>{t.label}</Text>
                     <Text style={{ color: on ? "rgba(255,255,255,0.85)" : colors.muted, fontSize: 11, fontWeight: "800" }}>({t.count})</Text>
                   </Pressable>
@@ -244,8 +285,9 @@ function FavoritesScreenInner() {
               </View>
             ) : null}
 
-            {filtered.length === 0 ? (
-              <EmptyState title={translateCopy("Favori yok", language)} body={translateCopy("Ürün detayında kalp simgesine basarak favorilerine ekleyebilirsin.", language)} action={{ label: "Ürünleri keşfet", href: "/explore", icon: "compass-outline" }} mascot="heart" />
+            {favoriteNotice}
+            {filtered.length === 0 && (favoriteResolving || favoriteFetchFailed) ? null : filtered.length === 0 ? (
+              <EmptyState title={translateCopy(myFavs.length ? "Bu görünümde favori ilan yok" : "Favori yok", language)} body={translateCopy(myFavs.length ? "Arama ve filtrelerini değiştirebilirsin. Yayından kaldırılan ilanlar listelenmez; favori kaydın korunur." : "Ürün detayında kalp simgesine basarak favorilerine ekleyebilirsin.", language)} action={myFavs.length && favoriteListings.length ? { label: "Filtreleri Temizle", onPress: () => { setQuery(""); setFavTab("all"); setCatFilter(null); setColFilter(null); } } : { label: "Ürünleri keşfet", href: "/explore", icon: "compass-outline" }} mascot="heart" />
             ) : (
               <>
                 <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 16 }}>
@@ -287,7 +329,7 @@ function FavoritesScreenInner() {
   }
 
   return (
-    <ScrollView contentInsetAdjustmentBehavior="automatic" keyboardShouldPersistTaps="handled" contentContainerStyle={{ gap: 12, padding: 12, paddingBottom: 96 }} refreshControl={Platform.OS === "web" ? undefined : <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} colors={[colors.primary]} />}>
+    <ScrollView contentInsetAdjustmentBehavior="automatic" keyboardShouldPersistTaps="handled" contentContainerStyle={{ flexGrow: 1, gap: 12, padding: 12, paddingBottom: Platform.OS === "web" ? 16 : 96 }} refreshControl={Platform.OS === "web" ? undefined : <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} colors={[colors.primary]} />}>
       <View style={{ alignItems: "center", flexDirection: "row", gap: 10 }}>
         <View style={{ alignItems: "center", backgroundColor: colors.accentSoft, borderRadius: 12, height: 46, justifyContent: "center", width: 46 }}>
           <MaterialCommunityIcons name="heart" size={22} color={colors.accent} />
@@ -300,9 +342,9 @@ function FavoritesScreenInner() {
 
       {/* Stat çipleri (mobil parite — masaüstündeki FavStat satırının kompakt karşılığı). */}
       {(() => {
-        const favs = favoriteListings.filter(Boolean) as { commissionType?: string; commissionValue?: number; partnershipMode?: string }[];
+        const favs = favoriteListings.filter(Boolean) as Listing[];
         const hi = favs.filter((l) => l.commissionType === "rate" && (l.commissionValue ?? 0) >= 15).length;
-        const op = favs.filter((l) => l.partnershipMode === "open").length;
+        const op = favs.filter(isPublicPartnershipListing).length;
         if (favs.length === 0) return null;
         return (
           <View style={{ flexDirection: "row", gap: 8 }}>
@@ -330,11 +372,11 @@ function FavoritesScreenInner() {
       </View>
 
       {/* Filtre çipleri + sıralama (masaüstü paritesi) */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 7, paddingRight: 12 }}>
+      <HorizontalScroll  showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 7, paddingRight: 12 }}>
         {([["all", "Tümü"], ["open", "Ortak satışa açık"], ["highcomm", "Yüksek komisyon"]] as const).map(([k, lbl]) => {
           const on = favTab === k && !catFilter;
           return (
-            <Pressable key={k} onPress={() => { setFavTab(k); setCatFilter(null); }} style={{ backgroundColor: on ? colors.primary : colors.surface, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 7 }}>
+            <Pressable key={k} accessibilityRole="button" accessibilityState={{ selected: on }} aria-pressed={on} onPress={() => { setFavTab(k); setCatFilter(null); }} style={{ backgroundColor: on ? colors.primary : colors.surface, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 7 }}>
               <Text style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 12, fontWeight: "800" }}>{translateCopy(lbl, language)}</Text>
             </Pressable>
           );
@@ -346,11 +388,11 @@ function FavoritesScreenInner() {
           <MaterialCommunityIcons name="sort" size={14} color={colors.muted} />
           <Text style={{ color: colors.ink, fontSize: 12, fontWeight: "800" }}>{translateCopy({ new: "En yeni", priceAsc: "Fiyat: artan", priceDesc: "Fiyat: azalan", commission: "En yüksek komisyon" }[sortMode], language)}</Text>
         </Pressable>
-      </ScrollView>
+      </HorizontalScroll>
 
       {/* KOLEKSİYON çipleri (favori-klasörler) — kart üstündeki 📁 ile atanır. */}
       {collections.length > 0 ? (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 7, paddingRight: 12 }}>
+        <HorizontalScroll  showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 7, paddingRight: 12 }}>
           <Pressable onPress={() => setColFilter(null)} style={{ alignItems: "center", backgroundColor: !colFilter ? colors.primary : colors.surface, borderColor: !colFilter ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 5, paddingHorizontal: 12, paddingVertical: 7 }}>
             <MaterialCommunityIcons name="folder-multiple-outline" size={13} color={!colFilter ? "#FFFFFF" : colors.muted} />
             <Text style={{ color: !colFilter ? "#FFFFFF" : colors.ink, fontSize: 12, fontWeight: "800" }}>{translateCopy("Tüm koleksiyonlar", language)}</Text>
@@ -363,7 +405,7 @@ function FavoritesScreenInner() {
               </Pressable>
             );
           })}
-        </ScrollView>
+        </HorizontalScroll>
       ) : null}
 
       <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
@@ -371,7 +413,8 @@ function FavoritesScreenInner() {
         <Text selectable style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "900" }}>{visibleListings.length} {language === "en" ? "results" : "sonuç"}</Text>
       </View>
 
-      {favoriteListings.length === 0 ? <EmptyState title={language === "en" ? "No favorites" : "Favori yok"} body={language === "en" ? "Tap the heart on product details to add products to favorites." : "Ürün detayında kalp simgesine basarak ürünleri favorilerine ekleyebilirsin."} action={{ label: "Ürünleri keşfet", href: "/explore", icon: "compass-outline" }} mascot="heart" /> : null}
+      {favoriteNotice}
+      {favoriteListings.length === 0 && !favoriteResolving && !favoriteFetchFailed ? <EmptyState title={translateCopy(myFavs.length ? "Bu görünümde favori ilan yok" : "Favori yok", language)} body={translateCopy(myFavs.length ? "Yayından kaldırılan ilanlar listelenmez; favori kaydın korunur." : "Ürün detayında kalp simgesine basarak ürünleri favorilerine ekleyebilirsin.", language)} action={{ label: "Ürünleri keşfet", href: "/explore", icon: "compass-outline" }} mascot="heart" /> : null}
       {favoriteListings.length > 0 && visibleListings.length === 0 ? <EmptyState title={translateCopy("Sonuç yok", language)} body={language === "en" ? "Change your search term to list your favorites again." : "Arama kelimesini değiştirerek favorilerini tekrar listeleyebilirsin."} mascot="thinking" /> : null}
 
       {droppedCount > 0 ? (
@@ -396,6 +439,7 @@ function FavoritesScreenInner() {
       {favoriteListings.length > 0 ? <PrimaryButton href="/(tabs)/explore" tone="secondary">{translateCopy("Keşfete dön", language)}</PrimaryButton> : null}
 
       {collectionModal}
+      <CompactFooter />
     </ScrollView>
   );
 }
@@ -403,12 +447,12 @@ function FavoritesScreenInner() {
 // Kompakt stat çipi (mobil) — masaüstü FavStat'ın 3'lü satıra sığan hâli.
 function FavMini({ icon, tint, color, value, label }: { icon: keyof typeof MaterialCommunityIcons.glyphMap; tint: string; color: string; value: string; label: string }) {
   return (
-    <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 12, borderWidth: 1, flex: 1, gap: 6, minWidth: 0, padding: 10 }}>
-      <View style={{ alignItems: "center", backgroundColor: tint, borderRadius: 9, height: 30, justifyContent: "center", width: 30 }}>
-        <MaterialCommunityIcons name={icon} size={16} color={color} />
+    <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 12, borderWidth: 1, flex: 1, gap: 5, minWidth: 0, padding: 10 }}>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 7 }}>
+        <View style={{ backgroundColor: tint, width: 24, height: 24, borderRadius: 7, alignItems: "center", justifyContent: "center" }}><MaterialCommunityIcons name={icon} size={14} color={color} /></View>
+        <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={{ color: colors.ink, fontSize: 17, fontWeight: "800" }}>{value}</Text>
       </View>
-      <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={{ color: colors.ink, fontSize: 17, fontWeight: "900" }}>{value}</Text>
-      <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 10.5, fontWeight: "800" }}>{label}</Text>
+      <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 10.5, fontWeight: "600" }}>{label}</Text>
     </View>
   );
 }
@@ -430,6 +474,7 @@ function FavStat({ icon, tint, color, value, title, sub }: { icon: keyof typeof 
 
 
 export default function FavoritesScreen() {
+  const params = useLocalSearchParams<{ view?: string }>();
   const { language } = useLanguage();
   const auth = useStore();
   const mounted = useMounted();
@@ -441,5 +486,5 @@ export default function FavoritesScreen() {
   // Store ilk yüklemesi bitmeden "Favori yok" YALANINI flaşlama (favoriler pazaryeri
   // ilanlarına göre çözülür; ilanlar/hesap gelmeden boş görünür).
   if (auth.marketplaceInitialLoading || !auth.accountLoaded) return <ScreenSkeleton />;
-  return <FavoritesScreenInner />;
+  return isMobileApp && params.view !== "collections" ? <MobileFavorites /> : <FavoritesScreenInner key={auth.currentUser.id} />;
 }

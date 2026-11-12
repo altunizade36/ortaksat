@@ -56,6 +56,25 @@ const NAV_GROUPS: Array<{ title: string; items: NavItem[] }> = [
   ] }
 ];
 const NAV: NavItem[] = NAV_GROUPS.flatMap((g) => g.items);
+const SECTION_META: Record<Section, { title: string; description: string }> = {
+  dashboard: { title: "Yönetim Merkezi", description: "Platform sağlığı, bekleyen işler ve son hareketler" },
+  users: { title: "Kullanıcı Yönetimi", description: "Hesap, rol, doğrulama ve erişim durumları" },
+  listings: { title: "İlan Moderasyonu", description: "Yayın, inceleme, risk ve öne çıkarma işlemleri" },
+  partnerships: { title: "Ortaklık Talepleri", description: "Başvuru ve ortaklık durumlarının platform görünümü" },
+  complaints: { title: "Şikayet Merkezi", description: "Açık kayıtlar, inceleme süreci ve karar geçmişi" },
+  categories: { title: "Kategori Yönetimi", description: "Kategori ağacı ve kullanıcı önerileri" },
+  locations: { title: "Konum Önerileri", description: "İl, ilçe ve mahalle önerilerinin kontrolü" },
+  messages: { title: "Mesaj Güvenliği", description: "Platform mesaj hacmi ve riskli konuşma sinyalleri" },
+  commissions: { title: "Komisyon Kayıtları", description: "Hak ediş, ödeme beyanı ve anlaşmazlık durumları" },
+  records: { title: "Site Kayıtları", description: "Teklif, yorum, soru, talep ve ortak arama kayıtları" },
+  stats: { title: "İstatistikler", description: "Kategori, şehir, kullanıcı ve gelir dağılımları" },
+  notifications: { title: "Bildirim Merkezi", description: "Kullanıcı bildirimleri ve toplu duyurular" },
+  content: { title: "Site İçerikleri", description: "Kurumsal ve yardım sayfalarının yönetimi" },
+  blog: { title: "Blog Yönetimi", description: "Yayın, taslak ve içerik düzenleme işlemleri" },
+  seo: { title: "SEO Yönetimi", description: "Sayfa başlığı, açıklama ve indeksleme ayarları" },
+  settings: { title: "Platform Ayarları", description: "Yayın kuralları, duyuru ve yönetici ayarları" },
+  reports: { title: "Raporlar ve Denetim", description: "Operasyon özeti, aktivite ve denetim kayıtları" }
+};
 
 // Güvenlik: mesajlarda geçince "riskli konuşma" işaretlenecek kelimeler.
 const RISK_WORDS = ["iban", "havale", "eft", "kapora", "kaparo", "site dışı", "whatsapp", "telegram", "dolandırıcı", "dolandiri", "sahte", "acil gönder", "papara", "western union", "hesap numaras", "kart numaras", "kripto", "bitcoin"];
@@ -91,7 +110,7 @@ const ACTION_LABEL: Record<string, string> = {
   sale_recorded: "Satış kaydı", sale_confirmed: "Satış onaylandı",
   offer_created: "Teklif verildi", review_created: "Yorum yazıldı", lead_created: "Talep oluştu"
 };
-const REPORT_BARS = ["#0EA5B7", "#0F9D66", "#7C5CFC", "#E4572E", "#E0A81E", "#0B7285"];
+const REPORT_BARS = ["#0645C9", "#0F9D66", "#7C5CFC", "#E4572E", "#E0A81E", "#09275E"];
 const SALE_TONE: Record<SaleStatus, { tint: string; color: string; label: string }> = {
   pending: { tint: colors.warningSoft, color: colors.warning, label: "Bekliyor" },
   return_pending: { tint: colors.warningSoft, color: colors.warning, label: "İade süresi" },
@@ -217,6 +236,7 @@ function AdminScreenInner() {
     setCategorySuggestionStatus(id, "approved");
   }
   const [section, setSection] = useState<Section>("dashboard");
+  const [adminNavOpen, setAdminNavOpen] = useState(false);
   const [expandedCat, setExpandedCat] = useState<string | null>(null);
   const [audit, setAudit] = useState<{ logs: AuditEntry[]; rateHits: number } | null>(null);
   // Sunucu-gerçek analitik (AdminActivity 15sn'de bir çeker + onData ile buraya verir) → Dashboard/stats
@@ -331,6 +351,14 @@ function AdminScreenInner() {
   }, [listings]);
 
   const navBadge = (k: Section) => (k === "categories" ? pendingCat : k === "locations" ? pendingLoc : k === "listings" ? pendingReview.length : k === "complaints" ? pendingReports : k === "partnerships" ? pendingPartnerships : 0);
+  const activeNav = NAV.find((item) => item.key === section) ?? NAV[0];
+  const activeMeta = SECTION_META[section];
+  const activeGroup = NAV_GROUPS.find((group) => group.items.some((item) => item.key === section)) ?? NAV_GROUPS[0];
+
+  const selectSection = (next: Section) => {
+    setSection(next);
+    setAdminNavOpen(false);
+  };
 
   return (
     <View style={{ backgroundColor: colors.background, flex: 1, flexDirection: isWideWeb ? "row" : "column", minHeight: "100%" }}>
@@ -394,32 +422,64 @@ function AdminScreenInner() {
           </View>
         </View>
       ) : (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ backgroundColor: colors.primaryDark, maxHeight: 56 }} contentContainerStyle={{ alignItems: "center", gap: 6, paddingHorizontal: 10 }}>
-          <Link href="/" asChild>
-            <Pressable style={{ alignItems: "center", borderColor: "rgba(255,255,255,0.3)", borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 5, paddingHorizontal: 11, paddingVertical: 7 }}>
-              <MaterialCommunityIcons name="storefront-outline" size={15} color="#FFFFFF" />
-              <Text style={{ color: "#FFFFFF", fontSize: 12.5, fontWeight: "800" }}>Site</Text>
+        <View style={{ backgroundColor: colors.primaryDark, gap: 8, paddingBottom: 9, paddingHorizontal: 12, paddingTop: 10 }}>
+          <View style={{ alignItems: "center", flexDirection: "row", gap: 9 }}>
+            <Pressable
+              accessibilityLabel="Yönetim menüsünü aç"
+              accessibilityRole="button"
+              onPress={() => setAdminNavOpen(true)}
+              style={({ pressed }) => ({ alignItems: "center", backgroundColor: pressed ? "rgba(255,255,255,0.2)" : "rgba(255,255,255,0.12)", borderRadius: 11, height: 38, justifyContent: "center", width: 38 })}
+            >
+              <MaterialCommunityIcons name="menu" size={21} color="#FFFFFF" />
             </Pressable>
-          </Link>
-          <Pressable onPress={() => void doRefresh()} disabled={refreshing} accessibilityLabel="Verileri yenile" style={{ alignItems: "center", borderColor: "rgba(255,255,255,0.3)", borderRadius: 999, borderWidth: 1, justifyContent: "center", opacity: refreshing ? 0.6 : 1, paddingHorizontal: 10, paddingVertical: 7 }}>
-            <MaterialCommunityIcons name={refreshing ? "loading" : "refresh"} size={15} color="#FFFFFF" />
-          </Pressable>
-          {NAV.map((n) => {
-            const on = section === n.key;
-            const badge = navBadge(n.key); // mobil nav'da da bekleyen-iş rozetleri (eskiden yalnız sidebar'da)
-            return (
-              <Pressable key={n.key} onPress={() => setSection(n.key)} style={{ alignItems: "center", backgroundColor: on ? "rgba(255,255,255,0.18)" : "transparent", borderRadius: 999, flexDirection: "row", gap: 6, paddingHorizontal: 12, paddingVertical: 8 }}>
-                <MaterialCommunityIcons name={n.icon} size={15} color="#FFFFFF" />
-                <Text style={{ color: "#FFFFFF", fontSize: 12.5, fontWeight: on ? "900" : "700" }}>{n.label}</Text>
-                {badge ? <View style={{ alignItems: "center", backgroundColor: colors.accent, borderRadius: 999, height: 17, justifyContent: "center", minWidth: 17, paddingHorizontal: 4 }}><Text style={{ color: "#FFFFFF", fontSize: 9.5, fontWeight: "900" }}>{badge}</Text></View> : null}
+            <View style={{ flex: 1, minWidth: 0 }}>
+              <Text numberOfLines={1} style={{ color: "rgba(255,255,255,0.68)", fontSize: 9.5, fontWeight: "900", letterSpacing: 0.6 }}>ORTAKSAT YÖNETİM</Text>
+              <Text numberOfLines={1} style={{ color: "#FFFFFF", fontSize: 15, fontWeight: "900" }}>{activeMeta.title}</Text>
+            </View>
+            <Pressable onPress={() => void doRefresh()} disabled={refreshing} accessibilityLabel="Verileri yenile" style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.12)", borderRadius: 11, height: 38, justifyContent: "center", opacity: refreshing ? 0.6 : 1, width: 38 }}>
+              <MaterialCommunityIcons name={refreshing ? "loading" : "refresh"} size={19} color="#FFFFFF" />
+            </Pressable>
+            <Link href="/" asChild>
+              <Pressable accessibilityLabel="Siteye dön" style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.12)", borderRadius: 11, height: 38, justifyContent: "center", width: 38 }}>
+                <MaterialCommunityIcons name="storefront-outline" size={19} color="#FFFFFF" />
               </Pressable>
-            );
-          })}
-        </ScrollView>
+            </Link>
+          </View>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
+            {activeGroup.items.map((n) => {
+              const on = section === n.key;
+              const badge = navBadge(n.key);
+              return (
+                <Pressable key={n.key} onPress={() => selectSection(n.key)} style={{ alignItems: "center", backgroundColor: on ? "#FFFFFF" : "rgba(255,255,255,0.1)", borderRadius: 999, flexDirection: "row", gap: 5, paddingHorizontal: 11, paddingVertical: 7 }}>
+                  <MaterialCommunityIcons name={n.icon} size={14} color={on ? colors.primaryDark : "#FFFFFF"} />
+                  <Text style={{ color: on ? colors.primaryDark : "#FFFFFF", fontSize: 11.5, fontWeight: "800" }}>{n.label}</Text>
+                  {badge ? <View style={{ alignItems: "center", backgroundColor: colors.accent, borderRadius: 999, height: 16, justifyContent: "center", minWidth: 16, paddingHorizontal: 4 }}><Text style={{ color: "#FFFFFF", fontSize: 9, fontWeight: "900" }}>{badge}</Text></View> : null}
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+        </View>
       )}
 
       {/* Content */}
-      <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false} contentContainerStyle={{ gap: 16, padding: isWideWeb ? 24 : 14, paddingBottom: 60 }}>
+      <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false} contentContainerStyle={{ alignSelf: "center", gap: 16, maxWidth: 1680, padding: isWideWeb ? 24 : 12, paddingBottom: 60, width: "100%" }}>
+        {section !== "dashboard" ? (
+          <View style={{ alignItems: isWideWeb ? "center" : "flex-start", flexDirection: isWideWeb ? "row" : "column", gap: 10, justifyContent: "space-between" }}>
+            <View style={{ flex: 1, gap: 3, minWidth: 0 }}>
+              <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
+                <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 10, height: 34, justifyContent: "center", width: 34 }}>
+                  <MaterialCommunityIcons name={activeNav.icon} size={18} color={colors.primaryDark} />
+                </View>
+                <Text style={{ color: colors.ink, flex: 1, fontSize: isWideWeb ? 22 : 19, fontWeight: "900", letterSpacing: -0.35 }}>{activeMeta.title}</Text>
+              </View>
+              <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600", lineHeight: 18, marginLeft: 42 }}>{activeMeta.description}</Text>
+            </View>
+            <View style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 6, paddingHorizontal: 10, paddingVertical: 7 }}>
+              <View style={{ backgroundColor: isAdmin ? colors.success : colors.warning, borderRadius: 999, height: 7, width: 7 }} />
+              <Text style={{ color: colors.muted, fontSize: 10.5, fontWeight: "800" }}>{isAdmin ? "Yetkili oturum" : "Önizleme"}</Text>
+            </View>
+          </View>
+        ) : null}
         {!isAdmin ? (
           <View style={{ alignItems: "center", backgroundColor: colors.warningSoft, borderRadius: 12, flexDirection: "row", gap: 10, padding: 12 }}>
             <MaterialCommunityIcons name="information-outline" size={18} color={colors.warning} />
@@ -1229,6 +1289,63 @@ function AdminScreenInner() {
         ) : null}
       </ScrollView>
 
+      {/* Mobil yönetim menüsü: tüm bölümleri tek yatay şeride sıkıştırmak yerine
+          gruplu, okunabilir ve rozetli bir çekmece içinde gösterir. */}
+      <Modal visible={!isWideWeb && adminNavOpen} transparent animationType="fade" onRequestClose={() => setAdminNavOpen(false)}>
+        <View style={{ flex: 1, flexDirection: "row" }}>
+          <View style={{ backgroundColor: colors.surface, flex: 1, maxWidth: 340, shadowColor: colors.primaryDark, shadowOffset: { width: 8, height: 0 }, shadowOpacity: 0.18, shadowRadius: 22 }}>
+            <View style={{ backgroundColor: colors.primaryDark, gap: 12, paddingBottom: 14, paddingHorizontal: 16, paddingTop: 18 }}>
+              <View style={{ alignItems: "center", flexDirection: "row", gap: 10 }}>
+                <View style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.14)", borderRadius: 11, height: 38, justifyContent: "center", width: 38 }}>
+                  <MaterialCommunityIcons name="shield-crown" size={21} color="#FFFFFF" />
+                </View>
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <Text style={{ color: "#FFFFFF", fontSize: 16, fontWeight: "900" }}>OrtakSat Yönetim</Text>
+                  <Text numberOfLines={1} style={{ color: "rgba(255,255,255,0.68)", fontSize: 11, fontWeight: "700" }}>{currentUser.name || "Yönetici"} · {currentUser.role === "super_admin" ? "Süper Admin" : currentUser.role === "moderator" ? "Moderatör" : "Admin"}</Text>
+                </View>
+                <Pressable accessibilityLabel="Yönetim menüsünü kapat" onPress={() => setAdminNavOpen(false)} style={{ alignItems: "center", height: 38, justifyContent: "center", width: 38 }}>
+                  <MaterialCommunityIcons name="close" size={23} color="#FFFFFF" />
+                </Pressable>
+              </View>
+              <View style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.1)", borderRadius: 10, flexDirection: "row", gap: 7, paddingHorizontal: 10, paddingVertical: 8 }}>
+                <View style={{ backgroundColor: isAdmin ? colors.success : colors.warning, borderRadius: 999, height: 8, width: 8 }} />
+                <Text style={{ color: "#FFFFFF", fontSize: 11, fontWeight: "800" }}>{isAdmin ? "Yetkili yönetim oturumu" : "Yalnızca önizleme"}</Text>
+              </View>
+            </View>
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ gap: 4, padding: 12, paddingBottom: 30 }}>
+              {NAV_GROUPS.map((group) => (
+                <View key={group.title} style={{ gap: 3, marginBottom: 8 }}>
+                  <Text style={{ color: colors.subtle, fontSize: 9.5, fontWeight: "900", letterSpacing: 0.7, paddingHorizontal: 10, paddingVertical: 7 }}>{group.title.toLocaleUpperCase("tr-TR")}</Text>
+                  {group.items.map((item) => {
+                    const on = item.key === section;
+                    const badge = navBadge(item.key);
+                    return (
+                      <Pressable
+                        key={item.key}
+                        accessibilityRole="button"
+                        accessibilityState={{ selected: on }}
+                        onPress={() => selectSection(item.key)}
+                        style={({ pressed }) => ({ alignItems: "center", backgroundColor: on ? colors.primarySoft : pressed ? colors.surfaceAlt : "transparent", borderColor: on ? colors.primary : "transparent", borderRadius: 11, borderWidth: 1, flexDirection: "row", gap: 11, minHeight: 46, paddingHorizontal: 11 })}
+                      >
+                        <MaterialCommunityIcons name={item.icon} size={19} color={on ? colors.primary : colors.muted} />
+                        <Text style={{ color: on ? colors.primaryDark : colors.ink, flex: 1, fontSize: 13, fontWeight: on ? "900" : "700" }}>{item.label}</Text>
+                        {badge ? <View style={{ alignItems: "center", backgroundColor: colors.accent, borderRadius: 999, height: 19, justifyContent: "center", minWidth: 19, paddingHorizontal: 5 }}><Text style={{ color: "#FFFFFF", fontSize: 10, fontWeight: "900" }}>{badge}</Text></View> : null}
+                        <MaterialCommunityIcons name="chevron-right" size={17} color={on ? colors.primary : colors.subtle} />
+                      </Pressable>
+                    );
+                  })}
+                </View>
+              ))}
+              <Pressable onPress={() => { setAdminNavOpen(false); void signOut(); router.replace("/"); }} style={{ alignItems: "center", backgroundColor: colors.accentSoft, borderRadius: 11, flexDirection: "row", gap: 10, marginTop: 4, minHeight: 46, paddingHorizontal: 12 }}>
+                <MaterialCommunityIcons name="logout" size={19} color={colors.accent} />
+                <Text style={{ color: colors.accent, fontSize: 13, fontWeight: "900" }}>Çıkış Yap</Text>
+              </Pressable>
+            </ScrollView>
+          </View>
+          <Pressable accessibilityLabel="Yönetim menüsünü kapat" onPress={() => setAdminNavOpen(false)} style={{ backgroundColor: "rgba(9,39,94,0.42)", flex: 1 }} />
+        </View>
+      </Modal>
+
       {/* Kullanıcıya bildirim gönder — her iki platformda çalışan gerçek metin kutusu
           (eskiden web'de window.prompt, NATIVE'de hiç girdi alınmadan sabit metin). */}
       <Modal visible={notifyTarget !== null} transparent animationType="fade" onRequestClose={() => setNotifyTarget(null)}>
@@ -1338,7 +1455,7 @@ function Dashboard({ usersN, listingsN, salesN, commission, activeN, pendingN, r
 
   return (
     <View style={{ gap: 18 }}>
-      <View style={{ backgroundColor: colors.primaryDark, borderRadius: 18, overflow: "hidden", shadowColor: "#0B3A44", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.18, shadowRadius: 20 }}>
+      <View style={{ backgroundColor: colors.primaryDark, borderRadius: 18, overflow: "hidden", shadowColor: "#001449", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.18, shadowRadius: 20 }}>
         <View style={{ gap: 18, padding: 22 }}>
           <View style={{ alignItems: "flex-start", flexDirection: "row", flexWrap: "wrap", gap: 16, justifyContent: "space-between" }}>
             <View style={{ flex: 1, gap: 6, minWidth: 260 }}>

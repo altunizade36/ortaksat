@@ -22,10 +22,13 @@ export async function fetchDistricts(provinceId: number): Promise<District[]> {
 
 export type Neighborhood = { id: number; provinceId: number; districtId: number; name: string; slug: string };
 
-export async function fetchNeighborhoods(districtId: number): Promise<Neighborhood[]> {
+export async function fetchNeighborhoods(districtId: number, reportErrors = false): Promise<Neighborhood[]> {
   if (!supabase) return [];
   const { data, error } = await supabase.from("neighborhoods").select("id,province_id,district_id,name,slug").eq("district_id", districtId).eq("is_active", true).order("name");
-  if (error || !data) return [];
+  if (error || !data) {
+    if (reportErrors) throw new Error("Neighborhood lookup failed");
+    return [];
+  }
   return data.map((d: { id: number; province_id: number; district_id: number; name: string; slug: string }) => ({ id: d.id, provinceId: d.province_id, districtId: d.district_id, name: d.name, slug: d.slug }));
 }
 

@@ -1,0 +1,64 @@
+import { mobileAuthFixture } from './mobile-auth-fixture.mjs';
+import assert from 'node:assert/strict';
+const f=await mobileAuthFixture({authenticated:true});const {page,browser,go,errors,writes,shot,listing,listingId,api,me}=f;
+try{
+ await page.setViewportSize({width:1440,height:1000});
+ await go('/create');
+ await page.getByText('Kategori seç',{exact:true}).click();
+ await page.getByText('Vasıta',{exact:true}).last().click();
+ await page.getByText('Alt kategori seç',{exact:true}).last().click();
+ await page.getByText('Otomobil',{exact:true}).last().click();
+ await page.getByText('Alt kategori seç',{exact:true}).last().click();
+ await page.getByText('BMW',{exact:true}).last().click();
+ await page.getByText('Alt kategori seç',{exact:true}).last().click();
+ await page.getByText('Diğer Model',{exact:true}).last().click();
+ const input=page.getByTestId('field-title');
+ await input.fill('⫷⫷ iPhone 13 Pro ⫸⫸');
+ await page.getByRole('alert').filter({hasText:'Başlıkta emoji, ok'}).waitFor();
+ await shot({path:'audit/mobile-v4/title-desktop-warning-1440.png'});
+ await input.fill('A'.repeat(71));
+ await page.getByText('Başlık en fazla 70 karakter olabilir. Lütfen kısaltın.',{exact:true}).waitFor();
+ await input.fill('iPhone 13 Pro 128 GB');
+ assert.equal(await page.getByRole('alert').filter({hasText:'Başlık'}).count(),0);
+ for(const width of [320,390,1440]){
+  await page.setViewportSize({width,height:1000});
+  await input.fill('iPhone 13 Pro 128 GB');
+  assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),`Web create overflow at ${width}`);
+ }
+ const rawTitle='⫷⫷PANORAMİK BOĞAZ MANZARALI 433 M2 MÜSTAKİL ARSA⫸⫸';
+ const cleanTitle='PANORAMİK BOĞAZ MANZARALI 433 M2 MÜSTAKİL ARSA';
+ const own={...listing,owner_id:me,title:rawTitle,description:'Yeterli uzunlukta ayrıntılı bir ürün açıklaması.',province_id:34,district_id:34028};
+ await page.route(`${api}/rest/v1/listing_public_cards**`,async route=>{
+  const single=route.request().headers().accept?.includes('vnd.pgrst.object');
+  await route.fulfill({json:single?own:[own]});
+ });
+ await go(`/listing/${listingId}`);
+ await page.getByRole('heading',{name:cleanTitle,exact:true}).waitFor();
+ assert.ok((await page.title()).includes(cleanTitle)&&!(await page.title()).includes('⫷'),'Browser title must include the cleaned listing');
+ const og=await page.locator('meta[property="og:title"]').last().getAttribute('content');
+ assert.ok(og.includes(cleanTitle)&&!og.includes('⫷'),'Open Graph title must match heading');
+ const ld=await page.locator('script[type="application/ld+json"]').allTextContents();
+ assert.ok(ld.some(s=>s.includes(cleanTitle))&&!ld.some(s=>s.includes('⫷')),'Structured data must use clean title');
+ await shot({path:'audit/mobile-v4/title-web-listing-clean-1440.png'});
+ await page.setViewportSize({width:390,height:844});
+ await page.getByRole('heading',{name:cleanTitle,exact:true}).waitFor();
+ await page.evaluate(async()=>{await document.fonts.ready;await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));});
+ const overflow=await page.evaluate(()=>({width:innerWidth,scroll:document.documentElement.scrollWidth,nodes:[...document.querySelectorAll('body *')].filter(e=>e.getBoundingClientRect().right>innerWidth+1).slice(-12).map(e=>({tag:e.tagName,text:e.textContent?.slice(0,90),width:e.getBoundingClientRect().width,right:e.getBoundingClientRect().right,style:e.getAttribute('style')}))}));
+ if(overflow.scroll>overflow.width)console.log('Overflow detail',JSON.stringify(overflow));
+ assert.ok(overflow.scroll<=overflow.width,'Mobile browser detail overflow');
+ await go(`/listing-edit/${listingId}`);
+ const editTitle=page.getByTestId('field-title');
+ await editTitle.waitFor();
+ assert.equal(await editTitle.inputValue(),rawTitle,'Editor must preserve original title for correction');
+ await page.getByRole('alert').filter({hasText:'Başlıkta emoji, ok'}).waitFor();
+ const writesBeforeInvalid=writes.filter(w=>w.table==='listings').length;
+ await page.getByRole('button',{name:'Kaydet',exact:true}).click();
+ await page.getByText('Başlığı düzenleyin',{exact:true}).waitFor();
+ assert.equal(writes.filter(w=>w.table==='listings').length,writesBeforeInvalid,'Web edit must block invalid save');
+ await page.getByRole('button',{name:'Tamam',exact:true}).click();
+ await editTitle.fill('Temiz iPhone 13 Pro 128 GB');
+ assert.equal(await page.getByRole('alert').filter({hasText:'Başlık'}).count(),0);
+ assert.equal(writes.filter(w=>w.table==='listings').length,0);
+ assert.equal(errors.length,0,JSON.stringify(errors));
+ console.log('Passed web titles: desktop create, 320/390/1440px, clean detail/browser/OG/JSON-LD, original preserved in editor, invalid save blocked before writes.');
+}catch(e){console.error(page.url(),(await page.locator('body').innerText()).slice(0,6500));throw e;}finally{await browser.close();}

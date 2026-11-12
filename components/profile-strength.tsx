@@ -5,12 +5,9 @@ import { Pressable, Text, View } from "react-native";
 import { colors } from "@/components/colors";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import type { User } from "@/lib/types";
+import { hasProfilePhoto } from "@/lib/profile-photo";
 
 type IconName = keyof typeof MaterialCommunityIcons.glyphMap;
-
-function isImageAvatar(value: string) {
-  return value.startsWith("http") || value.startsWith("file:");
-}
 
 /**
  * Profil gücü göstergesi + eksikleri tamamlamaya yönlendiren aksiyonlar.
@@ -22,7 +19,7 @@ export function ProfileStrength({ user, hasListing, hasPartnership }: { user: Us
   // TEK onboarding sistemi (eski ayrı OnboardingChecklist kaldırıldı): profil tamamlama +
   // ilk ilan + ilk ortaklık tek listede. Platformun çekirdek eylemi "ilk ortaklık" da burada.
   const items: Array<{ label: string; done: boolean; icon: IconName; href: Href; cta: string }> = [
-    { label: "Profil fotoğrafı ekle", done: isImageAvatar(user.avatar), icon: "camera-outline", href: "/profile-edit", cta: "Ekle" },
+    { label: "Profil fotoğrafı ekle", done: hasProfilePhoto(user.avatar), icon: "camera-outline", href: "/profile-edit", cta: "Ekle" },
     { label: "Kısa tanıtım yaz", done: !!user.bio, icon: "text-account", href: "/profile-edit", cta: "Yaz" },
     { label: "Telefonunu doğrula", done: user.verifiedPhone, icon: "phone-check-outline", href: "/trust", cta: "Doğrula" },
     { label: "Kimliğini doğrula", done: user.verifiedIdentity, icon: "card-account-details-outline", href: "/trust", cta: "Doğrula" },
@@ -58,7 +55,7 @@ export function ProfileStrength({ user, hasListing, hasPartnership }: { user: Us
         {items.map((item) => (
           <View key={item.label} style={{ alignItems: "center", flexDirection: "row", gap: 10 }}>
             <MaterialCommunityIcons name={item.done ? "check-circle" : item.icon} size={18} color={item.done ? colors.success : colors.muted} />
-            <Text style={{ color: item.done ? colors.muted : colors.ink, flex: 1, fontSize: 13, fontWeight: item.done ? "600" : "800", textDecorationLine: item.done ? "line-through" : "none" }}>
+            <Text style={{ color: item.done ? colors.muted : colors.ink, flex: 1, minWidth: 0, fontSize: 13, fontWeight: item.done ? "600" : "800", textDecorationLine: item.done ? "line-through" : "none" }}>
               {translateCopy(item.label, language)}
             </Text>
             {item.done ? (

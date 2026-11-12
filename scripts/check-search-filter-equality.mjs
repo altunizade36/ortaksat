@@ -1,0 +1,15 @@
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import vm from 'node:vm';
+import ts from 'typescript';
+const source=readFileSync('lib/search-filter-equality.ts','utf8');
+const js=ts.transpileModule(source,{compilerOptions:{module:ts.ModuleKind.CommonJS}}).outputText;
+const exports={};vm.runInNewContext(js,{exports});
+const same=exports.sameSearchFilters;
+assert.ok(same({rate:5,attr:{fuel:['Dizel','Benzin']}},{attr:{fuel:['Benzin','Dizel']},rate:5}));
+assert.ok(same(null,{}));assert.ok(same({rate:undefined},{}));
+assert.equal(same({rate:5},{rate:10}),false);
+assert.equal(same({province:'istanbul',district:'kadikoy'},{province:'istanbul',district:'atasehir'}),false);
+assert.equal(same({rating:4},{}),false);
+assert.equal(same({attr:{fuel:['Dizel']}},{attr:{gear:['Dizel']}}),false);
+console.log('Passed seven filter equality cases: key/value order, empty compatibility, distinct rate/location/rating and nested keys.');

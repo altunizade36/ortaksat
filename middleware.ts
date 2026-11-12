@@ -1,3 +1,4 @@
+import { displayListingTitle } from "./lib/listing-title";
 // Vercel Edge Middleware — sosyal medya crawler'ları için per-sayfa OG meta enjekte eder.
 // WhatsApp/Facebook/Twitter/LinkedIn JS çalıştırmaz; bu yüzden /listing/:id ve
 // /kategori/:slug(/:sehir) için gerçek başlık/görsel/açıklama içeren HTML döneriz.
@@ -66,13 +67,14 @@ async function listingResponse(id: string): Promise<Response | undefined> {
   const rows = (await res.json()) as Array<{ title: string; description: string; price: number; image_url: string | null; category: string | null; stock_count: number | null; currency: string | null; commission_tl: number | null; review_count: number | null; attributes?: Record<string, unknown> | null; created_at?: string | null }>;
   const l = rows && rows[0];
   if (!l) return;
+  const listingTitle = displayListingTitle(l.title);
   const url = `https://www.ortaksat.com/listing/${id}`;
   const image = l.image_url || OG_COVER;
   const currency = l.currency || "TRY";
   const priceStr = Number(l.price || 0).toLocaleString("tr-TR");
   const commTl = Number(l.commission_tl || 0);
   const commissionHint = commTl > 0 ? ` Ortak ol, ₺${commTl.toLocaleString("tr-TR")} komisyon kazan.` : "";
-  const title = `${l.title} — ₺${priceStr} | OrtakSat`;
+  const title = `${listingTitle} — ₺${priceStr} | OrtakSat`;
   const desc = `₺${priceStr}.${commissionHint} ${(l.description || "").replace(/\s+/g, " ")}`.trim().slice(0, 185);
   const inStock = (l.stock_count ?? 1) > 0;
 
@@ -91,7 +93,7 @@ async function listingResponse(id: string): Promise<Response | undefined> {
   const product: Record<string, unknown> = {
     "@context": "https://schema.org",
     "@type": "Product",
-    name: l.title,
+    name: listingTitle,
     description: (l.description || "").replace(/\s+/g, " ").slice(0, 500),
     image,
     sku: id,
@@ -155,7 +157,7 @@ async function listingResponse(id: string): Promise<Response | undefined> {
   const catSlug = l.category ? CAT_NAME_TO_SLUG[l.category] : undefined;
   const crumbEls: Array<Record<string, unknown>> = [{ "@type": "ListItem", position: 1, name: "Ana Sayfa", item: "https://www.ortaksat.com/" }];
   if (catSlug && l.category) crumbEls.push({ "@type": "ListItem", position: 2, name: l.category, item: `https://www.ortaksat.com/kategori/${catSlug}` });
-  crumbEls.push({ "@type": "ListItem", position: crumbEls.length + 1, name: l.title, item: url });
+  crumbEls.push({ "@type": "ListItem", position: crumbEls.length + 1, name: listingTitle, item: url });
   const breadcrumb = { "@context": "https://schema.org", "@type": "BreadcrumbList", itemListElement: crumbEls };
 
   // Facebook/Pinterest ürün kartı fiyat etiketleri.
@@ -163,9 +165,9 @@ async function listingResponse(id: string): Promise<Response | undefined> {
 
   // Gerçek indekslenebilir gövde (JS render'a bağlı kalmadan içerik). Crawler bunu okur.
   const crumbHtml = catSlug && l.category
-    ? `<nav><a href="https://www.ortaksat.com/">Ana Sayfa</a> › <a href="https://www.ortaksat.com/kategori/${esc(catSlug)}">${esc(l.category)}</a> › ${esc(l.title)}</nav>`
-    : `<nav><a href="https://www.ortaksat.com/">Ana Sayfa</a> › ${esc(l.title)}</nav>`;
-  const body = `${crumbHtml}<h1>${esc(l.title)}</h1><p><strong>₺${esc(priceStr)}</strong>${commTl > 0 ? ` · Ortak ol, ₺${esc(commTl.toLocaleString("tr-TR"))} komisyon kazan` : ""}${inStock ? "" : " · Stokta yok"}</p><p>${esc((l.description || "").replace(/\s+/g, " ").slice(0, 400))}</p>${image !== OG_COVER ? `<img src="${esc(image)}" alt="${esc(l.title)}" width="600" />` : ""}<p><a href="${esc(url)}">İlanı OrtakSat'ta görüntüle →</a></p>`;
+    ? `<nav><a href="https://www.ortaksat.com/">Ana Sayfa</a> › <a href="https://www.ortaksat.com/kategori/${esc(catSlug)}">${esc(l.category)}</a> › ${esc(listingTitle)}</nav>`
+    : `<nav><a href="https://www.ortaksat.com/">Ana Sayfa</a> › ${esc(listingTitle)}</nav>`;
+  const body = `${crumbHtml}<h1>${esc(listingTitle)}</h1><p><strong>₺${esc(priceStr)}</strong>${commTl > 0 ? ` · Ortak ol, ₺${esc(commTl.toLocaleString("tr-TR"))} komisyon kazan` : ""}${inStock ? "" : " · Stokta yok"}</p><p>${esc((l.description || "").replace(/\s+/g, " ").slice(0, 400))}</p>${image !== OG_COVER ? `<img src="${esc(image)}" alt="${esc(listingTitle)}" width="600" />` : ""}<p><a href="${esc(url)}">İlanı OrtakSat'ta görüntüle →</a></p>`;
 
   return page(title, desc, image, url, "product", `${priceOg}${ld(product)}${ld(breadcrumb)}`, body);
 }
@@ -200,14 +202,14 @@ function cardsItemList(cards: CrawlCard[], name: string) {
       "@type": "ListItem",
       position: i + 1,
       url: `https://www.ortaksat.com/listing/${c.id}`,
-      name: c.title,
+      name: displayListingTitle(c.title),
       image: c.image_url || OG_COVER
     }))
   };
 }
 function cardsBody(cards: CrawlCard[]): string {
   if (!cards.length) return "";
-  return `<ul>${cards.slice(0, 24).map((c) => `<li><a href="https://www.ortaksat.com/listing/${esc(c.id)}">${esc(c.title)} — ₺${esc(Number(c.price || 0).toLocaleString("tr-TR"))}</a></li>`).join("")}</ul>`;
+  return `<ul>${cards.slice(0, 24).map((c) => `<li><a href="https://www.ortaksat.com/listing/${esc(c.id)}">${esc(displayListingTitle(c.title))} — ₺${esc(Number(c.price || 0).toLocaleString("tr-TR"))}</a></li>`).join("")}</ul>`;
 }
 
 async function storeResponse(id: string): Promise<Response | undefined> {

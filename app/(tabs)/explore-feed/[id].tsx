@@ -1,3 +1,4 @@
+import { displayListingTitle } from "@/lib/listing-title";
 import { MaterialCommunityIcons } from "@/components/icons";
 import { Image } from "expo-image";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -94,7 +95,7 @@ export default function ExploreFeedScreen() {
     setCurrentIndex(Math.max(0, Math.min(feed.length - 1, nextIndex)));
   }
 
-  function becomePartner(listing: Listing) {
+  async function becomePartner(listing: Listing) {
     if (!isAuthenticated) { router.push("/auth"); return; }
     // "Zaten ortak" YALNIZ active/pending demektir. cancelled (kendi ayrıldı) / rejected /
     // completed olan ortak DEĞİLDİR → yeniden ortak olabilmeli (joinListing yeniden açar).
@@ -105,7 +106,7 @@ export default function ExploreFeedScreen() {
     }
     if (listing.partnershipMode === "open") {
       // Anında ortaklık: gerçekten ortak yap, paylaşım linki hazır olsun.
-      const created = joinListing(listing.id);
+      const created = await joinListing(listing.id);
       if (created) {
         Alert.alert(
           translateCopy("Ortak oldun! 🎉", language),
@@ -126,15 +127,15 @@ export default function ExploreFeedScreen() {
       router.push(`/listing/${listing.id}`);
       return;
     }
-    const conversation = startConversation(listing.id, owner.id, `${listing.title} ${translateCopy("için bilgi almak istiyorum.", language)}`);
+    const conversation = startConversation(listing.id, owner.id, `${displayListingTitle(listing.title)} ${translateCopy("için bilgi almak istiyorum.", language)}`);
     if (conversation) router.push(`/chat/${conversation.id}`);
   }
 
   async function shareListing(listing: Listing) {
     // MODEL: referans/takip YOK → her zaman DÜZ ürün sayfası linki paylaşılır.
     const url = productUrl(listing);
-    const message = `${listing.title}\n${money(listing.price)}\n${translateCopy("OrtakSat'ta gör:", language)} ${url}`;
-    const r = await shareOrCopy({ title: listing.title, message, url });
+    const message = `${displayListingTitle(listing.title)}\n${money(listing.price)}\n${translateCopy("OrtakSat'ta gör:", language)} ${url}`;
+    const r = await shareOrCopy({ title: displayListingTitle(listing.title), message, url });
     if (r === "copied") showToast(translateCopy("Bağlantı kopyalandı", language));
   }
 
@@ -232,9 +233,9 @@ export default function ExploreFeedScreen() {
             <View style={{ bottom: insets.bottom + 18 + (commentsOpen ? kbInset : 0), gap: 10, left: 14, position: "absolute", right: 78 }}>
               <View style={{ gap: 5 }}>
                 <Text selectable numberOfLines={2} style={{ color: "#FFFFFF", fontSize: 23, fontWeight: "900", lineHeight: 28 }}>
-                  {listing.title}
+                  {displayListingTitle(listing.title)}
                 </Text>
-                <Text selectable numberOfLines={commentsOpen ? 4 : 2} style={{ color: "#E6F8F4", fontSize: 13, fontWeight: "700", lineHeight: 19 }}>
+                <Text selectable numberOfLines={commentsOpen ? 4 : 2} style={{ color: "#E5F0FF", fontSize: 13, fontWeight: "700", lineHeight: 19 }}>
                   {listing.description}
                 </Text>
                 <Pressable
@@ -243,13 +244,13 @@ export default function ExploreFeedScreen() {
                   accessibilityLabel={translateCopy("Satıcı profilini gör", language)}
                   style={({ pressed }) => ({ alignItems: "center", flexDirection: "row", gap: 6, opacity: pressed ? 0.7 : 1 })}
                 >
-                  <MaterialCommunityIcons name="storefront-outline" size={14} color="#CFF8EC" />
-                  <Text selectable numberOfLines={1} style={{ color: "#CFF8EC", flexShrink: 1, fontSize: 12, fontWeight: "900" }}>
+                  <MaterialCommunityIcons name="storefront-outline" size={14} color="#DCE9FF" />
+                  <Text selectable numberOfLines={1} style={{ color: "#DCE9FF", flexShrink: 1, fontSize: 12, fontWeight: "900" }}>
                     {owner?.name ?? translateCopy("Satıcı", language)}
                     {owner && owner.rating > 0 ? ` · ${owner.rating.toFixed(1)} ${translateCopy("puan", language)}` : ` · ${translateCopy("Yeni satıcı", language)}`}
                     {` · ${listing.location} · ${translateCopy(listing.category, language)}`}
                   </Text>
-                  <MaterialCommunityIcons name="chevron-right" size={14} color="#CFF8EC" />
+                  <MaterialCommunityIcons name="chevron-right" size={14} color="#DCE9FF" />
                 </Pressable>
               </View>
 

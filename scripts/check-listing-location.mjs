@@ -1,0 +1,35 @@
+import { createRequire } from 'node:module';
+import { readFileSync, existsSync } from 'node:fs';
+import { resolve, dirname } from 'node:path';
+import vm from 'node:vm';
+import assert from 'node:assert/strict';
+import ts from 'typescript';
+const require = createRequire(import.meta.url), cache = new Map();
+function load(filename) {
+  let path = resolve(filename); if (!existsSync(path)) path += '.ts';
+  if (cache.has(path)) return cache.get(path).exports;
+  const module = { exports: {} }; cache.set(path, module);
+  const code = ts.transpileModule(readFileSync(path, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText;
+  const localRequire = id => id.startsWith('@/') ? load(id.slice(2)) : id.startsWith('.') ? load(resolve(dirname(path), id)) : require(id);
+  vm.runInThisContext(`(function(require,module,exports){${code}\n})`, { filename: path })(localRequire, module, module.exports);
+  return module.exports;
+}
+const { provinces, districts, validateListingLocation, formatLocation, searchProvinces, searchDistricts } = load('lib/locations.ts');
+assert.equal(provinces.length, 81);
+assert.equal(new Set(districts.map(d => d.id)).size, districts.length);
+for (const district of districts) assert.equal(validateListingLocation({ provinceId: district.provinceId, districtId: district.id }), null);
+const istanbul = searchProvinces('istanbul')[0];
+const kadikoy = searchDistricts(istanbul.id, 'kadikoy')[0];
+const ankara = searchProvinces('ankara')[0];
+const location = { provinceId: istanbul.id, districtId: kadikoy.id, neighborhood: 'Örnek Mahallesi' };
+assert.ok(validateListingLocation({}));
+assert.ok(validateListingLocation({ ...location, provinceId: ankara.id }));
+assert.ok(validateListingLocation({ ...location, districtId: -1 }));
+assert.ok(validateListingLocation({ ...location, neighborhood: 'a'.repeat(101) }));
+assert.ok(validateListingLocation({ ...location, neighborhood: 'Örnek\u202eMahallesi' }));
+assert.equal(formatLocation(location, 'city_only'), 'İstanbul');
+assert.equal(formatLocation(location, 'district_only'), 'İstanbul / Kadıköy');
+assert.equal(formatLocation(location, 'neighborhood'), 'İstanbul / Kadıköy / Örnek Mahallesi');
+assert.equal(formatLocation({ ...location, provinceId: ankara.id }, 'neighborhood'), 'Ankara');
+assert.equal(formatLocation({}, 'neighborhood'), '');
+console.log(`Passed: 81 provinces, ${districts.length} district relationships, Turkish search, invalid IDs, length/hidden characters and public visibility formatting.`);

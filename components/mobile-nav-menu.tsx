@@ -1,10 +1,11 @@
+import { WebAccountMenu } from "@/components/web-account-menu";
 import { MaterialCommunityIcons } from "@/components/icons";
 import { useRouter, type Href } from "expo-router";
 import { useState } from "react";
 import { Modal, Pressable, ScrollView, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { BrandMark } from "@/components/brand/brand-mark";
+import { MobileBrand } from "@/components/mobile-brand";
 import { colors } from "@/components/colors";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { useStore } from "@/lib/use-store";
@@ -28,29 +29,6 @@ export function MobileNavMenu() {
   // Bekleyen teklif (satıcı karşı-teklif verdi, sıra bende) — masaüstü menüyle aynı rozet.
   const pendingOffers = offers.filter((o) => o.buyerId === currentUser.id && o.status === "countered").length;
   const badgeTotal = unreadMsg + unreadNotif + pendingOffers;
-
-  const primary: NavItem[] = [
-    { label: "Ana Sayfa", href: "/", icon: "home-outline" },
-    { label: "Keşfet", href: "/explore", icon: "play-box-multiple-outline" },
-    { label: "Kategoriler", href: "/kategoriler", icon: "shape-outline" },
-    { label: "İlan Ver", href: "/create", icon: "store-plus-outline" },
-    { label: "Ortak Satış Fırsatları", href: "/partner", icon: "handshake-outline" }
-  ];
-  const isStaff = currentUser.role === "admin" || currentUser.role === "moderator" || currentUser.role === "super_admin";
-  const account: NavItem[] = [
-    // Yönetim Paneli — yalnız staff (admin/moderatör). Masaüstü header'da vardı, mobilde YOKTU
-    // → admin panele mobilden erişmek için URL'yi elle yazmak gerekiyordu. En üstte, belirgin.
-    ...(isStaff ? [{ label: "Yönetim Paneli", href: "/admin" as Href, icon: "shield-crown-outline" as IconName }] : []),
-    { label: "Favorilerim", href: "/favorites", icon: "heart-outline" },
-    { label: "Takip Ettiklerin", href: "/following", icon: "storefront-check-outline" },
-    { label: "Tekliflerim", href: "/offers", icon: "tag-outline", badge: pendingOffers },
-    { label: "Mesajlar", href: "/(tabs)/messages", icon: "message-text-outline", badge: unreadMsg },
-    { label: "Bildirimler", href: "/(tabs)/notifications-tab", icon: "bell-outline", badge: unreadNotif },
-    { label: "Satıcı Panelim", href: "/(tabs)/seller", icon: "storefront-outline" },
-    { label: "Kazançlarım", href: "/earnings", icon: "cash-multiple" },
-    { label: "Profilim", href: "/(tabs)/profile", icon: "account-circle-outline" },
-    { label: "Menü & Ayarlar", href: "/(tabs)/menu", icon: "cog-outline" }
-  ];
 
   function go(href: Href) {
     setOpen(false);
@@ -85,9 +63,9 @@ export function MobileNavMenu() {
             {/* Başlık */}
             <View style={{ alignItems: "center", flexDirection: "row", gap: 10, paddingBottom: 12, paddingHorizontal: 16 }}>
               {/* Gerçek marka logosu (eskiden jenerik vektör "handshake" ikonuydu). */}
-              <BrandMark size={40} />
+              <MobileBrand size={21} />
               <View style={{ flex: 1, minWidth: 0 }}>
-                <Text style={{ color: colors.primaryDark, fontSize: 18, fontWeight: "900" }}>ortaksat</Text>
+
                 <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 11.5, fontWeight: "700" }}>{isAuthenticated ? currentUser.name : translateCopy("Ortak satışla kazan", language)}</Text>
               </View>
               <Pressable accessibilityLabel={translateCopy("Kapat", language)} hitSlop={6} onPress={() => setOpen(false)} style={{ alignItems: "center", justifyContent: "center", minHeight: 44, minWidth: 44 }}>
@@ -96,11 +74,7 @@ export function MobileNavMenu() {
             </View>
 
             <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + 20 }}>
-              <View style={{ backgroundColor: colors.line, height: 1, marginBottom: 6 }} />
-              {primary.map((item) => <Row key={item.label} item={item} onPress={() => go(item.href)} />)}
-              <View style={{ backgroundColor: colors.line, height: 1, marginVertical: 6 }} />
-              {account.map((item) => <Row key={item.label} item={item} onPress={() => go(item.href)} />)}
-              <View style={{ backgroundColor: colors.line, height: 1, marginVertical: 6 }} />
+              <WebAccountMenu onNavigate={() => setOpen(false)} />
               {isAuthenticated ? (
                 <Row item={{ label: "Çıkış Yap", href: "/", icon: "logout" }} danger onPress={() => { setOpen(false); void signOut(); router.replace("/"); }} />
               ) : (

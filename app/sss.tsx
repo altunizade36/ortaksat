@@ -12,6 +12,8 @@ import { WebFooter } from "@/components/web-landing";
 import { SUPPORT_EMAIL } from "@/lib/contact";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { useIsWideWeb } from "@/lib/layout";
+import { isMobileApp } from "@/lib/mobile-app";
+import { MobileHelpCenter } from "@/components/mobile/help-center";
 
 type IconName = keyof typeof MaterialCommunityIcons.glyphMap;
 
@@ -75,7 +77,8 @@ const faqLd = JSON.stringify({
 });
 
 export default function FaqScreen() {
-  return <ContentPageView slug="sss" fallback={<FaqScreenStatic />} />;
+  if (isMobileApp) return <MobileHelpCenter questions={FAQ} />;
+  return <><Head><script type="application/ld+json" dangerouslySetInnerHTML={{ __html: faqLd }} /></Head><ContentPageView slug="sss" fallback={<MobileHelpCenter questions={FAQ} />} /></>;
 }
 
 function FaqScreenStatic() {

@@ -2,6 +2,9 @@ import Constants from "expo-constants";
 import { Platform } from "react-native";
 
 import { savePushTokenLive } from "@/lib/live-service";
+import { notificationEnabled } from "@/lib/notification-preferences";
+let currentPreferences:Record<string,unknown>={notify_all_off:true};
+export function setPushPreferences(preferences:Record<string,unknown>){currentPreferences=preferences;}
 
 /**
  * Native push kaydı. YALNIZCA native'de (web'de no-op). Kullanıcı girişte çağrılır.
@@ -10,7 +13,7 @@ import { savePushTokenLive } from "@/lib/live-service";
  * İçerik/gönderim sunucudadır (notifications INSERT → push_on_notification trigger).
  */
 export async function registerForPush(): Promise<void> {
-  if (Platform.OS === "web") return;
+  if (Platform.OS === "web" || Constants.executionEnvironment === "storeClient") return;
   try {
     const projectId =
       (Constants.expoConfig?.extra?.eas?.projectId as string | undefined) ??
@@ -48,16 +51,15 @@ export async function registerForPush(): Promise<void> {
 
 /** Uygulama önplandayken bildirim davranışı (native). Web'de no-op. */
 export async function configurePushHandler(): Promise<void> {
-  if (Platform.OS === "web") return;
+  if (Platform.OS === "web" || Constants.executionEnvironment === "storeClient") return;
   try {
     const Notifications = await import("expo-notifications");
     Notifications.setNotificationHandler({
-      handleNotification: async () => ({
-        shouldShowBanner: true,
-        shouldShowList: true,
-        shouldPlaySound: false,
-        shouldSetBadge: true
-      })
+      handleNotification: async notification => {
+        const type=String(notification.request.content.data?.type||"system");
+        const enabled=notificationEnabled(currentPreferences,type)&&!(type==="message"&&currentPreferences.notify_message_inapp_only===true);
+        return {shouldShowBanner:enabled,shouldShowList:enabled,shouldPlaySound:false,shouldSetBadge:enabled};
+      }
     });
   } catch {
     /* no-op */

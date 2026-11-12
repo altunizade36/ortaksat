@@ -1,7 +1,7 @@
+import { UserAvatar } from "@/components/user-avatar";
 import { MaterialCommunityIcons } from "@/components/icons";
 import { Link, usePathname, useRouter, type Href } from "expo-router";
-import { Image } from "expo-image";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Pressable, ScrollView, Text, useWindowDimensions, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -10,10 +10,11 @@ import { PressLink } from "@/components/ui";
 import { GlobalSearchBar } from "@/components/global-search-bar";
 import { MobileNavMenu } from "@/components/mobile-nav-menu";
 import { HeaderActions } from "@/components/header-actions";
-import { BrandMark } from "@/components/brand/brand-mark";
+import { MobileBrand } from "@/components/mobile-brand";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { useIsWideWeb } from "@/lib/layout";
 import { useStore } from "@/lib/use-store";
+import { useBackNavigation } from "@/lib/use-back-navigation";
 
 type NavItem = { href: Href; label: string; match: (path: string) => boolean; caret?: boolean };
 
@@ -21,10 +22,15 @@ export function AppHeader() {
   const insets = useSafeAreaInsets();
   const pathname = usePathname();
   const router = useRouter();
+  const goBack = useBackNavigation();
+  const { width } = useWindowDimensions();
   const { language, t } = useLanguage();
   const isWideWeb = useIsWideWeb();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
   const isHome = pathname === "/" || pathname === "/index";
   const showBack = !isWideWeb && !isHome;
+  const compactMobile = mounted && !isWideWeb && width < 360;
   // Masaüstünde de alt sayfalarda (ilan detayı, sohbet, mağaza, form ekranları…)
   // geri butonu göster ki kullanıcı tarayıcı geri tuşuna muhtaç kalmasın.
   const showDesktopBack = isWideWeb && !isHome && router.canGoBack();
@@ -38,14 +44,6 @@ export function AppHeader() {
     { href: "/nasil-calisir", label: "Nasıl Çalışır?", match: (p) => p.startsWith("/nasil-calisir") },
     { href: "/blog", label: "Blog", match: (p) => p.startsWith("/blog") }
   ];
-
-  function goBack() {
-    if (router.canGoBack()) {
-      router.back();
-      return;
-    }
-    router.replace("/");
-  }
 
   if (isWideWeb) {
     return (
@@ -66,11 +64,7 @@ export function AppHeader() {
           ) : null}
           <Link href="/" asChild>
             <Pressable accessibilityRole="link" accessibilityLabel={translateCopy("OrtakSat ana sayfa", language)} style={{ alignItems: "center", flexDirection: "row", gap: 10 }}>
-              <BrandMark size={40} />
-              <View style={{ gap: 1 }}>
-                <Text numberOfLines={1} style={{ color: colors.primaryDark, fontSize: 22, fontWeight: "900" }}>ortaksat</Text>
-                <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 11, fontWeight: "700" }}>{t("appSlogan")}</Text>
-              </View>
+              <MobileBrand size={29} />
             </Pressable>
           </Link>
           <View style={{ flexShrink: 1, maxWidth: 640, minWidth: 168, width: 640 }}>
@@ -146,26 +140,18 @@ export function AppHeader() {
             </View>
           </Pressable>
         ) : null}
-        {!showBack ? <View style={{ marginRight: 8, zIndex: 2 }}><MobileNavMenu /></View> : null}
+        {!showBack ? <View style={{ marginRight: compactMobile ? 4 : 8, zIndex: 2 }}><MobileNavMenu /></View> : null}
         <Link href="/" asChild>
-          <Pressable accessibilityRole="link" accessibilityLabel={translateCopy("OrtakSat ana sayfa", language)} style={{ alignItems: "center", flex: 1, flexDirection: "row", gap: 9, minWidth: 0 }}>
-            <BrandMark size={36} />
-            {/* flex:1 ŞART: minWidth:0 tek başına RNW'de no-op (View zaten flexShrink:0) →
-                kutu max-content kalıyor, 320-375px'te "ortaksat"+slogan header butonlarının
-                ALTINA giriyordu (390px'te kıl payı sığdığı için testlerde görünmedi). */}
-            <View style={{ flex: 1, gap: 0, minWidth: 0 }}>
-              <Text selectable numberOfLines={1} style={{ color: colors.primaryDark, fontSize: 18, fontWeight: "900", letterSpacing: 0 }}>
-                ortaksat
-              </Text>
-              <Text selectable numberOfLines={1} style={{ color: colors.muted, fontSize: 11, fontWeight: "800" }}>
-                {t("appSlogan")}
-              </Text>
-            </View>
+          <Pressable accessibilityRole="link" accessibilityLabel={translateCopy("OrtakSat ana sayfa", language)} style={{ alignItems: "center", flex: 1, flexDirection: "row", gap: compactMobile ? 6 : 9, minWidth: 0 }}>
+            <MobileBrand size={compactMobile ? 21 : 25} />
           </Pressable>
         </Link>
         <HeaderActions />
       </View>
       <GlobalSearchBar />
+      <View testID="mobile-web-primary-nav" style={{ flexDirection: "row", borderTopWidth: 1, borderTopColor: colors.line, marginTop: 4 }}>
+        {([{ href: "/explore", label: "Keşfet" }, { href: "/partner", label: "Ortak Satış" }, { href: "/kategoriler", label: "Kategoriler" }, { href: "/menu", label: "Menü" }] as const).map(item => <Link key={item.href} href={item.href} asChild><Pressable accessibilityRole="link" style={{ flex: 1, minHeight: 44, alignItems: "center", justifyContent: "center", borderBottomWidth: 2, borderBottomColor: pathname.startsWith(item.href) ? colors.primary : "transparent" }}><Text style={{ color: pathname.startsWith(item.href) ? colors.primaryDark : colors.muted, fontSize: 12, fontWeight: "700" }}>{translateCopy(item.label, language)}</Text></Pressable></Link>)}
+      </View>
     </View>
   );
 }
@@ -285,7 +271,6 @@ function AccountMenu() {
   const { language } = useLanguage();
   const { height: winHeight } = useWindowDimensions();
   const { isAuthenticated, currentUser, messages, notifications, offers, signOut } = useStore();
-  const avatarIsImage = isAuthenticated && (currentUser.avatar?.startsWith("http") || currentUser.avatar?.startsWith("file"));
   const unreadMessages = messages.filter((m) => m.receiverId === currentUser.id && !m.read).length;
   const unreadNotifications = notifications.filter((n) => n.userId === currentUser.id && !n.read).length;
   // Tekliflerim rozeti: satıcı karşı-teklif verdi, SIRA BENDE (alıcı) → aksiyon gerekli.
@@ -353,13 +338,7 @@ function AccountMenu() {
             {/* Başlık */}
             <View style={{ alignItems: "center", backgroundColor: colors.primaryDark, flexDirection: "row", gap: 11, paddingHorizontal: 15, paddingVertical: 13 }}>
               <View style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.16)", borderRadius: 999, height: 40, justifyContent: "center", overflow: "hidden", width: 40 }}>
-                {avatarIsImage ? (
-                  <Image source={{ uri: currentUser.avatar }} contentFit="cover" style={{ height: 40, width: 40 }} />
-                ) : isAuthenticated && currentUser.avatar && currentUser.avatar.length <= 3 ? (
-                  <Text style={{ color: "#FFFFFF", fontSize: 17, fontWeight: "900" }}>{currentUser.avatar}</Text>
-                ) : (
-                  <MaterialCommunityIcons name="account" size={22} color="#FFFFFF" />
-                )}
+                <UserAvatar uri={currentUser.avatar} size={40} />
               </View>
               <View style={{ flex: 1, minWidth: 0 }}>
                 <Text numberOfLines={1} style={{ color: "#FFFFFF", fontSize: 14, fontWeight: "900" }}>{isAuthenticated ? currentUser.name : translateCopy("Hesabım", language)}</Text>
@@ -424,4 +403,3 @@ function AccountMenu() {
     </View>
   );
 }
-

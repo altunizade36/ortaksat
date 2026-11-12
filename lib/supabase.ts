@@ -1,6 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { createClient } from "@supabase/supabase-js";
-import { Platform } from "react-native";
+import { AppState, Platform } from "react-native";
 
 // Native (iOS/Android): AsyncStorage GERÇEK kalıcı depodur → oturum persist + auto-refresh
 // AÇIK olmalı. Önceki config native'i "tarayıcı yok = depolama yok" sanıp persistSession'ı
@@ -132,3 +132,12 @@ export const supabase = isSupabaseConfigured
       }
     })
   : null;
+
+// One client owns token refresh; backgrounding the app does not discard its persisted session.
+if (isNativeApp && supabase) {
+  const client = supabase;
+  AppState.addEventListener("change", state => {
+    if (state === "active") client.auth.startAutoRefresh();
+    else client.auth.stopAutoRefresh();
+  });
+}

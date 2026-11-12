@@ -1,3 +1,5 @@
+import { CompactFooter } from "@/components/compact-footer";
+import { isMobileApp } from "@/lib/mobile-app";
 import Head from "expo-router/head";
 import { useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
@@ -41,6 +43,7 @@ export default function CreateListingScreen() {
   if (isAuthenticated && platformSettings.requireEmailVerification && !emailVerified) {
     return <AuthRequired title={translateCopy("E-posta doğrulaması gerekli", language)} body={translateCopy("İlan verebilmek için e-posta adresini doğrulaman gerekiyor. Kayıt sırasında gönderilen doğrulama bağlantısına tıkla, ardından tekrar giriş yap.", language)} icon="email-alert-outline" />;
   }
+  if (isMobileApp) return <DesktopCreateFlow initialIntent={initialIntent} />;
   return (
     <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={{ flex: 1 }}>
       <Head>
@@ -57,10 +60,11 @@ export default function CreateListingScreen() {
         contentInsetAdjustmentBehavior="automatic"
         showsVerticalScrollIndicator={false}
         style={{ backgroundColor: colors.background }}
-        contentContainerStyle={{ backgroundColor: colors.background, paddingBottom: 48, paddingHorizontal: isWideWeb ? 20 : 12, paddingTop: 16 }}
+        contentContainerStyle={{ flexGrow: 1, backgroundColor: colors.background, paddingBottom: 48, paddingHorizontal: isWideWeb ? 20 : 12, paddingTop: 16 }}
       >
         <View style={{ alignSelf: "center", maxWidth: 1280, width: "100%" }}>
           <DesktopCreateFlow initialIntent={initialIntent} />
+          {!isWideWeb && <CompactFooter />}
         </View>
       </ScrollView>
     </KeyboardAvoidingView>

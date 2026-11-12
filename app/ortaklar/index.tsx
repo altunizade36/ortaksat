@@ -74,7 +74,7 @@ function Inner() {
   const pad = 12;
   const inner = Math.min(width, PAGE_MAX_WIDTH) - pad * 2;
   const gap = 10;
-  const cardWidth = responsiveGrid({ available: inner, gap, minCardWidth: isWideWeb ? 240 : 168, minColumns: isWideWeb ? 3 : 2 }).cardWidth;
+  const cardWidth = responsiveGrid({ available: inner, gap, minCardWidth: isWideWeb ? 240 : width >= 600 ? 230 : 168, minColumns: isWideWeb ? 3 : 2 }).cardWidth;
   const cityQuery = citySearch.trim();
   const filteredProvinces = cityQuery ? TR_PROVINCES.filter((p) => citySlug(p).includes(citySlug(cityQuery))) : TR_PROVINCES;
 
@@ -287,7 +287,7 @@ function PartnerCard({ entry, width, favorited, isSelf, onFav }: { entry: Partne
           {chips.length > 0 ? (
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 5 }}>
               {chips.map((c) => (
-                <View key={c} style={{ backgroundColor: colors.primarySoft, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 3 }}>
+                <View key={c} style={{ backgroundColor: colors.primarySoft, borderRadius: 999, maxWidth: "100%", paddingHorizontal: 8, paddingVertical: 3 }}>
                   <Text numberOfLines={1} style={{ color: colors.primaryDark, fontSize: 10.5, fontWeight: "800" }}>{t(c)}</Text>
                 </View>
               ))}

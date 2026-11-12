@@ -1,5 +1,5 @@
+import { UserAvatar } from "@/components/user-avatar";
 import { MaterialCommunityIcons } from "@/components/icons";
-import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import { Pressable, Text, TextInput, View } from "react-native";
@@ -13,6 +13,7 @@ import { shortDate } from "@/lib/locale";
 import { displayText } from "@/lib/text";
 import { replyToReviewLive, toggleReviewHelpfulLive } from "@/lib/live-service";
 import type { Review } from "@/lib/types";
+import { EvidenceGallery } from "@/components/mobile/evidence";
 
 /*
  * Yorum kartı — TEK kaynak. Eskiden yalnız mağaza sayfasının içinde yerel bir
@@ -85,13 +86,7 @@ export function ReviewCard({ review, reviewerName, isSeller, authed, onPatch, on
     <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 8, padding: 16 }}>
       <View style={{ alignItems: "center", flexDirection: "row", gap: 10 }}>
         <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 999, height: 38, justifyContent: "center", overflow: "hidden", width: 38 }}>
-          {review.reviewerAvatar && review.reviewerAvatar.startsWith("http") ? (
-            <Image source={{ uri: review.reviewerAvatar }} contentFit="cover" style={{ height: 38, width: 38 }} accessibilityLabel={reviewerName ?? undefined} />
-          ) : review.reviewerAvatar && review.reviewerAvatar.trim() ? (
-            <Text style={{ color: colors.primaryDark, fontSize: 16, fontWeight: "900" }}>{review.reviewerAvatar.trim().slice(0, 2)}</Text>
-          ) : (
-            <MaterialCommunityIcons name="account" size={20} color={colors.primaryDark} />
-          )}
+          <UserAvatar uri={review.reviewerAvatar} size={38} />
         </View>
         <View style={{ flex: 1, minWidth: 0 }}>
           <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
@@ -123,7 +118,9 @@ export function ReviewCard({ review, reviewerName, isSeller, authed, onPatch, on
           </View>
         </View>
       ) : (
-        <Text style={{ color: colors.ink, fontSize: 13.5, fontWeight: "500", lineHeight: 20 }}>{review.comment}</Text>
+        <View style={{gap:8}}><Text style={{ color: colors.ink, fontSize: 13.5, fontWeight: "500", lineHeight: 20 }}>{review.comment}</Text>
+        {!!review.experienceTags?.length&&<Text style={{color:colors.primary,fontSize:11,lineHeight:18}}>{review.experienceTags.join(" · ")}</Text>}
+        {!!review.mediaPaths?.length&&<EvidenceGallery paths={review.mediaPaths} bucket="review-media"/>}</View>
       )}
 
       {savedReply ? (

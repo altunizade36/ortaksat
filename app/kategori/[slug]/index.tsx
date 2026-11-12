@@ -1,3 +1,7 @@
+import { isMobileApp } from "@/lib/mobile-app";
+import { listingInCategoryNode, listingRootNode } from "@/lib/category-match";
+import { HorizontalScroll } from "@/components/horizontal-scroll";
+import { MobileCatalogue } from "@/components/mobile/catalogue";
 import { MaterialCommunityIcons } from "@/components/icons";
 import { Link, useLocalSearchParams, useRouter, type Href } from "expo-router";
 import Head from "expo-router/head";
@@ -77,12 +81,19 @@ export async function generateStaticParams(): Promise<Array<{ slug: string }>> {
 const PAGE = 24;
 
 export default function CategoryLandingScreen() {
+  const params = useLocalSearchParams<{ slug?: string }>();
+  return isMobileApp ? <MobileCatalogue slug={String(params.slug || "")} /> : <CategoryLandingScreenLegacy />;
+}
+
+function CategoryLandingScreenLegacy() {
   const { language } = useLanguage();
   const params = useLocalSearchParams<{ slug: string }>();
   const slug = Array.isArray(params.slug) ? params.slug[0] : params.slug;
   const router = useRouter();
   const { width } = useWindowDimensions();
   const isWideWeb = useIsWideWeb();
+  const [introExpanded, setIntroExpanded] = useState(false);
+  useEffect(() => setIntroExpanded(false), [slug]);
   // Hidrasyon güvenliği: SSG'de gerçek genişlik yok → cardWidth sunucu/istemci
   // arasında uyuşmayıp React #418 üretiyordu. Mount'a kadar sabit genişlik kullan
   // (içerik SEO için render edilmeye devam eder), sonra gerçek genişliğe geç.
@@ -182,7 +193,7 @@ export default function CategoryLandingScreen() {
     // Kesin (tam) eşleşme — alt-metin eşleşmesi kategoriler arası sızıntı yapıyordu
     // (ör. "Yat" ⊂ "Yatak"). Bileşik/eski kategori ("Konut - Satılık") ayraçla bölünüp
     // TAM segment eşleşmesiyle kurtarılır (kelime-tam, alt-metin değil).
-    const matchCat = (cat: string) => {
+    const matchCatLegacy = (cat: string) => {
       const nc = cat.toLocaleLowerCase("tr-TR").trim();
       if (labels.has(cat) || nlabels.has(nc)) return true;
       const segs = nc.split(/\s*[-/>·|]\s*/).map((s) => s.trim()).filter((s) => s.length > 2);
@@ -197,7 +208,7 @@ export default function CategoryLandingScreen() {
     for (const l of memListings) if (!seen.has(l.id)) { seen.add(l.id); source.push(l); }
     for (const l of serverCat.listings) if (!seen.has(l.id)) { seen.add(l.id); source.push(l); }
     const out = source.filter((l) => {
-      if (l.status !== "active" || !matchCat(l.category)) return false;
+      if (l.status !== "active" || !listingInCategoryNode(l, node)) return false;
       if (!matchesLocationFilter(l, loc.provinceId, loc.districtId)) return false;
       if (band && (l.price < band[0] || l.price > band[1])) return false;
       if (onlyOpen && l.partnershipMode !== "open") return false;
@@ -378,25 +389,28 @@ export default function CategoryLandingScreen() {
             <MaterialCommunityIcons name={getCategoryIcon(node.label)} size={26} color={colors.primaryDark} />
           </View>
           <View style={{ flex: 1, gap: 3, minWidth: 0 }}>
-            <Text accessibilityRole="header" {...({ role: "heading", "aria-level": 1 } as Record<string, unknown>)} style={{ color: colors.ink, fontSize: 24, fontWeight: "900" }}>{intentPrefix}{needsCtx ? (modifierFirst ? `${translateCopy(node.label, language)} ${translateCopy(parentLabel, language)}` : `${translateCopy(parentLabel, language)} ${translateCopy(node.label, language)}`) : translateCopy(node.label, language)} ilanları</Text>
+            <Text accessibilityRole="header" {...({ role: "heading", "aria-level": 1 } as Record<string, unknown>)} style={{ color: colors.ink, fontSize: isWideWeb ? 24 : 20, lineHeight: isWideWeb ? 32 : 26, fontWeight: "800" }}>{intentPrefix}{needsCtx ? (modifierFirst ? `${translateCopy(node.label, language)} ${translateCopy(parentLabel, language)}` : `${translateCopy(parentLabel, language)} ${translateCopy(node.label, language)}`) : translateCopy(node.label, language)} ilanları</Text>
             <Text style={{ color: colors.muted, fontSize: 13.5, fontWeight: "600" }}>{items.length} ortak satış ilanı · komisyonlu ürünleri keşfet</Text>
           </View>
         </View>
 
         {/* SEO: kategoriye ÖZGÜ tanıtım (gerçek şema verisinden türetilir → thin-content/near-dup korur) */}
-        <Text style={{ color: colors.muted, fontSize: 14, fontWeight: "600", lineHeight: 21 }}>{introText}</Text>
+        <View>
+          <Text numberOfLines={isWideWeb || introExpanded ? undefined : 2} style={{ color: colors.muted, fontSize: 13, fontWeight: "400", lineHeight: 20 }}>{introText}</Text>
+          {!isWideWeb && <Pressable accessibilityRole="button" accessibilityState={{ expanded: introExpanded }} onPress={() => setIntroExpanded(v => !v)} style={{ minHeight: 44, alignSelf: "flex-start", justifyContent: "center" }}><Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "600" }}>{translateCopy(introExpanded ? "Daha az göster" : "Kategori hakkında", language)}</Text></Pressable>}
+        </View>
 
         {/* Alt kategoriler (varsa) */}
         {node.children && node.children.length > 0 ? (
-          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+          <HorizontalScroll testID="category-children" showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
             {node.children.map((c) => (
               <Link key={c.key} href={{ pathname: "/kategori/[slug]", params: { slug: c.slug } } as unknown as Href} asChild>
-                <Pressable style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 7 }}>
-                  <Text style={{ color: colors.ink, fontSize: 12.5, fontWeight: "800" }}>{translateCopy(c.label, language)}</Text>
+                <Pressable style={{ justifyContent: "center", minHeight: 44, maxWidth: 240, backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 12, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 7 }}>
+                  <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 12.5, fontWeight: "600" }}>{translateCopy(c.label, language)}</Text>
                 </Pressable>
               </Link>
             ))}
-          </View>
+          </HorizontalScroll>
         ) : null}
 
         {/* SEO YATAY İÇ-LİNK AĞI: kardeş kategoriler. Hub'lar eskiden yalnız yukarı (breadcrumb) +
@@ -407,15 +421,15 @@ export default function CategoryLandingScreen() {
           return siblings.length > 0 ? (
             <View style={{ gap: 6 }}>
               <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>{translateCopy("İlgili kategoriler", language)}</Text>
-              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+              <HorizontalScroll showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
                 {siblings.map((s) => (
                   <Link key={s.key} href={catHref(s.slug)} asChild>
-                    <Pressable style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 7 }}>
-                      <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "700" }}>{translateCopy(s.label, language)}</Text>
+                    <Pressable style={{ justifyContent: "center", minHeight: 44, maxWidth: 240, backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 7 }}>
+                      <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 12, fontWeight: "600" }}>{translateCopy(s.label, language)}</Text>
                     </Pressable>
                   </Link>
                 ))}
-              </View>
+              </HorizontalScroll>
             </View>
           ) : null;
         })() : null}
@@ -423,15 +437,15 @@ export default function CategoryLandingScreen() {
         {/* SEO: tüm ana kategoriler rayı — HER hub'dan 11 köke crawl/otorite yolu (mesh'i kapatır). */}
         <View style={{ gap: 6 }}>
           <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>{translateCopy("Tüm kategoriler", language)}</Text>
-          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+          <HorizontalScroll testID="category-roots" showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
             {CATEGORY_TREE.map((r) => (
               <Link key={r.key} href={catHref(r.slug)} asChild>
-                <Pressable style={{ backgroundColor: r.slug === (ancestors[0]?.slug ?? node.slug) ? colors.primarySoft : colors.surface, borderColor: colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 7 }}>
-                  <Text style={{ color: colors.ink, fontSize: 12, fontWeight: "700" }}>{translateCopy(r.label, language)}</Text>
+                <Pressable style={{ justifyContent: "center", minHeight: 44, maxWidth: 240, backgroundColor: r.slug === (ancestors[0]?.slug ?? node.slug) ? colors.primarySoft : colors.surface, borderColor: colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 7 }}>
+                  <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 12, fontWeight: "600" }}>{translateCopy(r.label, language)}</Text>
                 </Pressable>
               </Link>
             ))}
-          </View>
+          </HorizontalScroll>
         </View>
 
         {/* Sıralama + hızlı filtreler */}

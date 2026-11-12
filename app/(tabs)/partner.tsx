@@ -1,3 +1,9 @@
+import { HorizontalScroll } from "@/components/horizontal-scroll";
+import { CompactFooter } from "@/components/compact-footer";
+import { displayListingTitle } from "@/lib/listing-title";
+import { isMobileApp } from "@/lib/mobile-app";
+import { MobileProfile } from "@/components/mobile/profile";
+import { MobilePartnershipHub } from "@/components/mobile/partnership-hub";
 ﻿import { MaterialCommunityIcons } from "@/components/icons";
 import * as Clipboard from "expo-clipboard";
 import { Image } from "expo-image";
@@ -69,7 +75,10 @@ function provinceOf(location: string): string {
 export default function PartnerScreen() {
   // Hidrasyon-gate: SSG (verisiz) ↔ istemci (girişli, veri dolu) render'ı arasındaki
   // React #418 metin uyuşmazlığını gider; mount'a kadar iskelet.
-  return useMounted() ? <PartnerScreenInner /> : <ScreenSkeleton />;
+  const mounted = useMounted();
+  const params = useLocalSearchParams<{ view?: string }>();
+  if (!mounted) return <ScreenSkeleton />;
+  return params.view !== "advanced" ? <MobilePartnershipHub /> : <PartnerScreenInner />;
 }
 
 function PartnerScreenInner() {
@@ -194,7 +203,10 @@ function PartnerScreenInner() {
   // Ortaklık fırsatları: başkalarının TÜM aktif ilanları (herkese açık, global).
   // Reddedilenler HARİÇ: reddedilen bir başvuru fırsat listesinde "Ortak" (pasif) gösterip
   // tekrar başvuruyu engelliyordu; joinListing yeniden-açmayı destekliyor.
-  const joinedIds = new Set(myPartnerships.filter((p) => p.status !== "rejected").map((p) => p.listingId));
+  // Sonlandırılan/tamamlanan (cancelled/completed) ortaklıklar da HARİÇ: joinListing bunları da
+  // yeniden açar (REOPENABLE); eskiden "Ortak" (pasif) görünüp yeniden katılım engelleniyordu.
+  // Durum da taşınır: bekleyen başvuru "Ortak" değil "Bekliyor", engellenen "Kapalı" görünür.
+  const joinedStatus = new Map<string, Partnership["status"]>(myPartnerships.filter((p) => p.status === "active" || p.status === "pending" || p.status === "blocked").map((p) => [p.listingId, p.status]));
   // "Sadece davetle" ilanlar fırsat listesinde gösterilmez — bunlara yalnızca
   // satıcının paylaştığı davet linkiyle ortak olunabilir.
   // ÖRNEK/vitrin (demo) ilanlar ortaklığa KAPALI (joinListing engeller) → fırsat listesinden
@@ -246,7 +258,7 @@ function PartnerScreenInner() {
   const oppCategoryOptions = useMemo(() => Array.from(new Set(allOpportunities.map((l) => l.category))).sort((a, b) => a.localeCompare(b, "tr")), [allOpportunities]);
   const oppCityOptions = useMemo(() => Array.from(new Set(allOpportunities.map((l) => l.location))).sort((a, b) => a.localeCompare(b, "tr")), [allOpportunities]);
 
-  function onJoin(listingId: string) {
+  async function onJoin(listingId: string) {
     // Anonim: girişe yönlendir (dönüşte ilana gelir) — alert'te tıkanma yok.
     if (!isAuthenticated) { router.push({ pathname: "/auth", params: { redirect: `/listing/${listingId}` } }); return; }
     const listing = listings.find((l) => l.id === listingId);
@@ -258,7 +270,7 @@ function PartnerScreenInner() {
       return;
     }
     // Açık mod: başvuru gerekmez, anında ortak ol.
-    const result = joinListing(listingId);
+    const result = await joinListing(listingId);
     const ok = Boolean(result);
     if (ok) haptic.success(); else haptic.warning();
     // DEĞER ANI (MODEL): ortak ürünü KENDİ YÖNTEMİYLE tanıtır — zorunlu link/takip YOK.
@@ -295,7 +307,7 @@ function PartnerScreenInner() {
   async function shareProduct(listing: Listing) {
     const url = productUrl(listing);
     const pitch = listing.salesPitch?.[0] ? `\n${listing.salesPitch[0]}` : "";
-    const r = await shareOrCopy({ title: listing.title, message: `${listing.title} — ${money(listing.price)}${pitch}\n${url}`, url });
+    const r = await shareOrCopy({ title: displayListingTitle(listing.title), message: `${displayListingTitle(listing.title)} — ${money(listing.price)}${pitch}\n${url}`, url });
     if (r === "copied") showToast(translateCopy("Bağlantı kopyalandı", language));
   }
   // Eski imza korunur (çağrı yerleri); refCode YOK SAYILIR (link/takip modeli kaldırıldı).
@@ -308,7 +320,7 @@ function PartnerScreenInner() {
     const listing = listings.find((item) => item.id === listingId);
     if (!listing) return;
     const url = productUrl(listing);
-    const text = encodeURIComponent(`${listing.title} — ${money(listing.price)}\n${url}`);
+    const text = encodeURIComponent(`${displayListingTitle(listing.title)} — ${money(listing.price)}\n${url}`);
     await openUrlSafe(`https://wa.me/?text=${text}`);
   }
 
@@ -412,7 +424,7 @@ function PartnerScreenInner() {
       { key: "links", label: translateCopy("Ortak ürünlerim", language) }
     ];
     return (
-      <ScrollView contentInsetAdjustmentBehavior="automatic" showsVerticalScrollIndicator={false} contentContainerStyle={{ backgroundColor: colors.background, gap: 16, paddingBottom: 40, paddingHorizontal: 20, paddingTop: 16 }} style={{ backgroundColor: colors.background }}>
+      <ScrollView contentInsetAdjustmentBehavior="automatic" showsVerticalScrollIndicator={false} contentContainerStyle={{ alignSelf: "center", flexGrow: 1, backgroundColor: colors.background, gap: 16, maxWidth: 1280, paddingBottom: 40, paddingHorizontal: 20, paddingTop: 16, width: "100%" }} style={{ backgroundColor: colors.background }}>
         <Seo title={translateCopy("Ortak Satış — Ürün paylaş, satışta komisyon kazan | OrtakSat", language)} description={translateCopy("Beğendiğin ürünlere ortak ol, kendi yönteminle tanıt; satış gerçekleşince komisyonu kazan. Sıfır sermaye, ücretsiz başvuru. Zorunlu link veya takip yok. OrtakSat ortak satış platformu.", language)} path="/partner" />
         {/* Hero */}
         <View style={{ backgroundColor: colors.primarySoft, borderRadius: 18, overflow: "hidden", paddingHorizontal: 22, paddingVertical: 16 }}>
@@ -479,7 +491,7 @@ function PartnerScreenInner() {
         <LegalDisclaimerCollapsible />
 
         {/* Tabs */}
-        <View style={{ borderBottomColor: colors.line, borderBottomWidth: 1, flexDirection: "row", gap: 6 }}>
+        <View style={{ borderBottomColor: colors.line, borderBottomWidth: 1, flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
           {tabs.map((tabItem) => {
             const on = tab === tabItem.key;
             return (
@@ -545,7 +557,7 @@ function PartnerScreenInner() {
                       <View style={{ width: 150 }} />
                     </View>
                     {opportunities.slice(0, oppVisible).map((listing) => (
-                      <OppRow key={listing.id} listing={listing} owner={findUser(listing.ownerId)} joined={joinedIds.has(listing.id)} nearMe={Boolean(myCity && provinceOf(listing.location) === myCity)} onJoin={() => onJoin(listing.id)} onDetail={() => router.push(`/listing/${listing.id}`)} />
+                      <OppRow key={listing.id} listing={listing} owner={findUser(listing.ownerId)} joined={joinedStatus.get(listing.id)} nearMe={Boolean(myCity && provinceOf(listing.location) === myCity)} onJoin={() => onJoin(listing.id)} onDetail={() => router.push(`/listing/${listing.id}`)} />
                     ))}
                   </>
                 )}
@@ -574,10 +586,10 @@ function PartnerScreenInner() {
                     {activePartnerships.length === 0 ? <Text style={{ color: colors.muted, fontSize: 14, fontWeight: "600" }}>{translateCopy("Aktif ortaklığın yok.", language)}</Text> :
                     activePartnerships.map((p) => {
                       const l = listings.find((x) => x.id === p.listingId);
-                      return l ? <ShareRow key={p.id} title={l.title} url={productUrl(l)} onCopy={() => void copyText("Bağlantı", productUrl(l))} clicks={clickCounts[p.id] ?? 0} leads={myBroughtLeads.filter((ld) => ld.partnershipId === p.id).length} /> : null;
+                      return l ? <ShareRow key={p.id} title={displayListingTitle(l.title)} url={productUrl(l)} onCopy={() => void copyText("Bağlantı", productUrl(l))} clicks={clickCounts[p.id] ?? 0} leads={myBroughtLeads.filter((ld) => ld.partnershipId === p.id).length} /> : null;
                     })}
                   </>
-                ) : (tab === "earning" ? mySales : tab === "active" ? activePartnerships : pendingPartnerships).length === 0 ? (
+                ) : (tab === "earning" ? mySales : tab === "active" ? activePartnerships : applicationPartnerships).length === 0 ? (
                   <Text style={{ color: colors.muted, fontSize: 14, fontWeight: "600" }}>{translateCopy("Henüz kayıt yok.", language)}</Text>
                 ) : (
                   (tab === "earning"
@@ -601,7 +613,7 @@ function PartnerScreenInner() {
                         const canDispute = s.status !== "paid" && s.status !== "cancelled" && s.status !== "disputed";
                         return (
                           <View key={s.id} style={{ borderTopColor: colors.line, borderTopWidth: 1, gap: 8, paddingTop: 10 }}>
-                            <OppMiniRow title={l?.title ?? translateCopy("Ürün", language)} image={l?.image} right={money(s.commissionAmount)} sub={saleLabels[s.status]} />
+                            <OppMiniRow title={displayListingTitle(l?.title, translateCopy("Ürün", language))} image={l?.image} right={money(s.commissionAmount)} sub={saleLabels[s.status]} />
                             {/* Faz 2: alıcı-taraflı doğrulama durumu (ortak için güven sinyali). */}
                             {s.buyerConfirmedAt || s.buyerConfirmStatus === "confirmed" ? (
                               <View style={{ alignItems: "center", flexDirection: "row", gap: 5 }}>
@@ -661,7 +673,7 @@ function PartnerScreenInner() {
               ) : (
                 activePartnerships.slice(0, 3).map((p) => {
                   const l = listings.find((x) => x.id === p.listingId);
-                  return l ? <ShareRow key={p.id} title={l.title} url={productUrl(l)} onCopy={() => void copyText("Bağlantı", productUrl(l))} compact clicks={clickCounts[p.id] ?? 0} leads={myBroughtLeads.filter((ld) => ld.partnershipId === p.id).length} /> : null;
+                  return l ? <ShareRow key={p.id} title={displayListingTitle(l.title)} url={productUrl(l)} onCopy={() => void copyText("Bağlantı", productUrl(l))} compact clicks={clickCounts[p.id] ?? 0} leads={myBroughtLeads.filter((ld) => ld.partnershipId === p.id).length} /> : null;
                 })
               )}
               {/* Paylaşım linkleri ortak olunca otomatik üretilir; buradan yeni ürüne ortak olunur. */}
@@ -690,7 +702,7 @@ function PartnerScreenInner() {
                       </View>
                       <View style={{ flex: 1, gap: 1, minWidth: 0 }}>
                         <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 13, fontWeight: "800" }}>{translateCopy(saleLabels[s.status], language)}</Text>
-                        <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 11, fontWeight: "600" }}>{l?.title ?? translateCopy("Ürün", language)}</Text>
+                        <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 11, fontWeight: "600" }}>{displayListingTitle(l?.title, translateCopy("Ürün", language))}</Text>
                       </View>
                       <Text style={{ color: colors.success, fontSize: 13, fontWeight: "900" }}>+{money(s.commissionAmount)}</Text>
                     </View>
@@ -740,10 +752,16 @@ function PartnerScreenInner() {
   }
 
   return (
-    <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ gap: 14, padding: 12, paddingBottom: Platform.OS === "web" ? 28 : 96 }} refreshControl={Platform.OS === "web" ? undefined : <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} colors={[colors.primary]} />}>
+    <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ flexGrow: 1, gap: 14, padding: 12, paddingBottom: 0 }} refreshControl={Platform.OS === "web" ? undefined : <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} colors={[colors.primary]} />}>
       <WebContainer max={1280} padding={0} style={{ gap: 14 }}>
       {/* Çekirdek = ortak satış fırsatları: mobilde de EN ÜSTTE (eskiden Kazançlarım/liderlik/
           butonlar önce geliyordu → yeni kullanıcı boş panelle karşılaşıp fırsatları geç görüyordu). */}
+      {allOpportunities.length === 0 ? (
+        <Card>
+          <SectionTitle title="Ortak satış fırsatları" />
+          <NoOpportunities language={language} />
+        </Card>
+      ) : null}
       {allOpportunities.length > 0 ? (
         <Card>
           <SectionTitle title="Ortak satış fırsatları" action={`${mobileOpportunities.length}`} />
@@ -766,7 +784,7 @@ function PartnerScreenInner() {
             <PanelDropdown label="Kategoriler" value={oppCategory} onSelect={(v) => setOppCategory(String(v))} options={[{ label: "Tümü", value: "" }, ...oppCategoryOptions.map((c) => ({ label: c, value: c }))]} />
             <PanelDropdown label="Konum" value={oppCity} onSelect={(v) => setOppCity(String(v))} options={[{ label: "Tümü", value: "" }, ...oppCityOptions.map((c) => ({ label: c, value: c }))]} />
           </View>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6, paddingVertical: 2 }}>
+          <HorizontalScroll  showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6, paddingVertical: 2 }}>
             {([[0, "Tümü komisyon"], [10, "%10+"], [15, "%15+"]] as const).map(([val, lbl]) => {
               const on = oppCommission === val;
               return (
@@ -803,28 +821,27 @@ function PartnerScreenInner() {
                 </Pressable>
               );
             })}
-          </ScrollView>
+          </HorizontalScroll>
           {/* Aktif fırsat filtrelerini tek dokunuşla temizle. */}
-          {(oppCategory || oppCommission || oppCity || oppStock || oppGuven || oppSort !== "recommended") ? (
-            <Pressable onPress={() => { setOppCategory(""); setOppCommission(0); setOppCity(""); setOppStock(""); setOppGuven(""); setOppSort("recommended"); }} accessibilityRole="button" style={{ alignSelf: "flex-start", flexDirection: "row", alignItems: "center", gap: 5 }}>
+          {(oppCategory || oppCommission || oppCity || oppNearMe || oppStock || oppGuven || oppSort !== "recommended") ? (
+            <Pressable onPress={() => { setOppCategory(""); setOppCommission(0); setOppCity(""); setOppNearMe(false); setOppStock(""); setOppGuven(""); setOppSort("recommended"); }} accessibilityRole="button" style={{ alignSelf: "flex-start", flexDirection: "row", alignItems: "center", gap: 5 }}>
               <MaterialCommunityIcons name="filter-remove-outline" size={14} color={colors.muted} />
               <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>{translateCopy("Filtreleri temizle", language)}</Text>
             </Pressable>
           ) : null}
-          {allOpportunities.length === 0 ? (
-            <NoOpportunities language={language} />
-          ) : mobileOpportunities.length === 0 ? (
-            <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "700", paddingVertical: 10 }}>{translateCopy("Bu filtreye uyan fırsat yok. Komisyon eşiğini düşür.", language)}</Text>
+          {mobileOpportunities.length === 0 ? (
+            <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "700", paddingVertical: 10 }}>{translateCopy("Bu filtreye uyan fırsat yok. Filtreleri temizleyip tekrar dene.", language)}</Text>
           ) : null}
           {mobileOpportunities.slice(0, oppVisible).map((listing) => {
             const owner = findUser(listing.ownerId);
-            const joined = joinedIds.has(listing.id);
+            const joinedAs = joinedStatus.get(listing.id);
+            const joined = Boolean(joinedAs);
             const nearMe = Boolean(myCity && provinceOf(listing.location) === myCity);
             return (
               <View key={listing.id} style={{ alignItems: "center", borderTopColor: colors.line, borderTopWidth: 1, flexDirection: "row", gap: 10, paddingTop: 10 }}>
-                <SafeRemoteImage uri={listing.image} accessibilityLabel={displayText(listing.title)} style={{ backgroundColor: colors.line, borderRadius: 8, height: 52, width: 52 }} contentFit="cover" />
+                <SafeRemoteImage uri={listing.image} accessibilityLabel={displayListingTitle(listing.title)} style={{ backgroundColor: colors.line, borderRadius: 8, height: 52, width: 52 }} contentFit="cover" />
                 <Pressable onPress={() => router.push(`/listing/${listing.id}`)} style={{ flex: 1, gap: 2, minWidth: 0 }}>
-                  <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 13.5, fontWeight: "800" }}>{displayText(listing.title)}</Text>
+                  <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 13.5, fontWeight: "800" }}>{displayListingTitle(listing.title)}</Text>
                   <Text numberOfLines={1} style={{ color: colors.primaryDark, fontSize: 11.5, fontWeight: "800" }}>{commissionText(listing)} · kazanç {moneyIn(commissionAmount(listing), listing.currency)}</Text>
                   <View style={{ alignItems: "center", flexDirection: "row", gap: 3, minWidth: 0 }}>
                     {nearMe ? <MaterialCommunityIcons name="map-marker" size={11} color={colors.primary} /> : null}
@@ -846,7 +863,7 @@ function PartnerScreenInner() {
                   </View>
                 </Pressable>
                 <Pressable onPress={() => onJoin(listing.id)} disabled={joined} style={({ pressed }) => ({ alignItems: "center", backgroundColor: joined ? colors.surfaceAlt : colors.primary, borderColor: joined ? colors.line : colors.primary, borderRadius: 8, borderWidth: 1, opacity: pressed ? 0.85 : 1, paddingHorizontal: 13, paddingVertical: 8 })}>
-                  <Text style={{ color: joined ? colors.muted : "#FFFFFF", fontSize: 12, fontWeight: "900" }}>{joined ? translateCopy("Ortak", language) : translateCopy("Ortak ol", language)}</Text>
+                  <Text style={{ color: joined ? colors.muted : "#FFFFFF", fontSize: 12, fontWeight: "900" }}>{translateCopy(joinedAs === "pending" ? "Bekliyor" : joinedAs === "blocked" ? "Kapalı" : joined ? "Ortak" : "Ortak ol", language)}</Text>
                 </Pressable>
               </View>
             );
@@ -921,7 +938,7 @@ function PartnerScreenInner() {
       ) : null}
 
       <Card>
-        <SectionTitle title="Aktif ortaklıklarım" action={`${visiblePartnerships.length}`} />
+        <SectionTitle title={t("myPartnerships")} action={`${visiblePartnerships.length}`} />
         <View style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 8, borderWidth: 1, flexDirection: "row", gap: 10, minHeight: 48, paddingHorizontal: 12 }}>
           <MaterialCommunityIcons name="magnify" size={21} color={colors.info} />
           <TextInput
@@ -937,12 +954,12 @@ function PartnerScreenInner() {
             </Pressable>
           ) : null}
         </View>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingRight: 8 }}>
+        <HorizontalScroll  showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingRight: 8 }}>
           <PanelFilterChip active={filter === "all"} icon="view-grid" label="Tümü" onPress={() => setFilter("all")} />
           <PanelFilterChip active={filter === "active"} icon="handshake-outline" label="Aktif" onPress={() => setFilter("active")} />
           <PanelFilterChip active={filter === "pending"} icon="clock-outline" label="Bekleyen" onPress={() => setFilter("pending")} />
           <PanelFilterChip active={filter === "earning"} icon="cash-multiple" label="Komisyonlu" onPress={() => setFilter("earning")} />
-        </ScrollView>
+        </HorizontalScroll>
       </Card>
 
       {myPartnerships.length === 0 ? <QuickStart role="partner" /> : null}
@@ -955,6 +972,7 @@ function PartnerScreenInner() {
         onClose={() => setDisputeSaleId(null)}
         onSubmit={(reason) => { if (disputeSaleId) updateSaleStatus(disputeSaleId, "disputed", reason); setDisputeSaleId(null); }}
       />
+      {!isWideWeb && <CompactFooter />}
     </ScrollView>
   );
 }
@@ -999,8 +1017,8 @@ function PartnershipCard({ listing, partnership, listingLeads, listingSales, cli
     <Card>
       <View style={{ flexDirection: "row", gap: 10 }}>
         <Image source={{ uri: listing.image }} contentFit="cover" style={{ backgroundColor: colors.line, borderRadius: 8, height: 74, width: 74 }} />
-        <View style={{ flex: 1, gap: 6 }}>
-          <Text selectable numberOfLines={2} style={{ color: colors.ink, fontSize: 18, fontWeight: "900", lineHeight: 22 }}>{listing.title}</Text>
+        <View style={{ flex: 1, gap: 6, minWidth: 0 }}>
+          <Text selectable numberOfLines={2} style={{ color: colors.ink, fontSize: 16, fontWeight: "900", lineHeight: 21 }}>{displayListingTitle(listing.title)}</Text>
           <Text selectable numberOfLines={2} style={{ color: colors.muted, fontSize: 12, lineHeight: 17 }}>
             {/* Başvuru formu kaldırıldı → kanal/erişim yok. Kategori (+varsa eski kanal bilgisi) göster. */}
             {[listing.category, partnership.shareChannel].filter(Boolean).join(" · ")}
@@ -1008,7 +1026,7 @@ function PartnershipCard({ listing, partnership, listingLeads, listingSales, cli
         </View>
         <StatusPill
           label={partnership.status === "active" ? "Aktif" : partnership.status === "pending" ? "Bekliyor" : partnership.status === "rejected" ? "Reddedildi" : partnership.status === "blocked" ? "Kapatıldı" : partnership.status === "completed" ? "Tamamlandı" : "Sonlandırıldı"}
-          tone={partnership.status === "active" ? "success" : partnership.status === "pending" ? "warning" : "neutral"}
+          tone={partnership.status === "active" ? "success" : partnership.status === "pending" ? "warning" : partnership.status === "rejected" || partnership.status === "blocked" ? "danger" : "neutral"}
         />
       </View>
 
@@ -1079,13 +1097,17 @@ function PartnershipCard({ listing, partnership, listingLeads, listingSales, cli
         </View>
       )}
 
-      <PartnerActionBand
-        active={partnership.status === "active"}
-        leadCount={listingLeads.length}
-        sellerPaidCount={sellerPaidCount}
-        onCopy={() => actions.copy("Satış bağlantısı", url)}
-        onShare={() => actions.share(listing.id, partnership.refCode)}
-      />
+      {/* Yalnız aktif/bekleyen ortaklıkta: reddedilen/sonlandırılan kartta da "Sıradaki aksiyon:
+          Satıcı onayı bekleniyor" yazıyordu (yanlış durum). */}
+      {partnership.status === "active" || partnership.status === "pending" ? (
+        <PartnerActionBand
+          active={partnership.status === "active"}
+          leadCount={listingLeads.length}
+          sellerPaidCount={sellerPaidCount}
+          onCopy={() => actions.copy("Satış bağlantısı", url)}
+          onShare={() => actions.share(listing.id, partnership.refCode)}
+        />
+      ) : null}
 
       <SectionTitle title="Performans" />
       <View style={{ flexDirection: "row", gap: 8 }}>
@@ -1108,7 +1130,7 @@ function PartnershipCard({ listing, partnership, listingLeads, listingSales, cli
       {listingLeads.length > 0 ? <SectionTitle title="Gelen talepler" action="Benim bağlantım" /> : null}
       {listingLeads.map((lead) => (
         <View key={lead.id} style={{ backgroundColor: colors.surfaceAlt, borderRadius: 8, gap: 6, padding: 12 }}>
-          <Text selectable style={{ color: colors.ink, fontSize: 15, fontWeight: "900" }}>{lead.buyerName} · {lead.buyerPhone}</Text>
+          <Text selectable style={{ color: colors.ink, fontSize: 15, fontWeight: "900" }}>{[lead.buyerName, lead.buyerPhone].filter(Boolean).join(" · ")}</Text>
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
             <StatusPill label={lead.status === "converted" ? "Satışa döndü" : lead.status === "interested" ? "İlgileniyor" : lead.status === "contacted" ? "İletişimde" : lead.status === "lost" ? "Kayıp" : "Yeni"} tone={lead.status === "converted" ? "success" : "info"} />
             <StatusPill label={sourceLabels[lead.source]} />
@@ -1142,7 +1164,7 @@ function PartnershipCard({ listing, partnership, listingLeads, listingSales, cli
             <Metric label="Adet" value={`${sale.quantity ?? 1}`} />
             <Metric label="İade sonu" value={sale.returnUntil ?? "-"} />
           </View>
-          <StatusPill label={saleLabels[sale.status]} tone={sale.status === "paid" ? "success" : "warning"} />
+          <StatusPill label={saleLabels[sale.status]} tone={sale.status === "paid" ? "success" : sale.status === "disputed" ? "danger" : sale.status === "cancelled" ? "neutral" : "warning"} />
           {/* Faz 2: alıcı doğrulama durumu (güven sinyali). */}
           {sale.buyerConfirmedAt || sale.buyerConfirmStatus === "confirmed" ? (
             <StatusPill label={translateCopy("Alıcı onayladı ✓", language)} tone="success" />
@@ -1308,16 +1330,17 @@ function NoOpportunities({ language }: { language: "tr" | "en" }) {
   );
 }
 
-function OppRow({ listing, owner, joined, nearMe, onJoin, onDetail }: { listing: Listing; owner?: User; joined: boolean; nearMe?: boolean; onJoin: () => void; onDetail: () => void }) {
+function OppRow({ listing, owner, joined: joinedAs, nearMe, onJoin, onDetail }: { listing: Listing; owner?: User; joined?: Partnership["status"]; nearMe?: boolean; onJoin: () => void; onDetail: () => void }) {
   const { language } = useLanguage();
+  const joined = Boolean(joinedAs);
   return (
     <View style={{ alignItems: "center", borderBottomColor: colors.line, borderBottomWidth: 1, flexDirection: "row", paddingVertical: 12 }}>
       <View style={{ alignItems: "center", flex: 2.4, flexDirection: "row", gap: 10, minWidth: 0 }}>
         <View style={{ backgroundColor: colors.line, borderRadius: 10, height: 46, overflow: "hidden", width: 46 }}>
-          <SafeRemoteImage uri={listing.image} accessibilityLabel={displayText(listing.title)} style={{ height: "100%", width: "100%" }} contentFit="cover" transition={120} />
+          <SafeRemoteImage uri={listing.image} accessibilityLabel={displayListingTitle(listing.title)} style={{ height: "100%", width: "100%" }} contentFit="cover" transition={120} />
         </View>
         <View style={{ flex: 1, gap: 1, minWidth: 0 }}>
-          <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 13, fontWeight: "800" }}>{displayText(listing.title)}</Text>
+          <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 13, fontWeight: "800" }}>{displayListingTitle(listing.title)}</Text>
           <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 11, fontWeight: "600" }}>{displayText(listing.category)}</Text>
         </View>
       </View>
@@ -1326,7 +1349,7 @@ function OppRow({ listing, owner, joined, nearMe, onJoin, onDetail }: { listing:
           <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 12, fontWeight: "800" }}>{owner?.name ?? translateCopy("Satıcı", language)}</Text>
           {owner?.verifiedPhone || owner?.verifiedIdentity ? <MaterialCommunityIcons name="check-decagram" size={12} color={colors.primary} /> : null}
         </View>
-        <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 11, fontWeight: "600" }}>{(owner?.rating ?? 0) > 0 ? `★ ${owner?.rating}` : translateCopy("Yeni satıcı", language)}</Text>
+        <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 11, fontWeight: "600" }}>{(owner?.rating ?? 0) > 0 ? `★ ${(owner?.rating ?? 0).toFixed(1)}` : translateCopy("Yeni satıcı", language)}</Text>
       </View>
       <View style={{ flex: 0.9 }}>
         <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "900" }}>{listing.commissionType === "rate" ? `%${listing.commissionValue}` : money(commissionAmount(listing))}</Text>
@@ -1339,8 +1362,8 @@ function OppRow({ listing, owner, joined, nearMe, onJoin, onDetail }: { listing:
       <Text style={{ color: colors.ink, flex: 0.9, fontSize: 12, fontWeight: "700" }}>{listing.stockCount} {translateCopy("adet", language)}</Text>
       <View style={{ flex: 0.8 }}><GuvenBadge rating={owner?.rating ?? 0} /></View>
       <View style={{ alignItems: "center", flexDirection: "row", gap: 6, width: 150 }}>
-        <Pressable onPress={onJoin} style={({ pressed }) => ({ alignItems: "center", backgroundColor: joined ? colors.surfaceAlt : colors.primary, borderColor: joined ? colors.line : colors.primary, borderRadius: 8, borderWidth: 1, opacity: pressed ? 0.85 : 1, paddingHorizontal: 12, paddingVertical: 7 })}>
-          <Text style={{ color: joined ? colors.muted : "#FFFFFF", fontSize: 12, fontWeight: "900" }}>{joined ? translateCopy("Ortak", language) : translateCopy("Ortak ol", language)}</Text>
+        <Pressable onPress={onJoin} disabled={joined} accessibilityRole="button" accessibilityState={{ disabled: joined }} style={({ pressed }) => ({ alignItems: "center", backgroundColor: joined ? colors.surfaceAlt : colors.primary, borderColor: joined ? colors.line : colors.primary, borderRadius: 8, borderWidth: 1, opacity: pressed ? 0.85 : 1, paddingHorizontal: 12, paddingVertical: 7 })}>
+          <Text numberOfLines={1} style={{ color: joined ? colors.muted : "#FFFFFF", fontSize: 12, fontWeight: "900" }}>{translateCopy(joinedAs === "pending" ? "Bekliyor" : joinedAs === "blocked" ? "Kapalı" : joined ? "Ortak" : "Ortak ol", language)}</Text>
         </Pressable>
         <Pressable onPress={onDetail} style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 8, borderWidth: 1, opacity: pressed ? 0.85 : 1, paddingHorizontal: 10, paddingVertical: 7 })}>
           <Text style={{ color: colors.ink, fontSize: 12, fontWeight: "800" }}>{translateCopy("Detay", language)}</Text>
@@ -1355,10 +1378,10 @@ function OppMiniRow({ title, image, right, sub }: { title: string; image?: strin
   return (
     <View style={{ alignItems: "center", borderBottomColor: colors.line, borderBottomWidth: 1, flexDirection: "row", gap: 10, paddingVertical: 10 }}>
       <View style={{ backgroundColor: colors.line, borderRadius: 10, height: 44, overflow: "hidden", width: 44 }}>
-        {image ? <SafeRemoteImage uri={image} accessibilityLabel={displayText(title)} style={{ height: "100%", width: "100%" }} contentFit="cover" transition={120} /> : null}
+        {image ? <SafeRemoteImage uri={image} accessibilityLabel={displayListingTitle(title)} style={{ height: "100%", width: "100%" }} contentFit="cover" transition={120} /> : null}
       </View>
       <View style={{ flex: 1, gap: 1, minWidth: 0 }}>
-        <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 13, fontWeight: "800" }}>{displayText(title)}</Text>
+        <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 13, fontWeight: "800" }}>{displayListingTitle(title)}</Text>
         <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 11, fontWeight: "600" }}>{translateCopy(sub, language)}</Text>
       </View>
       <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "900" }}>{right}</Text>
@@ -1373,7 +1396,7 @@ function ShareRow({ title, url, onCopy, compact, clicks, leads }: { title: strin
     <View style={{ alignItems: "center", flexDirection: "row", gap: 10 }}>
       <MaterialCommunityIcons name="link-variant" size={18} color={colors.primary} />
       <View style={{ flex: 1, gap: 2, minWidth: 0 }}>
-        <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 13, fontWeight: "800" }}>{displayText(title)}</Text>
+        <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 13, fontWeight: "800" }}>{displayListingTitle(title)}</Text>
         <Text numberOfLines={1} style={{ color: colors.muted, fontSize: compact ? 10 : 11, fontWeight: "600" }}>{url}</Text>
         {/* Link başına performans: hangi linkin tıklama/talep getirdiği ortağa görünür. */}
         {showPerf ? (

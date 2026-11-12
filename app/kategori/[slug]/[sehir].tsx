@@ -1,4 +1,5 @@
 import { MaterialCommunityIcons } from "@/components/icons";
+import { listingInCategoryNode, listingRootNode } from "@/lib/category-match";
 import { Link, useLocalSearchParams, useRouter, type Href } from "expo-router";
 import Head from "expo-router/head";
 import { useEffect, useMemo, useState } from "react";
@@ -78,7 +79,7 @@ export default function CityCategoryScreen() {
   const catItems = useMemo(() => {
     if (!node) return [];
     const labels = new Set(descendantLabels(node));
-    const out = listings.filter((l) => l.status === "active" && labels.has(l.category) && (!onlyOpen || l.partnershipMode === "open"));
+    const out = listings.filter((l) => l.status === "active" && listingInCategoryNode(l, node) && (!onlyOpen || l.partnershipMode === "open"));
     out.sort((a, b) => {
       if (sortMode === "newest") return b.createdAt.localeCompare(a.createdAt);
       if (sortMode === "priceAsc") return a.price - b.price;

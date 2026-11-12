@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 
 import { colors } from "@/components/colors";
-import { resolveFormKey, suggestCategories, type CategoryNode } from "@/lib/category-tree";
+import { suggestCategories, type CategoryNode } from "@/lib/category-tree";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { useIsWideWeb } from "@/lib/layout";
 import { getRecentCategories, pushRecentCategory, subscribeRecentCategories, type RecentCategory } from "@/lib/recent-categories";
@@ -37,12 +37,11 @@ export function CategoryPicker({ value, onChange, presetRootFormKey }: { value: 
   const current = trail[trail.length - 1];
   const midItems = current?.children ?? (top ? [] : []);
   const finalized = value.length > 0;
-  // Dalda "seç" yalnızca kendi ÖZGÜL formu varsa açık kalır. Jenerik forma
-  // ("alisverisGenel") düşen bir dalda (Elektronik/Ev…) alt kategorileri olan
-  // düğümde durmak yanlış form verir → kullanıcı yaprağa inmeli.
-  const currentFormKey = trail.length ? resolveFormKey(trail) : "";
+  // Seçimi yaprak kategoride kesinleştir. Ara dallar özgül form taşısa bile ilanın
+  // fazla genel kategoriye düşmesi filtre/SEO kalitesini düşürür; kullanıcı bir alt
+  // detaya iner, bulamazsa her dalda bulunan "Diğer" yaprağını seçer.
   const hasChildren = !!(current?.children && current.children.length);
-  const canFinalizeHere = trail.length >= 2 && (!hasChildren || currentFormKey !== "alisverisGenel");
+  const canFinalizeHere = trail.length >= 2 && !hasChildren;
 
   // SON KULLANILAN KATEGORİLER: aynı satıcı çoğunlukla aynı kategoride tekrar ilan
   // veriyor; 4594 yapraklı ağacı her seferinde gezmesin diye çip olarak sunulur.
@@ -64,7 +63,13 @@ export function CategoryPicker({ value, onChange, presetRootFormKey }: { value: 
       path.push(hit);
       level = hit.children ?? [];
     }
-    if (path.length) finalize(path);
+    if (!path.length) return;
+    const last = path[path.length - 1];
+    if (last.children && last.children.length) {
+      setTrail(path);
+      return;
+    }
+    finalize(path);
   };
 
 
@@ -97,7 +102,11 @@ export function CategoryPicker({ value, onChange, presetRootFormKey }: { value: 
         {suggestions.length ? (
           <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 11, borderWidth: 1, overflow: "hidden" }}>
             {suggestions.map((s) => (
-              <Pressable key={s.labels.join(">")} onPress={() => { finalize(s.path); setQuery(""); }} style={({ pressed }) => ({ backgroundColor: pressed ? colors.surfaceAlt : "transparent", borderBottomColor: colors.line, borderBottomWidth: 1, paddingHorizontal: 13, paddingVertical: 10 })}>
+              <Pressable key={s.labels.join(">")} onPress={() => {
+                const last = s.path[s.path.length - 1];
+                if (last?.children && last.children.length) setTrail(s.path); else finalize(s.path);
+                setQuery("");
+              }} style={({ pressed }) => ({ backgroundColor: pressed ? colors.surfaceAlt : "transparent", borderBottomColor: colors.line, borderBottomWidth: 1, minHeight: 48, paddingHorizontal: 13, paddingVertical: 10 })}>
                 <Text style={{ color: colors.ink, fontSize: 13.5, fontWeight: "800" }}>{translateCopy(s.labels[s.labels.length - 1], language)}</Text>
                 <Text numberOfLines={1} style={{ color: colors.subtle, fontSize: 11.5, fontWeight: "600" }}>{s.labels.map((l) => translateCopy(l, language)).join(" › ")}</Text>
               </Pressable>
@@ -129,7 +138,7 @@ export function CategoryPicker({ value, onChange, presetRootFormKey }: { value: 
       {!finalized && !top && !query.trim() && recents.length ? (
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
           {recents.slice(0, 6).map((rc) => (
-            <Pressable key={rc.slugs.join(">")} onPress={() => pickRecent(rc)} style={({ pressed }) => ({ backgroundColor: pressed ? colors.primarySoft : colors.surfaceAlt, borderColor: colors.line, borderRadius: 999, borderWidth: 1, minHeight: 34, justifyContent: "center", paddingHorizontal: 12 })}>
+            <Pressable key={rc.slugs.join(">")} onPress={() => pickRecent(rc)} style={({ pressed }) => ({ backgroundColor: pressed ? colors.primarySoft : colors.surfaceAlt, borderColor: colors.line, borderRadius: 999, borderWidth: 1, minHeight: 44, justifyContent: "center", paddingHorizontal: 14 })}>
               <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 12, fontWeight: "700", maxWidth: 200 }}>{rc.labels[rc.labels.length - 1]}</Text>
             </Pressable>
           ))}
@@ -145,7 +154,7 @@ export function CategoryPicker({ value, onChange, presetRootFormKey }: { value: 
                 {categoryTree.map((n, i) => {
                   const on = top?.key === n.key;
                   return (
-                    <Pressable key={n.key} onPress={() => pickTop(n)} style={{ alignItems: "center", backgroundColor: on ? colors.primarySoft : "transparent", borderTopColor: colors.line, borderTopWidth: i === 0 ? 0 : 1, flexDirection: "row", gap: 8, paddingHorizontal: 14, paddingVertical: 13 }}>
+                    <Pressable key={n.key} onPress={() => pickTop(n)} style={{ alignItems: "center", backgroundColor: on ? colors.primarySoft : "transparent", borderTopColor: colors.line, borderTopWidth: i === 0 ? 0 : 1, flexDirection: "row", gap: 8, minHeight: 48, paddingHorizontal: 14, paddingVertical: 13 }}>
                       <Text numberOfLines={1} style={{ color: on ? colors.primaryDark : colors.ink, flex: 1, fontSize: 14, fontWeight: on ? "900" : "600" }}>{translateCopy(n.label, language)}</Text>
                       <MaterialCommunityIcons name="chevron-right" size={18} color={on ? colors.primary : colors.subtle} />
                     </Pressable>
@@ -169,7 +178,7 @@ export function CategoryPicker({ value, onChange, presetRootFormKey }: { value: 
               ) : null}
               <ScrollView nestedScrollEnabled style={{ maxHeight: isWideWeb ? 440 : 420 }}>
                 {canFinalizeHere ? (
-                  <Pressable onPress={selectCurrent} style={{ alignItems: "center", backgroundColor: colors.primarySoft, flexDirection: "row", gap: 8, paddingHorizontal: 14, paddingVertical: 13 }}>
+                  <Pressable onPress={selectCurrent} style={{ alignItems: "center", backgroundColor: colors.primarySoft, flexDirection: "row", gap: 8, minHeight: 48, paddingHorizontal: 14, paddingVertical: 13 }}>
                     <MaterialCommunityIcons name="check-circle" size={18} color={colors.primary} />
                     <Text style={{ color: colors.primaryDark, flex: 1, fontSize: 13.5, fontWeight: "900" }}>“{translateCopy(current.label, language)}” {translateCopy("ile devam et", language)}</Text>
                   </Pressable>
@@ -183,7 +192,7 @@ export function CategoryPicker({ value, onChange, presetRootFormKey }: { value: 
                   </View>
                 ) : (
                   midItems.map((n, i) => (
-                    <Pressable key={n.key} onPress={() => pickChild(n)} style={({ pressed }) => ({ alignItems: "center", backgroundColor: pressed ? colors.surfaceAlt : "transparent", borderTopColor: colors.line, borderTopWidth: (i === 0 && !canFinalizeHere) ? 0 : 1, flexDirection: "row", gap: 8, paddingHorizontal: 14, paddingVertical: 13 })}>
+                    <Pressable key={n.key} onPress={() => pickChild(n)} style={({ pressed }) => ({ alignItems: "center", backgroundColor: pressed ? colors.surfaceAlt : "transparent", borderTopColor: colors.line, borderTopWidth: (i === 0 && !canFinalizeHere) ? 0 : 1, flexDirection: "row", gap: 8, minHeight: 48, paddingHorizontal: 14, paddingVertical: 13 })}>
                       <Text numberOfLines={1} style={{ color: colors.ink, flex: 1, fontSize: 14, fontWeight: "600" }}>{translateCopy(n.label, language)}</Text>
                       {n.children && n.children.length ? <MaterialCommunityIcons name="chevron-right" size={18} color={colors.subtle} /> : null}
                     </Pressable>

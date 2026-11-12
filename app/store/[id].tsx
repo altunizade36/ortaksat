@@ -1,3 +1,6 @@
+import { TrustEntry } from "@/components/trust/entry";
+import { displayListingTitle } from "@/lib/listing-title";
+import { UserAvatar } from "@/components/user-avatar";
 import { MaterialCommunityIcons } from "@/components/icons";
 import { Image } from "expo-image";
 import { Link, useLocalSearchParams, useRouter } from "expo-router";
@@ -27,6 +30,8 @@ import { fetchReviewsForUser } from "@/lib/live-service";
 import { calculateUserTrustScores } from "@/lib/trust-score";
 import type { Listing, Review, User } from "@/lib/types";
 import { useStore } from "@/lib/use-store";
+import { isMobileApp } from "@/lib/mobile-app";
+import { MobileSellerStore } from "@/components/mobile/seller-store";
 
 type StoreFilter = "active" | "all" | "partner";
 type ProfileTab = "about" | "listings" | "partnerships" | "policies" | "reviews" | "badges";
@@ -42,6 +47,10 @@ function memberSinceLabel(createdAt: string | undefined, language: string): stri
 }
 
 export default function StoreScreen() {
+  const {id,view}=useLocalSearchParams<{id:string;view?:string}>();
+  return isMobileApp&&view!=="advanced"?<MobileSellerStore key={id} id={id}/>:<StoreScreenLegacy/>;
+}
+function StoreScreenLegacy() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { language, t } = useLanguage();
   const { width } = useWindowDimensions();
@@ -315,6 +324,7 @@ export default function StoreScreen() {
 
     return (
       <ScrollView contentInsetAdjustmentBehavior="automatic" showsVerticalScrollIndicator={false} contentContainerStyle={{ backgroundColor: colors.background, flexGrow: 1, paddingBottom: 0 }} style={{ backgroundColor: colors.background }}>
+        {seller && <TrustEntry userId={seller.id} />}
         <Seo title={`${seller?.name ?? "Satıcı"} — Mağaza ve ilanları | OrtakSat`} description={`${seller?.name ?? "Bu satıcının"} OrtakSat mağazası: ${activeListings.length} aktif ilan. Ürünleri incele, ortak ol veya doğrudan satıcıyla iletişime geç.`} path={id ? `/store/${id}` : undefined} image={seller?.avatar?.startsWith("http") ? seller.avatar : undefined} />
         {seller ? (
           <JsonLd id="store" json={JSON.stringify({
@@ -332,13 +342,7 @@ export default function StoreScreen() {
           <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 18, borderWidth: 1, padding: 20 }}>
             <View style={{ alignItems: "flex-start", flexDirection: "row", gap: 18 }}>
               <View style={{ borderColor: colors.surface, borderRadius: 20, borderWidth: 4, marginTop: -54 }}>
-                {isImageAvatar(seller.avatar) ? (
-                  <Image source={{ uri: seller.avatar }} contentFit="cover" style={{ borderRadius: 16, height: 96, width: 96 }} />
-                ) : (
-                  <View style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 16, height: 96, justifyContent: "center", width: 96 }}>
-                    <Text style={{ color: "#FFFFFF", fontSize: 30, fontWeight: "900" }}>{seller.avatar || seller.name.slice(0, 2)}</Text>
-                  </View>
-                )}
+                <UserAvatar uri={seller.avatar} size={96} />
               </View>
               <View style={{ flex: 1, gap: 6, minWidth: 0, paddingTop: 6 }}>
                 <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
@@ -400,7 +404,7 @@ export default function StoreScreen() {
               <DeskProfileStat value={`${seller.successfulSales}`} label={translateCopy("Satış", language)} />
               <DeskProfileStat value={`${activeListings.length}`} label={translateCopy("Aktif ilan", language)} />
               <DeskProfileStat value={`${sellerPartnerships.length}`} label={translateCopy("Ortaklık", language)} />
-              <DeskProfileStat value={`%${trust?.seller.score ?? 0}`} label={translateCopy("Satıcı güveni", language)} last />
+              <DeskProfileStat value={trust?.seller.score == null ? "Henüz yok" : `%${trust.seller.score}`} label={translateCopy("Satıcı güveni", language)} last />
             </View>
           </View>
 
@@ -430,7 +434,7 @@ export default function StoreScreen() {
                       <DeskAboutRow icon="cart-check" label={translateCopy("Toplam satış", language)} value={`${seller.successfulSales}`} />
                       <DeskAboutRow icon="lightning-bolt" label={translateCopy("Yanıt oranı", language)} value={`%${seller.responseRate}`} />
                       <DeskAboutRow icon="tag-multiple-outline" label={translateCopy("Toplam komisyon havuzu", language)} value={money(totalCommission)} />
-                      <DeskAboutRow icon="shield-check" label={translateCopy("Satıcı güven puanı", language)} value={`%${trust?.seller.score ?? 0}`} />
+                      <DeskAboutRow icon="shield-check" label={translateCopy("Satıcı güven puanı", language)} value={trust?.seller.score == null ? "Henüz yok" : `%${trust.seller.score}`} />
                       {memberLabel ? <DeskAboutRow icon="calendar-check-outline" label={translateCopy("Üyelik", language)} value={memberLabel} /> : null}
                       {seller.city ? <DeskAboutRow icon="map-marker-outline" label={translateCopy("Konum", language)} value={seller.city} /> : null}
                     </View>
@@ -459,7 +463,7 @@ export default function StoreScreen() {
                         <PartnerScoreCell value={`${partnerBroughtSales}`} label={translateCopy("Getirdiği satış", language)} />
                         <PartnerScoreCell value={`${partnerActiveCount}`} label={translateCopy("Aktif ortaklık", language)} />
                         <PartnerScoreCell value={money(partnerEarned)} label={translateCopy("Kazandırdığı komisyon", language)} />
-                        <PartnerScoreCell value={`%${trust?.partner.score ?? 0}`} label={translateCopy("Ortak güven puanı", language)} />
+                        <PartnerScoreCell value={trust?.partner.score == null ? "Henüz yok" : `%${trust.partner.score}`} label={translateCopy("Ortak güven puanı", language)} />
                       </View>
                     </View>
                   ) : null}
@@ -515,7 +519,7 @@ export default function StoreScreen() {
                       <Pressable style={{ alignItems: "center", backgroundColor: "transparent", borderTopColor: colors.line, borderTopWidth: idx === 0 ? 0 : 1, flexDirection: "row", gap: 12, paddingVertical: 12 }}>
                         <Image source={{ uri: l.image }} contentFit="cover" style={{ backgroundColor: colors.line, borderRadius: 10, height: 48, width: 48 }} />
                         <View style={{ flex: 1, gap: 2, minWidth: 0 }}>
-                          <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 14, fontWeight: "800" }}>{displayText(l.title)}</Text>
+                          <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 14, fontWeight: "800" }}>{displayListingTitle(l.title)}</Text>
                           <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600" }}>{l.category} · {l.location}</Text>
                         </View>
                         <View style={{ alignItems: "flex-end", gap: 2 }}>
@@ -585,7 +589,7 @@ export default function StoreScreen() {
                 <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>{translateCopy("Güven puanı", language)}</Text>
                 <View style={{ alignItems: "center", flexDirection: "row", gap: 12 }}>
                   <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 999, height: 56, justifyContent: "center", width: 56 }}>
-                    <Text style={{ color: colors.primaryDark, fontSize: 18, fontWeight: "900" }}>%{trust?.overall ?? 0}</Text>
+                    <Text style={{ color: colors.primaryDark, fontSize: 18, fontWeight: "900" }}>{trust?.overall == null ? "Henüz karne yok" : `%${trust.overall}`}</Text>
                   </View>
                   <Text style={{ color: colors.muted, flex: 1, fontSize: 12.5, fontWeight: "600", lineHeight: 18 }}>{translateCopy("Doğrulama, satış geçmişi ve yorumlara göre hesaplanır.", language)}</Text>
                 </View>
@@ -634,7 +638,8 @@ export default function StoreScreen() {
     >
       {/* SEO/JsonLd mobil dalda da (eskiden yalnız masaüstündeydi → dar-ekran web'de
           sayfa meta/aggregateRating üretmiyordu). Görsel çıktı yok; head'e enjekte eder. */}
-      <Seo title={`${seller?.name ?? "Satıcı"} — Mağaza ve ilanları | OrtakSat`} description={`${seller?.name ?? "Bu satıcının"} OrtakSat mağazası: ${activeListings.length} aktif ilan. Ürünleri incele, ortak ol veya doğrudan satıcıyla iletişime geç.`} path={id ? `/store/${id}` : undefined} image={seller?.avatar?.startsWith("http") ? seller.avatar : undefined} />
+      {seller && <TrustEntry userId={seller.id} />}
+        <Seo title={`${seller?.name ?? "Satıcı"} — Mağaza ve ilanları | OrtakSat`} description={`${seller?.name ?? "Bu satıcının"} OrtakSat mağazası: ${activeListings.length} aktif ilan. Ürünleri incele, ortak ol veya doğrudan satıcıyla iletişime geç.`} path={id ? `/store/${id}` : undefined} image={seller?.avatar?.startsWith("http") ? seller.avatar : undefined} />
       {seller ? (
         <JsonLd id="store" json={JSON.stringify({
           "@context": "https://schema.org",
@@ -648,15 +653,7 @@ export default function StoreScreen() {
       <StoreCover seed={seller.id} height={92} radius={10} />
       <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 8, borderWidth: 1, gap: 12, marginTop: -44, padding: 14 }}>
         <View style={{ alignItems: "center", flexDirection: "row", gap: 12 }}>
-          {isImageAvatar(seller.avatar) ? (
-            <Image source={{ uri: seller.avatar }} contentFit="cover" style={{ borderRadius: 14, height: 66, width: 66 }} />
-          ) : (
-            <View style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 14, height: 66, justifyContent: "center", width: 66 }}>
-              <Text selectable numberOfLines={1} style={{ color: "#FFFFFF", fontSize: 20, fontWeight: "900" }}>
-                {seller.avatar || seller.name.slice(0, 2)}
-              </Text>
-            </View>
-          )}
+          <UserAvatar uri={seller.avatar} size={66} />
           <View style={{ flex: 1, gap: 5, minWidth: 0 }}>
             <Text selectable numberOfLines={1} style={{ color: colors.ink, fontSize: 21, fontWeight: "900" }}>
               {seller.name}
@@ -697,7 +694,7 @@ export default function StoreScreen() {
         <View style={{ flexDirection: "row", gap: 8 }}>
           <Metric label={translateCopy("Puan", language)} value={seller.rating.toFixed(1)} />
           <Metric label={translateCopy("Yanıt oranı", language)} value={`%${seller.responseRate}`} />
-          <Metric label={translateCopy("Satıcı güveni", language)} value={`%${trust?.seller.score ?? 0}`} />
+          <Metric label={translateCopy("Satıcı güveni", language)} value={trust?.seller.score == null ? "Henüz yok" : `%${trust.seller.score}`} />
         </View>
         {!isOwnStore ? (
           <Pressable onPress={handleFollow} accessibilityRole="button" style={{ alignItems: "center", backgroundColor: following ? colors.surfaceAlt : colors.primary, borderColor: colors.primary, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 8, justifyContent: "center", paddingVertical: 12 }}>
@@ -716,7 +713,7 @@ export default function StoreScreen() {
               <PartnerScoreCell value={`${partnerBroughtSales}`} label={translateCopy("Getirdiği satış", language)} />
               <PartnerScoreCell value={`${partnerActiveCount}`} label={translateCopy("Aktif ortaklık", language)} />
               <PartnerScoreCell value={money(partnerEarned)} label={translateCopy("Kazandırdığı komisyon", language)} />
-              <PartnerScoreCell value={`%${trust?.partner.score ?? 0}`} label={translateCopy("Ortak güveni", language)} />
+              <PartnerScoreCell value={trust?.partner.score == null ? "Henüz yok" : `%${trust.partner.score}`} label={translateCopy("Ortak güveni", language)} />
             </View>
           </View>
         ) : null}
@@ -1066,9 +1063,5 @@ function DeskAboutRow({ icon, label, value }: { icon: keyof typeof MaterialCommu
       <Text style={{ color: colors.ink, fontSize: 13.5, fontWeight: "900" }}>{value}</Text>
     </View>
   );
-}
-
-function isImageAvatar(value: string) {
-  return value.startsWith("http://") || value.startsWith("https://") || value.startsWith("file:");
 }
 

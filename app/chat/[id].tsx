@@ -1,4 +1,11 @@
-﻿import { MaterialCommunityIcons } from "@/components/icons";
+import { UserAvatar } from "@/components/user-avatar";
+import { ConversationListingStrip } from "@/components/conversation-listing-strip";
+import { ConversationOfferCard } from "@/components/conversation-offer-card";
+import { ConversationListingActions } from "@/components/conversation-listing-actions";
+import { displayListingTitle } from "@/lib/listing-title";
+import { isMobileApp } from "@/lib/mobile-app";
+import { MobileConversation } from "@/components/mobile/messages";
+import { MaterialCommunityIcons } from "@/components/icons";
 import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -13,7 +20,7 @@ import { showToast } from "@/lib/toast";
 import { openUrlSafe } from "@/lib/link";
 import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { EmptyState } from "@/components/ui";
-import { localToday, money } from "@/lib/format";
+import { localToday, moneyIn } from "@/lib/format";
 import { displayText } from "@/lib/text";
 import { uploadMessageAttachment } from "@/lib/live-service";
 import { useTypingIndicator } from "@/lib/use-typing";
@@ -51,6 +58,11 @@ function scanChatRisk(text: string) {
 }
 
 export default function ChatScreen() {
+  const params = useLocalSearchParams<{ id?: string }>();
+  return isMobileApp ? <MobileConversation key={String(params.id || "")} id={String(params.id || "")} /> : <ChatScreenLegacy key={String(params.id || "")} />;
+}
+
+function ChatScreenLegacy() {
   const { isAuthenticated, authReady } = useStore();
   const { language } = useLanguage();
   const mounted = useMounted();
@@ -72,7 +84,8 @@ function ChatScreenInner() {
   const { currentUser, accountLoaded, findConversation, findListing, findUser, markConversationRead, messages, refreshUserData, reportUser, sendConversationMessage, retryMessage, isUserBlocked, blockUser, unblockUser } = useStore();
   const [body, setBody] = useState("");
   const [attaching, setAttaching] = useState(false);
-  const [inputFocused, setInputFocused] = useState(false);
+  const [showReplies, setShowReplies] = useState(false);
+  const [showOptions, setShowOptions] = useState(false);
   const [lightboxUri, setLightboxUri] = useState<string | null>(null);
   // "Aşağı in" FAB: kullanıcı geçmişi okumak için yukarı kaydırınca görünür; yukarıdayken
   // yeni mesaj gelirse üstünde nokta belirir (kaçırmasın). nearBottomRef auto-scroll
@@ -149,7 +162,7 @@ function ChatScreenInner() {
   const conversationRisk = scanChatRisk([...conversationMessages.map((item) => item.body), body].filter(Boolean).join(" "));
   const draftRisk = scanChatRisk(body);
   const safeDealDraft = listing
-    ? `Ödeme ve teslimat koşullarını OrtakSat mesaj kaydında netleştirelim. İlan: ${listing.title} - Fiyat: ${money(listing.price)}.`
+    ? `Ödeme ve teslimat koşullarını OrtakSat mesaj kaydında netleştirelim. İlan: ${displayListingTitle(listing.title)} - Fiyat: ${moneyIn(listing.price, listing.currency)}.`
     : "Ödeme ve teslimat koşullarını OrtakSat mesaj kaydında netleştirelim.";
 
   function send() {
@@ -192,7 +205,7 @@ function ChatScreenInner() {
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : Platform.OS === "android" ? "height" : undefined}
       keyboardVerticalOffset={0}
-      style={{ backgroundColor: colors.background, flex: 1, paddingBottom: kbInset }}
+      testID="web-conversation" style={{ backgroundColor: colors.background, flex: 1, minHeight: 0, paddingBottom: kbInset }}
     >
       {/* Kompakt sohbet başlığı (WhatsApp/Sahibinden benzeri): geri · avatar ·
           isim/durum · ilana git. Pazaryeri arama çubuğu YOK → dikey alan mesajlara. */}
@@ -211,15 +224,9 @@ function ChatScreenInner() {
             onPress={() => otherId && router.push({ pathname: "/store/[id]", params: { id: otherId } })}
             style={{ alignItems: "center", flex: 1, flexDirection: "row", gap: 9, minWidth: 0 }}
           >
-            {listing?.image ? (
-              <Image source={{ uri: listing.image }} contentFit="cover" style={{ borderRadius: 999, height: 40, width: 40 }} />
-            ) : (
-              <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 999, height: 40, justifyContent: "center", width: 40 }}>
-                <MaterialCommunityIcons name="account" size={22} color={colors.primaryDark} />
-              </View>
-            )}
+            <UserAvatar uri={otherUser?.avatar} size={38} />
             <View style={{ flex: 1, gap: 1, minWidth: 0 }}>
-              <Text selectable numberOfLines={1} style={{ color: colors.ink, fontSize: 15.5, fontWeight: "900" }}>
+              <Text selectable numberOfLines={1} style={{ color: colors.ink, fontSize: 15.5, fontWeight: "700" }}>
                 {otherUser?.name ?? translateCopy("Kullanıcı", language)}
               </Text>
               {otherTyping ? (
@@ -234,17 +241,9 @@ function ChatScreenInner() {
               )}
             </View>
           </Pressable>
-          {listing ? (
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={translateCopy("İlanı görüntüle", language)}
-              hitSlop={8}
-              onPress={() => router.push(`/listing/${listing.id}`)}
-              style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 999, borderWidth: 1, height: 38, justifyContent: "center", opacity: pressed ? 0.7 : 1, width: 38 })}
-            >
-              <MaterialCommunityIcons name="open-in-new" size={18} color={colors.primaryDark} />
-            </Pressable>
-          ) : null}
+          <Pressable accessibilityRole="button" accessibilityLabel={translateCopy("Sohbet seçenekleri", language)} accessibilityState={{ expanded: showOptions }} onPress={() => setShowOptions((v) => !v)} style={{ height: 44, width: 44, alignItems: "center", justifyContent: "center" }}><MaterialCommunityIcons name="dots-horizontal" size={23} color={colors.muted} /></Pressable>
+        </View>
+        {showOptions ? <View testID="chat-options" style={{ flexDirection: "row", justifyContent: "flex-end", alignItems: "center", gap: 10, borderTopWidth: 1, borderTopColor: colors.line, paddingHorizontal: 12, paddingVertical: 6 }}><Text style={{ flex: 1, color: colors.muted, fontSize: 12 }}>{translateCopy("Sohbet seçenekleri", language)}</Text>
           {/* Engelle / engel kaldır */}
           {otherId ? (
             <Pressable
@@ -259,7 +258,7 @@ function ChatScreenInner() {
                   { text: translateCopy("Engelle", language), style: "destructive", onPress: () => void blockUser(otherId) }
                 ]);
               }}
-              style={({ pressed }) => ({ alignItems: "center", backgroundColor: isUserBlocked(otherId) ? colors.accentSoft : colors.surfaceAlt, borderColor: isUserBlocked(otherId) ? colors.accent : colors.line, borderRadius: 999, borderWidth: 1, height: 38, justifyContent: "center", opacity: pressed ? 0.7 : 1, width: 38 })}
+              style={({ pressed }) => ({ alignItems: "center", backgroundColor: isUserBlocked(otherId) ? colors.accentSoft : colors.surfaceAlt, borderColor: isUserBlocked(otherId) ? colors.accent : colors.line, borderRadius: 999, borderWidth: 1, height: 44, justifyContent: "center", opacity: pressed ? 0.7 : 1, width: 44 })}
             >
               <MaterialCommunityIcons name={isUserBlocked(otherId) ? "account-cancel" : "account-cancel-outline"} size={17} color={isUserBlocked(otherId) ? colors.accent : colors.muted} />
             </Pressable>
@@ -276,32 +275,19 @@ function ChatScreenInner() {
                   { text: translateCopy("Bildir", language), style: "destructive", onPress: () => { void (async () => { const ok = await reportUser(otherId, translateCopy("Kullanıcı bildirimi", language), translateCopy("Mesajlaşmadan bildirildi.", language)); if (ok) showToast(translateCopy("Bildirim alındı — ekibimiz inceleyecek", language)); else Alert.alert(translateCopy("Bildirilemedi", language), translateCopy("Lütfen tekrar dene.", language)); })(); } }
                 ]);
               }}
-              style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 999, borderWidth: 1, height: 38, justifyContent: "center", opacity: pressed ? 0.7 : 1, width: 38 })}
+              style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 999, borderWidth: 1, height: 44, justifyContent: "center", opacity: pressed ? 0.7 : 1, width: 44 })}
             >
               <MaterialCommunityIcons name="flag-outline" size={17} color={colors.muted} />
             </Pressable>
           ) : null}
-        </View>
-        {/* Slim ilan şeridi: ürün + fiyat tek satır (tıklayınca ilana gider). */}
-        {listing ? (
-          <Pressable
-            onPress={() => router.push(`/listing/${listing.id}`)}
-            style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.surfaceAlt, borderTopColor: colors.line, borderTopWidth: 1, flexDirection: "row", gap: 8, opacity: pressed ? 0.85 : 1, paddingHorizontal: 12, paddingVertical: 7 })}
-          >
-            <MaterialCommunityIcons name="tag-outline" size={14} color={colors.primaryDark} />
-            <Text numberOfLines={1} style={{ color: colors.ink, flex: 1, fontSize: 12.5, fontWeight: "800", minWidth: 0 }}>{listing.title}</Text>
-            <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "900" }}>{money(listing.price)}</Text>
-          </Pressable>
-        ) : (
-          <View style={{ backgroundColor: colors.surfaceAlt, borderTopColor: colors.line, borderTopWidth: 1, paddingHorizontal: 12, paddingVertical: 7 }}>
-            <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 12, fontWeight: "700" }}>{translateCopy("İlan yayından kaldırıldı — mesaj geçmişin burada kalır.", language)}</Text>
-          </View>
-        )}
+        </View> : null}
+        <ConversationListingStrip listing={listing} />
+        {listing ? <View style={{ paddingHorizontal: 10, paddingBottom: 8 }}><ConversationListingActions key={currentConversation.id} conversation={currentConversation} listing={listing} /></View> : null}
         {conversationRisk.hasRisk ? (
           <View style={{ alignItems: "center", backgroundColor: colors.warningSoft, borderTopColor: colors.warning, borderTopWidth: 1, flexDirection: "row", gap: 7, paddingHorizontal: 12, paddingVertical: 6 }}>
             <MaterialCommunityIcons name="shield-alert-outline" size={14} color={colors.warning} />
             <Text numberOfLines={1} style={{ color: colors.ink, flex: 1, fontSize: 11, fontWeight: "800" }}>
-              {`Dikkat: ${conversationRisk.matches.join(", ")} — anlaşmayı mesajda tutun.`}
+              {`${translateCopy("Dikkat", language)}: ${conversationRisk.matches.join(", ")} — ${translateCopy("anlaşmayı mesajda tutun.", language)}`}
             </Text>
           </View>
         ) : null}
@@ -333,9 +319,10 @@ function ChatScreenInner() {
         {/* PERF: baloncuklar memo'lu ayrı bileşende → composer'a her tuş vuruşunda (body
             state) TÜM mesaj listesi yeniden çizilmez; yalnız mesajlar değişince çizilir. */}
         <MessageBubbles messages={conversationMessages} currentUserId={currentUser.id} language={language} onRetry={retryMessage} onImagePress={setLightboxUri} />
+        <ConversationOfferCard key={currentConversation.id} conversation={currentConversation} listing={listing} />
       </ScrollView>
         {/* "En alta in" FAB — yalnız yukarı kaydırıldığında; yukarıdayken yeni mesaj
-            gelirse üstünde turkuaz nokta belirir. */}
+            gelirse üstünde marka mavisi nokta belirir. */}
         {showJump ? (
           <Pressable
             accessibilityRole="button"
@@ -361,13 +348,13 @@ function ChatScreenInner() {
 
       {/* Hızlı yanıt önerileri — kutu boşken ve odak yokken. Odaklanınca gizlenir ki
           yazmaya başlayınca ekran "zıplamasın" (kayma tek seferde klavye açılışına biner). */}
-      {!blockedHere && !inputFocused && !body.trim() ? (
+      {!blockedHere && showReplies ? (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={{ gap: 6, paddingHorizontal: 10, paddingVertical: 8 }} style={{ backgroundColor: colors.surface, borderTopColor: colors.line, borderTopWidth: 1, maxHeight: 52 }}>
           <Pressable onPress={() => setBody(translateCopy("Bu ürün için ortak satış yapmak istiyorum; komisyon ve şartları konuşabilir miyiz?", language))} style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderColor: colors.primary, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 5, paddingHorizontal: 12, paddingVertical: 7 }}>
             <MaterialCommunityIcons name="handshake-outline" size={13} color={colors.primaryDark} />
             <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "800" }}>{translateCopy("Ortaklık öner", language)}</Text>
           </Pressable>
-          <Pressable onPress={() => setBody(listing ? `${displayText(listing.title)} için fiyat teklifim: ₺___ (liste: ${money(listing.price)}). Uygun olur mu?` : translateCopy("Fiyat teklifim: ₺___ — uygun olur mu?", language))} style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 5, paddingHorizontal: 12, paddingVertical: 7 }}>
+          <Pressable onPress={() => setBody(listing ? `${displayListingTitle(listing.title)} için fiyat teklifim: ₺___ (liste: ${moneyIn(listing.price, listing.currency)}). Uygun olur mu?` : translateCopy("Fiyat teklifim: ₺___ — uygun olur mu?", language))} style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 5, paddingHorizontal: 12, paddingVertical: 7 }}>
             <MaterialCommunityIcons name="tag-outline" size={13} color={colors.primaryDark} />
             <Text style={{ color: colors.ink, fontSize: 12, fontWeight: "700" }}>{translateCopy("Fiyat teklifi", language)}</Text>
           </Pressable>
@@ -383,25 +370,28 @@ function ChatScreenInner() {
         </ScrollView>
       ) : null}
 
-      {blockedHere ? (
+      {blockedHere || currentConversation.status !== "open" ? (
         <View style={{ alignItems: "center", backgroundColor: colors.surface, borderTopColor: colors.line, borderTopWidth: 1, gap: 8, paddingBottom: insets.bottom > 0 ? insets.bottom : 14, paddingHorizontal: 16, paddingTop: 14 }}>
-          <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "700", textAlign: "center" }}>{translateCopy("Bu kullanıcıyı engelledin. Mesajlaşmak için engeli kaldır.", language)}</Text>
-          <Pressable accessibilityRole="button" onPress={() => otherId && void unblockUser(otherId)} style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.primary, borderRadius: 10, opacity: pressed ? 0.85 : 1, paddingHorizontal: 18, paddingVertical: 10 })}>
-            <Text style={{ color: "#FFFFFF", fontSize: 13.5, fontWeight: "900" }}>{translateCopy("Engeli kaldır", language)}</Text>
-          </Pressable>
+          <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "700", textAlign: "center" }}>{translateCopy(blockedHere ? "Bu kullanıcıyı engelledin. Mesajlaşmak için engeli kaldır." : "Bu konuşma kapatılmış. Mesaj geçmişini görüntüleyebilirsin.", language)}</Text>
+          {blockedHere ? <Pressable accessibilityRole="button" onPress={() => otherId && void unblockUser(otherId)} style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.primary, borderRadius: 10, opacity: pressed ? 0.85 : 1, paddingHorizontal: 18, paddingVertical: 10 })}>
+            <Text style={{ color: "#FFFFFF", fontSize: 13.5, fontWeight: "700" }}>{translateCopy("Engeli kaldır", language)}</Text>
+          </Pressable> : null}
         </View>
       ) : (
       <View style={{ alignItems: "flex-end", backgroundColor: colors.surface, borderTopColor: colors.line, borderTopWidth: 1, flexDirection: "row", gap: 8, paddingBottom: insets.bottom > 0 ? insets.bottom : 10, paddingHorizontal: 10, paddingTop: 10 }}>
+        <Pressable accessibilityRole="button" accessibilityLabel={translateCopy("Hazır yanıtlar", language)} accessibilityState={{ expanded: showReplies }} onPress={() => setShowReplies((v) => !v)} style={{ height: 44, width: 36, alignItems: "center", justifyContent: "center" }}><MaterialCommunityIcons name="message-text-outline" size={20} color={showReplies ? colors.primary : colors.muted} /></Pressable>
         <Pressable accessibilityRole="button" accessibilityLabel={translateCopy("Görsel ekle", language)} disabled={attaching} onPress={() => void attachImage()} style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 999, borderWidth: 1, height: 44, justifyContent: "center", opacity: pressed ? 0.7 : 1, width: 44 })}>
           <MaterialCommunityIcons name={attaching ? "loading" : "paperclip"} size={20} color={attaching ? colors.primary : colors.muted} />
         </Pressable>
         <TextInput
+          testID="message-composer"
+          maxLength={4000}
           accessibilityLabel={translateCopy("Mesaj yaz", language)}
           value={body}
           onChangeText={(t) => { setBody(t); notifyTyping(); }}
           multiline
-          onFocus={() => { setInputFocused(true); setTimeout(() => scrollRef.current?.scrollToEnd({ animated: false }), 120); }}
-          onBlur={() => setInputFocused(false)}
+          numberOfLines={1}
+          onFocus={() => { setTimeout(() => scrollRef.current?.scrollToEnd({ animated: false }), 120); }}
           placeholder={translateCopy("Mesaj yaz…", language)}
           placeholderTextColor={colors.muted}
           onKeyPress={(e) => {
@@ -411,7 +401,7 @@ function ChatScreenInner() {
               send();
             }
           }}
-          style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 22, borderWidth: 1, color: colors.ink, flex: 1, fontSize: 14.5, maxHeight: 120, minHeight: 44, paddingHorizontal: 16, paddingVertical: 11 }}
+          style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 12, borderWidth: 1, color: colors.ink, flex: 1, fontSize: 14, maxHeight: 120, minHeight: 44, minWidth: 0, paddingHorizontal: 16, paddingVertical: 11 }}
         />
         <Pressable accessibilityRole="button" accessibilityLabel={translateCopy("Gönder", language)} disabled={!body.trim()} onPress={send} style={({ pressed }) => ({ alignItems: "center", backgroundColor: body.trim() ? colors.primary : colors.line, borderRadius: 999, height: 44, justifyContent: "center", opacity: pressed ? 0.75 : 1, width: 44 })}>
           <MaterialCommunityIcons name="send" size={20} color="#FFFFFF" />
@@ -469,14 +459,14 @@ const MessageBubbles = memo(function MessageBubbles({ messages, currentUserId, l
               <View style={{ backgroundColor: mine ? colors.primary : colors.surface, borderColor: mine ? colors.primary : colors.line, borderTopLeftRadius: 14, borderTopRightRadius: 14, borderBottomLeftRadius: mine ? 14 : 4, borderBottomRightRadius: mine ? 4 : 14, borderWidth: 1, maxWidth: "82%", overflow: "hidden", paddingHorizontal: message.attachmentType === "image" ? 4 : 12, paddingVertical: message.attachmentType === "image" ? 4 : 8 }}>
                 {message.attachmentType === "image" && message.attachmentUrl ? (
                   <Pressable accessibilityRole="imagebutton" accessibilityLabel={translateCopy("Görseli büyüt", language)} onPress={() => message.attachmentUrl && onImagePress(message.attachmentUrl)}>
-                    <SafeRemoteImage uri={message.attachmentUrl} accessibilityLabel={translateCopy("Sohbet görseli", language)} contentFit="cover" style={{ backgroundColor: colors.line, borderRadius: 10, height: 180, width: 220 }} />
+                    <SafeRemoteImage uri={message.attachmentUrl} accessibilityLabel={translateCopy("Sohbet görseli", language)} contentFit="cover" style={{ backgroundColor: colors.line, borderRadius: 10, height: 160, width: 190, maxWidth: "100%" }} />
                   </Pressable>
                 ) : null}
                 {message.attachmentType === "file" && message.attachmentUrl ? (
-                  <View style={{ alignItems: "center", flexDirection: "row", gap: 8, paddingVertical: 2 }}>
-                    <MaterialCommunityIcons name="file-document-outline" size={22} color={mine ? "#FFFFFF" : colors.primary} />
-                    <Text numberOfLines={1} style={{ color: mine ? "#FFFFFF" : colors.ink, fontSize: 12.5, fontWeight: "700", maxWidth: 170 }}>{message.attachmentName ?? "Dosya"}</Text>
-                  </View>
+                  <Pressable accessibilityRole="button" accessibilityLabel={`${translateCopy("Dosyayı aç", language)}: ${message.attachmentName ?? "Dosya"}`} onPress={() => message.attachmentUrl && void openUrlSafe(message.attachmentUrl)} style={{ alignItems: "center", flexDirection: "row", gap: 8, paddingVertical: 2 }}>
+                    <MaterialCommunityIcons name="file-document-outline" size={22} color={mine ? "#FFFFFF" : colors.primaryDark} />
+                    <Text numberOfLines={1} style={{ color: mine ? "#FFFFFF" : colors.ink, flexShrink: 1, fontSize: 12.5, fontWeight: "700", maxWidth: 170 }}>{message.attachmentName ?? "Dosya"}</Text>
+                  </Pressable>
                 ) : null}
                 {message.body ? (
                   <Text selectable style={{ color: mine ? "#FFFFFF" : colors.ink, fontSize: 14, fontWeight: "500", lineHeight: 20, paddingHorizontal: message.attachmentType === "image" ? 8 : 0, paddingTop: message.attachmentType === "image" ? 5 : 0 }}>
@@ -485,12 +475,12 @@ const MessageBubbles = memo(function MessageBubbles({ messages, currentUserId, l
                 ) : null}
                 {lastOfGroup ? (
                   <View style={{ alignItems: "center", alignSelf: "flex-end", flexDirection: "row", gap: 3, marginTop: 3, paddingHorizontal: message.attachmentType === "image" ? 8 : 0, paddingBottom: message.attachmentType === "image" ? 4 : 0 }}>
-                    <Text selectable style={{ color: mine ? "#E6FBF7" : colors.subtle, fontSize: 10, fontWeight: "700" }}>
+                    <Text selectable style={{ color: mine ? "#DCE7F7" : colors.muted, fontSize: 10, fontWeight: "700" }}>
                       {chatMsgTime(message.createdAt) || shortDate(message.createdAt)}
                     </Text>
                     {mine ? (message.status === "failed"
                       ? <MaterialCommunityIcons name="alert-circle" size={13} color="#FFD9D0" />
-                      : <MaterialCommunityIcons name={message.read ? "check-all" : "check"} size={13} color={message.read ? "#E6FBF7" : "rgba(255,255,255,0.7)"} />) : null}
+                      : <MaterialCommunityIcons name={message.read ? "check-all" : "check"} size={13} color={message.read ? "#FFFFFF" : "#C7D5EC"} />) : null}
                   </View>
                 ) : null}
               </View>
@@ -518,10 +508,14 @@ function chatMsgDay(createdAt: string) {
 function chatDayHeader(day: string, language: "tr" | "en") {
   const today = localToday();
   if (day === today) return language === "en" ? "Today" : "Bugün";
-  const d = new Date(day);
-  if (Number.isNaN(d.getTime())) return day;
-  const months = ["Oca", "Şub", "Mar", "Nis", "May", "Haz", "Tem", "Ağu", "Eyl", "Eki", "Kas", "Ara"];
-  return `${String(d.getDate()).padStart(2, "0")} ${months[d.getMonth()]} ${d.getFullYear()}`;
+  // "YYYY-MM-DD" doğrudan ayrıştırılır: new Date("YYYY-MM-DD") UTC gece yarısıdır →
+  // UTC'nin gerisindeki saat dilimlerinde başlık bir gün ÖNCEYİ gösterirdi.
+  const [y, mo, d] = day.split("-").map(Number);
+  const months = language === "en"
+    ? ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+    : ["Oca", "Şub", "Mar", "Nis", "May", "Haz", "Tem", "Ağu", "Eyl", "Eki", "Kas", "Ara"];
+  if (!y || !d || !months[mo - 1]) return day;
+  return `${String(d).padStart(2, "0")} ${months[mo - 1]} ${y}`;
 }
 
 

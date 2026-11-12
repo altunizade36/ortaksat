@@ -1,3 +1,6 @@
+import { validateListingTitle } from "@/lib/listing-title";
+import { clearOAuthConsent, prepareOAuthConsent, recordExplicitOAuthConsent } from "@/lib/oauth-consent";
+import { hasProfilePhoto } from "@/lib/profile-photo";
 ﻿import { createContext, PropsWithChildren, useEffect, useMemo, useRef, useState } from "react";
 import { Platform } from "react-native";
 import * as WebBrowser from "expo-web-browser";
@@ -99,7 +102,7 @@ import {
 } from "@/lib/live-service";
 import { rateLimit, rateLimitSync } from "@/lib/rate-limit";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
-import { loadAccountSnapshot, loadAdminSnapshot, loadBlogPosts, loadCategories, loadContentPages, loadMarketplacePage, loadMarketplaceSnapshot, loadOwnListings, loadPlatformSettings, loadSeoSettings, loadSuggestions, parseNotifMeta, type DbBlogPost, type DbContentPage, type DbSeoSetting, type ExtraCategory } from "@/lib/supabase-data";
+import { fetchListingsByIds, fetchPublicProfiles, fetchUserNotifications, loadAccountSnapshot, loadAdminSnapshot, loadBlogPosts, loadCategories, loadContentPages, loadMarketplacePage, loadMarketplaceSnapshot, loadOwnListings, loadPlatformSettings, loadSeoSettings, loadSuggestions, parseNotifMeta, type DbBlogPost, type DbContentPage, type DbSeoSetting, type ExtraCategory } from "@/lib/supabase-data";
 import { categoryTree as baseCategoryTree, setHiddenCategories as setHiddenCategoriesModule, type CategoryNode } from "@/lib/category-tree";
 import { displayText, repairTurkishText } from "@/lib/text";
 import { firstError, isValidEmail, validateSignIn, validateSignUp } from "@/lib/validation";
@@ -201,22 +204,6 @@ function translateAuthError(msg?: string | null): string | undefined {
   return msg; // bilinmeyen mesaj — olduğu gibi (nadiren İngilizce görünebilir)
 }
 
-// Google ile (ilk kez) girişte zımni yasal onayı kaydeder: buton altındaki
-// "Google ile devam ederek ... kabul etmiş olursun" bilgilendirmesiyle verilir.
-// localStorage kilidiyle kullanıcı başına yalnız bir kez çalışır (upsert zaten idempotent).
-async function recordGoogleConsentOnce(userId: string) {
-  try {
-    if (typeof window !== "undefined") {
-      const key = `ortaksat.legal.${userId}`;
-      if (window.localStorage.getItem(key) === "1") return;
-      window.localStorage.setItem(key, "1");
-    }
-    await Promise.all(LEGAL_DOCUMENT_TYPES.map((documentType) => recordLegalConsentLive(userId, documentType)));
-  } catch {
-    /* yasal kayıt kritik akışı bozmamalı */
-  }
-}
-
 type AppStore = {
   backendMode: "mock" | "supabase";
   authReady: boolean;
@@ -272,44 +259,44 @@ type AppStore = {
   emailVerified: boolean;
   isSuspended: boolean;
   signInWithEmail: (email: string, password: string) => Promise<boolean>;
-  signUpWithEmail: (input: { email: string; password: string; name: string }) => Promise<boolean>;
+  signUpWithEmail: (input: { email: string; password: string; name: string; legalAccepted: boolean }) => Promise<boolean>;
   resetPasswordWithEmail: (email: string) => Promise<boolean>;
   updatePasswordWithEmail: (password: string) => Promise<boolean>;
   resetPasswordWithCode: (email: string, code: string, newPassword: string) => Promise<boolean>;
-  signInWithGoogle: () => Promise<boolean>;
+  signInWithGoogle: (legalAccepted: boolean) => Promise<boolean>;
   verifyEmailCode: (email: string, code: string) => Promise<boolean>;
   resendEmailCode: (email: string) => Promise<boolean>;
   signOut: () => Promise<void>;
   signOutAllDevices: () => Promise<boolean>;
-  updateProfile: (input: Pick<User, "name" | "phone" | "avatar" | "bio"> & { expertiseCategories?: string[]; city?: string }) => Promise<boolean>;
+  updateProfile: (input: Pick<User, "name" | "phone" | "avatar" | "bio"> & { expertiseCategories?: string[]; city?: string;username?:string;districtId?:number|null;website?:string;instagram?:string }) => Promise<boolean>;
   savePreferences: (preferences: Record<string, boolean | string | number>) => Promise<boolean>;
   setEmailNotifications: (enabled: boolean) => Promise<boolean>;
-  reportListing: (listingId: string, reason: string, details?: string) => Promise<boolean>;
-  reportUser: (reportedUserId: string, reason: string, details?: string) => Promise<boolean>;
+  reportListing: (listingId: string, reason: string, details?: string, options?:{id?:string;attachments?:string[]}) => Promise<boolean>;
+  reportUser: (reportedUserId: string, reason: string, details?: string, options?:{id?:string;attachments?:string[]}) => Promise<boolean>;
   // Self-service doğrulama talebi: kullanıcı kendi hesabı için doğrulama ister →
   // admin moderasyon kuyruğunda "DOĞRULAMA TALEBİ" olarak görünür, admin onaylar.
   requestVerification: (note?: string) => Promise<boolean>;
   updateReportStatus: (reportId: string, status: Report["status"]) => Promise<boolean>;
   recordLegalConsent: (documentType: "privacy" | "terms" | "kvkk" | "seller_rules") => Promise<boolean>;
-  createSupportTicket: (subject: string, message: string) => Promise<boolean>;
+  createSupportTicket: (subject: string, message: string, options?: {id?:string;category?:string;attachments?:string[]}) => Promise<boolean>;
   requestAccountDeletion: (reason: string) => Promise<boolean>;
-  createListing: (input: NewListingInput, statusOverride?: Listing["status"]) => Listing;
-  updateListing: (listingId: string, input: NewListingInput) => Promise<boolean>;
+  createListing: (input: NewListingInput, statusOverride?: Listing["status"]) => Promise<Listing>;
+  updateListing: (listingId: string, input: NewListingInput, publish?: boolean) => Promise<boolean>;
   createLead: (input: Omit<Lead, "id" | "createdAt" | "status">) => Lead | undefined;
-  createReview: (listingId: string, rating: number, comment: string) => Review | undefined;
-  createSaleReview: (saleId: string, rating: number, comment: string) => Review | undefined;
+  createReview: (listingId: string, rating: number, comment: string) => Promise<Review | undefined>;
+  createSaleReview: (saleId: string, rating: number, comment: string, options?:{id?:string;experienceTags?:string[];mediaPaths?:string[]}) => Promise<Review | undefined>;
   editReview: (reviewId: string, rating: number, comment: string) => Promise<boolean>;
   deleteReview: (reviewId: string) => Promise<boolean>;
   reportReview: (review: Review, details?: string) => Promise<boolean>;
   canReviewSale: (saleId: string) => boolean;
   createSaleFromLead: (leadId: string, input?: Partial<SaleFromLeadInput>) => Sale | undefined;
   recordSaleForPartner: (partnershipId: string, input?: Partial<SaleFromLeadInput> & { buyerName?: string }) => Sale | undefined;
-  joinListing: (listingId: string, input?: Partial<PartnershipApplicationInput>) => Partnership | undefined;
-  approvePartnership: (partnershipId: string) => void;
-  rejectPartnership: (partnershipId: string, reason?: string) => void;
-  endPartnership: (partnershipId: string, mode?: "blocked" | "cancelled") => void;
-  leavePartnership: (partnershipId: string) => void;
-  setPartnershipCommission: (partnershipId: string, type?: "rate" | "fixed", value?: number) => void;
+  joinListing: (listingId: string, input?: Partial<PartnershipApplicationInput>, fallbackListing?: Listing) => Promise<Partnership | undefined>;
+  approvePartnership: (partnershipId: string) => Promise<boolean>;
+  rejectPartnership: (partnershipId: string, reason?: string) => Promise<boolean>;
+  endPartnership: (partnershipId: string, mode?: "blocked" | "cancelled") => Promise<boolean>;
+  leavePartnership: (partnershipId: string) => Promise<boolean>;
+  setPartnershipCommission: (partnershipId: string, type?: "rate" | "fixed", value?: number) => Promise<boolean>;
   toggleFavorite: (listingId: string) => void;
   setFavoriteCollection: (listingId: string, collection: string | null) => void;
   followedSellerIds: string[];
@@ -321,14 +308,15 @@ type AppStore = {
   buyerOfferAction: (offerId: string, action: "withdrawn" | "accept_counter" | "reject_counter") => Promise<boolean>;
   blockedUserIds: string[];
   isUserBlocked: (userId: string) => boolean;
-  blockUser: (userId: string) => Promise<void>;
-  unblockUser: (userId: string) => Promise<void>;
+  blockUser: (userId: string,reason?:string) => Promise<boolean>;
+  unblockUser: (userId: string) => Promise<boolean>;
   startConversation: (listingId: string, receiverId: string, body?: string, fallbackListing?: Listing) => Conversation | undefined;
   sendMessage: (listingId: string, receiverId: string, body: string) => void;
   sendConversationMessage: (conversationId: string, body: string, attachment?: { url: string; type: "image" | "file"; name?: string }) => boolean;
   retryMessage: (messageId: string) => void;
   markConversationRead: (conversationId: string) => void;
-  markNotificationRead: (notificationId: string) => void;
+  markNotificationRead: (notificationId: string) => Promise<boolean>;
+  refreshNotifications: () => Promise<void>;
   categorySuggestions: CategorySuggestion[];
   locationSuggestions: LocationSuggestion[];
   addCategorySuggestion: (input: { suggestedPath: string; note?: string; listingId?: string }) => void;
@@ -336,11 +324,11 @@ type AppStore = {
   setCategorySuggestionStatus: (id: string, status: SuggestionStatus) => void;
   setLocationSuggestionStatus: (id: string, status: SuggestionStatus) => void;
   updateLeadStatus: (leadId: string, status: LeadStatus) => void;
-  updateListingStatus: (listingId: string, status: Listing["status"]) => void;
+  updateListingStatus: (listingId: string, status: Listing["status"]) => Promise<boolean>;
   updateListingInventory: (listingId: string, patch: { stockCount?: number; price?: number }) => void;
   setListingFeatured: (listingId: string, featured: boolean) => void;
   deleteListing: (listingId: string) => void;
-  removeListing: (listingId: string) => void;
+  removeListing: (listingId: string) => Promise<boolean>;
   setUserRole: (userId: string, role: UserRole) => void;
   setUserStatus: (userId: string, status: NonNullable<User["status"]>) => void;
   setUserVerification: (userId: string, field: "verifiedPhone" | "verifiedIdentity", value: boolean) => void;
@@ -397,15 +385,15 @@ function initials(name: string) {
     .join("");
 }
 
-function userFromAuth(id: string, phone?: string | null, name?: string | null): User {
+function userFromAuth(id: string, phone?: string | null, name?: string | null, avatar?: string | null): User {
   const displayName = name || phone || "OrtakSat kullanıcısı";
 
   return {
     id,
     name: displayName,
     phone: phone ?? "",
-    avatar: initials(displayName) || "OS",
-    bio: "OrtakSat canlı kullanıcı profili.",
+    avatar: hasProfilePhoto(avatar) ? avatar! : initials(displayName) || "OS",
+    bio: "",
     verifiedPhone: Boolean(phone),
     verifiedIdentity: false,
     verifiedInstagram: false,
@@ -459,6 +447,11 @@ export function StoreProvider({ children }: PropsWithChildren) {
   const [sales, setSales] = useState(isSupabaseConfigured ? [] : initialSales);
   const [orders, setOrders] = useState(isSupabaseConfigured ? [] : initialOrders);
   const [reviews, setReviews] = useState(isSupabaseConfigured ? [] : initialReviews);
+  const favoriteAccount = useRef(authUser?.id);
+  const partnershipWrites=useRef(new Set<string>());
+  favoriteAccount.current = authUser?.id;
+  const notificationWrites = useRef(new Set<string>());
+  const favoriteWrites = useRef(new Set<string>());
   const [favorites, setFavorites] = useState(isSupabaseConfigured ? [] : initialFavorites);
   const [followedSellerIds, setFollowedSellerIds] = useState<string[]>([]);
   const [offers, setOffers] = useState<Offer[]>([]);
@@ -502,6 +495,36 @@ export function StoreProvider({ children }: PropsWithChildren) {
   const [hiddenCategories, setHiddenCategoriesState] = useState<string[]>([]);
   // Preview (no-Supabase) auth registry so register/login/logout work end-to-end in demo mode.
   const [mockAccounts, setMockAccounts] = useState<Record<string, { password: string; user: User }>>({});
+
+  // Old conversation listings and buyer profiles need not be in the first catalogue page.
+  // Hydrate only public fields, batch once per session, and never overwrite newer cached data.
+  const conversationContextAttempts = useRef({ userId: "", listings: new Set<string>(), users: new Set<string>() });
+  const contextAuthRef = useRef<string | undefined>(authUser?.id);
+  contextAuthRef.current = authUser?.id;
+  const contextEntitiesRef = useRef({ listings, users });
+  contextEntitiesRef.current = { listings, users };
+  useEffect(() => {
+    const uid = authUser?.id;
+    if (!isSupabaseConfigured || !uid || !accountLoaded) return;
+    if (conversationContextAttempts.current.userId !== uid) conversationContextAttempts.current = { userId: uid, listings: new Set(), users: new Set() };
+    const attempts = conversationContextAttempts.current;
+    const own = conversations.filter((conversation) => conversation.participantIds.includes(uid));
+    const knownListings = new Set(contextEntitiesRef.current.listings.map((item) => item.id));
+    const knownUsers = new Set(contextEntitiesRef.current.users.map((item) => item.id));
+    const listingIds = [...new Set(own.map((conversation) => conversation.listingId))].filter((id) => !knownListings.has(id) && !attempts.listings.has(id));
+    const userIds = [...new Set(own.flatMap((conversation) => conversation.participantIds))].filter((id) => id !== uid && !knownUsers.has(id) && !attempts.users.has(id));
+    if (!listingIds.length && !userIds.length) return;
+    listingIds.forEach((id) => attempts.listings.add(id));userIds.forEach((id) => attempts.users.add(id));
+    void Promise.all([
+      listingIds.length ? fetchListingsByIds(listingIds).catch(() => null) : Promise.resolve(null),
+      userIds.length ? fetchPublicProfiles(userIds).catch(() => []) : Promise.resolve([] as User[])
+    ]).then(([snapshot, profiles]) => {
+      if (contextAuthRef.current !== uid) return;
+      if (snapshot?.listings.length) setListings((previous) => { const known = new Set(previous.map((item) => item.id));return [...previous, ...snapshot.listings.filter((item) => !known.has(item.id))]; });
+      const extraUsers = [...(snapshot?.users ?? []), ...profiles];
+      if (extraUsers.length) setUsers((previous) => { const known = new Set(previous.map((item) => item.id));return [...previous, ...extraUsers.filter((item) => { if (known.has(item.id)) return false;known.add(item.id);return true; })]; });
+    });
+  }, [conversations, authUser?.id, accountLoaded]);
 
   // Çıkışta kullanıcıya ÖZEL (private) durumları temizle → aynı tarayıcıda sıradaki
   // kullanıcı/oturum önceki kullanıcının konuşma/mesaj/favori/ortaklık/talep/satış/
@@ -629,13 +652,21 @@ export function StoreProvider({ children }: PropsWithChildren) {
     if (!supabase) return;
     let mounted = true;
 
-    async function loadProfile(userId: string, fallbackPhone?: string | null, fallbackName?: string | null) {
-      const fallback = userFromAuth(userId, fallbackPhone, fallbackName);
+    let authRevision = 0;
+    let receivedAuthEvent = false;
+    let sessionUserId: string | null = null;
+    let accountRevision = 0;
+    async function loadProfile(userId: string, fallbackPhone?: string | null, fallbackName?: string | null, fallbackAvatar?: string | null) {
+      const revision = ++authRevision;
+      if (sessionUserId !== userId) { sessionUserId = userId; accountRevision++; }
+      const accountLoadRevision = accountRevision;
+      const fallback = userFromAuth(userId, fallbackPhone, fallbackName, fallbackAvatar);
       // Own profil'i SECURITY DEFINER RPC ile getir: phone kolon-grant'ı güvenlik için
       // kaldırıldığından `select("*")` "permission denied for column phone" verirdi (→ fallback,
       // role="user", admin linki kaybolurdu). get_my_profile auth.uid()'in KENDİ satırını
       // (phone dahil) döner. Bkz migration 20260813140000 / 20260813130000.
-      const { data: myRows, error } = await supabase!.rpc("get_my_profile");
+      const { data: myRows, error } = await supabase!.rpc("get_my_profile")
+        .then(result => result, () => ({ data: null, error: { message: "Profile temporarily unavailable" } }));
       const data = (Array.isArray(myRows) ? myRows[0] : myRows) as Record<string, any> | null;
 
       const profile: User =
@@ -643,6 +674,7 @@ export function StoreProvider({ children }: PropsWithChildren) {
           ? {
               id: data.id,
               name: data.full_name,
+              createdAt: data.created_at || undefined,
               phone: data.phone ?? fallback.phone,
               avatar: data.avatar_url || fallback.avatar,
               bio: data.bio ?? fallback.bio,
@@ -662,16 +694,19 @@ export function StoreProvider({ children }: PropsWithChildren) {
               // (vitrin/ortak-dizini uzmanlık filtresinden düşüyordu). Artık geri okunuyor.
               expertiseCategories: Array.isArray(data.expertise_categories) ? data.expertise_categories : [],
               city: typeof data.city === "string" && data.city.trim() ? data.city : undefined,
+              username:data.username||undefined,districtId:data.district_id||undefined,website:data.website_url||undefined,instagram:data.instagram_handle||undefined,
               preferences: (data.preferences ?? {}) as Record<string, boolean>
             }
           : fallback;
 
-      await ensureProfile(profile).catch(() => {});
-      if (!mounted) return;
+      if (!mounted || revision !== authRevision) return;
+      // Auth's signup trigger creates the profile. Restoring a session is read-only:
+      // a temporary profile-read failure must never overwrite it with fallback values.
       // AUTH'U ÖNCE ATA: hesap-özeti (10 tablo) yavaş yüklenirken ya da bir tablosu hata
       // verirken kullanıcı "misafir" görünmesin / oturumu kaybolmuş sanılmasın. Eskiden
       // setAuthUser 4 zincirli await SONRASINDA çağrılıyordu; biri patlarsa auth hiç kurulmuyordu.
       setAuthUser(profile);
+      setAuthReady(true);
       setBackendMode("supabase");
       setUsers((items) => [profile, ...items.filter((item) => item.id !== profile.id)]);
       // OLAY-KAPISI: hesap-özetini (10 tablo) yalnız kullanıcı DEĞİŞTİĞİNDE / ilk yüklemede çek.
@@ -691,7 +726,7 @@ export function StoreProvider({ children }: PropsWithChildren) {
         fetchBlockedUsers(profile.id).catch(() => [] as string[]),
         fetchOffersLive().catch(() => [] as Offer[])
       ]);
-      if (!mounted) return;
+      if (!mounted || accountLoadRevision !== accountRevision) return;
       setAccountLoaded(true); // başarı ya da hata; artık boş=gerçekten-boş
       setFollowedSellerIds(myFollows);
       setBlockedUserIds(myBlocks);
@@ -718,17 +753,17 @@ export function StoreProvider({ children }: PropsWithChildren) {
     }
 
     supabase.auth.getSession().then(({ data, error }) => {
+      if (!mounted || receivedAuthEvent) return;
       if (error) setAuthError(translateAuthError(error.message));
       const user = data.session?.user;
       if (user) {
         setEmailVerified(Boolean(user.email_confirmed_at));
-        if (user.app_metadata?.provider === "google") void recordGoogleConsentOnce(user.id);
+        if (user.app_metadata?.provider === "google") void recordExplicitOAuthConsent(user.id);
         // authReady'yi loadProfile BİTİNCE (authUser set olduktan sonra) işaretle. Eskiden aşağıda
         // KOŞULSUZ set ediliyordu → loadProfile async olduğundan authReady=true olurken authUser
         // henüz null → korumalı ekranlar (favoriler/mesajlar…) yenilemede AuthRequired FLAŞ ediyordu.
-        void loadProfile(user.id, user.phone, user.user_metadata?.full_name)
-          .catch((e) => console.warn("loadProfile failed", e))
-          .finally(() => { if (mounted) setAuthReady(true); });
+        void loadProfile(user.id, user.phone, user.user_metadata?.full_name, user.user_metadata?.avatar_url || user.user_metadata?.picture)
+          .catch((e) => console.warn("loadProfile failed", e));
       } else if (mounted) {
         setAuthUser(null);
         setEmailVerified(false);
@@ -737,19 +772,23 @@ export function StoreProvider({ children }: PropsWithChildren) {
     }).catch((e) => {
       // Ağ reddinde (getSession fetch timeout/kopuk) authReady askıda kalmasın → UI kilitlenmesin.
       console.warn("getSession failed", e);
-      if (mounted) setAuthReady(true);
+      if (mounted && !receivedAuthEvent) setAuthReady(true);
     });
 
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!mounted) return;
+      receivedAuthEvent = true;
       const user = session?.user;
       if (user) {
         setEmailVerified(Boolean(user.email_confirmed_at));
-        if (user.app_metadata?.provider === "google") void recordGoogleConsentOnce(user.id);
+        if (user.app_metadata?.provider === "google") void recordExplicitOAuthConsent(user.id);
         // authReady loadProfile bitince (authUser set) → AuthRequired flaşı olmaz (getSession ile aynı).
-        void loadProfile(user.id, user.phone, user.user_metadata?.full_name)
-          .catch((e) => console.warn("loadProfile failed", e))
-          .finally(() => setAuthReady(true));
+        void loadProfile(user.id, user.phone, user.user_metadata?.full_name, user.user_metadata?.avatar_url || user.user_metadata?.picture)
+          .catch((e) => console.warn("loadProfile failed", e));
       } else {
+        authRevision++;
+        sessionUserId = null;
+        accountRevision++;
         setAuthUser(null);
         setEmailVerified(false);
         loadedAccountUserRef.current = null; // çıkış → sonraki giriş hesap-özetini yeniden yüklesin
@@ -966,6 +1005,7 @@ export function StoreProvider({ children }: PropsWithChildren) {
     const conversationById = new Map(conversations.map((c) => [c.id, c]));
 
     function createOrReuseConversation(listingId: string, receiverId: string, body?: string, fallbackListing?: Listing) {
+      if (!isAuthenticated) { setAuthError("Mesaj göndermek için giriş yapmalısın."); return undefined; }
       if (isSuspended) return undefined;
       // Paylaşılan/derin-linkli ilan store feed'inde OLMAYABİLİR (yalnız remote fetch ile gelir) →
       // listings.find undefined → eskiden mesaj SESSİZCE başlamıyordu. Çağıran remote ilanı
@@ -1142,6 +1182,7 @@ export function StoreProvider({ children }: PropsWithChildren) {
         return !error;
       },
       async signUpWithEmail(input) {
+        if (input.legalAccepted !== true) { setAuthError("Önce yasal metinleri kabul etmelisin."); return false; }
         if (!platformSettings.allowSignups) {
           setAuthError("Yeni kayıtlar şu anda geçici olarak kapalıdır. Lütfen daha sonra tekrar deneyin.");
           return false;
@@ -1276,11 +1317,15 @@ export function StoreProvider({ children }: PropsWithChildren) {
         setAuthError(uErr?.message);
         return !uErr;
       },
-      async signInWithGoogle() {
+      async signInWithGoogle(legalAccepted) {
+        if (legalAccepted !== true) { setAuthError("Önce yasal metinleri kabul etmelisin."); return false; }
+
         if (!supabase) {
           setAuthError("Google ile giriş yalnızca canlı (Supabase) modda çalışır.");
           return false;
         }
+        try { await prepareOAuthConsent(); }
+        catch { setAuthError("Onay kaydedilemedi. Lütfen tekrar dene."); return false; }
         const isWebEnv = Platform.OS === "web";
         // Web'de tarayıcı Google'a yönlenir, dönüşte onAuthStateChange oturumu yakalar.
         // Native'de otomatik yönlenme YOK → URL'yi expo-web-browser ile aç, dönüşü işle.
@@ -1290,6 +1335,7 @@ export function StoreProvider({ children }: PropsWithChildren) {
           options: { redirectTo, skipBrowserRedirect: !isWebEnv }
         });
         if (error) {
+          await clearOAuthConsent();
           // Sağlayıcı Supabase'de etkin değilse anlaşılır mesaj göster.
           setAuthError(
             /provider.*not enabled|not enabled|unsupported/i.test(error.message)
@@ -1303,10 +1349,11 @@ export function StoreProvider({ children }: PropsWithChildren) {
           if (!data?.url) { setAuthError("Google bağlantısı açılamadı, lütfen tekrar dene."); return false; }
           try {
             const res = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
-            if (res.type !== "success" || !res.url) return false; // kullanıcı iptal etti — sessiz
+            if (res.type !== "success" || !res.url) { await clearOAuthConsent(); return false; } // kullanıcı iptal etti — sessiz
             const ok = await handleSupabaseAuthUrl(res.url);
-            if (!ok) { setAuthError("Google oturumu tamamlanamadı, lütfen tekrar dene."); return false; }
+            if (!ok) { await clearOAuthConsent(); setAuthError("Google oturumu tamamlanamadı, lütfen tekrar dene."); return false; }
           } catch {
+            await clearOAuthConsent();
             setAuthError("Google ile bağlantı kurulamadı, lütfen tekrar dene.");
             return false;
           }
@@ -1359,9 +1406,9 @@ export function StoreProvider({ children }: PropsWithChildren) {
         if (!supabase) { setAuthUser(null); resetPrivateState(); return true; }
         void logActivity("sign_out", { userId: authUser?.id, metadata: { scope: "global" } });
         const { error } = await supabase.auth.signOut({ scope: "global" });
+        if (error) { setAuthError(translateAuthError(error.message)); return false; }
         setAuthUser(null);
         resetPrivateState();
-        if (error) { setAuthError(translateAuthError(error.message)); return false; }
         return true;
       },
       async savePreferences(preferences) {
@@ -1369,6 +1416,7 @@ export function StoreProvider({ children }: PropsWithChildren) {
         const updatedUser: User = { ...currentUser, preferences: merged };
         const ok = liveUser ? await savePreferencesLive(currentUser.id, merged) : true;
         if (!ok) { setAuthError("Tercihler kaydedilemedi."); return false; }
+        if(favoriteAccount.current!==currentUser.id)return false;
         setUsers((items) => [updatedUser, ...items.filter((item) => item.id !== updatedUser.id)]);
         if (authUser?.id === updatedUser.id) setAuthUser(updatedUser);
         return true;
@@ -1392,6 +1440,10 @@ export function StoreProvider({ children }: PropsWithChildren) {
           bio: input.bio.trim(),
           verifiedPhone: phoneChanged ? false : currentUser.verifiedPhone,
           expertiseCategories: input.expertiseCategories ?? currentUser.expertiseCategories ?? [],
+          username:input.username!==undefined?(input.username.trim()||undefined):currentUser.username,
+          districtId:input.districtId!==undefined?(input.districtId||undefined):input.city!==undefined&&input.city!==currentUser.city?undefined:currentUser.districtId,
+          website:input.website!==undefined?(input.website.trim()||undefined):currentUser.website,
+          instagram:input.instagram!==undefined?(input.instagram.trim()||undefined):currentUser.instagram,
           city: input.city !== undefined ? (input.city.trim() || undefined) : currentUser.city
         };
         const ok = liveUser ? await updateProfileLive(updatedUser) : true;
@@ -1399,12 +1451,13 @@ export function StoreProvider({ children }: PropsWithChildren) {
           setAuthError("Profil güncellenemedi. Lütfen tekrar dene.");
           return false;
         }
+        if(favoriteAccount.current!==currentUser.id)return false;
         setAuthError(undefined);
         setUsers((items) => [updatedUser, ...items.filter((item) => item.id !== updatedUser.id)]);
         if (authUser?.id === updatedUser.id) setAuthUser(updatedUser);
         return true;
       },
-      async reportListing(listingId, reason, details) {
+      async reportListing(listingId, reason, details,options) {
         if (!liveUser) {
           setAuthError("Bildirim göndermek için e-posta ile giriş yapmalısın.");
           return false;
@@ -1413,7 +1466,8 @@ export function StoreProvider({ children }: PropsWithChildren) {
           reporterId: currentUser.id,
           listingId,
           reason,
-          details
+          details,
+          ...options
         });
         if (reportId) {
           setReports((items) => [
@@ -1431,13 +1485,13 @@ export function StoreProvider({ children }: PropsWithChildren) {
         }
         return Boolean(reportId);
       },
-      async reportUser(reportedUserId, reason, details) {
+      async reportUser(reportedUserId, reason, details,options) {
         if (!liveUser) {
           setAuthError("Bildirim göndermek için e-posta ile giriş yapmalısın.");
           return false;
         }
         if (reportedUserId === currentUser.id) return false;
-        const reportId = await insertReport({ reporterId: currentUser.id, reportedUserId, reason, details });
+        const reportId = await insertReport({ reporterId: currentUser.id, reportedUserId, reason, details, ...options });
         if (reportId) {
           setReports((items) => [
             { id: reportId, reporterId: currentUser.id, reportedUserId, reason, details: details ?? "", status: "open", createdAt: today() },
@@ -1491,13 +1545,13 @@ export function StoreProvider({ children }: PropsWithChildren) {
         }
         return recordLegalConsentLive(currentUser.id, documentType);
       },
-      async createSupportTicket(subject, message) {
+      async createSupportTicket(subject, message, options) {
         if (!liveUser) {
           setAuthError("Destek talebi için e-posta ile giriş yapmalısın.");
           return false;
         }
         if (!subject.trim() || !message.trim()) return false;
-        return createSupportTicketLive({ userId: currentUser.id, subject: subject.trim(), message: message.trim() });
+        return createSupportTicketLive({ userId: currentUser.id, subject: subject.trim(), message: message.trim(), ...options });
       },
       async requestAccountDeletion(reason) {
         if (!liveUser) {
@@ -1506,12 +1560,15 @@ export function StoreProvider({ children }: PropsWithChildren) {
         }
         return requestAccountDeletionLive({ userId: currentUser.id, reason: reason.trim() || "Kullanıcı hesap silme talebi oluşturdu." });
       },
-      createListing(input, statusOverride) {
+      async createListing(input, statusOverride) {
+        const titleCheck = validateListingTitle(input.title);
+        if (titleCheck.error) throw new Error(titleCheck.error);
+        if (!isAuthenticated) throw new Error("İlan vermek için giriş yapmalısın.");
         const id = newId("l", liveUser);
         // Admin "yayindan once incele" acikken (moderasyon zaten pending/rejected
         // demediyse) tum yeni ilanlar pending_review'a duser.
         const resolvedStatus: Listing["status"] =
-          statusOverride === "pending_review" || statusOverride === "rejected"
+          statusOverride === "draft" || statusOverride === "pending_review" || statusOverride === "rejected"
             ? statusOverride
             : platformSettings.reviewBeforePublish
               ? "pending_review"
@@ -1521,7 +1578,8 @@ export function StoreProvider({ children }: PropsWithChildren) {
           id,
           ownerId: currentUser.id,
           viewCount: 0, // Y6: yeni ilan 0 görüntülenmeyle başlar (sunucuda record_listing_view ile artar)
-          title: displayText(input.title),
+          imageUrl: input.image,
+          title: titleCheck.title,
           description: repairTurkishText(input.description),
           salesPitch: input.salesPitch.map(repairTurkishText),
           tags: input.tags.map(repairTurkishText),
@@ -1537,24 +1595,27 @@ export function StoreProvider({ children }: PropsWithChildren) {
           reviewCount: 0,
           createdAt: today()
         };
-        setListings((items) => [listing, ...items]);
         if (liveUser) {
-          persistCritical(insertListing(listing), () => {
-            setListings((items) => items.filter((l) => l.id !== listing.id));
-          }, "İlan kaydedilemedi. Bağlantını kontrol edip tekrar dene.");
+          const ok = await insertListing(listing);
+          if (!ok) { setAuthError("İlan kaydedilemedi. Taslağın korundu; tekrar deneyebilirsin."); throw new Error("Listing persistence failed"); }
           void logActivity("listing_create", { userId: currentUser.id, entityType: "listing", entityId: listing.id, metadata: { status: listing.status, category: listing.category } });
         }
+        setAuthError(undefined);
+        setListings((items) => [listing, ...items]);
         return listing;
       },
-      async updateListing(listingId, input) {
+      async updateListing(listingId, input, publish = false) {
+        const titleCheck = validateListingTitle(input.title);
+        if (titleCheck.error) { setAuthError(titleCheck.error); setSyncError(titleCheck.error); return false; }
         const listing = listings.find((item) => item.id === listingId);
         if (!listing || listing.ownerId !== currentUser.id) return false;
         const updatedListing: Listing = {
           ...listing,
           ...input,
           // Düzenleme formu kademeli komisyonu sağlamıyorsa mevcut kademeleri KORU (silme).
-          commissionTiers: input.commissionTiers ?? listing.commissionTiers,
-          title: displayText(input.title),
+          commissionTiers: input.partnershipMode === "none" || input.commissionType !== "rate" ? undefined : input.commissionTiers ?? listing.commissionTiers,
+          imageUrl: input.image,
+          title: titleCheck.title,
           description: repairTurkishText(input.description),
           salesPitch: input.salesPitch.map(repairTurkishText),
           tags: input.tags.map(repairTurkishText),
@@ -1570,13 +1631,10 @@ export function StoreProvider({ children }: PropsWithChildren) {
         if (listing.status === "sold" && updatedListing.status === "sold" && (updatedListing.stockCount ?? 0) > 0) {
           updatedListing.status = "active";
         }
-        // Reddedilen/incelemedeki ilanı DÜZENLEMEK = YENİDEN GÖNDER: içeriği yeniden tara.
-        // Temizse yayına döner (active), "review" ifadesi varsa tekrar incelemeye, yasaklıysa
-        // sebeple reddedilir. Eskiden reddedilen ilan düzenlense de 'rejected' kalıyor, satıcının
-        // hiçbir kurtarma yolu yoktu (üstelik panelde hiç görünmüyordu).
-        if (listing.status === "rejected" || listing.status === "pending_review") {
+        if (publish) updatedListing.status = "active";
+        if (updatedListing.status === "active" || listing.status === "rejected" || listing.status === "pending_review") {
           const scan = scanTextLocal(`${updatedListing.title}\n${updatedListing.description}`);
-          updatedListing.status = scan.verdict === "block" ? "rejected" : scan.verdict === "review" ? "pending_review" : "active";
+          updatedListing.status = scan.verdict === "block" ? "rejected" : scan.verdict === "review" || platformSettings.reviewBeforePublish ? "pending_review" : "active";
           updatedListing.rejectionReason = scan.verdict === "block" ? (scan.matched ? `Yasaklı içerik: ${scan.matched}` : "Yasaklı içerik") : undefined;
         }
         const ok = liveUser ? await updateListingLive(updatedListing) : true;
@@ -1637,7 +1695,8 @@ export function StoreProvider({ children }: PropsWithChildren) {
         }, "Bu müşteri bu ilan için zaten kaydedilmiş olabilir (ilk kaydeden ortağa atanır) ya da bağlantı sorunu var. Lütfen tekrar dene.");
         return lead;
       },
-      createReview(listingId, rating, comment) {
+      async createReview(listingId, rating, comment) {
+        if (!isAuthenticated) { setAuthError("Yorum yapmak için giriş yapmalısın."); return undefined; }
         const listing = listings.find((item) => item.id === listingId);
         // Kendi ilanına yorum yasak + kullanıcı başına ilan başına tek yorum:
         // sahte 5-yıldızla reviewCount/güven/rich-result puanı şişirilmesin.
@@ -1655,6 +1714,8 @@ export function StoreProvider({ children }: PropsWithChildren) {
           type: "product",
           createdAt: today()
         };
+        if(!Number.isInteger(rating)||rating<1||rating>5||!comment.trim()||comment.length>1000)return undefined;
+        if(liveUser&&!await insertReview(review)){setSyncError("Değerlendirme kaydedilemedi. Lütfen tekrar dene.");return undefined;}
         setReviews((items) => [review, ...items]);
         setListings((items) =>
           items.map((listing) =>
@@ -1665,10 +1726,6 @@ export function StoreProvider({ children }: PropsWithChildren) {
         if (listing.ownerId !== currentUser.id) {
           notify(listing.ownerId, "review", "Yeni ürün yorumu", `${currentUser.name} "${listing.title}" ilanına ${rating}★ yorum bıraktı.`, { listingId });
         }
-        if (liveUser) persistCritical(insertReview(review), () => {
-          setReviews((items) => items.filter((r) => r.id !== review.id));
-          setListings((items) => items.map((l) => (l.id === listingId ? { ...l, reviewCount: Math.max(0, l.reviewCount - 1) } : l)));
-        }, "Değerlendirme kaydedilemedi. Lütfen tekrar dene.");
         return review;
       },
       canReviewSale(saleId) {
@@ -1682,7 +1739,8 @@ export function StoreProvider({ children }: PropsWithChildren) {
         const alreadyReviewed = reviews.some((item) => item.saleId === saleId && item.reviewerId === currentUser.id);
         return Boolean(allowed && !alreadyReviewed);
       },
-      createSaleReview(saleId, rating, comment) {
+      async createSaleReview(saleId, rating, comment, options) {
+        if (!isAuthenticated) { setAuthError("Yorum yapmak için giriş yapmalısın."); return undefined; }
         const sale = sales.find((item) => item.id === saleId);
         if (!sale || !comment.trim()) return undefined;
         const listing = listings.find((item) => item.id === sale.listingId);
@@ -1690,30 +1748,30 @@ export function StoreProvider({ children }: PropsWithChildren) {
         if (!listing || !partnership) return undefined;
         const allowed = listing.ownerId === currentUser.id || partnership.partnerId === currentUser.id;
         const alreadyReviewed = reviews.some((item) => item.saleId === saleId && item.reviewerId === currentUser.id);
-        if (!allowed || alreadyReviewed || sale.status === "pending") return undefined;
+        if (!allowed || alreadyReviewed || !["approved","seller_paid","paid"].includes(sale.status)) return undefined;
         const reviewerIsSeller = listing.ownerId === currentUser.id;
         const review: Review = {
-          id: newId("r", liveUser),
+          id: options?.id||newId("r", liveUser),
           listingId: listing.id,
           saleId,
           reviewerId: currentUser.id,
           reviewedUserId: reviewerIsSeller ? partnership.partnerId : listing.ownerId,
           rating,
           comment: comment.trim(),
+          experienceTags:options?.experienceTags,mediaPaths:options?.mediaPaths,
           type: reviewerIsSeller ? "partner" : "seller",
           createdAt: today()
         };
-        setReviews((items) => [review, ...items]);
+        if(!Number.isInteger(rating)||rating<1||rating>5||!comment.trim()||comment.length>1000)return undefined;
+        if(liveUser&&!await insertReview(review)){setSyncError("Değerlendirme kaydedilemedi. Lütfen tekrar dene.");return undefined;}
+        if(favoriteAccount.current!==currentUser.id)return undefined;
+        setReviews((items) => [review, ...items.filter(item=>item.id!==review.id)]);
         setListings((items) => items.map((item) => (item.id === listing.id ? { ...item, reviewCount: item.reviewCount + 1 } : item)));
         // Karşı tarafa (değerlendirilen satıcı/ortak) bildir.
         if (review.reviewedUserId) {
           const rol = reviewerIsSeller ? "Satıcı" : "Ortak";
           notify(review.reviewedUserId, "review", "Yeni değerlendirme aldın", `${currentUser.name} (${rol}) seni ${rating}★ ile değerlendirdi.`, { listingId: listing.id });
         }
-        if (liveUser) persistCritical(insertReview(review), () => {
-          setReviews((items) => items.filter((r) => r.id !== review.id));
-          setListings((items) => items.map((l) => (l.id === listing.id ? { ...l, reviewCount: Math.max(0, l.reviewCount - 1) } : l)));
-        }, "Değerlendirme kaydedilemedi. Lütfen tekrar dene.");
         return review;
       },
       async editReview(reviewId, rating, comment) {
@@ -1877,12 +1935,14 @@ export function StoreProvider({ children }: PropsWithChildren) {
         // Stok düşümü artık record_sale RPC'sinde (atomik) — ayrı yazım YOK (çift düşüm olmasın).
         return sale;
       },
-      joinListing(listingId, input) {
+      async joinListing(listingId, input, fallbackListing) {
+        const writeKey="joinListing:"+listingId;if(partnershipWrites.current.has(writeKey))return undefined;partnershipWrites.current.add(writeKey);
+        try {
         // Giriş kapısı (favori/takip ile aynı): anonim kullanıcıda ortaklık yalnız yerel
         // state'te kalıyor, refCode sunucuda çözülmüyordu → hayalet ortaklık + sahte başarı.
         if (!isAuthenticated) { setAuthError("Ortak olmak için giriş yapmalısın."); return undefined; }
         if (isSuspended) { setAuthError("Hesabın askıya alındığı için işlem yapamazsın."); return undefined; }
-        const listing = listings.find((item) => item.id === listingId);
+        const listing = listings.find((item) => item.id === listingId) ?? (fallbackListing?.id === listingId ? fallbackListing : undefined);
         if (listing?.demo) { setAuthError("Bu bir örnek (vitrin) ilandır; ortaklık kapalıdır."); return undefined; }
         if (!listing || listing.ownerId === currentUser.id || listing.status !== "active") {
           setAuthError("Bu ilana ortak olunamaz. İlan pasif olabilir veya kendi ilanın olabilir.");
@@ -1906,6 +1966,7 @@ export function StoreProvider({ children }: PropsWithChildren) {
           return undefined;
         }
 
+        if (!listings.some((item) => item.id === listingId)) setListings((items) => items.some((item) => item.id === listingId) ? items : [...items, listing]);
         const existing = partnerships.find(
           (item) => item.listingId === listingId && item.partnerId === currentUser.id
         );
@@ -1939,20 +2000,18 @@ export function StoreProvider({ children }: PropsWithChildren) {
             reachEstimate: Number.isFinite(input?.reachEstimate) ? Math.max(0, Number(input?.reachEstimate)) : existing.reachEstimate,
             approvedAt: reopenStatus === "active" ? today() : existing.approvedAt
           };
+          if(liveUser&&!await partnerJoinLive(reopened,input?.inviteCode)){setAuthError("Başvuru kaydedilemedi. Kontenjanı ve bağlantını kontrol edip tekrar dene.");return undefined;}
+          if(favoriteAccount.current!==currentUser.id)return undefined;
           setPartnerships((items) => items.map((p) => (p.id === existing.id ? reopened : p)));
           setAuthError(undefined);
-          if (reopenStatus === "active") {
+          if (reopened.status === "active") {
             setListings((items) => items.map((item) => (item.id === listingId ? { ...item, partnerCount: item.partnerCount + 1 } : item)));
           } else {
             notify(listing.ownerId, "application", "Yeni ortak başvurusu", `${currentUser.name}, ${listing.title} ilanına yeniden başvurdu.`, { listingId: listing.id, partnershipId: reopened.id });
           }
           // Reopen ORTAK tarafından yapılır; partnerships UPDATE RLS'i yalnız sahibe izin
           // verir → SUNUCU RPC'si (partner_join) reddedileni yeniden açar + invite doğrular.
-          if (liveUser) persistCritical(partnerJoinLive(reopened, input?.inviteCode), () => {
-            setPartnerships((items) => items.map((p) => (p.id === existing.id ? existing : p)));
-            if (reopenStatus === "active") setListings((items) => items.map((l) => (l.id === listingId ? { ...l, partnerCount: Math.max(0, l.partnerCount - 1) } : l)));
-          }, "Başvuru güncellenemedi. Bağlantını kontrol edip tekrar dene.");
-          return reopened;
+        return reopened;
         }
 
         const status = listing.partnershipMode === "open" || invited ? "active" : "pending";
@@ -1972,101 +2031,109 @@ export function StoreProvider({ children }: PropsWithChildren) {
           approvedAt: status === "active" ? today() : undefined,
           createdAt: today()
         };
-        setPartnerships((items) => [partnership, ...items]);
+        const proposedId=partnership.id;
+        if(liveUser&&!await partnerJoinLive(partnership,input?.inviteCode)){setAuthError("Ortaklık kaydedilemedi. Kontenjanı ve bağlantını kontrol edip tekrar dene.");return undefined;}
+        if(favoriteAccount.current!==currentUser.id)return undefined;
+        setPartnerships((items) => [partnership, ...items.filter(p=>p.id!==partnership.id)]);
         setAuthError(undefined);
-        if (status === "active") {
+        if (partnership.status === "active" && partnership.id===proposedId) {
           setListings((items) =>
             items.map((item) => (item.id === listingId ? { ...item, partnerCount: item.partnerCount + 1 } : item))
           );
-        } else {
+        } else if(partnership.status==="pending") {
           notify(listing.ownerId, "application", "Yeni ortak başvurusu", `${currentUser.name}, ${listing.title} ilanına başvurdu.`, { listingId: listing.id, partnershipId: partnership.id });
         }
         // Katılım SUNUCU RPC'siyle: invite kodu SQL'de doğrulanır, onay modu 'pending'e
         // düşer (istemci hilesi geçmez), açık mod anında aktif. Trigger doğrudan-POST bypass'ı kapatır.
-        if (liveUser) persistCritical(partnerJoinLive(partnership, input?.inviteCode), () => {
-          setPartnerships((items) => items.filter((p) => p.id !== partnership.id));
-          if (status === "active") setListings((items) => items.map((l) => (l.id === listingId ? { ...l, partnerCount: Math.max(0, l.partnerCount - 1) } : l)));
-        }, "Ortaklık kaydedilemedi. Bağlantını kontrol edip tekrar dene.");
         return partnership;
+        } finally {partnershipWrites.current.delete(writeKey);}
       },
-      approvePartnership(partnershipId) {
+      async approvePartnership(partnershipId) {
+        const writeKey="decision:"+partnershipId;if(partnershipWrites.current.has(writeKey))return false;partnershipWrites.current.add(writeKey);
+        try {
         const partnership = partnerships.find((item) => item.id === partnershipId);
         const listing = partnership ? listings.find((item) => item.id === partnership.listingId) : undefined;
-        if (!partnership || !listing || (listing.ownerId !== currentUser.id && !staff) || partnership.status !== "pending") return;
+        if (!partnership || !listing || (listing.ownerId !== currentUser.id && !staff) || partnership.status !== "pending") return false;
         const updatedPartnership: Partnership = { ...partnership, status: "active", approvedAt: today() };
+        if(liveUser&&!await updatePartnershipStatus(updatedPartnership)){setSyncError("Başvuru onayı kaydedilemedi. Kontenjanı kontrol edip tekrar dene.");return false;}
+        if(favoriteAccount.current!==currentUser.id)return false;
         setPartnerships((items) => items.map((item) => (item.id === partnershipId ? updatedPartnership : item)));
         setListings((items) =>
           items.map((listing) =>
             listing.id === partnership.listingId ? { ...listing, partnerCount: listing.partnerCount + 1 } : listing
           )
         );
-        notify(partnership.partnerId, "application", "Ortaklık kabul edildi", `${listing.title} — paylaşım linkin aktif edildi. Paylaş, sat, kazan.`, { listingId: listing.id, partnershipId: partnership.id });
-        if (liveUser) persistCritical(updatePartnershipStatus(updatedPartnership), () => {
-          setPartnerships((items) => items.map((item) => (item.id === partnershipId ? partnership : item)));
-          setListings((items) => items.map((item) => (item.id === partnership.listingId ? { ...item, partnerCount: Math.max(0, item.partnerCount - 1) } : item)));
-        }, "Başvuru onayı kaydedilemedi. Bağlantını kontrol edip tekrar dene.");
+        notify(partnership.partnerId, "application", "Ortaklık kabul edildi", `${listing.title} için ortaklığın aktif. Satıcıyla iletişim kurarak satışa katkı sağlayabilirsin.`, { listingId: listing.id, partnershipId: partnership.id });
+        return true;
+        } finally {partnershipWrites.current.delete(writeKey);}
       },
-      rejectPartnership(partnershipId, reason) {
+      async rejectPartnership(partnershipId, reason) {
+        const writeKey="decision:"+partnershipId;if(partnershipWrites.current.has(writeKey))return false;partnershipWrites.current.add(writeKey);
+        try {
         const partnership = partnerships.find((item) => item.id === partnershipId);
         const listing = partnership ? listings.find((item) => item.id === partnership.listingId) : undefined;
-        if (!partnership || !listing || (listing.ownerId !== currentUser.id && !staff) || partnership.status !== "pending") return;
+        if (!partnership || !listing || (listing.ownerId !== currentUser.id && !staff) || partnership.status !== "pending") return false;
         const cleanReason = reason?.trim() || "Satıcı bu başvuruyu uygun görmedi.";
         const updatedPartnership = partnership
           ? { ...partnership, status: "rejected" as const, rejectionReason: cleanReason }
           : undefined;
+        if(liveUser&&updatedPartnership&&!await updatePartnershipStatus(updatedPartnership)){setSyncError("Başvuru reddi kaydedilemedi. Tekrar dene.");return false;}
+        if(favoriteAccount.current!==currentUser.id)return false;
         setPartnerships((items) =>
           items.map((item) => (item.id === partnershipId && updatedPartnership ? updatedPartnership : item))
         );
         if (partnership) notify(partnership.partnerId, "application", "Ortaklık reddedildi", cleanReason, { listingId: listing.id, partnershipId: partnership.id });
-        if (liveUser && updatedPartnership && partnership) persistCritical(updatePartnershipStatus(updatedPartnership), () => {
-          setPartnerships((items) => items.map((item) => (item.id === partnershipId ? partnership : item)));
-        }, "Başvuru reddi kaydedilemedi. Bağlantını kontrol edip tekrar dene.");
+        return true;
+        } finally {partnershipWrites.current.delete(writeKey);}
       },
       // Aktif ortaklığı satıcı sonlandırır/kapatır (eski hâlde bir kez onaylanan ortak
       // — sızan davet linkiyle gelen dahil — kalıcıydı). "cancelled": normal sonlandırma,
       // "blocked": kötüye kullanım engeli. Paylaşım linki artık lead getirmez.
-      endPartnership(partnershipId, mode = "cancelled") {
-        const partnership = partnerships.find((item) => item.id === partnershipId);
-        const listing = partnership ? listings.find((item) => item.id === partnership.listingId) : undefined;
-        if (!partnership || !listing || (listing.ownerId !== currentUser.id && !staff) || partnership.status !== "active") return;
-        const updated: Partnership = { ...partnership, status: mode };
-        setPartnerships((items) => items.map((p) => (p.id === partnershipId ? updated : p)));
-        setListings((items) => items.map((l) => (l.id === partnership.listingId ? { ...l, partnerCount: Math.max(0, l.partnerCount - 1) } : l)));
-        notify(partnership.partnerId, "application", mode === "blocked" ? "Ortaklık kapatıldı" : "Ortaklık sonlandırıldı", `${listing.title} için ortaklığın satıcı tarafından ${mode === "blocked" ? "kapatıldı" : "sonlandırıldı"}. Paylaşım linkin artık aktif değil.`, { listingId: listing.id, partnershipId: partnership.id });
-        if (liveUser) persistCritical(updatePartnershipStatus(updated), () => {
-          setPartnerships((items) => items.map((p) => (p.id === partnershipId ? partnership : p)));
-          setListings((items) => items.map((l) => (l.id === partnership.listingId ? { ...l, partnerCount: l.partnerCount + 1 } : l)));
-        }, "Ortaklık güncellenemedi. Bağlantını kontrol edip tekrar dene.");
+      async endPartnership(partnershipId, mode = "cancelled") {
+        const partnership = partnerships.find(item => item.id === partnershipId);
+        const listing = partnership ? listings.find(item => item.id === partnership.listingId) : undefined;
+        if (!isAuthenticated || !partnership || !listing || (listing.ownerId !== currentUser.id && !staff) || partnership.status !== "active") return false;
+        const key="decision:"+partnershipId;if(partnershipWrites.current.has(key))return false;partnershipWrites.current.add(key);
+        try {
+          const updated:Partnership={...partnership,status:mode};
+          if(liveUser&&!await updatePartnershipStatus(updated)){setSyncError("Ortaklık güncellenemedi. Tekrar dene.");return false;}
+          if(favoriteAccount.current!==currentUser.id)return false;
+          setSyncError(null);
+          setPartnerships(items=>items.map(p=>p.id===partnershipId?updated:p));
+          setListings(items=>items.map(l=>l.id===listing.id?{...l,partnerCount:Math.max(0,l.partnerCount-1)}:l));
+          notify(partnership.partnerId,"application",mode==="blocked"?"Ortaklık kapatıldı":"Ortaklık sonlandırıldı",`${listing.title} için ortaklığın satıcı tarafından sonlandırıldı.`,{listingId:listing.id,partnershipId});
+          return true;
+        }catch{setSyncError("Ortaklık güncellenemedi. Tekrar dene.");return false;}finally{partnershipWrites.current.delete(key);}
       },
-      // Ortak KENDİ aktif ortaklığından ayrılır (satıcının endPartnership'inin ortak-tarafı karşılığı;
-      // eskiden ortağın çıkış yolu YOKTU, kalıcı takılıydı). Sunucu otoritesi: leavePartnershipLive →
-      // SECURITY DEFINER RPC yalnız partner_id = auth.uid() & status='active' iken cancelled'a çeker.
-      leavePartnership(partnershipId) {
-        const partnership = partnerships.find((item) => item.id === partnershipId);
-        if (!partnership || partnership.partnerId !== currentUser.id || partnership.status !== "active") return;
-        const listing = listings.find((item) => item.id === partnership.listingId);
-        const updated: Partnership = { ...partnership, status: "cancelled" };
-        setPartnerships((items) => items.map((p) => (p.id === partnershipId ? updated : p)));
-        if (listing) setListings((items) => items.map((l) => (l.id === partnership.listingId ? { ...l, partnerCount: Math.max(0, l.partnerCount - 1) } : l)));
-        if (listing) notify(listing.ownerId, "application", "Ortak ayrıldı", `${currentUser.name}, "${listing.title}" ilanındaki ortaklıktan ayrıldı.`, { listingId: listing.id, partnershipId: partnership.id });
-        if (liveUser) persistCritical(leavePartnershipLive(partnershipId), () => {
-          setPartnerships((items) => items.map((p) => (p.id === partnershipId ? partnership : p)));
-          if (listing) setListings((items) => items.map((l) => (l.id === partnership.listingId ? { ...l, partnerCount: l.partnerCount + 1 } : l)));
-        }, "Ortaklıktan ayrılınamadı. Bağlantını kontrol edip tekrar dene.");
+      async leavePartnership(partnershipId) {
+        const partnership=partnerships.find(item=>item.id===partnershipId);
+        if(!isAuthenticated||!partnership||partnership.partnerId!==currentUser.id||partnership.status!=="active")return false;
+        const key="decision:"+partnershipId;if(partnershipWrites.current.has(key))return false;partnershipWrites.current.add(key);
+        try{
+          if(liveUser&&!await leavePartnershipLive(partnershipId)){setSyncError("Ortaklıktan ayrılınamadı. Tekrar dene.");return false;}
+          if(favoriteAccount.current!==currentUser.id)return false;
+          setSyncError(null);
+          setPartnerships(items=>items.map(p=>p.id===partnershipId?{...p,status:"cancelled"}:p));
+          setListings(items=>items.map(l=>l.id===partnership.listingId?{...l,partnerCount:Math.max(0,l.partnerCount-1)}:l));
+          const listing=listings.find(l=>l.id===partnership.listingId);
+          if(listing)notify(listing.ownerId,"application","Ortak ayrıldı",`${currentUser.name}, ortaklıktan ayrıldı.`,{listingId:listing.id,partnershipId});
+          return true;
+        }catch{setSyncError("Ortaklıktan ayrılınamadı. Tekrar dene.");return false;}finally{partnershipWrites.current.delete(key);}
       },
-      // Satıcı bu ortağa ÖZEL komisyon belirler (ilan varsayılanını ezer). type yoksa temizler.
-      setPartnershipCommission(partnershipId, type, value) {
-        const partnership = partnerships.find((item) => item.id === partnershipId);
-        const listing = partnership ? listings.find((item) => item.id === partnership.listingId) : undefined;
-        if (!partnership || !listing || (listing.ownerId !== currentUser.id && !staff)) return;
-        const set = type && typeof value === "number" && value > 0;
-        const nextType = set ? type : undefined;
-        const nextValue = set ? Math.round(value as number) : undefined;
-        const prev = { commissionOverrideType: partnership.commissionOverrideType, commissionOverrideValue: partnership.commissionOverrideValue };
-        setPartnerships((items) => items.map((p) => (p.id === partnershipId ? { ...p, commissionOverrideType: nextType, commissionOverrideValue: nextValue } : p)));
-        if (liveUser) persistCritical(setPartnershipCommissionLive(partnershipId, nextType ?? null, nextValue ?? null), () => {
-          setPartnerships((items) => items.map((p) => (p.id === partnershipId ? { ...p, ...prev } : p)));
-        }, "Komisyon güncellenemedi. Bağlantını kontrol edip tekrar dene.");
+      async setPartnershipCommission(partnershipId,type,value) {
+        const partnership=partnerships.find(item=>item.id===partnershipId),listing=partnership?listings.find(l=>l.id===partnership.listingId):undefined;
+        if(!isAuthenticated||!partnership||!listing||(listing.ownerId!==currentUser.id&&!staff))return false;
+        const clear=type===undefined&&value===undefined;
+        if(!clear&&(!type||!Number.isFinite(value)||Number(value)<=0||type==="rate"&&Number(value)>90))return false;
+        const key="decision:"+partnershipId;if(partnershipWrites.current.has(key))return false;partnershipWrites.current.add(key);
+        const nextType=clear?undefined:type,nextValue=clear?undefined:Math.round(Number(value)*100)/100;
+        try{
+          if(liveUser&&!await setPartnershipCommissionLive(partnershipId,nextType??null,nextValue??null)){setSyncError("Komisyon güncellenemedi. Tekrar dene.");return false;}
+          if(favoriteAccount.current!==currentUser.id)return false;
+          setSyncError(null);
+          setPartnerships(items=>items.map(p=>p.id===partnershipId?{...p,commissionOverrideType:nextType,commissionOverrideValue:nextValue}:p));
+          return true;
+        }catch{setSyncError("Komisyon güncellenemedi. Tekrar dene.");return false;}finally{partnershipWrites.current.delete(key);}
       },
       // Koleksiyon (favori-klasör) ata/kaldır — favori zaten ekliyse. null → "Tümü"ne düşer.
       setFavoriteCollection(listingId, collection) {
@@ -2075,11 +2142,14 @@ export function StoreProvider({ children }: PropsWithChildren) {
         if (!existing) return;
         const col = collection && collection.trim() ? collection.trim() : undefined;
         setFavorites((items) => items.map((item) => (item.id === existing.id ? { ...item, collection: col } : item)));
-        if (liveUser) void updateFavoriteCollection(listingId, currentUser.id, col ?? null);
+        if (liveUser) persistCritical(updateFavoriteCollection(listingId, currentUser.id, col ?? null), () => setFavorites(items => items.map(item => item.id === existing.id ? existing : item)), "Koleksiyon kaydedilemedi. Tekrar dene.");
       },
       toggleFavorite(listingId) {
         // Anon: sessiz no-op yerine /auth'a yönlendir (iletişim/ortak akışlarıyla parite).
         if (!isAuthenticated) { promptLogin(); return; }
+        const writeKey = `${currentUser.id}:${listingId}`;
+        if (favoriteWrites.current.has(writeKey)) return;
+        const favoriteUser = favoriteAccount.current;
         haptic.light();
         const existing = favorites.find((item) => item.listingId === listingId && item.userId === currentUser.id);
         if (existing) {
@@ -2089,13 +2159,20 @@ export function StoreProvider({ children }: PropsWithChildren) {
               listing.id === listingId ? { ...listing, favoriteCount: Math.max(0, listing.favoriteCount - 1) } : listing
             )
           );
-          if (liveUser) void deleteFavorite(listingId, currentUser.id);
+          if (liveUser) {
+            favoriteWrites.current.add(writeKey);
+            persistCritical(deleteFavorite(listingId, currentUser.id).finally(() => favoriteWrites.current.delete(writeKey)), () => {
+              if (favoriteAccount.current !== favoriteUser) return;
+              setFavorites(items => items.some(f => f.id === existing.id) ? items : [existing,...items]);
+              setListings(items => items.map(l => l.id === listingId ? { ...l, favoriteCount: l.favoriteCount + 1 } : l));
+            }, "Favori kaldırılamadı. Tekrar dene.");
+          }
           return;
         }
         const favoriteId = newId("f", liveUser);
         const favListing = listings.find((l) => l.id === listingId);
         const savedPrice = favListing?.price;
-        setFavorites((items) => [{ id: favoriteId, listingId, userId: currentUser.id, savedPrice }, ...items]);
+        setFavorites((items) => [{ id: favoriteId, listingId, userId: currentUser.id, savedPrice, createdAt: new Date().toISOString() }, ...items]);
         // Meta Pixel: favoriye ekleme = ilgi sinyali (AddToWishlist). fbq yoksa no-op.
         metaTrack("AddToWishlist", { content_name: favListing?.title, content_category: favListing?.category, value: favListing?.price || 0, currency: "TRY" });
         setListings((items) =>
@@ -2103,7 +2180,14 @@ export function StoreProvider({ children }: PropsWithChildren) {
             listing.id === listingId ? { ...listing, favoriteCount: listing.favoriteCount + 1 } : listing
           )
         );
-        if (liveUser) void insertFavorite(listingId, currentUser.id, favoriteId, savedPrice);
+        if (liveUser) {
+          favoriteWrites.current.add(writeKey);
+          persistCritical(insertFavorite(listingId, currentUser.id, favoriteId, savedPrice).finally(() => favoriteWrites.current.delete(writeKey)), () => {
+            if (favoriteAccount.current !== favoriteUser) return;
+            setFavorites(items => items.filter(f => f.id !== favoriteId));
+            setListings(items => items.map(l => l.id === listingId ? { ...l, favoriteCount: Math.max(0,l.favoriteCount-1) } : l));
+          }, "Favori kaydedilemedi. Tekrar dene.");
+        }
       },
       followedSellerIds,
       isFollowing(sellerId) {
@@ -2153,16 +2237,22 @@ export function StoreProvider({ children }: PropsWithChildren) {
       isUserBlocked(userId) {
         return blockedUserIds.includes(userId);
       },
-      async blockUser(userId) {
-        if (!isAuthenticated) { setAuthError("Engellemek için giriş yapmalısın."); return; }
-        if (userId === currentUser.id || blockedUserIds.includes(userId)) return;
+      async blockUser(userId,reason) {
+        if (!isAuthenticated) { setAuthError("Engellemek için giriş yapmalısın."); return false; }
+        if (userId === currentUser.id) return false;
+        if (blockedUserIds.includes(userId)) return true;
+        if(liveUser&&!await blockUserLive(userId,reason)){setSyncError("Engellenemedi. Tekrar dene.");return false;}
+        if(favoriteAccount.current!==currentUser.id)return false;
         setBlockedUserIds((ids) => [...ids, userId]);
-        if (liveUser) { const ok = await blockUserLive(userId); if (!ok) { setBlockedUserIds((ids) => ids.filter((id) => id !== userId)); setSyncError("Engellenemedi. Tekrar dene."); } }
+        return true;
       },
       async unblockUser(userId) {
-        if (!blockedUserIds.includes(userId)) return;
+        if(!isAuthenticated)return false;
+        if (!blockedUserIds.includes(userId)) return true;
+        if(liveUser&&!await unblockUserLive(userId)){setSyncError("Engel kaldırılamadı. Tekrar dene.");return false;}
+        if(favoriteAccount.current!==currentUser.id)return false;
         setBlockedUserIds((ids) => ids.filter((id) => id !== userId));
-        if (liveUser) { const ok = await unblockUserLive(userId); if (!ok) { setBlockedUserIds((ids) => (ids.includes(userId) ? ids : [...ids, userId])); setSyncError("Engel kaldırılamadı. Tekrar dene."); } }
+        return true;
       },
       startConversation(listingId, receiverId, body, fallbackListing) {
         return createOrReuseConversation(listingId, receiverId, body, fallbackListing);
@@ -2171,6 +2261,7 @@ export function StoreProvider({ children }: PropsWithChildren) {
         createOrReuseConversation(listingId, receiverId, body);
       },
       sendConversationMessage(conversationId, body, attachment) {
+        if (!isAuthenticated) { setAuthError("Mesaj göndermek için giriş yapmalısın."); return false; }
         // Reddedilen durumlarda FALSE dön → çağıran metni geri yükler (sessiz kayıp yok).
         if (isSuspended) { setSyncError("Hesabın askıya alındığı için mesaj gönderemezsin."); return false; }
         const trimmed = body.trim();
@@ -2225,10 +2316,24 @@ export function StoreProvider({ children }: PropsWithChildren) {
         // TEK istek (eskiden mesaj başına ayrı UPDATE → N istek + tutarsız sayaç titremesi).
         if (liveUser && unread.length) void markConversationReadLive(conversationId, currentUser.id);
       },
-      markNotificationRead(notificationId) {
-        const notification = notifications.find((item) => item.id === notificationId);
-        setNotifications((items) => items.map((item) => (item.id === notificationId ? { ...item, read: true } : item)));
-        if (liveUser && notification) void markNotificationReadLive({ ...notification, read: true });
+      async markNotificationRead(notificationId) {
+        const notification = notifications.find(item => item.id === notificationId && item.userId === currentUser.id);
+        if (!notification) return false;
+        if (notification.read || notificationWrites.current.has(notificationId)) return true;
+        notificationWrites.current.add(notificationId);
+        setNotifications(items => items.map(item => item.id === notificationId ? { ...item, read: true } : item));
+        try {
+          const ok = !liveUser || await markNotificationReadLive(notification);
+          if (!ok && favoriteAccount.current === currentUser.id) setNotifications(items => items.map(item => item.id === notificationId && item.userId === currentUser.id ? { ...item, read: false } : item));
+          return ok;
+        } finally { notificationWrites.current.delete(notificationId); }
+      },
+      async refreshNotifications() {
+        if (!liveUser) return;
+        const uid = currentUser.id;
+        const rows = await fetchUserNotifications(uid);
+        if (favoriteAccount.current !== uid) return;
+        setNotifications(rows.map(n => notificationWrites.current.has(n.id) ? { ...n, read: true } : n));
       },
       categorySuggestions,
       locationSuggestions,
@@ -2279,19 +2384,26 @@ export function StoreProvider({ children }: PropsWithChildren) {
           setLeads((items) => items.map((item) => (item.id === leadId ? { ...item, status: prevStatus } : item)));
         }, "Müşteri durumu güncellenemedi. Bağlantını kontrol edip tekrar dene.");
       },
-      updateListingStatus(listingId, status) {
-        const listing = listings.find((item) => item.id === listingId);
+      async updateListingStatus(listingId, status) {
+        const listing = listings.find(item => item.id === listingId);
         const isStaff = currentUser.role === "admin" || currentUser.role === "moderator" || currentUser.role === "super_admin";
-        // İlan sahibi veya admin/moderatör (moderasyon) değiştirebilir.
-        if (!listing || (listing.ownerId !== currentUser.id && !isStaff)) return;
-        // Moderasyon kaçağını önle: sahip, incelemedeki/reddedilen ilanı kendisi
-        // "active" yapamaz — yalnızca admin/moderatör yayınlayabilir.
+        if (!isAuthenticated || !listing || (listing.ownerId !== currentUser.id && !isStaff)) return false;
         if (!isStaff && (listing.status === "pending_review" || listing.status === "rejected") && status === "active") {
-          setAuthError("Bu ilan incelemede. Yayına alınması için admin onayı gerekir.");
-          return;
+          setAuthError("Bu ilan incelemede. Yayına alınması için admin onayı gerekir."); return false;
         }
-        setListings((items) => items.map((item) => (item.id === listingId ? { ...item, status } : item)));
-        if (liveUser) persistOrWarn(updateListingStatusLive({ ...listing, status }), "İlan durumu güncellenemedi. Lütfen tekrar dene.");
+        let resolvedStatus = status;
+        if (!isStaff && status === "active") {
+          const scan = scanTextLocal(`${listing.title}\n${listing.description}`);
+          if (scan.verdict === "block") { setAuthError("Bu içerik yayınlanamıyor. Önce ilanını düzenle."); return false; }
+          if (scan.verdict === "review" || platformSettings.reviewBeforePublish) resolvedStatus = "pending_review";
+        }
+        try {
+          if (liveUser && !await updateListingStatusLive({ ...listing, status: resolvedStatus })) {
+            setAuthError("İlan durumu kaydedilemedi. Tekrar deneyebilirsin."); return false;
+          }
+          setListings(items => items.map(item => item.id === listingId ? { ...item, status: resolvedStatus } : item));
+          setAuthError(undefined); return true;
+        } catch { setAuthError("Bağlantı kurulamadı. İlan durumu korunuyor."); return false; }
       },
       updateListingInventory(listingId, patch) {
         const listing = listings.find((item) => item.id === listingId);
@@ -2345,28 +2457,20 @@ export function StoreProvider({ children }: PropsWithChildren) {
       // Kullanıcı ilan silme (sahip). Finansal/ilişki geçmişi olan ilan hard-delete EDİLMEZ →
       // arşivlenir (gizlenir, geçmiş korunur). Temiz ilan gerçekten silinir. Sunucu da FK
       // hatasında arşive düşer (removeListingLive) → istemci geçmişi eksik bilse bile para kaybı olmaz.
-      removeListing(listingId) {
-        const listing = listings.find((item) => item.id === listingId);
+      async removeListing(listingId) {
+        const listing = listings.find(item => item.id === listingId);
         const isStaff = currentUser.role === "admin" || currentUser.role === "moderator" || currentUser.role === "super_admin";
-        if (!listing || (listing.ownerId !== currentUser.id && !isStaff)) return;
-        const hasHistory =
-          partnerships.some((p) => p.listingId === listingId) ||
-          leads.some((l) => l.listingId === listingId) ||
-          sales.some((s) => s.listingId === listingId);
-        if (hasHistory) {
-          // Arşivle: her yerden gizlenir (archived public+panel'de saklı), satır+geçmiş korunur.
-          setListings((items) => items.map((item) => (item.id === listingId ? { ...item, status: "archived" as const } : item)));
-          // Aktif ortaklıkları sonlandır — ortak ölü referans linkiyle kalmasın (sunucuda
-          // remove_listing RPC'si aynısını yapar + ortağa bildirim düşer).
-          setPartnerships((items) =>
-            items.map((p) => (p.listingId === listingId && p.status === "active" ? { ...p, status: "cancelled" as const } : p))
-          );
-        } else {
-          // Temiz ilan → gerçekten silinir.
-          setListings((items) => items.filter((item) => item.id !== listingId));
-        }
-        // Her iki durumda da SUNUCU karar verir (remove_listing RPC): sil ya da arşivle+ortaklık kapat.
-        if (liveUser) persistOrWarn(removeListingLive(listingId).then((r) => r !== false), "İlan kaldırılamadı. Lütfen tekrar dene.");
+        if (!isAuthenticated || !listing || (listing.ownerId !== currentUser.id && !isStaff)) return false;
+        const hasHistory = partnerships.some(p => p.listingId === listingId) || leads.some(l => l.listingId === listingId) || sales.some(s => s.listingId === listingId);
+        try {
+          const result = liveUser ? await removeListingLive(listingId) : hasHistory ? "archived" : "deleted";
+          if (result === false) { setAuthError("İlan kaldırılamadı. Kaydın korunuyor; tekrar deneyebilirsin."); return false; }
+          if (result === "archived") {
+            setListings(items => items.map(item => item.id === listingId ? { ...item, status: "archived" as const } : item));
+            setPartnerships(items => items.map(p => p.listingId === listingId && p.status === "active" ? { ...p, status: "cancelled" as const } : p));
+          } else setListings(items => items.filter(item => item.id !== listingId));
+          setAuthError(undefined); return true;
+        } catch { setAuthError("Bağlantı kurulamadı. İlanın korunuyor."); return false; }
       },
       setUserRole(userId, role) {
         const isAdmin = currentUser.role === "admin" || currentUser.role === "super_admin";
@@ -2650,8 +2754,10 @@ export function StoreProvider({ children }: PropsWithChildren) {
       },
       async refreshUserData() {
         const uid = currentUser?.id;
-        if (!isSupabaseConfigured || !uid) return;
-        const account = await loadAccountSnapshot(uid).catch(() => null);
+        if (!isSupabaseConfigured || !uid || !isAuthenticated) return;
+        conversationContextAttempts.current.listings.clear();conversationContextAttempts.current.users.clear();
+        const [account, refreshedOffers] = await Promise.all([loadAccountSnapshot(uid).catch(() => null), fetchOffersLive()]);
+        setOffers(refreshedOffers);
         if (!account) return;
         setPartnerships(account.partnerships);
         setLeads(account.leads);
@@ -2701,7 +2807,7 @@ export function StoreProvider({ children }: PropsWithChildren) {
         return favorites.some((item) => item.listingId === listingId && item.userId === currentUser.id);
       }
     };
-  }, [authError, authReady, authUser, backendMode, blogPosts, contentPages, conversations, emailVerified, extraCategories, hiddenCategories, favorites, leads, listings, marketplaceHasMore, marketplaceLoadingMore, marketplaceInitialLoading, accountLoaded, marketplaceLoadFailed, messages, notifications, orders, partnerships, pendingVerifyEmail, platformSettings, reports, reviews, sales, seoSettings, syncError, users]);
+  }, [authError, authReady, authUser, backendMode, blogPosts, contentPages, conversations, emailVerified, extraCategories, hiddenCategories, favorites, leads, listings, marketplaceHasMore, marketplaceLoadingMore, marketplaceInitialLoading, accountLoaded, marketplaceLoadFailed, messages, notifications, offers, orders, partnerships, pendingVerifyEmail, platformSettings, reports, reviews, sales, seoSettings, syncError, users]);
 
   // Hafif favori-önbelleğini app-store ile senkronla (kart favori kalbi için).
   const favToggleRef = useRef<(id: string) => void>(() => {});

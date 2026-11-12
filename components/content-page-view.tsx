@@ -1,3 +1,4 @@
+import { InformationPage } from "@/components/information-page";
 import { MaterialCommunityIcons } from "@/components/icons";
 import { Link } from "expo-router";
 import Head from "expo-router/head";
@@ -23,32 +24,8 @@ export function ContentPageView({ slug, fallback }: { slug: string; fallback?: R
   if (!page) return <Fragment>{fallback ?? <NotFound />}</Fragment>;
 
   const paras = page.body.split(/\n{2,}/).map((s) => s.trim()).filter(Boolean);
-  return (
-    <ScrollView contentInsetAdjustmentBehavior="automatic" showsVerticalScrollIndicator={false} contentContainerStyle={{ backgroundColor: colors.background, gap: 16, paddingHorizontal: 20, paddingTop: 16 }} style={{ backgroundColor: colors.background }}>
-      <Head>
-        <title>{page.seoTitle || `${page.title || slug} — OrtakSat`}</title>
-        {page.seoDescription ? <meta name="description" content={page.seoDescription} /> : null}
-        <meta property="og:title" content={page.seoTitle || `${page.title || slug} — OrtakSat`} />
-        {page.seoDescription ? <meta property="og:description" content={page.seoDescription} /> : null}
-      </Head>
-      <View style={{ alignSelf: "center", gap: 14, maxWidth: 1280, width: "100%" }}>
-        {/* Breadcrumb — kullanıcı her zaman ana sayfaya dönebilir. */}
-        <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 4 }}>
-          <PressLink href="/" accessibilityLabel={translateCopy("Ana sayfa", language)} pressedOpacity={0.7} style={{ alignItems: "center", flexDirection: "row", gap: 3 }}>
-            <MaterialCommunityIcons name="home-outline" size={14} color={colors.primaryDark} />
-            <Text style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Ana sayfa", language)}</Text>
-          </PressLink>
-          <MaterialCommunityIcons name="chevron-right" size={15} color={colors.subtle} />
-          <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 12.5, fontWeight: "700" }}>{page.title || slug}</Text>
-        </View>
-        <Text accessibilityRole="header" {...({ role: "heading", "aria-level": 1 } as Record<string, unknown>)} style={{ color: colors.ink, fontSize: 28, fontWeight: "900", lineHeight: 34 }}>{page.title || slug}</Text>
-        {paras.map((p, i) => (
-          <Text key={i} selectable style={{ color: colors.muted, fontSize: 15, fontWeight: "500", lineHeight: 24 }}>{p}</Text>
-        ))}
-      </View>
-      <WebFooter />
-    </ScrollView>
-  );
+  return <InformationPage title={page.title || slug} seoTitle={page.seoTitle} path={`/${slug}`} intro={page.seoDescription || "OrtakSat hakk?nda g?ncel bilgiler ve destek."}>{paras.map((paragraph, i) => <View key={i} style={{ padding: 18, backgroundColor: "white", borderWidth: 1, borderColor: colors.line, borderRadius: 14 }}><Text selectable style={{ color: colors.muted, fontSize: 14, lineHeight: 23 }}>{paragraph}</Text></View>)}</InformationPage>;
+
 }
 
 function NotFound() {

@@ -2,7 +2,8 @@ import { MaterialCommunityIcons } from "@/components/icons";
 import { Text, View } from "react-native";
 
 import { colors } from "@/components/colors";
-import { commissionAmount, commissionText, money } from "@/lib/format";
+import { commissionAmount, commissionText, effectiveCommissionAmount, moneyIn } from "@/lib/format";
+import { displayListingTitle } from "@/lib/listing-title";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import type { Listing, Partnership } from "@/lib/types";
 
@@ -13,16 +14,28 @@ import type { Listing, Partnership } from "@/lib/types";
  */
 export function AgreementCard({ listing, partnership }: { listing: Listing; partnership?: Partnership }) {
   const { language } = useLanguage();
-  const commission = commissionAmount(listing);
+  // Bu ORTAĞIN anlaşması: özel komisyon (override) > katılımda kilitlenen şartlar > ilan varsayılanı.
+  // Eskiden hep ilanın GÜNCEL komisyonu gösteriliyordu → satıcı ilanı düzenleyince ya da ortağa özel
+  // oran verince "Ortaklık kaydın" kartı gerçekte uygulanan komisyondan FARKLI tutar gösteriyordu.
+  const hasOverride = Boolean(partnership?.commissionOverrideType) && typeof partnership?.commissionOverrideValue === "number";
+  const hasAgreed = Boolean(partnership?.agreedCommissionType) && typeof partnership?.agreedCommissionValue === "number";
+  const termsType = (hasOverride ? partnership?.commissionOverrideType : hasAgreed ? partnership?.agreedCommissionType : undefined) ?? listing.commissionType;
+  const termsValue = (hasOverride ? partnership?.commissionOverrideValue : hasAgreed ? partnership?.agreedCommissionValue : undefined) ?? listing.commissionValue;
+  const termsListing: Listing = { ...listing, commissionType: termsType, commissionValue: termsValue };
+  const commission = partnership ? effectiveCommissionAmount(listing, partnership, 0, listing.price, 1) : commissionAmount(listing);
   const partnerAccepted = Boolean(partnership); // başvuru = ortağın kabulü
-  const sellerAccepted = partnership?.status === "active" || partnership?.status === "completed";
-  const rejected = partnership?.status === "rejected" || partnership?.status === "blocked";
+  // Sonlandırılan/kapatılan ortaklık bir zamanlar ONAYLANMIŞTI: eskiden "cancelled" için satıcı
+  // "Bekliyor", "blocked" için "Satıcı reddetti" görünüyordu (yanlış durum).
+  const wasApproved = partnership?.status === "active" || partnership?.status === "completed" || Boolean(partnership && partnership.status !== "pending" && partnership.status !== "rejected" && (partnership.approvedAt || (partnership.agreedAt && listing.partnershipMode === "open")));
+  const ended = partnership?.status === "cancelled" || partnership?.status === "blocked";
+  const sellerAccepted = wasApproved;
+  const rejected = partnership?.status === "rejected" || (partnership?.status === "blocked" && !wasApproved);
 
   const rows: Array<{ label: string; value: string }> = [
-    { label: "Ürün", value: listing.title },
-    { label: "Ürün fiyatı", value: money(listing.price) },
-    { label: "Komisyon tipi", value: listing.commissionType === "rate" ? translateCopy("Yüzde (%)", language) : translateCopy("Sabit tutar (₺)", language) },
-    { label: "Komisyon", value: `${commissionText(listing)}  ≈ ${money(commission)}` },
+    { label: "Ürün", value: displayListingTitle(listing.title) },
+    { label: "Ürün fiyatı", value: moneyIn(listing.price, listing.currency) },
+    { label: "Komisyon tipi", value: termsType === "rate" ? translateCopy("Yüzde (%)", language) : translateCopy("Sabit tutar", language) },
+    { label: "Komisyon", value: `${commissionText(termsListing)}  ≈ ${moneyIn(commission, listing.currency)}` },
     { label: "Satış olursa", value: "Satıcı → Ortağa komisyonu öder" },
     { label: "Ödeme yöntemi", value: "Taraflar belirler (havale/EFT, elden…)" }
   ];
@@ -42,7 +55,7 @@ export function AgreementCard({ listing, partnership }: { listing: Listing; part
       <View style={{ gap: 7 }}>
         {rows.map((r) => (
           <View key={r.label} style={{ alignItems: "center", flexDirection: "row", gap: 8, justifyContent: "space-between" }}>
-            <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "700" }}>{translateCopy(r.label, language)}</Text>
+            <Text style={{ color: colors.muted, flexShrink: 0, fontSize: 12.5, fontWeight: "700" }}>{translateCopy(r.label, language)}</Text>
             <Text numberOfLines={1} style={{ color: colors.ink, flex: 1, fontSize: 12.5, fontWeight: "800", textAlign: "right" }}>{translateCopy(r.value, language)}</Text>
           </View>
         ))}
@@ -60,7 +73,9 @@ export function AgreementCard({ listing, partnership }: { listing: Listing; part
         const steps: Array<{ done: boolean; bad?: boolean; label: string; date: string }> = [
           { done: true, label: translateCopy("Başvuru yapıldı", language), date: d(partnership.createdAt) },
           { done: sellerAccepted, bad: rejected, label: rejected ? translateCopy("Satıcı reddetti", language) : translateCopy("Onaylandı — ortaklık aktif", language), date: d(partnership.agreedAt ?? partnership.approvedAt) },
-          { done: partnership.status === "completed", label: translateCopy("Satış & komisyon tamamlandı", language), date: "" }
+          ended
+            ? { done: false, bad: wasApproved, label: translateCopy(partnership.status === "blocked" ? "Ortaklık kapatıldı" : "Ortaklık sonlandırıldı", language), date: "" }
+            : { done: partnership.status === "completed", label: translateCopy("Ortaklık tamamlandı", language), date: "" }
         ];
         return (
           <View style={{ borderTopColor: colors.line, borderTopWidth: 1, paddingTop: 10 }}>
@@ -100,8 +115,8 @@ function AcceptPill({ label, ok, rejected }: { label: string; ok: boolean; rejec
   return (
     <View style={{ alignItems: "center", backgroundColor: tint, borderRadius: 10, flex: 1, flexDirection: "row", gap: 7, paddingHorizontal: 11, paddingVertical: 9 }}>
       <MaterialCommunityIcons name={icon} size={16} color={color} />
-      <View style={{ minWidth: 0 }}>
-        <Text style={{ color: colors.ink, fontSize: 12, fontWeight: "900" }}>{label}</Text>
+      <View style={{ flex: 1, minWidth: 0 }}>
+        <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 12, fontWeight: "900" }}>{label}</Text>
         <Text style={{ color, fontSize: 10.5, fontWeight: "800" }}>{state}</Text>
       </View>
     </View>

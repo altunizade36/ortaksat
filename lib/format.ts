@@ -1,3 +1,4 @@
+import { displayListingTitle } from "./listing-title";
 import type { Listing, Partnership } from "@/lib/types";
 import { defaultCurrency, deviceLocale, localize } from "@/lib/locale";
 
@@ -177,9 +178,9 @@ export function listingShareTemplates(listing: Listing, url?: string, _refCode?:
   const firstPitch = listing.salesPitch[0] ?? listing.description;
 
   return {
-    instagram: listing.shareTemplates?.instagram || `${listing.title}\n${firstPitch}\nFiyat: ${money(listing.price)}\n${link}`,
-    whatsapp: listing.shareTemplates?.whatsapp || `Merhaba, ${listing.title} ürünü ilgini çekebilir.\nFiyat: ${money(listing.price)}\n${firstPitch}\n${link}`,
-    tiktok: listing.shareTemplates?.tiktok || `${listing.title} — ${firstPitch}\nFiyat: ${money(listing.price)}\n${link}`
+    instagram: listing.shareTemplates?.instagram || `${displayListingTitle(listing.title)}\n${firstPitch}\nFiyat: ${money(listing.price)}\n${link}`,
+    whatsapp: listing.shareTemplates?.whatsapp || `Merhaba, ${displayListingTitle(listing.title)} ürünü ilgini çekebilir.\nFiyat: ${money(listing.price)}\n${firstPitch}\n${link}`,
+    tiktok: listing.shareTemplates?.tiktok || `${displayListingTitle(listing.title)} — ${firstPitch}\nFiyat: ${money(listing.price)}\n${link}`
   };
 }
 

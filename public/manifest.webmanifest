@@ -9,8 +9,8 @@
   "orientation": "portrait",
   "lang": "tr",
   "dir": "ltr",
-  "background_color": "#F0FDFF",
-  "theme_color": "#0EA5B7",
+  "background_color": "#F6F9FF",
+  "theme_color": "#0645C9",
   "categories": ["shopping", "business"],
   "shortcuts": [
     { "name": "İlan Ver", "short_name": "İlan Ver", "url": "/create", "description": "Yeni ilan oluştur" },

@@ -1,3 +1,12 @@
+import { parseListingMoney, parseListingRate, listingCommissionError } from "@/lib/listing-numbers";
+import { resolveCategoryPath } from "@/lib/category-path";
+import { ListingLocationFields } from "@/components/listing-location-fields";
+import { displayListingTitle } from "@/lib/listing-title";
+import { ListingTitleField } from "@/components/listing-title-field";
+import { isMobileApp } from "@/lib/mobile-app";
+import { MobileCreateFlow } from "@/components/mobile/create-flow";
+import { MobileScreen, MobileButton, MobileCard } from "@/components/mobile/ui";
+import { showToast } from "@/lib/toast";
 import { MaterialCommunityIcons } from "@/components/icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Clipboard from "expo-clipboard";
@@ -11,14 +20,14 @@ import { colors } from "@/components/colors";
 import { AnchoredDropdown, useAnchor } from "@/components/anchored-dropdown";
 import { OptionSheet } from "@/components/option-sheet";
 import { LegalDisclaimerAccept } from "@/components/legal-disclaimer";
-import { LocationSelector, type LocationValue } from "@/components/location-selector";
+import { type LocationValue } from "@/components/location-selector";
 import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { modelsForSchema, deriveFieldsFromPath, getFormSchema, resolveFormKey, type CategoryNode, type FieldDef } from "@/lib/category-tree";
 import { moneyIn, partnerInviteUrl, productUrl, listingShareTemplates, type CurrencyCode } from "@/lib/format";
 import { TR_PROVINCES } from "@/lib/cities";
 import { metaTrack } from "@/lib/meta-pixel";
 import { translateCopy, useLanguage } from "@/lib/i18n";
-import { formatLocation, getProvince } from "@/lib/locations";
+import { formatLocation, getProvince, validateListingLocation } from "@/lib/locations";
 import { uploadListingImage } from "@/lib/live-service";
 import { autoFillListing } from "@/lib/listing-autofill";
 import { categoryRisk, moderateListingText, MODERATION_MESSAGES, scanTextLocal } from "@/lib/moderation";
@@ -30,10 +39,9 @@ import type { CommissionType, Listing, PartnershipMode } from "@/lib/types";
 import { useStore } from "@/lib/use-store";
 import { LIMITS, parseTrPrice, validateListing } from "@/lib/validation";
 
-// 5 idi: emlak/vasıta gibi kategorilerde ürünü anlatmaya yetmiyordu (Sahibinden 15-30 verir).
-// Yükleme otomatik 1600px'e ölçekler + sıkıştırır, ayrıca 512px kart varyantı üretir.
-// listing-edit zaten kapak + 14 ek = 15 kabul ediyor → create paritesi için 15.
-const MAX_PHOTOS = 15;
+// İlan fotoğraf limiti: kapak dahil en fazla 5. Galeri, sürükle-bırak ve yapıştırma
+// aynı sabiti kullanır; video kabul edilmez, yalnız görsel seçilir.
+const MAX_PHOTOS = 5;
 // MİNİMAL İLAN DETAYLARI (mockup): formda + zorunlulukta YALNIZ bu alanlar. Kategoriye özel
 // Form, kategorinin ZORUNLU alanlarını gösterir: sade ürünlerde (elektronik/pet) yalnız
 // başlık/durum/fiyat/açıklama; araba/evde ise yıl/km/m²/oda gibi kategoriye özel zorunlular
@@ -53,10 +61,9 @@ const SUGGESTED_COMMISSION: Record<string, [number, number]> = {
   "Ustalar & Hizmetler": [10, 20],
   "Özel Ders & Eğitim": [10, 20],
   "Hayvanlar Alemi": [8, 15],
-  "Dijital Ürünler & Hizmetler": [15, 30],
-  "Yapı Market & Bahçe": [8, 18],
-  "Müzik Enstrümanları": [8, 18],
-  "Sağlık & Medikal": [8, 15]
+  "İş İlanları": [5, 12],
+  "Yardımcı Arayanlar": [8, 15],
+  "Arayanlar / Talep İlanları": [6, 15]
 };
 
 // Başlık boşken gösterilen ÖRNEK (kategoriye göre). Sahibinden gibi: kullanıcıya iyi bir
@@ -70,7 +77,9 @@ const TITLE_EXAMPLES: Record<string, string> = {
   "Ustalar & Hizmetler": "Örn. Boya Badana ve Alçı Ustası — İstanbul",
   "Özel Ders & Eğitim": "Örn. Lise Matematik Özel Ders — birebir/online",
   "Hayvanlar Alemi": "Örn. Golden Retriever Yavru, aşıları tam",
-  "Dijital Ürünler & Hizmetler": "Örn. Kurumsal Logo + Marka Kimliği Tasarımı"
+  "İş İlanları": "Örn. Kadıköy Mağaza Satış Danışmanı — tam zamanlı",
+  "Yardımcı Arayanlar": "Örn. Haftada 3 Gün Çocuk Bakımı İçin Yardımcı",
+  "Arayanlar / Talep İlanları": "Örn. 2018 sonrası otomatik vites araç arıyorum"
 };
 const titlePlaceholderFor = (topLabel?: string) => (topLabel && TITLE_EXAMPLES[topLabel]) || "Örn. Ürünü, modeli ve öne çıkan özelliğini yaz";
 
@@ -80,7 +89,14 @@ const DESC_TEMPLATES: Record<string, string> = {
   "Emlak": "• Oda / salon: \n• m² (net/brüt): \n• Bulunduğu kat / bina yaşı: \n• Isıtma: \n• Aidat: \n• Krediye uygun mu: \n• Eşyalı mı: \n• Öne çıkanlar (asansör, otopark, cephe): ",
   "Vasıta": "• Model yılı / km: \n• Yakıt / vites: \n• Değişen–boyalı parça: \n• Tramer kaydı: \n• Bakım geçmişi: \n• Lastik durumu: \n• Ekstralar (cam tavan, kamera…): \n• Takas / kredi: ",
   "İkinci El & Sıfır Alışveriş": "• Ürün / model: \n• Durumu (sıfır / az kullanılmış): \n• Garanti / fatura: \n• Kutu–aksesuar tam mı: \n• Kullanım süresi: \n• Kusur (varsa): \n• Kargo / elden teslim: ",
-  "İş Makineleri & Sanayi": "• Marka / model / yıl: \n• Çalışma saati: \n• Bakım durumu: \n• Arıza / eksik: \n• Ekipman / ataşman: \n• Teslim yeri: "
+  "İş Makineleri & Sanayi": "• Marka / model / yıl: \n• Çalışma saati: \n• Bakım durumu: \n• Arıza / eksik: \n• Ekipman / ataşman: \n• Teslim yeri: ",
+  "Yedek Parça, Aksesuar, Donanım & Tuning": "• Parça / aksesuar adı: \n• OEM / parça numarası: \n• Uyumlu marka-model-yıl: \n• Orijinal / muadil / çıkma: \n• Sağ-sol / ön-arka konumu: \n• Garanti / fatura: \n• Kargo / montaj: ",
+  "Ustalar & Hizmetler": "• Hizmet kapsamı: \n• Hizmet bölgesi: \n• Keşif / randevu: \n• Deneyim / belge: \n• Malzeme dahil mi: \n• Garanti / fatura: \n• Başlangıç fiyatı: ",
+  "Özel Ders & Eğitim": "• Ders / branş: \n• Seviye: \n• Online / yüz yüze: \n• Ders süresi: \n• Deneyim / mezuniyet: \n• Uygun gün-saat: \n• Saatlik ücret: ",
+  "İş İlanları": "• Pozisyon / departman: \n• Çalışma tipi / modeli: \n• Deneyim beklentisi: \n• Maaş aralığı / yan haklar: \n• Çalışma gün-saatleri: \n• Başvuru yöntemi: \n• Başlangıç tarihi: ",
+  "Hayvanlar Alemi": "• Tür / ırk / yaş: \n• Aşı / sağlık durumu: \n• Mikroçip / karne: \n• Sahiplendirme şartları: \n• Uygun ev ortamı: \n• Teslim koşulu: \n• Ücret / masraf: ",
+  "Yardımcı Arayanlar": "• Aranan görev: \n• Çalışma şekli: \n• Gün / saat: \n• Bakılacak kişi / ev bilgisi: \n• Maaş / sigorta: \n• Deneyim / referans: \n• Ek beklentiler: ",
+  "Arayanlar / Talep İlanları": "• Aradığın ürün / hizmet: \n• Marka-model / özellik: \n• Kabul edilen durum: \n• Bütçe aralığı: \n• Teslim / konum tercihi: \n• Aciliyet: \n• Bulana ödül / komisyon: "
 };
 const descTemplateFor = (topLabel?: string) =>
   (topLabel && DESC_TEMPLATES[topLabel]) ||
@@ -136,7 +152,7 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
   const { language } = useLanguage();
   const isWideWeb = useIsWideWeb();
   const router = useRouter();
-  const { createListing, addCategorySuggestion, addLocationSuggestion, currentUser, isAuthenticated, listings } = useStore();
+  const { createListing, addCategorySuggestion, addLocationSuggestion, currentUser, isAuthenticated, listings, categoryTree } = useStore();
   const DRAFT_KEY = draftKeyFor(currentUser?.id);
   const [step, setStep] = useState(0);
   // İlan niyeti: "sell" (ürün/hizmet satıyorum) | "seek" (bir şey arıyorum = talep/buluş komisyonu).
@@ -172,6 +188,9 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
   // ACİL SATIŞ: 0 = kapalı; 3/7/14 = N gün içinde acil (attributes._urgentUntil ISO'ya yazılır).
   const [urgentDays, setUrgentDays] = useState(0);
   const [publishing, setPublishing] = useState(false);
+  const publishOperation = useRef(false);
+  const [pickingPhotos, setPickingPhotos] = useState(false);
+  const photoPickerLock = useRef(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [honeypot, setHoneypot] = useState(""); // bot tuzağı: gerçek kullanıcı boş bırakır
@@ -182,9 +201,11 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
   const [published, setPublished] = useState<{ listing: Listing; review: boolean } | null>(null);
   const [shareCopied, setShareCopied] = useState(false); // paylaşım metni kopyalandı bildirimi
 
-  const formKey = path.length ? resolveFormKey(path) : "";
+  const selectedCategory = path[path.length - 1];
+  const categoryComplete = !!selectedCategory && !(selectedCategory.children && selectedCategory.children.length);
+  const formKey = categoryComplete ? resolveFormKey(path) : "";
   const schema = formKey ? getFormSchema(formKey) : undefined;
-  const leafLabel = path.length ? path[path.length - 1].label : "";
+  const leafLabel = categoryComplete && selectedCategory ? selectedCategory.label : "";
   // Yolun HERHANGİ bir düğümü "Diğer" ise → kategori listemizde eksik demektir.
   // (Eskiden yalnız path[0]==="Diğer" bakılıyordu; artık "Diğer" her dalda olduğu için
   //  "Emlak › Konut › Diğer" gibi seçimler de havuza düşmeliydi ama düşmüyordu.)
@@ -201,7 +222,16 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
     return null;
   }, [values.title, values.description, path]);
 
-  const setV = (k: string, v: string | boolean | string[]) => setValues((s) => ({ ...s, [k]: v }));
+  const setV = (k: string, v: string | boolean | string[]) => setValues((s) => ({ ...s, [k]: v, ...(k === "brand" && s.brand !== v ? { model: "" } : {}) }));
+  const changePath = (next: CategoryNode[]) => {
+    if (resolveFormKey(path) !== resolveFormKey(next)) {
+      setValues(previous => ({ title: previous.title || "", description: previous.description || "", price: previous.price || "" }));
+    } else {
+      const oldSeed = schema ? deriveFieldsFromPath(path, schema) : {};
+      setValues(previous => Object.fromEntries(Object.entries(previous).filter(([key,value]) => !(key in oldSeed) || key === "title" || value !== oldSeed[key])));
+    }
+    setPath(next);
+  };
 
   // Komisyon/kazanç yardımı: fiyattan ortak kazancını ve kategoriye göre önerilen
   // komisyon aralığını canlı hesapla.
@@ -217,15 +247,15 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
       schema.fields.find((x) => x.type === "number" && x.suffix === "₺");
     return f?.key ?? "price";
   }, [schema]);
-  const priceNum = parseTrPrice(String(values[priceKey] ?? ""));
+  const priceNum = parseListingMoney(values[priceKey] ? String(values[priceKey]) : 0);
   // KOMİSYON/BONUS TR-SAYI GÜVENLİĞİ: sabit (₺) komisyonu satıcı "1.500" diye yazınca
   // Number("1.500") = 1.5 ₺ olur → sessizce YANLIŞ komisyonla yayınlanır (para modelini bozar).
   // Sabit tutar TR binlik biçimindedir → parseTrPrice. Yüzde (%) için nokta binlik DEĞİL
   // ondalık olabilir (12,5), o yüzden virgülü noktaya çevirip parseFloat. (bkz. tr-number-parse-gotcha)
   const commissionRaw = String(commissionValue);
   const commissionNum = commissionType === "rate"
-    ? (parseFloat(commissionRaw.replace(",", ".")) || 0)
-    : (parseTrPrice(commissionRaw) || 0);
+    ? parseListingRate(commissionRaw)
+    : parseListingMoney(commissionRaw);
   const bonusNum = parseTrPrice(String(bonusAmount)) || 0;
   const perSaleCommission = commissionType === "rate"
     ? Math.round((priceNum * commissionNum) / 100)
@@ -337,7 +367,7 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
       try {
         const d = JSON.parse(raw) as DraftShape;
         if (!d?.savedAt || Date.now() - d.savedAt > DRAFT_TTL_MS) { void AsyncStorage.removeItem(DRAFT_KEY); return; }
-        if (Array.isArray(d.path) && d.path.length) { draftShownRef.current = true; setPendingDraft(d); }
+        if (Array.isArray(d.path) && (d.path.length || d.images?.length || String(d.values?.title || "").trim())) { draftShownRef.current = true; setPendingDraft(d); }
       } catch { void AsyncStorage.removeItem(DRAFT_KEY); }
     })().catch(() => { if (alive) setDraftReady(true); });
     return () => { alive = false; };
@@ -359,11 +389,11 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
   });
 
   useEffect(() => {
-    if (!draftReady || !path.length || publishing) return;
+    if (!draftReady || pendingDraft || publishing || (!path.length && !images.length && !String(values.title || "").trim())) return;
     const draft = buildDraft();
     const h = setTimeout(() => { void AsyncStorage.setItem(DRAFT_KEY, JSON.stringify(draft)); }, 700);
     return () => clearTimeout(h);
-  }, [DRAFT_KEY, draftReady, path, values, images, loc, visibility, currency, commissionType, commissionValue, bonusAmount, bonusQuota, partnershipMode, partnerNote, contactMethod, attributionWindow, tiers, customCategory, step, publishing, commissionCondition, partnerRegion, maxPartners]);
+  }, [DRAFT_KEY, draftReady, pendingDraft, path, values, images, loc, visibility, currency, commissionType, commissionValue, bonusAmount, bonusQuota, partnershipMode, partnerNote, contactMethod, attributionWindow, tiers, customCategory, step, publishing, commissionCondition, partnerRegion, maxPartners]);
 
   const clearDraft = () => { setPendingDraft(null); void AsyncStorage.removeItem(DRAFT_KEY); };
 
@@ -371,9 +401,9 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
     const d = pendingDraft;
     if (!d) return;
     skipNextDerive.current = true; // geri-yüklenen değerlerin üzerine türetme yazmasın
-    setPath((d.path as CategoryNode[]) ?? []);
+    setPath(resolveCategoryPath(categoryTree, d.path));
     setValues(d.values ?? {});
-    setImages(d.images ?? []);
+    setImages([...new Set(d.images ?? [])].slice(0, MAX_PHOTOS));
     setLoc(d.loc ?? {});
     if (d.visibility) setVisibility(d.visibility);
     if (d.currency) setCurrency(d.currency);
@@ -443,38 +473,37 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
       .filter(Boolean);
     if (!uris.length) return;
     setImages((s) => {
-      const next = [...s, ...uris].slice(0, MAX_PHOTOS);
+      const next = [...new Set([...s, ...uris])].slice(0, MAX_PHOTOS);
       if (s.length + uris.length > MAX_PHOTOS) setError(translateCopy(`En fazla ${MAX_PHOTOS} görsel ekleyebilirsin. Fazlası eklenmedi.`, language));
       return next;
     });
   }
 
-  async function pickFromGallery() {
-    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!perm.granted) {
-      setError(translateCopy("Galeri izni verilmedi. Ayarlardan izin verip tekrar dene.", language));
-      return;
+  async function pickPhotos(camera: boolean) {
+    if (photoPickerLock.current || publishing) return;
+    if (images.length >= MAX_PHOTOS) { setError(translateCopy("En fazla 5 fotoğraf ekleyebilirsin.", language)); return; }
+    photoPickerLock.current = true;
+    setPickingPhotos(true);
+    setError(null);
+    try {
+      const permission = camera ? await ImagePicker.requestCameraPermissionsAsync() : await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!permission.granted) {
+        setError(translateCopy(camera ? "Kamera izni verilmedi. Ayarlardan izin verip tekrar dene." : "Galeri izni verilmedi. Ayarlardan izin verip tekrar dene.", language));
+        return;
+      }
+      const result = camera
+        ? await ImagePicker.launchCameraAsync({ mediaTypes: ["images"], quality: 0.85 })
+        : await ImagePicker.launchImageLibraryAsync({ allowsMultipleSelection: true, mediaTypes: ["images"], quality: 0.85, selectionLimit: MAX_PHOTOS - images.length });
+      if (!result.canceled) addAssets(result.assets.filter(asset => asset.type !== "video"));
+    } catch {
+      setError(translateCopy("Fotoğraf açılamadı. İzinlerini kontrol edip tekrar dene.", language));
+    } finally {
+      photoPickerLock.current = false;
+      setPickingPhotos(false);
     }
-    const result = await ImagePicker.launchImageLibraryAsync({ allowsMultipleSelection: true, mediaTypes: ["images"], quality: 0.85, selectionLimit: MAX_PHOTOS });
-    if (result.canceled) return;
-    addAssets(result.assets);
   }
-
-  /**
-   * KAMERA (mobil): ürünü anında çekip ilana ekle. Eskiden yalnız galeri vardı —
-   * mobilde ilan verirken en doğal yol telefonla fotoğrafı O AN çekmek.
-   * Web'de kamera akışı yok (tarayıcı dosya seçici zaten galeriyi kapsar) → buton gizli.
-   */
-  async function captureFromCamera() {
-    const perm = await ImagePicker.requestCameraPermissionsAsync();
-    if (!perm.granted) {
-      setError(translateCopy("Kamera izni verilmedi. Ayarlardan izin verip tekrar dene.", language));
-      return;
-    }
-    const result = await ImagePicker.launchCameraAsync({ mediaTypes: ["images"], quality: 0.85 });
-    if (result.canceled) return;
-    addAssets(result.assets);
-  }
+  async function pickFromGallery() { await pickPhotos(false); }
+  async function captureFromCamera() { await pickPhotos(true); }
 
   // Yayınla'ya basınca eksik zorunlu alanları GÖSTER (kırmızı etiket) + ilk eksiğe kaydır.
   // Eskiden buton sessizce disabled'dı: kullanıcı uzun formda hangi alanın eksik olduğunu
@@ -504,6 +533,7 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
   }
 
   async function publish(asDraft = false) {
+    if (publishOperation.current || photoPickerLock.current) return;
     if (!schema) {
       // Eskiden sessizce return ediyordu: "Yayınla" tıklanıyor, hiçbir şey olmuyordu.
       setError(translateCopy("Kategori formu yüklenemedi. Kategoriyi tekrar seç.", language));
@@ -518,7 +548,7 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
       return;
     }
 
-    const title = String(values.title ?? leafLabel).trim() || leafLabel;
+    const title = String(values.title ?? leafLabel);
     const description = String(values.description ?? "").trim();
     const descRequired = schema.fields.some((f) => f.key === "description" && f.required);
 
@@ -533,7 +563,7 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
     const priceRequired = priceField ? !!priceField.required : false;
 
     // Merkezi doğrulama (başlık/açıklama/fiyat). Fiyat TR formatıyla ("1.500.000") ayrıştırılır.
-    const v = validateListing({ title, description, price: parseTrPrice(String(priceRaw ?? "")) });
+    const v = validateListing({ title, description, price: String(priceRaw ?? "") });
     const errs = v.errors.filter((e) => {
       if (e.field === "description" && !descRequired && !description) return false;
       // Fiyat şemada opsiyonel (hayvan/hizmet/ders vb.) ve boşsa: fiyat=0 kabul, hatayı düşür.
@@ -547,22 +577,28 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
     // Savunmacı yayın-anı kontrolü: adım-navigasyonu atlansa/draft bozulsa bile
     // eksik foto/konum/komisyonlu ilan yayınlanmasın (canNext'e ek güvenlik).
     if (images.length === 0) { setError(translateCopy("En az bir fotoğraf ekle.", language)); return; }
-    if (!loc.provinceId) { setError(translateCopy("İl seçmelisin.", language)); return; }
-    if (!loc.districtId) { setError(translateCopy("İlçe seçmelisin.", language)); return; }
-    if (partnershipMode !== "none" && !(commissionNum > 0)) { setError(translateCopy("Komisyon değeri sıfırdan büyük olmalı.", language)); return; }
+    const locationError = validateListingLocation(loc);
+    if (locationError) { setError(translateCopy(locationError, language)); return; }
+    const commissionError = partnershipMode !== "none" ? listingCommissionError(commissionType, commissionRaw, maxPartners) : "";
+    if (commissionError) { setError(commissionError); return; }
 
     // ANONİM YAYIN: form GEÇERLİ ama giriş yok → taslağı anon-pending'e kaydet + Kayıt'a
     // yönlendir (dönüşte /create'e döner, taslak migrasyonla korunur). Emeğini harcamış
     // kullanıcıyı EN YÜKSEK motivasyon anında kayda alırız — kayıt duvarını başa değil sona koy.
-    if (!isAuthenticated) {
-      try { await AsyncStorage.setItem(ANON_PENDING_KEY, JSON.stringify(buildDraft())); } catch { /* yoksay */ }
-      setNotice("İlanını yayınlamak için ücretsiz hesabını oluştur — bilgilerin korunuyor.");
-      router.push("/auth?redirect=/create&mode=register");
-      return;
-    }
-
+    publishOperation.current = true;
     setPublishing(true);
     try {
+      if (!isAuthenticated) {
+        try { await AsyncStorage.setItem(ANON_PENDING_KEY, JSON.stringify(buildDraft())); }
+        catch {
+          setError(translateCopy("Taslak cihazına kaydedilemedi. Bilgilerin formda duruyor; girişe geçmeden önce tekrar dene.", language));
+          return;
+        }
+        setNotice("İlanını yayınlamak için ücretsiz hesabını oluştur — bilgilerin korunuyor.");
+        router.push("/auth?redirect=/create&mode=register");
+        return;
+      }
+
       // Hız sınırı (spam/bot ilan yağmurunu engeller).
       const rl = await rateLimit("listing_create");
       if (!rl.allowed) {
@@ -662,7 +698,7 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
       const risk = computeListingRisk(riskDraft, listings, currentUser);
       if (!asDraft && risk.level === "high" && !statusOverride) { verdict = "review"; statusOverride = "pending_review"; }
 
-      const created = createListing({
+      const created = await createListing({
         title: v.clean.title || leafLabel,
         description: description ? v.clean.description : auto.description,
         salesPitch: detailLines.slice(0, 4).length ? detailLines.slice(0, 4) : auto.salesPitch,
@@ -686,6 +722,7 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
         location: formatLocation(loc, visibility) || getProvince(loc.provinceId)?.name || "Türkiye",
         provinceId: loc.provinceId,
         districtId: loc.districtId,
+        neighborhoodId: loc.neighborhoodId,
         addressVisibility: visibility,
         locationNote: loc.neighborhood?.trim() || undefined,
         image: cover,
@@ -702,7 +739,7 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
       }, statusOverride);
 
       // İlan oluşturuldu → yarım-kalan taslağı sil (tekrar "devam et?" çıkmasın).
-      void AsyncStorage.removeItem(DRAFT_KEY);
+      void AsyncStorage.removeItem(DRAFT_KEY).catch(() => { /* Publication already succeeded; local cleanup must not turn it into a failure. */ });
 
       // BAŞARI EKRANI: eskiden kullanıcı doğrudan panele atılıyordu ve elinde HİÇBİR ŞEY
       // kalmıyordu. Paylaşım metinleri yayından ÖNCE gösteriliyordu — yani içlerinde gerçek
@@ -721,7 +758,7 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
         router.replace("/(tabs)/seller");
         return;
       }
-      setPublished({ listing: created, review: verdict === "review" });
+      setPublished({ listing: created, review: created.status === "pending_review" });
       setPublishing(false);
       return;
     } catch (e) {
@@ -735,6 +772,7 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
           : translateCopy("İlan yayınlanamadı. Taslağın korundu, tekrar deneyebilirsin.", language)
       );
     } finally {
+      publishOperation.current = false;
       setPublishing(false);
     }
   }
@@ -744,6 +782,15 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
     setPublished(null); setStep(0); setPath([]); setValues({}); setImages([]);
     setLoc({}); setTiers([]); setCustomCategory(""); setError(null); setNotice(null);
   }
+
+  if (isMobileApp && published) {
+    const l = published.listing;
+    return <MobileScreen title={published.review ? "İlan incelemeye gönderildi" : "İlanın hazır"}>
+      <MobileCard><Text style={{ fontSize: 22, fontWeight: "800", color: colors.primaryDark }}>{displayListingTitle(l.title)}</Text><Text style={{ color: colors.muted, lineHeight: 21 }}>{published.review ? "İlanın kontrol edildikten sonra yayınlanacak. Durumunu İlanlarım bölümünden takip edebilirsin." : "İlanın oluşturuldu. Paylaşabilir ve İlanlarım bölümünden yönetebilirsin."}</Text></MobileCard>
+      <MobileButton onPress={() => router.push(`/listing/${l.id}` as never)}>İlanı Gör</MobileButton><View style={{ height: 10 }} /><MobileButton secondary onPress={() => void shareOrCopy({ title: l.title, url: productUrl(l), message: listingShareTemplates(l, productUrl(l)).whatsapp })}>İlanı Paylaş</MobileButton><View style={{ height: 10 }} /><MobileButton secondary onPress={resetForNew}>Yeni İlan Ver</MobileButton>
+    </MobileScreen>;
+  }
+  if (isMobileApp) return <MobileCreateFlow picking={pickingPhotos} currency={currency} path={path} onPath={changePath} schema={schema} values={values} onValue={setV} images={images} onImages={setImages} onGallery={() => void pickFromGallery()} onCamera={() => void captureFromCamera()} loc={loc} onLocation={setLoc} visibility={visibility} onVisibility={setVisibility} commissionType={commissionType} onCommissionType={setCommissionType} commissionValue={commissionValue} onCommission={setCommissionValue} partnershipMode={partnershipMode} onPartnership={setPartnershipMode} maxPartners={maxPartners} onMaxPartners={setMaxPartners} contactMethod={contactMethod} onContact={setContactMethod} acceptedLegal={acceptedLegal} onLegal={setAcceptedLegal} publishing={publishing} error={error} onPublish={() => { if (guardRequiredFields()) void publish(); }} hasDraft={!!pendingDraft} onRestore={restoreDraft} onClearDraft={clearDraft} onSaveDraft={() => { const draft = buildDraft(); void AsyncStorage.setItem(DRAFT_KEY, JSON.stringify(draft)).then(() => { setPendingDraft(draft); showToast("Taslak cihazına kaydedildi."); }).catch(() => showToast("Taslak kaydedilemedi.")); }} />;
 
   if (published) {
     const l = published.listing;
@@ -988,7 +1035,18 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
                 </View>
               </View>
             ) : null}
-            <CategoryDropdowns value={path} presetFormKey={intent === "seek" ? "arayan" : undefined} onChange={(p) => { setPath(p); if (p.length) setStep(1); }} />
+            <CategoryDropdowns
+              value={path}
+              presetFormKey={intent === "seek" ? "arayan" : undefined}
+              onChange={(p) => {
+                changePath(p);
+                const nextCategory = p[p.length - 1];
+                if (nextCategory && !nextCategory.children?.length) setStep(1);
+              }}
+            />
+            {path.length && !categoryComplete ? (
+              <Text style={{ color: colors.goldInk, fontSize: 12.5, fontWeight: "700", lineHeight: 18 }}>{translateCopy("İlan detaylarına geçmek için bir alt kategori daha seç.", language)}</Text>
+            ) : null}
           </View>
 
         {/* Kart: İlan detayları (dinamik şema formu) */}
@@ -1134,8 +1192,7 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
         {schema ? (
           <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 18, borderWidth: 1, gap: 14, padding: isWideWeb ? 22 : 14 }}>
             <Text style={{ color: colors.ink, fontSize: 15.5, fontWeight: "900" }}>{translateCopy("Konum", language)}</Text>
-            {/* Sade: yalnız İl + İlçe (mahalle / açık adres / görünürlük çipleri kaldırıldı). */}
-            <LocationSelector value={loc} onChange={setLoc} required neighborhoodRequired={false} showNeighborhood={false} showAddressLine={false} mode="listing" />
+            <ListingLocationFields value={loc} onChange={setLoc} visibility={visibility} onVisibility={setVisibility} />
           </View>
         ) : null}
 
@@ -1374,14 +1431,14 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
 
         {/* Footer — her zaman görünür: Taslak Olarak Kaydet (sol) + İlanı Yayınla (sağ) */}
         <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 12, justifyContent: "space-between" }}>
-          <Pressable accessibilityRole="button" disabled={publishing} onPress={() => void publish(true)} style={({ pressed }) => ({ alignItems: "center", borderColor: colors.line, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 7, opacity: pressed ? 0.85 : 1, paddingHorizontal: 18, paddingVertical: 12 })}>
+          <Pressable accessibilityRole="button" accessibilityLabel={translateCopy("Taslak Olarak Kaydet", language)} accessibilityState={{ disabled: publishing, busy: publishing }} disabled={publishing} onPress={() => void publish(true)} style={({ pressed }) => ({ alignItems: "center", borderColor: colors.line, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 7, opacity: pressed ? 0.85 : 1, paddingHorizontal: 18, paddingVertical: 12 })}>
             <MaterialCommunityIcons name="content-save-outline" size={16} color={colors.muted} />
             <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "800" }}>{translateCopy("Taslak Olarak Kaydet", language)}</Text>
           </Pressable>
           {/* TIKLANABİLİR (disabled değil): eksik alan varsa sessizce kilitlenmek yerine
               basınca kırmızı işaretle + ilk eksiğe kaydır (guardRequiredFields). Yalnız
               yayın sürerken / moderasyon "block" iken gerçekten kilitli. */}
-          <Pressable accessibilityRole="button" disabled={publishing || liveModeration?.level === "block"} onPress={() => { if (!guardRequiredFields()) return; if (!acceptedLegal) { setShowLegalError(true); return; } void publish(); }} style={{ alignItems: "center", backgroundColor: missingFields.length || liveModeration?.level === "block" ? colors.subtle : colors.primary, borderRadius: 10, flexDirection: "row", gap: 7, paddingHorizontal: 24, paddingVertical: 12 }}>
+          <Pressable accessibilityRole="button" accessibilityLabel={translateCopy(publishing ? "Yayınlanıyor…" : "İlanı Yayınla", language)} accessibilityState={{ disabled: publishing || liveModeration?.level === "block", busy: publishing }} disabled={publishing || liveModeration?.level === "block"} onPress={() => { if (!guardRequiredFields()) return; if (!acceptedLegal) { setShowLegalError(true); return; } void publish(); }} style={{ alignItems: "center", backgroundColor: missingFields.length || liveModeration?.level === "block" ? colors.subtle : colors.primary, borderRadius: 10, flexDirection: "row", gap: 7, paddingHorizontal: 24, paddingVertical: 12 }}>
             <MaterialCommunityIcons name="check-decagram" size={17} color="#FFFFFF" /><Text style={{ color: "#FFFFFF", fontSize: 13.5, fontWeight: "900" }}>{publishing ? translateCopy("Yayınlanıyor…", language) : translateCopy("İlanı Yayınla", language)}</Text>
           </Pressable>
         </View>
@@ -1419,6 +1476,7 @@ function DField({ field, value, onChange, invalid }: { field: FieldDef; value: s
   const charLimit = field.key === "title" ? LIMITS.title : field.key === "description" ? LIMITS.description : null;
   const charLen = charLimit ? String(value ?? "").length : 0;
   const selected = Array.isArray(value) ? value : [];
+  if (field.key === "title") return <View style={{ flexBasis: 230, flexGrow: 1, minWidth: 0 }}><ListingTitleField value={String(value ?? "")} onChange={onChange} invalid={invalid}/></View>;
   return (
     // data-field: "İlanı Yayınla"ya basınca ilk EKSİK alana kaydırmak için hedef (web).
     <View dataSet={{ field: field.key }} style={{ flexBasis: wide ? "100%" : 230, flexGrow: 1, gap: 6, minWidth: 0 }}>
@@ -1431,16 +1489,16 @@ function DField({ field, value, onChange, invalid }: { field: FieldDef; value: s
           {(field.options ?? []).map((opt) => {
             const on = selected.includes(opt);
             return (
-              <Pressable key={opt} onPress={() => onChange(on ? selected.filter((x) => x !== opt) : [...selected, opt])} style={{ alignItems: "center", backgroundColor: on ? colors.primarySoft : colors.surfaceAlt, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 4, paddingHorizontal: 11, paddingVertical: 7 }}>
+              <Pressable key={opt} onPress={() => onChange(on ? selected.filter((x) => x !== opt) : [...selected, opt])} style={{ alignItems: "center", backgroundColor: on ? colors.primarySoft : colors.surfaceAlt, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 5, minHeight: 44, paddingHorizontal: 13, paddingVertical: 8 }}>
                 {on ? <MaterialCommunityIcons name="check" size={13} color={colors.primaryDark} /> : null}
-                <Text style={{ color: on ? colors.primaryDark : colors.ink, fontSize: 12, fontWeight: on ? "800" : "600" }}>{opt}</Text>
+                <Text style={{ color: on ? colors.primaryDark : colors.ink, flexShrink: 1, fontSize: 12.5, fontWeight: on ? "800" : "600" }}>{opt}</Text>
               </Pressable>
             );
           })}
         </View>
       ) : field.type === "bool" ? (
-        <Pressable onPress={() => onChange(!(value === true))} style={{ alignItems: "center", flexDirection: "row", gap: 9 }}>
-          <View style={{ alignItems: value === true ? "flex-end" : "flex-start", backgroundColor: value === true ? colors.primary : colors.line, borderRadius: 999, height: 26, justifyContent: "center", paddingHorizontal: 3, width: 48 }}><View style={{ backgroundColor: "#FFFFFF", borderRadius: 999, height: 20, width: 20 }} /></View>
+        <Pressable accessibilityRole="switch" accessibilityState={{ checked: value === true }} onPress={() => onChange(!(value === true))} style={{ alignItems: "center", flexDirection: "row", gap: 10, minHeight: 44 }}>
+          <View style={{ alignItems: value === true ? "flex-end" : "flex-start", backgroundColor: value === true ? colors.primary : colors.line, borderRadius: 999, height: 30, justifyContent: "center", paddingHorizontal: 3, width: 54 }}><View style={{ backgroundColor: "#FFFFFF", borderRadius: 999, height: 24, width: 24 }} /></View>
           <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "700" }}>{value === true ? translateCopy("Evet", language) : translateCopy("Hayır", language)}</Text>
         </Pressable>
       ) : field.type === "select" ? (
@@ -1451,9 +1509,9 @@ function DField({ field, value, onChange, invalid }: { field: FieldDef; value: s
             {(field.options ?? []).map((opt) => {
               const on = String(value ?? "") === opt;
               return (
-                <Pressable key={opt} onPress={() => onChange(opt)} accessibilityRole="button" accessibilityState={{ selected: on }} style={{ alignItems: "center", backgroundColor: on ? colors.primarySoft : colors.surfaceAlt, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: on ? 2 : 1, flexDirection: "row", gap: 4, paddingHorizontal: 13, paddingVertical: 8 }}>
+                <Pressable key={opt} onPress={() => onChange(opt)} accessibilityRole="button" accessibilityState={{ selected: on }} style={{ alignItems: "center", backgroundColor: on ? colors.primarySoft : colors.surfaceAlt, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: on ? 2 : 1, flexDirection: "row", gap: 5, minHeight: 44, paddingHorizontal: 14, paddingVertical: 8 }}>
                   {on ? <MaterialCommunityIcons name="check" size={13} color={colors.primaryDark} /> : null}
-                  <Text style={{ color: on ? colors.primaryDark : colors.ink, fontSize: 12.5, fontWeight: on ? "800" : "600" }}>{opt}</Text>
+                  <Text style={{ color: on ? colors.primaryDark : colors.ink, flexShrink: 1, fontSize: 12.5, fontWeight: on ? "800" : "600" }}>{opt}</Text>
                 </Pressable>
               );
             })}
@@ -1506,7 +1564,7 @@ function CategoryDropdowns({ value, onChange, presetFormKey }: { value: Category
     onChange(next);
   };
   return (
-    <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
+    <View testID="listing-category-levels" style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
       {levels.map((lvl, i) => (
         <View key={i} style={{ flexBasis: 190, flexGrow: 1, minWidth: 0, zIndex: 40 - i }}>
           <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "800", marginBottom: 6 }}>{i === 0 ? translateCopy("Kategori", language) : translateCopy("Alt kategori", language)}{i === 0 ? " *" : ""}</Text>

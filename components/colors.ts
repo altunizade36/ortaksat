@@ -1,16 +1,16 @@
-// OrtakSat marka paleti — TURKUAZ sistem. Ana renk #0EA5B7.
+// OrtakSat marka paleti — güçlü mavi sistem.
 // Tüm butonlar, ikonlar, linkler ve aktif menüler bu sisteme bağlıdır.
 export const colors = {
-  background: "#F0FDFF",   // çok açık turkuaz arkaplan
+  background: "#F6F9FF",   // ilanları öne çıkaran nötr mavi zemin
   surface: "#FFFFFF",      // beyaz kart
-  surfaceAlt: "#F0FBFC",   // hafif turkuaz tint (ikincil yüzey)
-  ink: "#0F172A",          // başlık yazısı
+  surfaceAlt: "#F2F6FC",   // ikincil yüzey
+  ink: "#09275E",          // başlık yazısı / koyu lacivert
   muted: "#64748B",        // açıklama yazısı
-  subtle: "#5E6A7A",       // en soluk yazı — WCAG için koyulaştırıldı (#94A3B8→#6B7A8C→şimdi #5E6A7A; kart yüzeyi #F0FDFF üstünde 4.22:1 kalıp AA'yı geçemiyordu → ~5.3:1)
-  line: "#D8F3F6",         // turkuaz kenarlık
-  primary: "#0EA5B7",      // ana turkuaz
-  primaryDark: "#096273",  // koyu turkuaz — primarySoft çip üstünde AA (4.2→5.2:1) için hafif koyultuldu; beyazda da kontrast arttı
-  primarySoft: "#B8E8DE",  // açık turkuaz (soft yüzey/chip) — göz yormayan sakin ton
+  subtle: "#5E6A7A",       // en soluk yazı — WCAG için koyulaştırıldı (#94A3B8→#6B7A8C→şimdi #5E6A7A; kart yüzeyi #F0F4FF üstünde 4.22:1 kalıp AA'yı geçemiyordu → ~5.3:1)
+  line: "#DCE6F5",         // sakin ve okunur mavi-gri kenarlık
+  primary: "#0645C9",      // ana marka mavisi
+  primaryDark: "#09275E",  // okunabilir koyu lacivert
+  primarySoft: "#E5F0FF",  // seçili alanlarda açık mavi vurgu
   accent: "#DC2626",       // hata/tehlike (kırmızı) — beyaz metinle 3.76:1 (#EF4444) AA'yı geçmiyordu (popüler/acil rozetleri, İlan Ver CTA) → #DC2626 ile 4.83:1
   accentSoft: "#FEE4E2",
   warning: "#F59E0B",
@@ -35,8 +35,8 @@ export const shadow = {
   badge: { shadowColor: "#000000", shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.12, shadowRadius: 3 }
 } as const;
 
-// Hero gradyanı — index + home-desktop'ta birebir kopyalıydı. Ortası ana turkuaz (colors.primary).
-export const heroGradient = ["#14B8C4", colors.primary, "#0891B2"] as const;
+// Hero gradyanı — index + home-desktop'ta birebir kopyalıydı. Ortası ana marka mavisi (colors.primary).
+export const heroGradient = ["#075BEB", colors.primary, "#09275E"] as const;
 
 // ---- Tasarım ölçekleri (birörnek "bitmiş" görünüm için) --------------------
 // Köşe yarıçapı: 3 temel değer + hap. Yeni bileşenlerde ham sayı yerine bunları kullan.

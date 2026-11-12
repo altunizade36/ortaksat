@@ -1,3 +1,8 @@
+import { displayListingTitle } from "@/lib/listing-title";
+import {isMobileApp} from "@/lib/mobile-app";
+import {useLocalSearchParams} from "expo-router";
+import {MobileEarnings} from "@/components/mobile/earnings";
+import {MobileScreen,MobileBottomNav} from "@/components/mobile/ui";
 import { MaterialCommunityIcons } from "@/components/icons";
 import { Image } from "expo-image";
 import { Link } from "expo-router";
@@ -7,6 +12,7 @@ import { Platform, Pressable, RefreshControl, ScrollView, Text, View } from "rea
 import { colors } from "@/components/colors";
 import { ResponsiveLineArea } from "@/components/charts";
 import { AuthRequired } from "@/components/auth-gate";
+import { DisputeModal } from "@/components/dispute-modal";
 import { Card, EmptyState, PrimaryButton } from "@/components/ui";
 import { WebFooter } from "@/components/web-landing";
 import { money } from "@/lib/format";
@@ -44,6 +50,16 @@ function EarningsScreenInner() {
   const { refreshing, onRefresh } = useNativeRefresh(refreshUserData);
   const isWideWeb = useIsWideWeb();
   const [period, setPeriod] = useState<"month" | "quarter" | "year">("month");
+  // "Sorun bildir" tek dokunuşla, nedensiz ve onaysız 'disputed' yazıyordu; ortak paneliyle aynı
+  // neden-modalı kullanılır.
+  const [disputeSaleId, setDisputeSaleId] = useState<string | null>(null);
+  const disputeModal = (
+    <DisputeModal
+      visible={disputeSaleId !== null}
+      onClose={() => setDisputeSaleId(null)}
+      onSubmit={(reason) => { if (disputeSaleId) updateSaleStatus(disputeSaleId, "disputed", reason); setDisputeSaleId(null); }}
+    />
+  );
 
   // İki rol tek sayfada: ORTAK kazancım (ortak olarak yaptığın satışların komisyonu) +
   // SATICI satışlarım (kendi ilanlarından yapılan satışların cirosu + ortağa ödenecek
@@ -65,7 +81,7 @@ function EarningsScreenInner() {
   const txns: Txn[] = sourceSales
     .map((s) => {
       const listing = findListing(s.listingId);
-      return { id: s.id, title: listing ? displayText(listing.title) : translateCopy("İlan", language), image: listing?.image, date: s.paidAt ?? s.approvedAt ?? "—", sortAt: saleDate(s), amount: s.amount, commission: s.commissionAmount, status: s.status };
+      return { id: s.id, title: listing ? displayListingTitle(listing.title) : translateCopy("İlan", language), image: listing?.image, date: s.paidAt ?? s.approvedAt ?? (s.createdAt ? s.createdAt.slice(0, 10) : "—"), sortAt: saleDate(s), amount: s.amount, commission: s.commissionAmount, status: s.status };
     })
     .sort((a, b) => b.sortAt - a.sortAt);
 
@@ -165,7 +181,7 @@ function EarningsScreenInner() {
       <ScrollView contentInsetAdjustmentBehavior="automatic" showsVerticalScrollIndicator={false} contentContainerStyle={{ backgroundColor: colors.background, flexGrow: 1, paddingBottom: 0 }} style={{ backgroundColor: colors.background }}>
         <View style={{ alignSelf: "center", gap: 16, maxWidth: 1280, paddingHorizontal: 20, paddingTop: 16, width: "100%" }}>
         <View style={{ alignItems: "flex-end", flexDirection: "row", gap: 12 }}>
-          <View style={{ flex: 1, gap: 8 }}>
+          <View style={{ flex: 1, gap: 8, minWidth: 0 }}>
             <View style={{ gap: 4 }}>
               <Text style={{ color: colors.ink, fontSize: 26, fontWeight: "900" }}>{translateCopy(isSeller ? "Satıcı Satışlarım" : "Kazançlarım", language)}</Text>
               <Text style={{ color: colors.muted, fontSize: 14, fontWeight: "600" }}>{translateCopy(isSeller ? "İlanlarından yapılan satışların cirosu ve ortaklara ödenecek komisyonlar. OrtakSat para tutmaz." : "Ortak satışlarından kazandığın komisyonları takip et. Ödemeler satıcılarla aranızda yapılır; OrtakSat para tutmaz.", language)}</Text>
@@ -203,8 +219,8 @@ function EarningsScreenInner() {
             <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 16, padding: 20 }}>
               <View style={{ alignItems: "center", flexDirection: "row", justifyContent: "space-between" }}>
                 <View>
-                  <Text style={{ color: colors.ink, fontSize: 17, fontWeight: "900" }}>{translateCopy("Kazanç grafiği", language)}</Text>
-                  <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600" }}>{translateCopy("Son 6 ay komisyon kazancın", language)}</Text>
+                  <Text style={{ color: colors.ink, fontSize: 17, fontWeight: "900" }}>{translateCopy(isSeller ? "Ciro grafiği" : "Kazanç grafiği", language)}</Text>
+                  <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600" }}>{translateCopy(isSeller ? "Son 6 ay satış ciron" : "Son 6 ay komisyon kazancın", language)}</Text>
                 </View>
                 {growth !== null ? (
                   <View style={{ alignItems: "flex-end" }}>
@@ -214,7 +230,7 @@ function EarningsScreenInner() {
                 ) : null}
               </View>
               {!hasChartData ? (
-                <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600", paddingVertical: 40, textAlign: "center" }}>{translateCopy("Henüz komisyon kazancın yok. Ortak satış yaptıkça grafiğin burada oluşacak.", language)}</Text>
+                <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600", paddingVertical: 40, textAlign: "center" }}>{translateCopy(isSeller ? "Henüz satışın yok. Satış yapıldıkça grafiğin burada oluşacak." : "Henüz komisyon kazancın yok. Ortak satış yaptıkça grafiğin burada oluşacak.", language)}</Text>
               ) : (
                 <ResponsiveLineArea points={CHART.map((c) => ({ label: c.m, value: c.v }))} color={colors.primary} height={200} valueFmt={money} />
               )}
@@ -270,7 +286,7 @@ function EarningsScreenInner() {
                           <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "900" }}>{translateCopy(t.status === "disputed" ? "Çözüldü · Aldım" : "Ödemeyi Aldım", language)}</Text>
                         </Pressable>
                         {t.status !== "disputed" ? (
-                          <Pressable onPress={() => updateSaleStatus(t.id, "disputed")} style={{ alignItems: "center", borderColor: colors.line, borderRadius: 8, borderWidth: 1, flexDirection: "row", gap: 5, paddingHorizontal: 12, paddingVertical: 7 }}>
+                          <Pressable onPress={() => setDisputeSaleId(t.id)} style={{ alignItems: "center", borderColor: colors.line, borderRadius: 8, borderWidth: 1, flexDirection: "row", gap: 5, paddingHorizontal: 12, paddingVertical: 7 }}>
                             <MaterialCommunityIcons name="alert-outline" size={15} color={colors.muted} />
                             <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>{translateCopy("Sorun bildir", language)}</Text>
                           </Pressable>
@@ -322,12 +338,13 @@ function EarningsScreenInner() {
         </View>
 
         <WebFooter />
+        {disputeModal}
       </ScrollView>
     );
   }
 
   return (
-    <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ gap: 12, padding: 12, paddingBottom: 96 }} refreshControl={Platform.OS === "web" ? undefined : <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} colors={[colors.primary]} />}>
+    <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ alignSelf: "center", gap: 12, maxWidth: 760, padding: 12, paddingBottom: 96, width: "100%" }} refreshControl={Platform.OS === "web" ? undefined : <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} colors={[colors.primary]} />}>
       <View style={{ gap: 4 }}>
         <Text selectable style={{ color: colors.ink, fontSize: 22, fontWeight: "900" }}>{translateCopy(isSeller ? "Satıcı Satışlarım" : "Kazançlarım", language)}</Text>
         <Text selectable style={{ color: colors.muted, fontSize: 13, lineHeight: 18 }}>{translateCopy(isSeller ? "İlanlarından yapılan satışlar ve ortaklara ödenecek komisyonlar. OrtakSat para tutmaz." : "Ortak satış komisyonların. Ödeme satıcıyla aranızda yapılır; OrtakSat para tutmaz.", language)}</Text>
@@ -370,7 +387,7 @@ function EarningsScreenInner() {
       {hasChartData ? (
         <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 14, borderWidth: 1, gap: 12, padding: 14 }}>
           <View style={{ alignItems: "center", flexDirection: "row", justifyContent: "space-between" }}>
-            <Text style={{ color: colors.ink, fontSize: 14.5, fontWeight: "900" }}>{translateCopy("Kazanç grafiği", language)}</Text>
+            <Text style={{ color: colors.ink, fontSize: 14.5, fontWeight: "900" }}>{translateCopy(isSeller ? "Ciro grafiği" : "Kazanç grafiği", language)}</Text>
             {growth !== null ? <Text style={{ color: growth >= 0 ? colors.success : colors.accent, fontSize: 12.5, fontWeight: "900" }}>{growth >= 0 ? "↑" : "↓"} %{Math.abs(growth).toString().replace(".", ",")}</Text> : null}
           </View>
           <ResponsiveLineArea points={CHART.map((c) => ({ label: c.m, value: c.v }))} color={colors.primary} height={140} valueFmt={money} />
@@ -429,7 +446,7 @@ function EarningsScreenInner() {
                 </View>
                 {t.status !== "disputed" ? (
                   <View style={{ flex: 1 }}>
-                    <PrimaryButton tone="secondary" onPress={() => updateSaleStatus(t.id, "disputed")}>
+                    <PrimaryButton tone="secondary" onPress={() => setDisputeSaleId(t.id)}>
                       {translateCopy("Sorun bildir", language)}
                     </PrimaryButton>
                   </View>
@@ -448,6 +465,7 @@ function EarningsScreenInner() {
         </View>
         <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600", lineHeight: 18 }}>{translateCopy(isSeller ? "OrtakSat para tutmaz. Ortağının komisyonunu anlaştığınız kanaldan (havale/EFT, elden) doğrudan sen ödersin; ödeyince satışı “Ödendi” işaretle." : "OrtakSat para tutmaz. Komisyonunu satıcı anlaştığınız kanaldan (havale/EFT, elden) doğrudan sana öder; aldığında satışı “Ödendi” işaretle.", language)}</Text>
       </View>
+      {disputeModal}
     </ScrollView>
   );
 }
@@ -468,9 +486,11 @@ export default function EarningsScreen() {
   const { language } = useLanguage();
   const auth = useStore();
   const mounted = useMounted();
+  const params=useLocalSearchParams<{view?:string}>();
   // SSG (giriş yok) → client (giriş var) uyuşmazlığını (#418) mount-gate ile giderir.
   if (!mounted) return <ScreenSkeleton />;
   if (!auth.authReady) return <ScreenSkeleton />; // oturum geri-yüklenene kadar bekle (auth-flash önle)
   if (!auth.isAuthenticated) return <AuthRequired title={translateCopy("Kazançlarını görmek için giriş yapın", language)} />;
+  if(isMobileApp&&params.view!=="advanced")return <MobileScreen title="Ortaklık Kazançlarım" bottom={<MobileBottomNav active="partner"/>}><MobileEarnings key={auth.currentUser.id}/></MobileScreen>;
   return <EarningsScreenInner />;
 }

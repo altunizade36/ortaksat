@@ -1,7 +1,22 @@
+import { LISTING_GRID_PHOTO_RATIO, LISTING_GRID_BODY_HEIGHT, cardPriceFontSize, marketplaceCardGrid } from "@/lib/card-layout";
+import { listingInCategoryNode, listingRootNode } from "@/lib/category-match";
+import { ListingCommission } from "@/components/listing-commission";
+import { CompactFilterPanel, CompactFilterSection } from "@/components/compact-filter-panel";
+import { filterRangeError, serializePriceRange } from "@/lib/filter-numbers";
+import { listingNumberInput } from "@/lib/listing-numbers";
+import { sameSearchFilters } from "@/lib/search-filter-equality";
+import { HorizontalScroll } from "@/components/horizontal-scroll";
+import { CompactFooter } from "@/components/compact-footer";
+import { RetryNotice } from "@/components/retry-notice";
+import { displayListingTitle } from "@/lib/listing-title";
+import { isMobileApp } from "@/lib/mobile-app";
+import { MobileCatalogue } from "@/components/mobile/catalogue";
+import { MobileDiscovery } from "@/components/mobile/discovery";
+import { ExploreMosaic } from "@/components/explore-mosaic";
 import { MaterialCommunityIcons } from "@/components/icons";
 import { Link, useLocalSearchParams, useRouter } from "expo-router";
 import Head from "expo-router/head";
-import { memo, useEffect, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Modal, NativeScrollEvent, NativeSyntheticEvent, Platform, Pressable, RefreshControl, ScrollView, Text, TextInput, View, useWindowDimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -19,7 +34,7 @@ import { AnchoredDropdown, useAnchor } from "@/components/anchored-dropdown";
 import { SkeletonGrid } from "@/components/skeleton";
 import { commissionAmount, commissionRatePct, money, moneyCompact, moneyIn } from "@/lib/format";
 import { translateCopy, useLanguage } from "@/lib/i18n";
-import { responsiveGrid, useIsWideWeb } from "@/lib/layout";
+import { useIsWideWeb } from "@/lib/layout";
 import { searchKey } from "@/lib/locale";
 import { scoreListing } from "@/lib/search";
 import { useSavedSearches, type SavedFilters, type SavedSearch } from "@/lib/saved-searches";
@@ -92,6 +107,14 @@ type ExploreMedia = {
 };
 
 export default function ExploreScreen() {
+  return isMobileApp ? <MobileExplore /> : <ExploreScreenLegacy />;
+}
+function MobileExplore() {
+  const params = useLocalSearchParams<{q?:string;filters?:string;view?:string;saved?:string}>();
+  return params.q || params.filters === "1" || params.view === "list" ? <MobileCatalogue key={`${params.q||""}:${params.saved||""}`} tabbed /> : <MobileDiscovery />;
+}
+
+function ExploreScreenLegacy() {
   const { language, t } = useLanguage();
   const { width } = useWindowDimensions();
   const router = useRouter();
@@ -142,61 +165,85 @@ export default function ExploreScreen() {
   const [serverOffset, setServerOffset] = useState(0);
   const [serverHasMore, setServerHasMore] = useState(false);
   const [serverLoading, setServerLoading] = useState(false);
+  const [serverFailure, setServerFailure] = useState<"initial" | "more" | null>(null);
+  const [searchRetry, setSearchRetry] = useState(0);
+  const searchRevision = useRef(0), searchPageLock = useRef(false);
+
   // ÖLÇEK (append-only): metin araması YOKKEN kategori filtresi bellek penceresini (MP_MAX=600)
   // süzüyordu → 1000+ ilanda kategori-filtre sonucu eksik/boş görünebilir. Aktif kategori +
   // marketplaceHasMore + metin-yok iken o kategorinin ilanlarını sunucudan çekip EKLE (dedupe).
   // Küçük katalogda (hepsi yüklü) tetiklenmez; text-search yolu ayrı (serverResults) — karışmaz.
   const [serverCat, setServerCat] = useState<{ listings: Listing[]; users: User[] }>({ listings: [], users: [] });
   const SERVER_PAGE = 40;
-  const queryText = (params.q ?? "").trim();
+  const queryText = sp(params.q).replace(/\s+/g, " ").trim().slice(0, 120);
 
   useEffect(() => {
     let alive = true;
-    // Tek harf/boş sorguda sunucuya gitme; serverResults=null → istemci yüklü katalogda
-    // arar (anlamsız tek-harf DB taraması ve gereksiz yük önlenir).
-    if (queryText.length < 2) { setServerResults(null); setServerOwners({}); setServerOffset(0); setServerHasMore(false); return; }
+    const revision = ++searchRevision.current;
+    searchPageLock.current = false;
+    setServerFailure(null);
+    setServerResults(null);
+    setServerOwners({});
+    setServerOffset(0);
+    setServerHasMore(false);
+    if (queryText.length < 2) { setServerLoading(false); return; }
     setServerLoading(true);
     const priceParts = priceRange ? priceRange.split("-") : [];
     const minPrice = priceParts[0] ? Number(priceParts[0]) : undefined;
     const maxPrice = priceParts[1] ? Number(priceParts[1]) : undefined;
     const sort = sortMode === "priceAsc" || sortMode === "priceDesc" || sortMode === "commission" || sortMode === "new" ? sortMode : "new";
     const handle = setTimeout(() => {
-      void searchListings({ q: queryText, minPrice, maxPrice, openOnly: statusOpen, sort, offset: 0, limit: SERVER_PAGE }).then((res) => {
-        if (!alive) return;
-        setServerLoading(false);
-        // Sunucu ilike Türkçe-katlama yapmaz ("sarj"≠"şarj") ve typo'da 0 döner. Sunucu
-        // BOŞ/HATA dönerse serverResults=null bırak → baseListings yüklü kataloğa düşer,
-        // istemci searchKey (fold) + fuzzy skorlamasıyla arar. Böylece "sonuç yok"a düşmez.
-        if (!res || res.listings.length === 0) { setServerResults(null); setServerHasMore(false); return; }
-        setServerResults(res.listings);
-        setServerOwners(Object.fromEntries(res.users.map((u) => [u.id, u])));
-        setServerOffset(res.listings.length);
-        setServerHasMore(res.listings.length >= SERVER_PAGE);
-      });
+      void (async () => {
+        try {
+          const res = await searchListings({ q: queryText, minPrice, maxPrice, openOnly: statusOpen, sort, offset: 0, limit: SERVER_PAGE });
+          if (!alive || revision !== searchRevision.current) return;
+          if (!res) throw new Error("Search unavailable");
+          // An empty successful response can still use local Turkish/fuzzy matches.
+          if (!res.listings.length) return;
+          setServerResults(res.listings);
+          setServerOwners(Object.fromEntries(res.users.map(u => [u.id, u])));
+          setServerOffset(res.listings.length);
+          setServerHasMore(res.listings.length >= SERVER_PAGE);
+        } catch {
+          if (alive && revision === searchRevision.current) setServerFailure("initial");
+        } finally {
+          if (alive && revision === searchRevision.current) setServerLoading(false);
+        }
+      })();
     }, 280);
-    return () => { alive = false; clearTimeout(handle); };
-  }, [queryText, priceRange, statusOpen, sortMode]);
+    return () => { alive = false; clearTimeout(handle); if (searchRevision.current === revision) searchRevision.current++; };
+  }, [queryText, priceRange, statusOpen, sortMode, searchRetry]);
 
-  const loadMoreServer = () => {
-    if (!queryText || serverLoading || !serverHasMore) return;
+  const loadMoreServer = (retry = false) => {
+    if (!queryText || serverLoading || searchPageLock.current || !serverHasMore || serverFailure === "more" && !retry) return;
+    const revision = searchRevision.current;
+    searchPageLock.current = true;
     setServerLoading(true);
+    setServerFailure(null);
     const priceParts = priceRange ? priceRange.split("-") : [];
     const minPrice = priceParts[0] ? Number(priceParts[0]) : undefined;
     const maxPrice = priceParts[1] ? Number(priceParts[1]) : undefined;
     const sort = sortMode === "priceAsc" || sortMode === "priceDesc" || sortMode === "commission" || sortMode === "new" ? sortMode : "new";
-    void searchListings({ q: queryText, minPrice, maxPrice, openOnly: statusOpen, sort, offset: serverOffset, limit: SERVER_PAGE }).then((res) => {
-      setServerLoading(false);
-      if (!res) { setServerHasMore(false); return; }
-      setServerOffset((o) => o + res.listings.length);
-      if (res.listings.length < SERVER_PAGE) setServerHasMore(false);
-      setServerOwners((prev) => ({ ...prev, ...Object.fromEntries(res.users.map((u) => [u.id, u])) }));
-      setServerResults((prev) => {
-        const seen = new Set((prev ?? []).map((l) => l.id));
-        const fresh = res.listings.filter((l) => !seen.has(l.id));
-        return [...(prev ?? []), ...fresh];
-      });
-    });
+    void (async () => {
+      try {
+        const res = await searchListings({ q: queryText, minPrice, maxPrice, openOnly: statusOpen, sort, offset: serverOffset, limit: SERVER_PAGE });
+        if (revision !== searchRevision.current) return;
+        if (!res) throw new Error("Search unavailable");
+        setServerOffset(o => o + res.listings.length);
+        setServerHasMore(res.listings.length >= SERVER_PAGE);
+        setServerOwners(prev => ({ ...prev, ...Object.fromEntries(res.users.map(u => [u.id, u])) }));
+        setServerResults(prev => {
+          const seen = new Set((prev ?? []).map(l => l.id));
+          return [...(prev ?? []), ...res.listings.filter(l => !seen.has(l.id))];
+        });
+      } catch {
+        if (revision === searchRevision.current) setServerFailure("more");
+      } finally {
+        if (revision === searchRevision.current) { searchPageLock.current = false; setServerLoading(false); }
+      }
+    })();
   };
+  const searchNotice = serverFailure ? <RetryNotice message={serverFailure === "more" ? "Diğer arama sonuçları yüklenemedi. Mevcut sonuçlar korunuyor." : "Arama tamamlanamadı. Yüklü ilanlardaki eşleşmeleri görebilirsin; tüm sonuçlar için tekrar dene."} onRetry={() => serverFailure === "more" ? loadMoreServer(true) : setSearchRetry(v => v + 1)} busy={serverLoading}/> : serverLoading ? <Text accessibilityRole="progressbar" style={{ color: colors.muted, padding: 12 }}>{translateCopy("Arama sonuçları yükleniyor…", language)}</Text> : null;
   const serverCatUserById = useMemo(() => { const m = new Map<string, User>(); for (const u of serverCat.users) m.set(u.id, u); return m; }, [serverCat.users]);
   const resolveOwner = (id: string) => serverOwners[id] ?? findUser(id) ?? serverCatUserById.get(id);
   const feedFilters: Array<{ key: FeedFilter; label: string; icon: keyof typeof MaterialCommunityIcons.glyphMap }> = [
@@ -232,22 +279,13 @@ export default function ExploreScreen() {
   useEffect(() => { setMountedGate(true); }, []);
   // tokens memoize edilir: activeListings useMemo bağımlılığı; her render'da yeni dizi
   // kimliği memo'yu geçersizleştirip ağır scoreListing'i tekrar koşturuyordu.
-  const tokens = useMemo(() => searchKey(params.q ?? "").split(" ").filter(Boolean), [params.q]);
+  const tokens = useMemo(() => searchKey(queryText).split(" ").filter(Boolean), [queryText]);
   // Mobilde temiz 2-sütun ürün-kartı grid'i (görsel üstte + okunur beyaz metin altta);
   // masaüstü zaten ListingCard kullanır. Sıkışık overlay-reel yerine premium kart.
   const gap = isWideWeb ? 12 : 10;
   const padding = isWideWeb ? 20 : 12;
   // İçerik standart 1280 genişlikte ortalanır; grid hesabı da bu genişliğe göre.
   const contentW = Math.min(width, 1280);
-  // NOT: bu grid YALNIZ mobil/native medya-feed'i içindir (geniş-web zaten yukarıda
-  // ayrı bir return ile döner) — eskiden buradaki isWideWeb dalları ÖLÜ KODdu ve
-  // "web gridini" düzenlemek isteyeni yanlış yere yönlendiriyordu.
-  const gridArea = contentW - padding * 2;
-  const grid = responsiveGrid({ available: gridArea, gap, minCardWidth: 148, maxColumns: 3 });
-  const columns = grid.columns;
-  const tileSize = grid.cardWidth;
-  // Kart yüksekliği: kare görsel (tileSize) + okunur metin bölümü (~112px).
-  const tileHeight = tileSize + 112;
 
   const marketplaceListings = useMemo(() => {
     const visible = listings.filter((listing) => listing.status !== "draft" && listing.status !== "rejected" && listing.status !== "sold");
@@ -314,11 +352,18 @@ export default function ExploreScreen() {
   const toggleAttr = (key: string, val: string) => setAttrFilters((s) => { const cur = s[key] ?? []; const next = cur.includes(val) ? cur.filter((x) => x !== val) : [...cur, val]; const copy = { ...s }; if (next.length) copy[key] = next; else delete copy[key]; return copy; });
   const setNum = (key: string, side: "min" | "max", v: string) => setNumRange((s) => ({ ...s, [key]: { min: s[key]?.min ?? "", max: s[key]?.max ?? "", [side]: v } }));
   const clearCatFilter = () => { setCatPath([]); setAttrFilters({}); setNumRange({}); };
-  const clearAllFilters = () => { setPriceRange(""); setMinCommission(0); router.setParams({ province: undefined, district: undefined }); setStockFilter(""); setStatusOpen(false); setOnlyVerified(false); setFilter("all"); setCity(""); setSortMode("recommended"); clearCatFilter(); };
+  const clearAllFilters = () => { setPriceRange(""); setMinCommission(0); setMinRate(0); setMinRating(0); setOnlyFeatured(false); router.setParams({ province: undefined, district: undefined }); setStockFilter(""); setStatusOpen(false); setOnlyVerified(false); setFilter("all"); setCity(""); setSortMode("recommended"); clearCatFilter(); };
 
   // Kayıtlı arama: o anki filtre kümesini yakala + tıklanınca geri yükle.
   const currentFilters = (): SavedFilters => {
     const f: SavedFilters = {};
+    if (provinceId != null) f.province = getProvince(provinceId)?.slug;
+    if (districtId != null) f.district = getDistrict(districtId)?.slug;
+    if (minRate > 0) f.rate = minRate;
+    if (minRating > 0) f.rating = minRating;
+    if (onlyVerified) f.verified = true;
+    if (onlyFeatured) f.featured = true;
+    if (filter !== "all") f.tab = filter;
     if (priceRange) f.price = priceRange;
     if (minCommission) f.comm = minCommission;
     if (catPath.length) f.cat = catPath.join(">");
@@ -330,24 +375,31 @@ export default function ExploreScreen() {
     if (Object.keys(numRange).length) f.num = numRange;
     return f;
   };
-  const hasSaveableFilter = Boolean(priceRange) || minCommission > 0 || catPath.length > 0 || Boolean(city) || statusOpen || Boolean(stockFilter) || sortMode !== "recommended" || Object.keys(attrFilters).length > 0 || Object.keys(numRange).length > 0;
+  const hasSaveableFilter = Object.keys(currentFilters()).length > 0;
   // Sunucuya GÖNDERİLMEYEN (yalnızca istemcide uygulanan) filtreler. Bunlar aktifken
   // sunucu-sayfalama güvenilmez (getirilen sayfa tümden elenebilir) → "daha fazla yükle"
   // ölü görünür. Bu durumda sunucu-sayfalama butonu gizlenip ipucu gösterilir.
   const clientOnlyActive = minCommission > 0 || catPath.length > 0 || Boolean(stockFilter) || onlyVerified || Object.keys(attrFilters).length > 0 || Object.keys(numRange).length > 0;
-  const isCurrentSaved = savedSearches.some((s) => (s.q ?? "").toLocaleLowerCase("tr-TR") === queryText.toLocaleLowerCase("tr-TR") && JSON.stringify(s.f ?? {}) === JSON.stringify(currentFilters()));
+  const isCurrentSaved = savedSearches.some((s) => (s.q ?? "").toLocaleLowerCase("tr-TR") === queryText.toLocaleLowerCase("tr-TR") && sameSearchFilters(s.f, currentFilters()));
   const applySaved = (s: SavedSearch) => {
     const f = s.f ?? {};
     setPriceRange(typeof f.price === "string" ? f.price : "");
-    setMinCommission(typeof f.comm === "number" ? f.comm : 0);
+    setMinCommission(typeof f.comm === "number" && Number.isFinite(f.comm) && f.comm > 0 ? f.comm : 0);
+    setMinRate(typeof f.rate === "number" && Number.isFinite(f.rate) && f.rate > 0 ? f.rate : 0);
+    setMinRating(typeof f.rating === "number" && Number.isFinite(f.rating) && f.rating > 0 && f.rating <= 5 ? f.rating : 0);
+    setOnlyVerified(f.verified === true);
+    setOnlyFeatured(f.featured === true);
+    setFilter(["all", "commission", "open", "hot", "new"].includes(f.tab || "") ? f.tab as FeedFilter : "all");
     setCatPath(typeof f.cat === "string" ? f.cat.split(">").filter(Boolean) : []);
     setCity(typeof f.city === "string" ? f.city : "");
     setStatusOpen(f.open === true);
-    setStockFilter(typeof f.stock === "string" ? f.stock : "");
-    setSortMode(typeof f.sort === "string" ? (f.sort as SortMode) : "recommended");
+    setStockFilter(f.stock === "in" || f.stock === "low" ? f.stock : "");
+    setSortMode(["priceAsc", "priceDesc", "commission", "commissionRate", "rating", "new", "mostViewed"].includes(f.sort || "") ? (f.sort as SortMode) : "recommended");
     setAttrFilters(f.attr && typeof f.attr === "object" ? f.attr : {});
     setNumRange(f.num && typeof f.num === "object" ? f.num : {});
-    router.setParams({ q: s.q || undefined });
+    const province = provinces.find(p => p.slug === f.province);
+    const district = districtsOfProvince(province?.id).find(d => d.slug === f.district);
+    router.setParams({ q: s.q || undefined, province: province?.slug, district: district?.slug });
   };
 
   const hasPanelFilter = provinceId != null || Boolean(city) || minCommission > 0 || minRate > 0 || minRating > 0 || onlyFeatured || statusOpen || Boolean(priceRange) || Boolean(stockFilter) || onlyVerified || catPath.length > 0;
@@ -428,12 +480,7 @@ export default function ExploreScreen() {
       if (catLabelSet) {
         // Kesin (tam) eşleşme: alt-metin eşleşmesi kategoriler arası sızıntı yapıyordu
         // (ör. Vasıta alt "Yat" ⊂ "Yatak" → mobilya, araç filtresine düşüyordu).
-        const nc = listing.category.toLocaleLowerCase("tr-TR").trim();
-        const leaf = String(listing.attributes?._leaf ?? "").toLocaleLowerCase("tr-TR").trim();
-        // Eski/bileşik kategori ("Konut - Satılık") → ayraçla böl, TAM segment eşleşmesi
-        // dene (kelime-tam, alt-metin değil → sızıntı yok).
-        const segs = nc.split(/\s*[-/>·|]\s*/).map((s) => s.trim()).filter((s) => s.length > 2);
-        const catMatch = catLabelSet.has(nc) || (!!leaf && catLabelSet.has(leaf)) || (segs.length > 1 && segs.some((s) => catLabelSet.has(s)));
+        const catMatch = catNode ? listingInCategoryNode(listing, catNode) : true;
         if (!catMatch) return false;
       }
       for (const key of Object.keys(attrFilters)) {
@@ -509,7 +556,7 @@ export default function ExploreScreen() {
   // TABLET (834px) alanına yalnız 2 sütun sığıyordu — oysa dar telefonda (640px) 3 sütun
   // vardı (geniş ekran daha AZ sütun = tutarsız). 150 ile sütunlar pürüzsüz artar:
   // 834→3, 1024→4, 1280→5 (mobil 640→3 ile sürekli). Instagram-vari tutarlı akış.
-  const productGrid = responsiveGrid({ available: productArea, gap: 16, minCardWidth: 150, maxColumns: 6 });
+  const productGrid = marketplaceCardGrid({ available: productArea, gap: 16, minCardWidth: 160, maxCardWidth: 210, minColumns: 2, maxColumns: 7 });
 
   // Mobil medya-feed'i de sıralamaya (sortMode) uysun: kaynağı önce sırala, sonra
   // media öğelerine aç. "recommended" → activeListings'in mevcut (alaka/öne çıkan) düzeni.
@@ -549,7 +596,8 @@ export default function ExploreScreen() {
   }, [mediaSourceListings]);
 
   const visibleMediaItems = mediaItems.slice(0, visibleCount);
-  const rows = useMemo(() => chunk(visibleMediaItems, columns), [visibleMediaItems, columns]);
+  const mosaicListings = useMemo(() => visibleMediaItems.map((item) => item.listing), [visibleMediaItems]);
+  const openListing = useCallback((l: Listing) => router.push({ pathname: "/listing/[id]", params: { id: l.id } }), [router]);
   const openCount = activeListings.filter((listing) => listing.partnershipMode === "open").length;
   // Ortalama komisyon oranı (%) — ortağın "bu kategoride kazanç var mı" sinyali.
   const avgRate = useMemo(() => {
@@ -562,7 +610,7 @@ export default function ExploreScreen() {
     setProductVisible(20);
     // Kategori-özel filtreler (catPath/attrFilters/numRange) de sayacı sıfırlamalı;
     // yoksa daraltılan sonuç kümesinde eski "daha fazla göster" sayacı takılı kalıyordu.
-  }, [filter, params.q, city, minCommission, statusOpen, sortMode, onlyVerified, priceRange, stockFilter, catPath, attrFilters, numRange, provinceId, districtId]);
+  }, [filter, queryText, city, minCommission, minRate, minRating, onlyFeatured, statusOpen, sortMode, onlyVerified, priceRange, stockFilter, catPath, attrFilters, numRange, provinceId, districtId]);
 
   function refresh() {
     setRefreshing(true);
@@ -579,6 +627,9 @@ export default function ExploreScreen() {
     router.setParams({
       price: priceRange || undefined,
       comm: minCommission > 0 ? String(minCommission) : undefined,
+      rate: minRate > 0 ? String(minRate) : undefined,
+      rating: minRating > 0 ? String(minRating) : undefined,
+      featured: onlyFeatured ? "1" : undefined,
       stock: stockFilter || undefined,
       verified: onlyVerified ? "1" : undefined,
       open: statusOpen ? "1" : undefined,
@@ -591,7 +642,7 @@ export default function ExploreScreen() {
       num: Object.keys(numRange).length ? JSON.stringify(numRange) : undefined
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [priceRange, minCommission, stockFilter, onlyVerified, statusOpen, sortMode, catPath, city, filter, attrFilters, numRange]);
+  }, [priceRange, minCommission, minRate, minRating, onlyFeatured, stockFilter, onlyVerified, statusOpen, sortMode, catPath, city, filter, attrFilters, numRange]);
 
   // KENAR-tetiklemeli: her scroll karesinde değil, dibe her yaklaşımda bir kez.
   const exploreLoadArmed = useRef(true);
@@ -751,7 +802,7 @@ export default function ExploreScreen() {
       // Kabuk gerçek düzeni yansıtsın (hero artık İNCE şerit; kart ölçüsü ~178×250) —
       // aksi halde mount anında görsel "sıçrama" olur. Genişlikten BAĞIMSIZ sabitler
       // (deterministik → temiz hidrasyon, #418).
-      <ScrollView contentContainerStyle={{ backgroundColor: colors.background, gap: 14, padding: 16 }} style={{ backgroundColor: colors.background }}>
+      <ScrollView contentContainerStyle={{ flexGrow: 1, backgroundColor: colors.background, gap: 14, padding: 16 }} style={{ backgroundColor: colors.background }}>
         <View style={{ backgroundColor: colors.primarySoft, borderRadius: 14, height: 66 }} />
         <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 14, borderWidth: 1, height: 46 }} />
         <View style={{ flexDirection: "row", gap: 24 }}>
@@ -905,13 +956,13 @@ export default function ExploreScreen() {
                 ) : null}
                 {savedSearches.map((s) => {
                   const tokens = searchKey(s.q).split(" ").filter(Boolean);
-                  const newCount = tokens.length > 0 ? listings.filter((l) => l.status === "active" && Date.parse(l.createdAt ?? "") > s.ts && tokens.every((tk) => searchKey(`${l.title} ${l.category} ${l.location}`).includes(tk))).length : 0;
+                  const newCount = tokens.length > 0 ? listings.filter((l) => l.status === "active" && Date.parse(l.createdAt ?? "") > s.ts && tokens.every((tk) => searchKey(`${displayListingTitle(l.title)} ${l.category} ${l.location}`).includes(tk))).length : 0;
                   const hasF = s.f && Object.keys(s.f).length > 0;
                   const label = s.q || translateCopy("Filtreli arama", language);
                   return (
                     <View key={s.id} style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 6, paddingLeft: 12, paddingRight: 6, paddingVertical: 5 }}>
                       <MaterialCommunityIcons name={hasF ? "filter-check-outline" : "bookmark-outline"} size={14} color={colors.muted} />
-                      <Pressable onPress={() => applySaved(s)}><Text style={{ color: colors.ink, fontSize: 12.5, fontWeight: "800" }}>{label}</Text></Pressable>
+                      <Pressable accessibilityRole="button" accessibilityLabel={`${translateCopy("Kayıtlı aramayı aç", language)}: ${label}`} onPress={() => applySaved(s)}><Text style={{ color: colors.ink, fontSize: 12.5, fontWeight: "800" }}>{label}</Text></Pressable>
                       {newCount > 0 ? <View style={{ backgroundColor: colors.accent, borderRadius: 999, paddingHorizontal: 6, paddingVertical: 1 }}><Text style={{ color: "#FFFFFF", fontSize: 10, fontWeight: "900" }}>{newCount} {translateCopy("yeni", language)}</Text></View> : null}
                       <Pressable accessibilityRole="button" accessibilityLabel={translateCopy("Kayıtlı aramayı sil", language)} onPress={() => removeSaved(s.id)} hitSlop={6} style={{ alignItems: "center", height: 22, justifyContent: "center", width: 22 }}>
                         <MaterialCommunityIcons name="close" size={14} color={colors.subtle} />
@@ -922,7 +973,8 @@ export default function ExploreScreen() {
               </View>
             ) : null}
 
-            {visibleProducts.length === 0 && marketplaceLoadFailed && listings.length === 0 ? (
+            {searchNotice}
+            {visibleProducts.length === 0 && serverFailure ? null : visibleProducts.length === 0 && marketplaceLoadFailed && listings.length === 0 ? (
               // Katalog hiç yüklenemedi (ağ/sunucu) → "sonuç yok" yerine yeniden-dene.
               <MarketplaceRetry onRetry={retryMarketplace} />
             ) : visibleProducts.length === 0 && (serverLoading || (marketplaceInitialLoading && listings.length === 0)) ? (
@@ -1149,7 +1201,7 @@ export default function ExploreScreen() {
           isteyeni yanlış yere yönlendiriyordu). Kaldırıldı. */}
       <View>
       {/* Mobil: profesyonel alt-sayfa (bottom-sheet) modal — içeriği aşağı itmez. */}
-      {!isWideWeb ? (
+      {!isWideWeb && Platform.OS !== "web" ? (
         <Modal visible={showMobileFilters} transparent animationType="slide" onRequestClose={() => setShowMobileFilters(false)}>
           <View style={{ backgroundColor: "rgba(6,26,32,0.5)", flex: 1, justifyContent: "flex-end" }}>
             <Pressable accessibilityLabel={translateCopy("Kapat", language)} onPress={() => setShowMobileFilters(false)} style={{ flex: 1 }} />
@@ -1160,7 +1212,7 @@ export default function ExploreScreen() {
               <Pressable accessibilityLabel={translateCopy("Kapat", language)} hitSlop={10} onPress={() => setShowMobileFilters(false)} style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderRadius: 999, height: 32, justifyContent: "center", position: "absolute", right: 14, top: 12, width: 32, zIndex: 5 }}>
                 <MaterialCommunityIcons name="close" size={19} color={colors.ink} />
               </Pressable>
-              <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 8, paddingHorizontal: 14, paddingTop: 12 }}>
+              <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} contentContainerStyle={{ flexGrow: 1, paddingBottom: 8, paddingHorizontal: 14, paddingTop: 12 }}>
                 <FilterPanel
                   cities={cities} city={city} onCity={setCity}
                   minCommission={minCommission} onMinCommission={setMinCommission}
@@ -1239,12 +1291,12 @@ export default function ExploreScreen() {
             taşma yok. Dokunma hedefi 40px. Alt-sayfada tüm seçenekler işaretli. */}
         {!isWideWeb ? (
           <View style={{ flexDirection: "row", gap: 8 }}>
-            <Pressable onPress={() => setShowSortSheet(true)} accessibilityRole="button" accessibilityLabel={`${translateCopy("Sırala", language)}: ${translateCopy(SORT_LABELS[sortMode], language)}`} style={{ alignItems: "center", backgroundColor: sortMode !== "recommended" ? colors.primary : colors.surface, borderColor: sortMode !== "recommended" ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flex: 1, flexDirection: "row", gap: 5, justifyContent: "center", minHeight: 40, minWidth: 0, paddingHorizontal: 12, paddingVertical: 9 }}>
+            <Pressable onPress={() => setShowSortSheet(true)} accessibilityRole="button" accessibilityLabel={`${translateCopy("Sırala", language)}: ${translateCopy(SORT_LABELS[sortMode], language)}`} style={{ alignItems: "center", backgroundColor: sortMode !== "recommended" ? colors.primary : colors.surface, borderColor: sortMode !== "recommended" ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flex: 1, flexDirection: "row", gap: 5, justifyContent: "center", minHeight: 44, minWidth: 0, paddingHorizontal: 12, paddingVertical: 9 }}>
               <MaterialCommunityIcons name="sort" size={15} color={sortMode !== "recommended" ? "#FFFFFF" : colors.primaryDark} />
               <Text numberOfLines={1} style={{ color: sortMode !== "recommended" ? "#FFFFFF" : colors.primaryDark, fontSize: 12, fontWeight: "900" }}>{sortMode === "recommended" ? translateCopy("Sırala", language) : `${translateCopy("Sırala", language)}: ${translateCopy(SORT_LABELS[sortMode], language)}`}</Text>
             </Pressable>
             {/* Mobilde şehir/komisyon/il-ilçe/stok/onaylı filtreleri. */}
-            <Pressable onPress={() => setShowMobileFilters((v) => !v)} accessibilityRole="button" accessibilityLabel={translateCopy("Filtrele", language)} style={{ alignItems: "center", backgroundColor: showMobileFilters ? colors.primary : colors.surface, borderColor: hasPanelFilter ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 5, minHeight: 40, paddingHorizontal: 14, paddingVertical: 9 }}>
+            <Pressable onPress={() => setShowMobileFilters((v) => !v)} accessibilityRole="button" accessibilityLabel={translateCopy("Filtrele", language)} style={{ alignItems: "center", backgroundColor: showMobileFilters ? colors.primary : colors.surface, borderColor: hasPanelFilter ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 5, minHeight: 44, paddingHorizontal: 14, paddingVertical: 9 }}>
               <MaterialCommunityIcons name="tune-variant" size={15} color={showMobileFilters ? "#FFFFFF" : colors.primaryDark} />
               <Text style={{ color: showMobileFilters ? "#FFFFFF" : colors.primaryDark, fontSize: 12, fontWeight: "900" }}>{translateCopy("Filtre", language)}</Text>
               {hasPanelFilter ? <View style={{ backgroundColor: showMobileFilters ? "#FFFFFF" : colors.accent, borderRadius: 999, height: 7, width: 7 }} /> : null}
@@ -1252,11 +1304,31 @@ export default function ExploreScreen() {
           </View>
         ) : null}
 
-        <ScrollView ref={feedScrollRef} horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingRight: 12 }}>
+        {Platform.OS === "web" && showMobileFilters ? <FilterPanel
+                  onClose={() => setShowMobileFilters(false)}
+                  cities={cities} city={city} onCity={setCity}
+                  minCommission={minCommission} onMinCommission={setMinCommission}
+                  priceRange={priceRange} onPriceRange={setPriceRange}
+                  statusOpen={statusOpen} onStatusOpen={setStatusOpen}
+                  onClear={() => { setCity(""); setMinCommission(0); setPriceRange(""); setStockFilter(""); setStatusOpen(false); setOnlyVerified(false); setMinRate(0); setMinRating(0); setOnlyFeatured(false); router.setParams({ province: undefined, district: undefined }); clearCatFilter(); }}
+                  width={Math.max(0, width - 28)} mobile
+                  provinceId={provinceId} districtId={districtId}
+                  onLocation={(v) => router.setParams({ province: v.provinceId != null ? getProvince(v.provinceId)?.slug : undefined, district: v.districtId != null ? getDistrict(v.districtId)?.slug : undefined })}
+                  stockFilter={stockFilter} onStockFilter={setStockFilter}
+                  onlyVerified={onlyVerified} onOnlyVerified={setOnlyVerified}
+                  minRate={minRate} onMinRate={setMinRate}
+                  minRating={minRating} onMinRating={setMinRating}
+                  onlyFeatured={onlyFeatured} onOnlyFeatured={setOnlyFeatured}
+                /> : null}
+
+        <HorizontalScroll ref={feedScrollRef} testID="explore-feed-filters" showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingVertical: 2 }}>
           {feedFilters.map((item) => (
             <Pressable
               key={item.key}
-              onLayout={(e) => { const x = e.nativeEvent.layout.x; chipX.current[item.key] = x; if (item.key === filter) feedScrollRef.current?.scrollTo({ x: Math.max(0, x - 12), animated: false }); }}
+              accessibilityRole="button"
+              accessibilityLabel={item.label}
+              accessibilityState={{ selected: filter === item.key }}
+              onLayout={(e) => { const x = e.nativeEvent.layout.x; chipX.current[item.key] = x; }}
               onPress={() => setFilter(item.key)}
               style={({ pressed }) => ({
                 alignItems: "center",
@@ -1266,18 +1338,18 @@ export default function ExploreScreen() {
                 borderWidth: 1,
                 flexDirection: "row",
                 gap: 6,
-                minHeight: 34,
+                minHeight: 44,
                 opacity: pressed ? 0.72 : 1,
-                paddingHorizontal: 12
+                paddingHorizontal: 13
               })}
             >
               <MaterialCommunityIcons name={item.icon} size={14} color={filter === item.key ? "#FFFFFF" : colors.primary} />
-              <Text selectable style={{ color: filter === item.key ? "#FFFFFF" : colors.ink, fontSize: 12, fontWeight: "900" }}>
+              <Text numberOfLines={1} style={{ color: filter === item.key ? "#FFFFFF" : colors.ink, fontSize: 12, fontWeight: "600" }}>
                 {item.label}
               </Text>
             </Pressable>
           ))}
-        </ScrollView>
+        </HorizontalScroll>
 
         {/* MOBİL KATEGORİ ŞERİDİ: mobilde üstte GERÇEK kategori girişi yoktu (yalnız
             davranışsal filtreler) → kullanıcı verticalleri göremeden akordeon içinde
@@ -1286,17 +1358,27 @@ export default function ExploreScreen() {
             = "içine gir" sinyali (davranışsal çiplerden ayrışır). Masaüstünde sağ panel +
             nav "Kategoriler" zaten var → yalnız mobil. */}
         {!isWideWeb ? (
-          <ScrollView ref={catScrollRef} horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingRight: 12 }}>
-            {topCategories().map((n) => {
+          <HorizontalScroll ref={catScrollRef} testID="explore-category-filters" showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingVertical: 2 }}>
+            <Pressable onPress={() => setCatFilterOpen(v => !v)} accessibilityRole="button" accessibilityLabel={translateCopy("Tüm kategoriler", language)} accessibilityState={{ expanded: catFilterOpen }} style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 12, borderWidth: 1, flexDirection: "row", gap: 5, minHeight: 44, paddingHorizontal: 12 }}>
+              <MaterialCommunityIcons name="format-list-bulleted" size={16} color={colors.primaryDark} />
+              <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "700" }}>{translateCopy("Kategoriler", language)}</Text>
+              <MaterialCommunityIcons name={catFilterOpen ? "chevron-up" : "chevron-down"} size={14} color={colors.muted} />
+            </Pressable>
+            {(() => {
+              const all = topCategories();
+              const visible = all.slice(0, 6);
+              const active = catPath[0] ? all.find((n) => n.key === catPath[0]) : undefined;
+              return active && !visible.some((n) => n.key === active.key) ? [...visible, active] : visible;
+            })().map((n) => {
               const on = catPath[0] === n.key;
               return (
-                <Pressable key={n.key} onPress={() => selectTop(n.key)} onLayout={(e) => { const x = e.nativeEvent.layout.x; catChipX.current[n.key] = x; if (n.key === catPath[0]) catScrollRef.current?.scrollTo({ x: Math.max(0, x - 12), animated: false }); }} accessibilityRole="button" accessibilityLabel={translateCopy(n.label, language)} style={{ alignItems: "center", backgroundColor: on ? colors.primary : colors.surfaceAlt, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 3, minHeight: 34, paddingHorizontal: 12 }}>
-                  <Text numberOfLines={1} style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 12, fontWeight: "800" }}>{translateCopy(n.label, language)}</Text>
+                <Pressable key={n.key} onPress={() => selectTop(n.key)} onLayout={(e) => { const x = e.nativeEvent.layout.x; catChipX.current[n.key] = x; }} accessibilityRole="button" accessibilityLabel={translateCopy(n.label, language)} style={{ alignItems: "center", backgroundColor: on ? colors.primary : colors.surfaceAlt, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 4, maxWidth: 178, minHeight: 44, paddingHorizontal: 13 }}>
+                  <Text numberOfLines={1} style={{ color: on ? "#FFFFFF" : colors.ink, flexShrink: 1, fontSize: 12, fontWeight: "800" }}>{translateCopy(n.label, language)}</Text>
                   <MaterialCommunityIcons name="chevron-right" size={13} color={on ? "#FFFFFF" : colors.subtle} />
                 </Pressable>
               );
             })}
-          </ScrollView>
+          </HorizontalScroll>
         ) : null}
 
         {/* Karar verdiren sinyaller (anında ortak + ort. komisyon). 0/boş olanı GİZLE:
@@ -1311,28 +1393,28 @@ export default function ExploreScreen() {
 
         {/* Aktif filtre çipleri (tek-tek kaldırılabilir + tümünü temizle). */}
         {activeChips.length > 0 ? (
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ alignItems: "center", gap: 6, paddingVertical: 2 }}>
+          <HorizontalScroll  showsHorizontalScrollIndicator={false} contentContainerStyle={{ alignItems: "center", gap: 6, paddingVertical: 2 }}>
             {activeChips.map((c) => (
-              <Pressable key={c.key} onPress={c.onRemove} accessibilityRole="button" accessibilityLabel={`${translateCopy(c.label, language)} — ${translateCopy("kaldır", language)}`} style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderColor: colors.primary, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 5, paddingHorizontal: 10, paddingVertical: 6 }}>
+              <Pressable key={c.key} onPress={c.onRemove} accessibilityRole="button" accessibilityLabel={`${translateCopy(c.label, language)} — ${translateCopy("kaldır", language)}`} style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderColor: colors.primary, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 5, minHeight: 44, paddingHorizontal: 10, paddingVertical: 6 }}>
                 <Text numberOfLines={1} style={{ color: colors.primaryDark, fontSize: 11.5, fontWeight: "800", maxWidth: 160 }}>{translateCopy(c.label, language)}</Text>
                 <MaterialCommunityIcons name="close-circle" size={14} color={colors.primaryDark} />
               </Pressable>
             ))}
             {activeChips.length > 1 ? (
-              <Pressable onPress={clearAllFilters} accessibilityRole="button" style={{ alignItems: "center", borderColor: colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 10, paddingVertical: 6 }}>
+              <Pressable onPress={clearAllFilters} accessibilityRole="button" style={{ alignItems: "center", borderColor: colors.line, borderRadius: 999, borderWidth: 1, justifyContent: "center", minHeight: 44, paddingHorizontal: 10, paddingVertical: 6 }}>
                 <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "800" }}>{translateCopy("Tümünü temizle", language)}</Text>
               </Pressable>
             ) : null}
-          </ScrollView>
+          </HorizontalScroll>
         ) : null}
 
         {/* MOBİL PARİTE: Kayıtlı aramalar yalnız masaüstündeydi → hesaba kayıtlı + Supabase'e
             senkron olmasına rağmen mobil/native'de HİÇBİR yüzey gösteremiyordu. Yatay şerit
             (320px güvenli): mevcut aramayı/filtreyi kaydet + kayıtlı olanlara tek dokunuşla dön. */}
         {(((queryText || hasSaveableFilter) && !isCurrentSaved) || savedSearches.length > 0) ? (
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ alignItems: "center", gap: 8, paddingVertical: 2 }}>
+          <HorizontalScroll  showsHorizontalScrollIndicator={false} contentContainerStyle={{ alignItems: "center", gap: 8, paddingVertical: 2 }}>
             {(queryText || hasSaveableFilter) && !isCurrentSaved ? (
-              <Pressable onPress={() => addSaved(queryText, currentFilters())} accessibilityRole="button" style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderColor: colors.primary, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 5, paddingHorizontal: 11, paddingVertical: 6 }}>
+              <Pressable onPress={() => addSaved(queryText, currentFilters())} accessibilityRole="button" style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderColor: colors.primary, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 5, minHeight: 44, paddingHorizontal: 11, paddingVertical: 6 }}>
                 <MaterialCommunityIcons name="bell-plus-outline" size={14} color={colors.primaryDark} />
                 <Text numberOfLines={1} style={{ color: colors.primaryDark, fontSize: 11.5, fontWeight: "900", maxWidth: 190 }}>{queryText ? `“${queryText}” ${translateCopy("aramasını kaydet", language)}` : translateCopy("Bu filtreyi kaydet", language)}</Text>
               </Pressable>
@@ -1343,20 +1425,21 @@ export default function ExploreScreen() {
               return (
                 <View key={s.id} style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 5, paddingLeft: 11, paddingRight: 5, paddingVertical: 5 }}>
                   <MaterialCommunityIcons name={hasF ? "filter-check-outline" : "bookmark-outline"} size={13} color={colors.muted} />
-                  <Pressable onPress={() => applySaved(s)} accessibilityRole="button"><Text numberOfLines={1} style={{ color: colors.ink, fontSize: 12, fontWeight: "800", maxWidth: 150 }}>{label}</Text></Pressable>
-                  <Pressable accessibilityRole="button" accessibilityLabel={translateCopy("Kayıtlı aramayı sil", language)} onPress={() => removeSaved(s.id)} hitSlop={8} style={{ alignItems: "center", height: 22, justifyContent: "center", width: 22 }}>
+                  <Pressable accessibilityLabel={`${translateCopy("Kayıtlı aramayı aç", language)}: ${label}`} onPress={() => applySaved(s)} accessibilityRole="button" style={{ justifyContent: "center", minHeight: 36 }}><Text numberOfLines={1} style={{ color: colors.ink, fontSize: 12, fontWeight: "800", maxWidth: 150 }}>{label}</Text></Pressable>
+                  <Pressable accessibilityRole="button" accessibilityLabel={translateCopy("Kayıtlı aramayı sil", language)} onPress={() => removeSaved(s.id)} hitSlop={8} style={{ alignItems: "center", height: 36, justifyContent: "center", width: 36 }}>
                     <MaterialCommunityIcons name="close" size={13} color={colors.subtle} />
                   </Pressable>
                 </View>
               );
             })}
-          </ScrollView>
+          </HorizontalScroll>
         ) : null}
       </View>
 
-      {renderCatFilter()}
+      {(catFilterOpen || catPath.length > 0) && renderCatFilter()}
 
-      {mediaItems.length === 0 && marketplaceLoadFailed && listings.length === 0 ? (
+      {searchNotice}
+      {mediaItems.length === 0 && serverFailure ? null : mediaItems.length === 0 && serverLoading ? <Text accessibilityRole="progressbar" style={{ color: colors.muted, padding: 20 }}>{translateCopy("İlanlar aranıyor…", language)}</Text> : mediaItems.length === 0 && marketplaceLoadFailed && listings.length === 0 ? (
         <MarketplaceRetry onRetry={retryMarketplace} />
       ) : mediaItems.length === 0 ? (
         <View style={{ alignItems: "center", gap: 10, padding: 28 }}>
@@ -1394,36 +1477,7 @@ export default function ExploreScreen() {
         </View>
       ) : (
         <>
-          <View style={{ gap, paddingHorizontal: isWideWeb ? 0 : padding, paddingTop: 2 }}>
-            {rows.map((row, rowIndex) => (
-              <View key={`row-${rowIndex}`} style={{ flexDirection: "row", gap }}>
-                {row.map((item, index) => (
-                  <ExploreTile
-                    key={`${item.id}-${seed}`}
-                    favorited={isFavorite(item.listing.id)}
-                    height={tileHeight}
-                    inCompare={compareIds.includes(item.listing.id)}
-                    item={item}
-                    language={language}
-                    onCompare={() => toggleCompare(item.listing.id)}
-                    onFav={() => toggleFavorite(item.listing.id)}
-                    // ANA DOKUNMA → İLAN SAYFASI (masaüstüyle tutarlı, pazaryeri beklentisi).
-                    // Eskiden explore-feed'e (tam ekran medya) gidiyordu → kullanıcı ürüne
-                    // tıklayınca ilan yerine fotoğraf kaydırıcı görüyordu (tıklama şaşırtıcı).
-                    onPress={() => router.push({ pathname: "/listing/[id]", params: { id: item.listing.id } })}
-                    // GÖRSEL KEŞFET (tam ekran kaydırma) ayrı buton olarak korunur.
-                    onVisual={() => router.push({ pathname: "/(tabs)/explore-feed/[id]", params: { id: item.listing.id, media: item.id } })}
-                    order={rowIndex * columns + index}
-                    size={tileSize}
-                    t={t}
-                  />
-                ))}
-                {Array.from({ length: columns - row.length }).map((_, index) => (
-                  <View key={`empty-${rowIndex}-${index}`} style={{ height: tileHeight, width: tileSize }} />
-                ))}
-              </View>
-            ))}
-          </View>
+          <ExploreMosaic listings={mosaicListings} width={contentW} onOpen={openListing} />
           {visibleMediaItems.length < mediaItems.length ? (
             <Text selectable style={{ color: colors.muted, fontSize: 12, fontWeight: "800", paddingVertical: 8, textAlign: "center" }}>
               {visibleMediaItems.length} / {mediaItems.length} {translateCopy("ilan", language)}
@@ -1433,6 +1487,7 @@ export default function ExploreScreen() {
       )}
       </View>
       </View>
+      {!isWideWeb && <CompactFooter />}
     </ScrollView>
   );
 }
@@ -1462,7 +1517,8 @@ function FilterPanel({
   minRating,
   onMinRating,
   onlyFeatured,
-  onOnlyFeatured
+  onOnlyFeatured,
+  onClose
 }: {
   cities: string[];
   city: string;
@@ -1493,6 +1549,7 @@ function FilterPanel({
   onMinRating?: (v: number) => void;
   onlyFeatured?: boolean;
   onOnlyFeatured?: (v: boolean) => void;
+  onClose?: () => void;
 }) {
   const { language } = useLanguage();
   const commissionPresets = [0, 100, 250, 500];
@@ -1500,17 +1557,149 @@ function FilterPanel({
   const [pMaxDraft, setPMaxDraft] = useState("");
   useEffect(() => {
     const [mn, mx] = priceRange ? priceRange.split("-") : ["", ""];
-    setPMinDraft(mn ?? "");
-    setPMaxDraft(mx ?? "");
+    setPriceError(null);
+    setPMinDraft(mn ? listingNumberInput(Number(mn)) : "");
+    setPMaxDraft(mx ? listingNumberInput(Number(mx)) : "");
   }, [priceRange]);
+  const [priceError, setPriceError] = useState<string | null>(null);
   const applyPrice = () => {
-    const mn = pMinDraft.replace(/[^0-9]/g, "");
-    const mx = pMaxDraft.replace(/[^0-9]/g, "");
-    if (!mn && !mx) { onPriceRange(""); return; }
-    if (mn && mx && Number(mn) > Number(mx)) { onPriceRange(`${mx}-${mn}`); return; }
-    onPriceRange(`${mn}-${mx}`);
+    const error = filterRangeError(pMinDraft, pMaxDraft);
+    setPriceError(error);
+    if (!error) onPriceRange(serializePriceRange(pMinDraft, pMaxDraft));
   };
   const hasFilter = Boolean(city) || minCommission > 0 || Boolean(priceRange) || statusOpen || provinceId != null || districtId != null || Boolean(stockFilter) || Boolean(onlyVerified);
+  if (mobile && Platform.OS === "web") return <CompactFilterPanel onClear={onClear} onClose={() => onClose?.()} resultLabel={translateCopy("İlanlara dön", language)}>
+ <CompactFilterSection id="price" label="Fiyat"><View style={{ gap: 8 }}>
+        <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "900" }}>{translateCopy("Fiyat aralığı (₺)", language)}</Text>
+        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
+          {PRICE_PRESETS.map((p) => {
+            const on = priceRange === p.value;
+            return (
+              <Pressable key={p.value} onPress={() => onPriceRange(on ? "" : p.value)} style={{ backgroundColor: on ? colors.primary : colors.surfaceAlt, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 11, paddingVertical: 7 }}>
+                <Text style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 11.5, fontWeight: "800" }}>{p.label}</Text>
+              </Pressable>
+            );
+          })}
+        </View>
+        <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
+          <TextInput
+            value={pMinDraft}
+            accessibilityLabel="Minimum fiyat"
+            onChangeText={(t) => { setPMinDraft(t); setPriceError(null); }}
+            keyboardType="number-pad"
+            placeholder={translateCopy("En az", language)}
+            placeholderTextColor={colors.subtle}
+            style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 8, borderWidth: 1, color: colors.ink, flex: 1, fontSize: 16, height: 44, minWidth: 0, paddingHorizontal: 10 }}
+          />
+          <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "800" }}>—</Text>
+          <TextInput
+            value={pMaxDraft}
+            accessibilityLabel="Maksimum fiyat"
+            onChangeText={(t) => { setPMaxDraft(t); setPriceError(null); }}
+            keyboardType="number-pad"
+            placeholder={translateCopy("En çok", language)}
+            placeholderTextColor={colors.subtle}
+            onSubmitEditing={applyPrice}
+            style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 8, borderWidth: 1, color: colors.ink, flex: 1, fontSize: 16, height: 44, minWidth: 0, paddingHorizontal: 10 }}
+          />
+          <Pressable onPress={applyPrice} style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 8, height: 42, justifyContent: "center", paddingHorizontal: 14 }}>
+            <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>{translateCopy("Uygula", language)}</Text>
+          </Pressable>
+        </View>
+        {priceError && <Text accessibilityRole="alert" style={{ color: "#B42318", fontSize: 12 }}>{priceError}</Text>}
+      </View></CompactFilterSection>
+ <CompactFilterSection id="location" label="Konum">{mobile && onLocation ? (
+        <View style={{ gap: 8, zIndex: 20 }}>
+          <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "900" }}>{translateCopy("Konum (İl / İlçe)", language)}</Text>
+          <LocationSelector value={{ provinceId, districtId }} onChange={onLocation} showNeighborhood={false} mode="filter" />
+        </View>
+      ) : null}</CompactFilterSection>
+ <CompactFilterSection id="commission" label="Komisyon"><View style={{gap:12}}><View style={{ gap: 8 }}>
+        <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "900" }}>{translateCopy("Komisyon (en az)", language)}</Text>
+        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+          {commissionPresets.map((amount) => {
+            const active = minCommission === amount;
+            return (
+              <Pressable
+                key={amount}
+                onPress={() => onMinCommission(amount)}
+                style={{ backgroundColor: active ? colors.primary : colors.surfaceAlt, borderColor: active ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 7 }}
+              >
+                <Text style={{ color: active ? "#FFFFFF" : colors.ink, fontSize: 12, fontWeight: "800" }}>
+                  {amount === 0 ? translateCopy("Tümü", language) : `₺${amount}+`}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      </View>{onMinRate ? (
+        <View style={{ gap: 8 }}>
+          <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "900" }}>{translateCopy("Komisyon oranı (en az)", language)}</Text>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+            {[10, 15, 20, 25].map((r) => {
+              const on = (minRate ?? 0) === r;
+              return (
+                <Pressable key={r} accessibilityRole="button" onPress={() => onMinRate(on ? 0 : r)} style={{ backgroundColor: on ? colors.primary : colors.surfaceAlt, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 7 }}>
+                  <Text style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 12, fontWeight: "800" }}>%{r}+</Text>
+                </Pressable>
+              );
+            })}
+          </View>
+        </View>
+      ) : null}</View></CompactFilterSection>
+ <CompactFilterSection id="seller" label="Satıcı"><View style={{gap:12}}>{onMinRating ? (
+        <View style={{ gap: 8 }}>
+          <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "900" }}>{translateCopy("Satıcı puanı (en az)", language)}</Text>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+            {[4, 4.5].map((r) => {
+              const on = (minRating ?? 0) === r;
+              return (
+                <Pressable key={r} accessibilityRole="button" onPress={() => onMinRating(on ? 0 : r)} style={{ alignItems: "center", backgroundColor: on ? colors.primary : colors.surfaceAlt, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 4, paddingHorizontal: 12, paddingVertical: 7 }}>
+                  <MaterialCommunityIcons name="star" size={13} color={on ? "#FFFFFF" : colors.gold} />
+                  <Text style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 12, fontWeight: "800" }}>{r}+</Text>
+                </Pressable>
+              );
+            })}
+          </View>
+        </View>
+      ) : null}{mobile && onOnlyVerified ? (
+        <Pressable onPress={() => onOnlyVerified(!onlyVerified)} style={{ alignItems: "center", backgroundColor: onlyVerified ? colors.primarySoft : colors.surfaceAlt, borderColor: onlyVerified ? colors.primary : colors.line, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 8, paddingHorizontal: 12, paddingVertical: 10 }}>
+          <MaterialCommunityIcons name={onlyVerified ? "checkbox-marked" : "checkbox-blank-outline"} size={18} color={onlyVerified ? colors.primary : colors.muted} />
+          <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "700" }}>{translateCopy("Sadece onaylı satıcılar", language)}</Text>
+        </Pressable>
+      ) : null}</View></CompactFilterSection>
+ <CompactFilterSection id="other" label="Diğer"><View style={{gap:12}}><View style={{ gap: 8 }}>
+        <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "900" }}>{translateCopy("Durum", language)}</Text>
+        <Pressable
+          onPress={() => onStatusOpen(!statusOpen)}
+          style={{ alignItems: "center", backgroundColor: statusOpen ? colors.primarySoft : colors.surfaceAlt, borderColor: statusOpen ? colors.primary : colors.line, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 8, paddingHorizontal: 12, paddingVertical: 10 }}
+        >
+          <MaterialCommunityIcons name={statusOpen ? "checkbox-marked" : "checkbox-blank-outline"} size={18} color={statusOpen ? colors.primary : colors.muted} />
+          <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "700" }}>{translateCopy("Ortak satışa açık", language)}</Text>
+        </Pressable>
+      </View>{onOnlyFeatured ? (
+        <Pressable accessibilityRole="button" accessibilityState={{ checked: Boolean(onlyFeatured) }} onPress={() => onOnlyFeatured(!onlyFeatured)} style={{ alignItems: "center", flexDirection: "row", gap: 9 }}>
+          <View style={{ alignItems: "center", backgroundColor: onlyFeatured ? colors.primary : colors.surface, borderColor: onlyFeatured ? colors.primary : colors.line, borderRadius: 6, borderWidth: 1.5, height: 20, justifyContent: "center", width: 20 }}>
+            {onlyFeatured ? <MaterialCommunityIcons name="check" size={13} color="#FFFFFF" /> : null}
+          </View>
+          <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "700" }}>{translateCopy("Öne çıkan ilanlar", language)}</Text>
+        </Pressable>
+      ) : null}{mobile && onStockFilter ? (
+        <View style={{ gap: 8 }}>
+          <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "900" }}>{translateCopy("Stok Durumu", language)}</Text>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+            {([["", "Tümü"], ["in", "Stokta var"], ["low", "Az stok"]] as const).map(([val, lbl]) => {
+              const on = (stockFilter ?? "") === val;
+              return (
+                <Pressable key={val || "all"} onPress={() => onStockFilter(on ? "" : val)} style={{ backgroundColor: on ? colors.primary : colors.surfaceAlt, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 7 }}>
+                  <Text style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 12, fontWeight: "800" }}>{translateCopy(lbl, language)}</Text>
+                </Pressable>
+              );
+            })}
+          </View>
+        </View>
+      ) : null}</View></CompactFilterSection>
+ </CompactFilterPanel>;
   return (
     <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 18, padding: 16, width }}>
       <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
@@ -1549,26 +1738,29 @@ function FilterPanel({
         <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
           <TextInput
             value={pMinDraft}
-            onChangeText={(t) => setPMinDraft(t.replace(/[^0-9]/g, ""))}
+            accessibilityLabel="Minimum fiyat"
+            onChangeText={(t) => { setPMinDraft(t); setPriceError(null); }}
             keyboardType="number-pad"
             placeholder={translateCopy("En az", language)}
             placeholderTextColor={colors.subtle}
-            style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 8, borderWidth: 1, color: colors.ink, flex: 1, fontSize: 14, height: 42, minWidth: 0, paddingHorizontal: 10 }}
+            style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 8, borderWidth: 1, color: colors.ink, flex: 1, fontSize: 16, height: 44, minWidth: 0, paddingHorizontal: 10 }}
           />
           <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "800" }}>—</Text>
           <TextInput
             value={pMaxDraft}
-            onChangeText={(t) => setPMaxDraft(t.replace(/[^0-9]/g, ""))}
+            accessibilityLabel="Maksimum fiyat"
+            onChangeText={(t) => { setPMaxDraft(t); setPriceError(null); }}
             keyboardType="number-pad"
             placeholder={translateCopy("En çok", language)}
             placeholderTextColor={colors.subtle}
             onSubmitEditing={applyPrice}
-            style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 8, borderWidth: 1, color: colors.ink, flex: 1, fontSize: 14, height: 42, minWidth: 0, paddingHorizontal: 10 }}
+            style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 8, borderWidth: 1, color: colors.ink, flex: 1, fontSize: 16, height: 44, minWidth: 0, paddingHorizontal: 10 }}
           />
           <Pressable onPress={applyPrice} style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 8, height: 42, justifyContent: "center", paddingHorizontal: 14 }}>
             <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>{translateCopy("Uygula", language)}</Text>
           </Pressable>
         </View>
+        {priceError && <Text accessibilityRole="alert" style={{ color: "#B42318", fontSize: 12 }}>{priceError}</Text>}
       </View>
 
       <View style={{ gap: 8 }}>
@@ -1788,17 +1980,18 @@ function PriceRangeFilter({ value, onChange }: { value: string; onChange: (v: st
   const [maxVal, setMaxVal] = useState("");
   useEffect(() => {
     const [mn, mx] = value ? value.split("-") : ["", ""];
-    setMinVal(mn ?? "");
-    setMaxVal(mx ?? "");
+    setPriceError(null);
+    setMinVal(mn ? listingNumberInput(Number(mn)) : "");
+    setMaxVal(mx ? listingNumberInput(Number(mx)) : "");
   }, [value, open]);
   const active = Boolean(value);
   const label = formatPriceLabel(value) ?? translateCopy("Fiyat", language);
+  const [priceError, setPriceError] = useState<string | null>(null);
   function applyCustom() {
-    const mn = minVal.replace(/[^0-9]/g, "");
-    const mx = maxVal.replace(/[^0-9]/g, "");
-    if (!mn && !mx) { onChange(""); setOpen(false); return; }
-    if (mn && mx && Number(mn) > Number(mx)) { onChange(`${mx}-${mn}`); setOpen(false); return; }
-    onChange(`${mn}-${mx}`);
+    const error = filterRangeError(minVal, maxVal);
+    setPriceError(error);
+    if (error) return;
+    onChange(serializePriceRange(minVal, maxVal));
     setOpen(false);
   }
   // ÇAPALI KATMAN (ebeveyne-absolute → kırpılma/taşma sorunu giderildi).
@@ -1816,7 +2009,7 @@ function PriceRangeFilter({ value, onChange }: { value: string; onChange: (v: st
         </Pressable>
       </View>
       <AnchoredDropdown visible={open} anchor={anchorRect} onClose={() => setOpen(false)} maxHeight={360} minWidth={260}>
-          <ScrollView nestedScrollEnabled keyboardShouldPersistTaps="handled" contentContainerStyle={{ gap: 10, padding: 12 }}>
+          <ScrollView nestedScrollEnabled keyboardShouldPersistTaps="handled" contentContainerStyle={{ flexGrow: 1, gap: 10, padding: 12 }}>
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
               {PRICE_PRESETS.map((p) => {
                 const on = value === p.value;
@@ -1832,7 +2025,8 @@ function PriceRangeFilter({ value, onChange }: { value: string; onChange: (v: st
             <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
               <TextInput
                 value={minVal}
-                onChangeText={(t) => setMinVal(t.replace(/[^0-9]/g, ""))}
+                accessibilityLabel="Minimum fiyat"
+                onChangeText={(t) => { setMinVal(t); setPriceError(null); }}
                 keyboardType="number-pad"
                 placeholder={translateCopy("En az", language)}
                 placeholderTextColor={colors.subtle}
@@ -1841,7 +2035,8 @@ function PriceRangeFilter({ value, onChange }: { value: string; onChange: (v: st
               <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "800" }}>—</Text>
               <TextInput
                 value={maxVal}
-                onChangeText={(t) => setMaxVal(t.replace(/[^0-9]/g, ""))}
+                accessibilityLabel="Maksimum fiyat"
+                onChangeText={(t) => { setMaxVal(t); setPriceError(null); }}
                 keyboardType="number-pad"
                 placeholder={translateCopy("En çok", language)}
                 placeholderTextColor={colors.subtle}
@@ -1849,6 +2044,7 @@ function PriceRangeFilter({ value, onChange }: { value: string; onChange: (v: st
                 style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 8, borderWidth: 1, color: colors.ink, flex: 1, fontSize: 14, height: 40, paddingHorizontal: 10 }}
               />
             </View>
+            {priceError && <Text accessibilityRole="alert" style={{ color: "#B42318", fontSize: 12 }}>{priceError}</Text>}
             <View style={{ flexDirection: "row", gap: 8 }}>
               {active ? (
                 <Pressable onPress={() => { onChange(""); setOpen(false); }} style={{ alignItems: "center", borderColor: colors.line, borderRadius: 9, borderWidth: 1, flex: 1, paddingVertical: 10 }}>
@@ -1871,12 +2067,12 @@ function SidebarListing({ listing, owner, showStock }: { listing: Listing; owner
   const { language } = useLanguage();
   const commission = commissionAmount(listing);
   return (
-    <PressLink href={`/listing/${listing.id}`} accessibilityLabel={displayText(listing.title)} pressedOpacity={0.8} style={{ alignItems: "center", flexDirection: "row", gap: 10 }}>
+    <PressLink href={`/listing/${listing.id}`} accessibilityLabel={displayListingTitle(listing.title)} pressedOpacity={0.8} style={{ alignItems: "center", flexDirection: "row", gap: 10 }}>
         <View style={{ backgroundColor: colors.line, borderRadius: 10, height: 56, overflow: "hidden", width: 56 }}>
           <SafeRemoteImage uri={listing.image} style={{ height: "100%", width: "100%" }} contentFit="cover" transition={120} />
         </View>
         <View style={{ flex: 1, gap: 2, minWidth: 0 }}>
-          <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 13, fontWeight: "800" }}>{displayText(listing.title)}</Text>
+          <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 13, fontWeight: "800" }}>{displayListingTitle(listing.title)}</Text>
           <View style={{ alignItems: "center", flexDirection: "row", gap: 6 }}>
             <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "900" }}>{money(listing.price)}</Text>
             <Text numberOfLines={1} style={{ color: colors.primaryDark, fontSize: 11, fontWeight: "900" }}>{translateCopy("Kazanç", language)} {money(commission)}</Text>
@@ -1891,136 +2087,11 @@ function SidebarListing({ listing, owner, showStock }: { listing: Listing; owner
   );
 }
 
-function ExploreTileBase({ favorited, height, inCompare, item, language, onCompare, onFav, onPress, onVisual, order, size, t }: { favorited?: boolean; height: number; inCompare?: boolean; item: ExploreMedia; language: "tr" | "en"; onCompare?: () => void; onFav?: () => void; onPress: () => void; onVisual?: () => void; order: number; size: number; t: (key: string) => string }) {
-  const { listing } = item;
-  // "Vitrin ürünü" rozeti GERÇEK featured bayrağından gelir. Eskiden `index===0 || order%12===0`
-  // (POZİSYON) idi → yeni gerçek ilanlar üstte olduğu için "Vitrin ürünü" (sanki demo/vitrin)
-  // etiketi alıyordu — yanıltıcıydı. Artık yalnız DB'de featured olan ilanlar bu rozeti alır.
-  const featured = Boolean(listing.featured);
-  const conversionScore = listing.leadCount + listing.partnerCount * 2 + Math.round(listing.favoriteCount / 8);
-  const status = getExploreStatus(item, listing, featured, conversionScore, t);
-  const commission = commissionAmount(listing);
-  // İlanın GERÇEK kategorisi (eski sezgisel inferListingSubcategory kamera→"Araç elektroniği" gibi yanlış eşliyordu).
-  const subcategory = displayText(listing.category);
-
-  return (
-    <Pressable
-      accessibilityRole="link"
-      accessibilityLabel={`${displayText(listing.title)} — ${money(listing.price)}`}
-      onPress={onPress}
-      dataSet={{ card: "listing", tile: "1" }}
-      style={({ pressed }) => ({ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 14, borderWidth: 1, height, opacity: pressed ? 0.92 : 1, overflow: "hidden", shadowColor: "#0B3A44", shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.06, shadowRadius: 10, width: size })}
-    >
-      {/* Görsel — TAM KARE (aspectRatio:1, ListingCard'la aynı). Eskiden height:size idi ve
-          kenarlık/yuvarlama ile 176×178 gibi hafif kayıyordu; artık her platformda birebir kare. */}
-      <View style={{ aspectRatio: 1, backgroundColor: colors.surfaceAlt, overflow: "hidden", width: "100%" }}>
-        <SafeRemoteImage uri={item.type === "video" ? item.poster : item.uri} style={{ height: "100%", width: "100%" }} contentFit="cover" transition={order < 4 ? 0 : 120} priority={order < 4 ? "high" : "low"} />
-        <View style={{ left: 8, position: "absolute", right: 8, top: 8 }}>
-          <StatusLabel icon={status.icon} label={status.label} tone={status.tone} />
-        </View>
-        {item.type === "video" ? (
-          <View style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.92)", borderRadius: 999, bottom: 8, height: 30, justifyContent: "center", position: "absolute", right: 8, width: 30 }}>
-            <MaterialCommunityIcons name="play" size={18} color={colors.primaryDark} />
-          </View>
-        ) : onVisual ? (
-          // GÖRSEL KEŞFET (tam ekran kaydırma) — ana dokunma artık ilana gider; bu buton
-          // TikTok-tarzı tam ekran medya deneyimini korur (yalnız görselde; videoda oynat ikonu var).
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={translateCopy("Görsel keşfet — tam ekran", language)}
-            hitSlop={6}
-            onPress={onVisual}
-            style={{ alignItems: "center", backgroundColor: "rgba(0,0,0,0.5)", borderRadius: 999, bottom: 8, flexDirection: "row", gap: 3, paddingHorizontal: 8, paddingVertical: 4, position: "absolute", right: 8 }}
-          >
-            <MaterialCommunityIcons name="fullscreen" size={14} color="#FFFFFF" />
-            <Text style={{ color: "#FFFFFF", fontSize: 10, fontWeight: "900" }}>{translateCopy("Görsel", language)}</Text>
-          </Pressable>
-        ) : null}
-        {/* Favori — ListingCard'da vardı, keşfet kartında YOKTU (tutarsızlık). */}
-        {onFav ? (
-          <Pressable
-            accessibilityRole="button"
-            accessibilityState={{ selected: Boolean(favorited) }}
-            accessibilityLabel={favorited ? translateCopy("Favorilerden çıkar", language) : translateCopy("Favorilere ekle", language)}
-            hitSlop={6}
-            onPress={onFav}
-            style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.92)", borderRadius: 999, height: 30, justifyContent: "center", position: "absolute", right: 8, top: 34, width: 30 }}
-          >
-            <MaterialCommunityIcons name={favorited ? "heart" : "heart-outline"} size={17} color={favorited ? colors.accent : colors.muted} />
-          </Pressable>
-        ) : null}
-        {/* Karşılaştır — ListingCard'da (masaüstü) vardı, mobil keşfet kartında YOKTU (tutarsızlık).
-            Compare barı mobilde görünüyordu ama karta ekleme yolu yalnız ilan detayındaydı. */}
-        {onCompare ? (
-          <Pressable
-            accessibilityRole="button"
-            accessibilityState={{ selected: Boolean(inCompare) }}
-            accessibilityLabel={inCompare ? translateCopy("Karşılaştırmadan çıkar", language) : translateCopy("Karşılaştır", language)}
-            hitSlop={6}
-            onPress={onCompare}
-            style={{ alignItems: "center", backgroundColor: inCompare ? colors.primary : "rgba(255,255,255,0.92)", borderRadius: 999, height: 30, justifyContent: "center", position: "absolute", right: 8, top: 68, width: 30 }}
-          >
-            <MaterialCommunityIcons name="compare-horizontal" size={16} color={inCompare ? "#FFFFFF" : colors.muted} />
-          </Pressable>
-        ) : null}
-        {/* Görsel sayısı: ilan başına tek kart olduğu için "daha fazla görsel var" sinyali. */}
-        {(item.mediaCount ?? 1) > 1 ? (
-          <View style={{ alignItems: "center", backgroundColor: "rgba(0,0,0,0.55)", borderRadius: 999, bottom: 8, flexDirection: "row", gap: 3, left: 8, paddingHorizontal: 7, paddingVertical: 3, position: "absolute" }}>
-            <MaterialCommunityIcons name="image-multiple-outline" size={11} color="#FFFFFF" />
-            <Text style={{ color: "#FFFFFF", fontSize: 10, fontWeight: "900" }}>{item.mediaCount}</Text>
-          </View>
-        ) : null}
-      </View>
-      {/* Okunur metin bölümü (beyaz, alt) */}
-      <View style={{ flex: 1, gap: 3, paddingHorizontal: 9, paddingVertical: 8 }}>
-        <Text numberOfLines={2} style={{ color: colors.ink, fontSize: 13, fontWeight: "800", lineHeight: 16, minHeight: 32 }}>
-          {displayText(listing.title)}
-        </Text>
-        <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 11, fontWeight: "700" }}>
-          {translateCopy(subcategory, language)}
-        </Text>
-        {/* FİYAT ASLA KIRPILMAZ: eskiden fiyat+konum yarışıyordu, dar 2-sütun kartta fiyat
-            "₺5.0..." diye kesiliyordu. Fiyat flexShrink:0 (tam), konum kalan yeri alıp kısalır. */}
-        <View style={{ alignItems: "center", flexDirection: "row", gap: 6 }}>
-          <Text numberOfLines={1} style={{ color: colors.ink, flexShrink: 0, fontSize: 14.5, fontVariant: ["tabular-nums"], fontWeight: "900" }}>{moneyCompact(listing.price)}</Text>
-          <Text numberOfLines={1} style={{ color: colors.subtle, flex: 1, fontSize: 10.5, fontWeight: "700", textAlign: "right" }}>{displayText(listing.location)}</Text>
-        </View>
-        {commission > 0 ? (
-          <View style={{ alignItems: "center", alignSelf: "flex-start", backgroundColor: colors.primarySoft, borderRadius: 7, flexDirection: "row", gap: 4, paddingHorizontal: 7, paddingVertical: 3 }}>
-            <MaterialCommunityIcons name="cash-multiple" size={12} color={colors.primaryDark} />
-            <Text numberOfLines={1} style={{ color: colors.primaryDark, fontSize: 11, fontVariant: ["tabular-nums"], fontWeight: "900" }}>{t("earning")} {money(commission)}{listing.commissionType === "rate" ? ` · %${listing.commissionValue}` : ""}</Text>
-          </View>
-        ) : null}
-      </View>
-    </Pressable>
-  );
-}
-
-// Medya-feed'de her karo; parent re-render'larında (arama/filtre dışı state
-// değişimi) boşuna render olmasın. Yalnız içerik/boyut/dil değişince render et;
-// onPress kimliği yok sayılır (davranışsal olarak sabit).
-const ExploreTile = memo(ExploreTileBase, (a, b) =>
-  // favorited de karşılaştırılmalı — yoksa kalbe basınca kart yeniden render OLMAZ
-  // (memo eski çıktıyı tutar) ve favori görsel olarak dolmaz.
-  a.item === b.item && a.favorited === b.favorited && a.inCompare === b.inCompare && a.height === b.height && a.size === b.size && a.order === b.order && a.language === b.language
-);
-
-function getExploreStatus(item: ExploreMedia, listing: Listing, featured: boolean, conversionScore: number, t: (key: string) => string): { icon: keyof typeof MaterialCommunityIcons.glyphMap; label: string; tone: "primary" | "dark" | "warning" } {
-  if (item.type === "video") return { icon: "play-circle", label: t("videoContent"), tone: "dark" };
-  // Kartlarla TEK terminoloji: open→Anında ortak, approval→Onaylı ortak, invite→Davetli.
-  if (listing.partnershipMode === "open") return { icon: "flash", label: t("instantPartner"), tone: "primary" };
-  if (conversionScore >= 18) return { icon: "trending-up", label: t("trendProduct"), tone: "warning" };
-  if (featured) return { icon: "star-circle", label: t("showcaseProduct"), tone: "dark" };
-  // Komisyonlu (open-dışı) ilanlar: moda göre Onaylı/Davetli ortak (kart mod-etiketiyle aynı).
-  if (commissionAmount(listing) > 0) return { icon: listing.partnershipMode === "invite" ? "ticket-outline" : "shield-check-outline", label: t(listing.partnershipMode === "invite" ? "inviteOnly" : "approvedPartner"), tone: "primary" };
-  return { icon: "tag-outline", label: t("productImage"), tone: "dark" };
-}
-
 function ExploreStat({ icon, label, value }: { icon: keyof typeof MaterialCommunityIcons.glyphMap; label: string; value: string }) {
   const { language } = useLanguage();
 
   return (
-    <View style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 8, borderWidth: 1, flex: 1, flexDirection: "row", gap: 6, minHeight: 34, paddingHorizontal: 8 }}>
+    <View style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 8, borderWidth: 1, flex: 1, flexDirection: "row", gap: 6, minHeight: 44, paddingHorizontal: 8 }}>
       <MaterialCommunityIcons name={icon} size={16} color={colors.primary} />
       <Text numberOfLines={1} style={{ color: colors.muted, flex: 1, fontSize: 11, fontWeight: "900" }}>
         {translateCopy(label, language)}
@@ -2030,25 +2101,6 @@ function ExploreStat({ icon, label, value }: { icon: keyof typeof MaterialCommun
       </Text>
     </View>
   );
-}
-
-function StatusLabel({ icon, label, tone }: { icon: keyof typeof MaterialCommunityIcons.glyphMap; label: string; tone: "primary" | "dark" | "warning" }) {
-  const backgroundColor = tone === "primary" ? "rgba(14,165,183,0.96)" : tone === "warning" ? "rgba(245,158,11,0.97)" : "rgba(15,23,42,0.78)";
-
-  return (
-    <View style={{ alignItems: "center", alignSelf: "flex-start", backgroundColor, borderRadius: 999, flexDirection: "row", gap: 4, justifyContent: "center", maxWidth: "100%", minHeight: 24, paddingHorizontal: 9 }}>
-      <MaterialCommunityIcons name={icon} size={11} color="#FFFFFF" />
-      <Text adjustsFontSizeToFit minimumFontScale={0.74} numberOfLines={1} style={{ color: "#FFFFFF", flexShrink: 1, fontSize: 10, fontWeight: "900" }}>
-        {label}
-      </Text>
-    </View>
-  );
-}
-
-function chunk<T>(items: T[], size: number) {
-  const rows: T[][] = [];
-  for (let index = 0; index < items.length; index += size) rows.push(items.slice(index, index + size));
-  return rows;
 }
 
 function exploreScore(listing: Listing, seed: number) {

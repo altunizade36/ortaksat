@@ -1,3 +1,5 @@
+import { validateListingTitle } from "./listing-title";
+import { storageBody } from "@/lib/storage-body";
 ﻿import { Platform } from "react-native";
 import { manipulateAsync, SaveFormat } from "expo-image-manipulator";
 
@@ -194,6 +196,7 @@ export async function subscribeNewsletterLive(email: string): Promise<{ ok: bool
 /** Giris yapmis kullanicinin sifresini gunceller (Supabase Auth). */
 export async function changePasswordLive(newPassword: string, currentPassword?: string): Promise<{ ok: boolean; error?: string }> {
   if (!supabase) return { ok: false, error: "Canlı bağlantı yok." };
+  if(currentPassword&&!await reauthenticateLive(currentPassword))return {ok:false,error:"Mevcut şifre doğrulanamadı."};
   // Supabase "secure password change" AÇIK: mevcut şifre GEREKLİ. supabase-js
   // updateUser bunu iletmediği için GoTrue PUT /user'a current_password ile
   // doğrudan istek atıyoruz (aktif oturumun token'ıyla).
@@ -385,7 +388,7 @@ export async function ensureProfile(user: User) {
   if (error) console.warn("Supabase profile upsert failed", error);
 }
 
-export async function updateProfileLive(user: Pick<User, "id" | "name" | "phone" | "avatar" | "bio" | "verifiedPhone" | "expertiseCategories" | "city">) {
+export async function updateProfileLive(user: Pick<User, "id" | "name" | "phone" | "avatar" | "bio" | "verifiedPhone" | "expertiseCategories" | "city" | "username" | "districtId" | "website" | "instagram">) {
   if (!supabase || !uuidPattern.test(user.id)) return false;
 
   const { error } = await supabase
@@ -397,7 +400,8 @@ export async function updateProfileLive(user: Pick<User, "id" | "name" | "phone"
       bio: user.bio,
       verified_phone: user.verifiedPhone,
       expertise_categories: user.expertiseCategories ?? [],
-      city: user.city?.trim() ? user.city.trim() : null
+      city: user.city?.trim() ? user.city.trim() : null,
+      username:user.username||null,district_id:user.districtId||null,website_url:user.website||null,instagram_handle:user.instagram||null
     })
     .eq("id", user.id);
 
@@ -410,15 +414,18 @@ export async function updateProfileLive(user: Pick<User, "id" | "name" | "phone"
 }
 
 export async function insertListing(listing: Listing): Promise<boolean> {
+  const titleCheck = validateListingTitle(listing.title);
+  if (!titleCheck.ok) return false;
   if (!supabase) return true;
 
   const { error } = await supabase.from("listings").insert({
     id: listing.id,
     owner_id: listing.ownerId,
-    title: listing.title,
+    title: titleCheck.title,
     slug: listing.slug,
     description: listing.description,
     price: listing.price,
+    currency: listing.currency || "TRY",
     commission_type: listing.commissionType,
     commission_value: listing.commissionValue,
     commission_tiers: listing.commissionTiers && listing.commissionTiers.length ? listing.commissionTiers : null,
@@ -426,7 +433,6 @@ export async function insertListing(listing: Listing): Promise<boolean> {
     bonus_quota: listing.bonusQuota ?? null,
     category: listing.category,
     location: listing.location,
-    currency: listing.currency ?? "TRY",
     province_id: listing.provinceId ?? null,
     district_id: listing.districtId ?? null,
     neighborhood_id: listing.neighborhoodId ?? null,
@@ -446,6 +452,7 @@ export async function insertListing(listing: Listing): Promise<boolean> {
     sales_pitch: listing.salesPitch,
     share_templates: listing.shareTemplates ?? null,
     ad_assets: listing.adAssets ?? [],
+    cover_image_url: listing.image || listing.imageUrl || null,
     tags: listing.tags,
     attributes: listing.attributes ?? {}
   });
@@ -455,15 +462,6 @@ export async function insertListing(listing: Listing): Promise<boolean> {
     return false;
   }
 
-  // Görsel ikincil: ilan yazıldıysa görsel hatası tüm işlemi başarısız saymaz.
-  if (listing.image) {
-    const imageError = (await supabase.from("listing_images").insert({
-      listing_id: listing.id,
-      url: listing.image,
-      sort_order: 0
-    })).error;
-    if (imageError) console.warn("Supabase listing image insert failed", imageError);
-  }
   return true;
 }
 
@@ -533,7 +531,8 @@ async function compressImageBlob(
 // Görseli Supabase storage'a yükler ve public URL döndürür. Web (blob:/data:) ve
 // native (file:) URI'lerini destekler. Zaten yüklü http(s) URL'leri aynen döner.
 export async function uploadListingImage(uri: string, userId: string) {
-  if (!supabase || !uuidPattern.test(userId) || !uri) return uri;
+  if (!supabase) return uri;
+  if (!uuidPattern.test(userId) || !uri) throw new Error("Görsel için geçerli hesap ve dosya gerekli.");
   // Zaten uzak bir URL ise (ör. Supabase public URL veya stok görsel) tekrar yükleme.
   if (/^https?:\/\//i.test(uri)) return uri;
 
@@ -562,8 +561,9 @@ export async function uploadListingImage(uri: string, userId: string) {
     response = await fetch(workUri);
   } catch (e) {
     console.warn("Görsel okunamadı:", (e as Error)?.message);
-    return uri;
+    throw new Error("Görsel yüklenemedi. Dosyanı ve bağlantını kontrol et.");
   }
+  if (response.status && !response.ok) throw new Error("Görsel okunamadı.");
   let body = await response.blob();
 
   // Görselleri (video değil) hedef MB altına OTOMATİK sıkıştır/ölçekle (web: canvas;
@@ -579,17 +579,17 @@ export async function uploadListingImage(uri: string, userId: string) {
   // Video sıkıştırılamadığı için hard limiti aşarsa reddet. Görsel ise sıkıştırma
   // zaten en aza indirdi; nadiren limit üstü kalırsa yine de yüklemeyi dener
   // (kullanıcıya "çok büyük" hatası çıkarmamak için).
-  if (isVideo && body.size > MAX_MEDIA_BYTES) {
+  if (!body.size || body.size > (isVideo ? MAX_MEDIA_BYTES : MAX_IMAGE_BYTES)) {
     console.warn(`Video çok büyük (${Math.round(body.size / 1024 / 1024)}MB > ${Math.round(MAX_MEDIA_BYTES / 1024 / 1024)}MB)`);
-    return uri;
+    throw new Error("Görsel yüklenemedi. Dosyanı ve bağlantını kontrol et.");
   }
 
   const id = makeUuid();
   const path = `${userId}/${id}.${ext}`;
-  const { error } = await supabase.storage.from("listing-images").upload(path, body, { contentType, upsert: false });
+  const { error } = await supabase.storage.from("listing-images").upload(path, await storageBody(body), { contentType, upsert: false });
   if (error) {
     console.warn("Supabase listing image upload failed", error);
-    return uri;
+    throw new Error("Görsel yüklenemedi. Dosyanı ve bağlantını kontrol et.");
   }
 
   // KART VARYANTI (<uuid>-t.jpg): kartlar ~180-256px, ama tam boyut (1600px) görsel
@@ -617,7 +617,7 @@ export async function uploadListingImage(uri: string, userId: string) {
       if (thumbBlob && thumbBlob.size > 0) {
         await supabase.storage
           .from("listing-images")
-          .upload(`${userId}/${id}-t.jpg`, thumbBlob, { contentType: "image/jpeg", upsert: true });
+          .upload(`${userId}/${id}-t.jpg`, await storageBody(thumbBlob), { contentType: "image/jpeg", upsert: true });
       }
     } catch (e) {
       console.warn("Kart varyantı üretilemedi (orijinal kullanılacak):", (e as Error)?.message);
@@ -628,7 +628,8 @@ export async function uploadListingImage(uri: string, userId: string) {
 }
 
 export async function uploadProfileAvatar(uri: string, userId: string) {
-  if (!supabase || !uuidPattern.test(userId) || !uri) return uri;
+  if (!supabase) return uri;
+  if (!uuidPattern.test(userId) || !uri) throw new Error("Görsel için geçerli hesap ve dosya gerekli.");
   // Zaten uzak URL ise tekrar yükleme (web blob:/data: ve native file: desteklenir).
   if (/^https?:\/\//i.test(uri)) return uri;
 
@@ -637,20 +638,21 @@ export async function uploadProfileAvatar(uri: string, userId: string) {
     response = await fetch(uri);
   } catch (e) {
     console.warn("Avatar okunamadı:", (e as Error)?.message);
-    return uri;
+    throw new Error("Görsel yüklenemedi. Dosyanı ve bağlantını kontrol et.");
   }
   // Avatar için 512px yeterli; hedef MB altına otomatik sıkıştır.
   const compressed = await compressImageBlob(await response.blob(), 512, 0.85, MAX_IMAGE_BYTES);
   const body = compressed.blob;
+  if (!body.size || body.size>MAX_IMAGE_BYTES) throw new Error("Görsel en fazla 5 MB olabilir.");
   const path = `${userId}/avatar-${makeUuid()}.jpg`;
-  const { error } = await supabase.storage.from("profile-avatars").upload(path, body, {
+  const { error } = await supabase.storage.from("profile-avatars").upload(path, await storageBody(body), {
     contentType: compressed.contentType,
     upsert: false
   });
 
   if (error) {
     console.warn("Supabase profile avatar upload failed", error);
-    return uri;
+    throw new Error("Görsel yüklenemedi. Dosyanı ve bağlantını kontrol et.");
   }
 
   return supabase.storage.from("profile-avatars").getPublicUrl(path).data.publicUrl;
@@ -661,7 +663,7 @@ export async function uploadProfileAvatar(uri: string, userId: string) {
 // takılan (ortak UPDATE yapamaz) reopen'ı da çözer. Yeni + reopen için tek yol.
 export async function partnerJoinLive(partnership: Partnership, inviteCode?: string): Promise<boolean> {
   if (!supabase) return true;
-  const { error } = await supabase.rpc("partner_join", {
+  const { data, error } = await supabase.rpc("partner_join", {
     p_partnership_id: partnership.id,
     p_listing_id: partnership.listingId,
     p_ref_code: partnership.refCode,
@@ -673,6 +675,14 @@ export async function partnerJoinLive(partnership: Partnership, inviteCode?: str
     p_reach: partnership.reachEstimate ?? 0
   });
   if (error) { console.warn("Supabase partner_join RPC failed", error); return false; }
+  const row=Array.isArray(data)?data[0]:data;
+  if(!row||!uuidPattern.test(row.r_id)||!["active","pending","blocked","cancelled","rejected","completed"].includes(row.r_status))return false;
+  partnership.id=row.r_id;partnership.status=row.r_status;
+  // The server snapshots the agreement. Read it back so the immediate detail view
+  // uses the committed terms rather than the possibly stale catalogue values.
+  const {data:stored}=await supabase.from("partnerships").select("approved_at,created_at,ref_code,agreed_commission_type,agreed_commission_value,agreed_commission_tiers,agreed_attribution_window_days,agreed_return_window_days,agreed_commission_due_days,agreed_at").eq("id",row.r_id).maybeSingle();
+  if(stored){partnership.approvedAt=stored.approved_at||undefined;partnership.createdAt=stored.created_at||partnership.createdAt;partnership.refCode=stored.ref_code||partnership.refCode;partnership.agreedCommissionType=stored.agreed_commission_type||undefined;partnership.agreedCommissionValue=stored.agreed_commission_value==null?undefined:Number(stored.agreed_commission_value);partnership.agreedCommissionTiers=stored.agreed_commission_tiers||undefined;partnership.agreedAttributionWindowDays=stored.agreed_attribution_window_days??undefined;partnership.agreedReturnWindowDays=stored.agreed_return_window_days??undefined;partnership.agreedCommissionDueDays=stored.agreed_commission_due_days??undefined;partnership.agreedAt=stored.agreed_at||undefined;}
+  else if(partnership.status!=="active")partnership.approvedAt=undefined;
   return true;
 }
 
@@ -711,17 +721,14 @@ export async function loadPartnerLeaderboardLive(limit = 10): Promise<PublicLead
 // Per-ortak komisyon override (satıcı = ilan sahibi; partnerships UPDATE RLS'i sahibe izinli).
 export async function setPartnershipCommissionLive(partnershipId: string, type: "rate" | "fixed" | null, value: number | null): Promise<boolean> {
   if (!supabase) return true;
-  const { error } = await supabase.from("partnerships").update({
-    commission_override_type: type,
-    commission_override_value: value
-  }).eq("id", partnershipId);
-  if (error) { console.warn("Supabase commission override update failed", error); return false; }
-  return true;
+  const {data,error}=await supabase.from("partnerships").update({commission_override_type:type,commission_override_value:value}).eq("id",partnershipId).select("id").maybeSingle();
+  if(error){console.warn("Supabase commission override update failed",error);return false;}
+  return !!data;
 }
 
 export async function updatePartnershipStatus(partnership: Partnership): Promise<boolean> {
   if (!supabase) return true;
-  const { error } = await supabase
+  const { data,error } = await supabase
     .from("partnerships")
     .update({
       status: partnership.status,
@@ -732,9 +739,9 @@ export async function updatePartnershipStatus(partnership: Partnership): Promise
       reach_estimate: partnership.reachEstimate ?? 0,
       approved_at: partnership.approvedAt ?? null
     })
-    .eq("id", partnership.id);
+    .eq("id", partnership.id).select("id").maybeSingle();
   if (error) { console.warn("Supabase partnership update failed", error); return false; }
-  return true;
+  return !!data;
 }
 
 // Ortağın KENDİ ortaklığından ayrılması. RLS yalnız ilan-sahibine (satıcı) partnership
@@ -908,9 +915,9 @@ export async function updateSaleStatusLive(sale: Sale): Promise<boolean> {
 
 export async function updateListingStatusLive(listing: Listing): Promise<boolean> {
   if (!supabase) return true;
-  const { error } = await supabase.from("listings").update({ status: listing.status }).eq("id", listing.id);
+  const {data,error} = await supabase.from("listings").update({ status: listing.status }).eq("id", listing.id).select("id").maybeSingle();
   if (error) { console.warn("Supabase listing status update failed", error); return false; }
-  return true;
+  return !!data;
 }
 
 /** Satır-içi hızlı düzenleme: yalnız stok ve/veya fiyat günceller (RLS: sahip). */
@@ -1012,15 +1019,18 @@ export async function updateListingInventoryLive(listing: Pick<Listing, "id" | "
 }
 
 export async function updateListingLive(listing: Listing) {
+  const titleCheck = validateListingTitle(listing.title);
+  if (!titleCheck.ok) return false;
   if (!supabase) return false;
 
   const { error } = await supabase
     .from("listings")
     .update({
-      title: listing.title,
+      title: titleCheck.title,
       slug: listing.slug,
       description: listing.description,
       price: listing.price,
+    currency: listing.currency || "TRY",
       commission_type: listing.commissionType,
       commission_value: listing.commissionValue,
       commission_tiers: listing.commissionTiers && listing.commissionTiers.length ? listing.commissionTiers : null,
@@ -1046,6 +1056,7 @@ export async function updateListingLive(listing: Listing) {
       sales_pitch: listing.salesPitch,
       share_templates: listing.shareTemplates ?? null,
       ad_assets: listing.adAssets ?? [],
+    cover_image_url: listing.image || listing.imageUrl || null,
       tags: listing.tags,
       attributes: listing.attributes ?? {},
       rejection_reason: listing.rejectionReason ?? null
@@ -1057,37 +1068,29 @@ export async function updateListingLive(listing: Listing) {
     return false;
   }
 
-  if (listing.image) {
-    const deleteError = (await supabase.from("listing_images").delete().eq("listing_id", listing.id).eq("sort_order", 0)).error;
-    if (deleteError) console.warn("Supabase listing image replace delete failed", deleteError);
-    const imageError = (await supabase.from("listing_images").insert({
-      listing_id: listing.id,
-      url: listing.image,
-      sort_order: 0
-    })).error;
-    if (imageError) console.warn("Supabase listing image replace insert failed", imageError);
-  }
-
   return true;
 }
 
 export async function insertFavorite(listingId: string, userId: string, id: string, savedPrice?: number) {
-  if (!supabase) return;
+  if (!supabase) return true;
   const { error } = await supabase.from("favorites").insert({ id, listing_id: listingId, user_id: userId, saved_price: savedPrice ?? null });
   if (error) console.warn("Supabase favorite insert failed", error);
+  return !error;
 }
 
 export async function deleteFavorite(listingId: string, userId: string) {
-  if (!supabase) return;
+  if (!supabase) return true;
   const { error } = await supabase.from("favorites").delete().eq("listing_id", listingId).eq("user_id", userId);
   if (error) console.warn("Supabase favorite delete failed", error);
+  return !error;
 }
 
 // Koleksiyon (favori-klasör) ata/kaldır. null → koleksiyondan çıkar ("Tümü"ne düşer).
 export async function updateFavoriteCollection(listingId: string, userId: string, collection: string | null) {
-  if (!supabase) return;
+  if (!supabase) return true;
   const { error } = await supabase.from("favorites").update({ collection: collection && collection.trim() ? collection.trim() : null }).eq("listing_id", listingId).eq("user_id", userId);
   if (error) console.warn("Supabase favorite collection update failed", error);
+  return !error;
 }
 
 export async function insertReview(review: Review): Promise<boolean> {
@@ -1103,7 +1106,9 @@ export async function insertReview(review: Review): Promise<boolean> {
     // engeli ve alınan-puan/güven hesabı yeniden yüklemeden sonra da çalışsın.
     sale_id: review.saleId ?? null,
     reviewed_user_id: review.reviewedUserId ?? null
+    ,experience_tags:review.experienceTags||[],media_paths:review.mediaPaths||[]
   });
+  if(error?.code==="23505"){const existing=await supabase.from("reviews").select("*").eq("id",review.id).eq("reviewer_id",review.reviewerId).is("deleted_at",null).maybeSingle();if(!existing.error&&existing.data){Object.assign(review,mapReviewRow(existing.data));return true;}}
   if (error) { console.warn("Supabase review insert failed", error); return false; }
   return true;
 }
@@ -1127,7 +1132,7 @@ export async function fetchReviewsForUser(userId: string): Promise<Review[]> {
 }
 
 // Yorum satırı → Review; yazar profilini FK-embed'den çözer (anon'da bile gerçek ad/avatar).
-function mapReviewRow(row: Record<string, any>): Review {
+export function mapReviewRow(row: Record<string, any>): Review {
   const reviewer = row.reviewer ?? null;
   return {
     id: row.id,
@@ -1144,6 +1149,7 @@ function mapReviewRow(row: Record<string, any>): Review {
     helpfulCount: Number(row.helpful_count ?? 0),
     reviewerName: (reviewer?.full_name as string) || undefined,
     reviewerAvatar: (reviewer?.avatar_url as string) || undefined
+    ,experienceTags:row.experience_tags||[],mediaPaths:row.media_paths||[]
   };
 }
 
@@ -1200,12 +1206,13 @@ export async function deleteReviewLive(reviewId: string): Promise<boolean> {
 }
 
 // Kullanıcıyı engelle / engeli kaldır / engellenenleri getir.
-export async function blockUserLive(blockedId: string): Promise<boolean> {
+export async function blockUserLive(blockedId: string, reason?: string): Promise<boolean> {
   if (!supabase) return true;
   const { data: auth } = await supabase.auth.getUser();
   const me = auth.user?.id;
   if (!me) return false;
-  const { error } = await supabase.from("blocked_users").upsert({ blocker_id: me, blocked_id: blockedId });
+  const { error } = await supabase.from("blocked_users").insert({ blocker_id: me, blocked_id: blockedId,reason:reason?.trim()||null });
+  if(error?.code==="23505"){const existing=await supabase.from("blocked_users").select("blocked_id").eq("blocker_id",me).eq("blocked_id",blockedId).maybeSingle();return !existing.error&&!!existing.data;}
   if (error) { console.warn("block user failed", error); return false; }
   return true;
 }
@@ -1228,10 +1235,10 @@ export async function fetchBlockedUsers(userId: string): Promise<string[]> {
 // Engellenen kullanıcıları görünen profil bilgisiyle getir (yönetim ekranı için).
 // SECURITY DEFINER `my_blocked_profiles` yalnız çağıranın engellediklerini döndürür.
 export type BlockedProfile = { id: string; name: string; avatarUrl?: string; role?: string; blockedAt?: string };
-export async function fetchBlockedProfiles(): Promise<BlockedProfile[]> {
+export async function fetchBlockedProfiles(strict=false): Promise<BlockedProfile[]> {
   if (!supabase) return [];
   const { data, error } = await supabase.rpc("my_blocked_profiles");
-  if (error) { console.warn("fetch blocked profiles failed", error); return []; }
+  if (error) { if(strict)throw error; console.warn("fetch blocked profiles failed", error); return []; }
   return ((data ?? []) as Array<{ id: string; full_name: string | null; avatar_url: string | null; role: string | null; blocked_at: string | null }>).map((r) => ({
     id: r.id,
     name: r.full_name?.trim() || "Kullanıcı",
@@ -1364,13 +1371,17 @@ export async function insertNotification(notification: Notification) {
   if (error) console.warn("Supabase notification insert failed", error);
 }
 
-export async function markNotificationReadLive(notification: Notification) {
-  if (!supabase) return;
-  const { error } = await supabase.from("notifications").update({ read: true }).eq("id", notification.id);
-  if (error) console.warn("Supabase notification update failed", error);
+export async function markNotificationReadLive(notification: Notification): Promise<boolean> {
+  if (!supabase) return false;
+  try {
+    const { data, error } = await supabase.from("notifications").update({ read: true }).eq("id", notification.id).eq("user_id", notification.userId).select("id").maybeSingle();
+    return !error && data?.id === notification.id;
+  } catch { return false; }
 }
 
 export async function insertReport(input: {
+  id?: string;
+  attachments?: string[];
   reporterId: string;
   listingId?: string;
   reportedUserId?: string;
@@ -1378,7 +1389,7 @@ export async function insertReport(input: {
   details?: string;
 }) {
   if (!supabase || !uuidPattern.test(input.reporterId)) return null;
-  const id = makeUuid();
+  const id = input.id || makeUuid();
 
   const { error } = await supabase.from("reports").insert({
     id,
@@ -1386,10 +1397,12 @@ export async function insertReport(input: {
     listing_id: input.listingId ?? null,
     reported_user_id: input.reportedUserId ?? null,
     reason: input.reason,
-    details: input.details ?? ""
+    details: input.details ?? "",
+    ...(input.attachments ? {attachments:input.attachments} : {})
   });
 
   if (error) {
+    if(error.code==="23505"&&input.id){const prior=await supabase.from("reports").select("id").eq("id",id).eq("reporter_id",input.reporterId).maybeSingle();if(!prior.error&&prior.data)return id;}
     console.warn("Supabase report insert failed", error);
     return null;
   }
@@ -1570,7 +1583,7 @@ export async function fetchAdminMessageStats(): Promise<{ conversations: number;
 // Eskiden teklif yalnız sohbette serbest metindi: satıcı takip edemiyor,
 // kabul/ret edemiyordu, mesaj geçmişinde kayboluyordu.
 // ---------------------------------------------------------------------------
-function mapOffer(r: Record<string, unknown>): Offer {
+export function mapOffer(r: Record<string, unknown>): Offer {
   return {
     id: String(r.id),
     listingId: String(r.listing_id),
@@ -1661,7 +1674,7 @@ export async function updateReportStatusLive(report: Report, status: ModerationS
   return true;
 }
 
-export async function recordLegalConsentLive(userId: string, documentType: "privacy" | "terms" | "kvkk" | "seller_rules") {
+export async function recordLegalConsentLive(userId: string, documentType: "privacy" | "terms" | "kvkk" | "seller_rules", acceptedAt = new Date().toISOString()) {
   if (!supabase || !uuidPattern.test(userId)) return false;
 
   // onConflict ŞART: unique constraint (user_id+document_type+version) PK değil; belirtilmezse
@@ -1672,7 +1685,7 @@ export async function recordLegalConsentLive(userId: string, documentType: "priv
     document_type: documentType,
     version: "2026-06-11",
     accepted: true,
-    accepted_at: new Date().toISOString()
+    accepted_at: acceptedAt
   }, { onConflict: "user_id,document_type,version" });
 
   if (error) {
@@ -1683,17 +1696,23 @@ export async function recordLegalConsentLive(userId: string, documentType: "priv
   return true;
 }
 
-export async function createSupportTicketLive(input: { userId: string; subject: string; message: string }) {
+export async function createSupportTicketLive(input: { userId: string; subject: string; message: string; id?: string; category?: string; attachments?: string[] }) {
   if (!supabase || !uuidPattern.test(input.userId)) return false;
 
   const { error } = await supabase.from("support_tickets").insert({
-    id: makeUuid(),
+    id: input.id || makeUuid(),
     user_id: input.userId,
     subject: input.subject,
-    message: input.message
+    message: input.message,
+    ...(input.category ? { category: input.category } : {}),
+    ...(input.attachments ? { attachments: input.attachments } : {})
   });
 
   if (error) {
+    if (error.code === "23505" && input.id) {
+      const prior=await supabase.from("support_tickets").select("id").eq("id",input.id).eq("user_id",input.userId).maybeSingle();
+      return !prior.error && !!prior.data;
+    }
     console.warn("Supabase support ticket insert failed", error);
     return false;
   }

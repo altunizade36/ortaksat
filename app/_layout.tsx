@@ -1,3 +1,5 @@
+import { isMobileApp } from "@/lib/mobile-app";
+import { MobileDrawerProvider } from "@/components/mobile/drawer";
 import Head from "expo-router/head";
 import { Stack } from "expo-router/stack";
 import * as SplashScreen from "expo-splash-screen";
@@ -24,6 +26,7 @@ import { StoreProvider } from "@/data/app-store";
 import { useMounted } from "@/lib/layout";
 import { LanguageProvider, useLanguage } from "@/lib/i18n";
 import { useStore } from "@/lib/use-store";
+import { MobileAccessProvider } from "@/lib/mobile-access";
 
 // expo-router, alt ağaçta render hatası yakalarsa bu fallback'i gösterir.
 export { RouteErrorBoundary as ErrorBoundary };
@@ -40,7 +43,7 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <LanguageProvider>
         <StoreProvider>
-          <RootStack />
+          <MobileAccessProvider><MobileDrawerProvider><RootStack /></MobileDrawerProvider></MobileAccessProvider>
         </StoreProvider>
       </LanguageProvider>
     </SafeAreaProvider>
@@ -99,7 +102,7 @@ function RootStack() {
         <Stack.Screen name="auth" options={{ headerShown: false, presentation: "modal", title: t("emailSignIn") }} />
         <Stack.Screen name="legal" options={{ presentation: "modal", title: t("legalSupport") }} />
         <Stack.Screen name="trust" options={{ presentation: "modal", title: t("trustCenter") }} />
-        <Stack.Screen name="create" options={{ presentation: "modal", title: t("createListingTitle") }} />
+        <Stack.Screen name="create" options={{ presentation: isMobileApp ? "fullScreenModal" : "modal", headerShown: !isMobileApp, title: t("createListingTitle") }} />
         <Stack.Screen name="profile-edit" options={{ presentation: "modal", title: t("editProfile") }} />
         <Stack.Screen name="notifications" options={{ title: t("notifications") }} />
         <Stack.Screen name="favorites" options={{ title: t("favorites") }} />

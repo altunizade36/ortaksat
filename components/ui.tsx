@@ -12,6 +12,7 @@ import type { MascotName } from "@/lib/mascots";
 type ButtonProps = PropsWithChildren<{
   onPress?: () => void;
   href?: Href;
+  disabled?: boolean;
   tone?: "primary" | "secondary" | "danger" | "soft";
   icon?: keyof typeof MaterialCommunityIcons.glyphMap;
 }>;
@@ -74,11 +75,11 @@ export function Card({ children }: PropsWithChildren) {
   );
 }
 
-export function PrimaryButton({ children, onPress, href, tone = "primary", icon }: ButtonProps) {
+export function PrimaryButton({ children, onPress, href, tone = "primary", icon, disabled = false }: ButtonProps) {
   const { language } = useLanguage();
   const [pressed, setPressed] = useState(false);
-  // WCAG AA: beyaz metin colors.primary (#0EA5B7) üstünde ~2.9:1 (AA'yı geçmez). primaryDark
-  // (#0B7285 ~5:1) marka turkuazının koyu tonu → hue korunur, kontrast geçer. En sık buton.
+  // WCAG AA: en sık kullanılan buton koyu lacivert (primaryDark) zemin kullanır;
+  // beyaz metinle kontrast AA'yı rahat geçer.
   const backgroundColor =
     tone === "primary" ? colors.primaryDark : tone === "danger" ? colors.accent : tone === "soft" ? colors.primarySoft : colors.surface;
   const color = tone === "secondary" ? colors.ink : tone === "soft" ? colors.primaryDark : "#FFFFFF";
@@ -98,7 +99,7 @@ export function PrimaryButton({ children, onPress, href, tone = "primary", icon 
     gap: 8,
     justifyContent: "center" as const,
     minHeight: 46,
-    opacity: pressed ? 0.76 : 1,
+    opacity: disabled ? 0.5 : pressed ? 0.76 : 1,
     paddingHorizontal: 14,
     paddingVertical: 12,
     shadowColor: tone === "primary" ? colors.primaryDark : "transparent",
@@ -109,9 +110,11 @@ export function PrimaryButton({ children, onPress, href, tone = "primary", icon 
 
   const button = (
     <Pressable
+      disabled={disabled}
+      accessibilityState={{ disabled }}
       accessibilityRole={href ? "link" : "button"}
       accessibilityLabel={typeof children === "string" ? translateCopy(children, language) : undefined}
-      onPress={onPress ? () => { haptic.light(); onPress(); } : undefined}
+      onPress={!disabled && onPress ? () => { haptic.light(); onPress(); } : undefined}
       onPressIn={() => setPressed(true)}
       onPressOut={() => setPressed(false)}
       style={style}
@@ -123,7 +126,7 @@ export function PrimaryButton({ children, onPress, href, tone = "primary", icon 
     </Pressable>
   );
 
-  if (!href) return button;
+  if (!href || disabled) return button;
 
   return (
     <Link href={href} asChild>

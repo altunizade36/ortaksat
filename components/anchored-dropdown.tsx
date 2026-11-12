@@ -116,7 +116,7 @@ export function AnchoredDropdown({
           maxHeight: height,
           overflow: "hidden",
           position: "absolute",
-          shadowColor: "#0B3A44",
+          shadowColor: "#001449",
           shadowOffset: { width: 0, height: 8 },
           shadowOpacity: 0.18,
           shadowRadius: 20,

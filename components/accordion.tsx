@@ -10,6 +10,9 @@ export function Accordion({ title, icon, defaultOpen, children }: PropsWithChild
   return (
     <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 12, borderWidth: 1, overflow: "hidden" }}>
       <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={title}
+        accessibilityState={{ expanded: open }}
         onPress={() => setOpen((v) => !v)}
         style={({ pressed }) => ({ alignItems: "center", flexDirection: "row", gap: 10, opacity: pressed ? 0.8 : 1, paddingHorizontal: 16, paddingVertical: 15 })}
       >

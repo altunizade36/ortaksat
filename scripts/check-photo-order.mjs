@@ -1,0 +1,18 @@
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import vm from 'node:vm';
+import ts from 'typescript';
+const module={exports:{}};
+const code=ts.transpileModule(readFileSync('lib/photo-order.ts','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;
+vm.runInThisContext(`(function(module,exports){${code}})`)(module,module.exports);
+const {movePhoto,restorePhoto}=module.exports;
+const photos=['cover','second','third','fourth','fifth'];
+assert.deepEqual(movePhoto(photos,2,0),['third','cover','second','fourth','fifth']);
+assert.deepEqual(movePhoto(photos,0,4),['second','third','fourth','fifth','cover']);
+for(const [from,to] of [[-1,0],[0,5],[1.5,2],[2,2]])assert.equal(movePhoto(photos,from,to),photos);
+assert.deepEqual(restorePhoto(photos.slice(1),{uri:'cover',index:0}),photos);
+assert.deepEqual(restorePhoto(['cover','third'],{uri:'second',index:1}),['cover','second','third']);
+assert.equal(restorePhoto(photos,{uri:'sixth',index:1}),photos);
+assert.equal(restorePhoto(photos,{uri:'cover',index:2}),photos);
+assert.deepEqual(photos,['cover','second','third','fourth','fifth']);
+console.log('Passed photo order, cover restoration, boundaries, no duplicates, five-photo limit and immutable input.');

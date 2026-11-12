@@ -1,4 +1,10 @@
-﻿import { MaterialCommunityIcons } from "@/components/icons";
+import { ListingTermsSummary } from "@/components/listing-terms-summary";
+import { listingFlowPaths, listingJoinAction } from "@/lib/listing-actions";
+import { listingPhotos } from "@/lib/mobile-listing";
+import { displayListingTitle } from "@/lib/listing-title";
+import { isMobileApp } from "@/lib/mobile-app";
+import { MobileListingDetail } from "@/components/mobile/listing-detail";
+import { MaterialCommunityIcons } from "@/components/icons";
 import { Link, type Href, useLocalSearchParams, useRouter } from "expo-router";
 import Head from "expo-router/head";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -87,10 +93,13 @@ export default function ListingDetailScreen() {
     toggleFavorite,
     offers,
     createOffer,
-    buyerOfferAction
+    buyerOfferAction,
+    isUserBlocked
   } = useStore();
   const { has: hasInCompare, toggle: toggleCompare } = useCompare();
   const storeListing = findListing(id);
+  const [showAllSpecs, setShowAllSpecs] = useState(false);
+  useEffect(() => { setShowAllSpecs(false); }, [id]);
   const [remote, setRemote] = useState<{ listing: Listing; owner?: User } | null>(null);
   const [fetching, setFetching] = useState(false);
   const [fetchError, setFetchError] = useState(false); // ağ hatası (bulunamadı DEĞİL) → retry
@@ -108,6 +117,7 @@ export default function ListingDetailScreen() {
     return () => { alive = false; };
   }, [id, retryTick]);
   const [revealingPhone, setRevealingPhone] = useState(false);
+  const mobileContactLock = useRef(false);
   const [message, setMessage] = useState("");
   const [reviewComment, setReviewComment] = useState("");
   const [reviewRating, setReviewRating] = useState(5);
@@ -203,7 +213,7 @@ export default function ListingDetailScreen() {
       metaTrack("ViewContent", {
         content_ids: [listing.id],
         content_type: "product",
-        content_name: listing.title,
+        content_name: displayListingTitle(listing.title),
         content_category: listing.category,
         value: listing.price || 0,
         currency: "TRY"
@@ -252,7 +262,7 @@ export default function ListingDetailScreen() {
   // (hook kuralı) + !listing guard → yalnız listing/listings değişince hesaplanır.
   const similarFinal = useMemo(() => {
     if (!listing) return [];
-    const meTerms = new Set(tokenize(`${listing.title} ${listing.tags.join(" ")}`));
+    const meTerms = new Set(tokenize(`${displayListingTitle(listing.title)} ${listing.tags.join(" ")}`));
     const meAttr = listing.attributes ?? {};
     const meM2 = Number(meAttr.grossM2 ?? meAttr.m2 ?? meAttr.netM2 ?? meAttr.totalGrossM2 ?? 0) || 0;
     const scored = listings
@@ -340,6 +350,7 @@ export default function ListingDetailScreen() {
   }
 
   const currentListing = listing;
+  const currentTitle = displayListingTitle(currentListing.title);
   // "Sadece davetle" ilan: ortaklık yalnızca satıcının paylaştığı geçerli davet
   // linkiyle açılır. Geçerli kod URL'de varsa ziyaretçi anında (ön-onaylı) katılır.
   const isInviteMode = currentListing.partnershipMode === "invite";
@@ -350,7 +361,9 @@ export default function ListingDetailScreen() {
   // Komisyon = BULUŞ ödülü (satan değil, bulan kazanır). Çerçeve buna göre değişir.
   const isDemand = currentListing.attributes?._formKey === "arayan";
   const validInvite = isInviteMode && !!inviteParam && inviteParam === listingInviteCode(currentListing);
-  const gallery = [currentListing.image, ...(currentListing.adAssets ?? [])].filter(Boolean);
+  const flowPaths = listingFlowPaths(currentListing.id, validInvite ? inviteParam : undefined);
+  const listingReturnPath = flowPaths.listing;
+  const gallery = listingPhotos(currentListing);
   const galleryIdx = Math.min(activeImage, Math.max(0, gallery.length - 1));
   const owner = findUser(currentListing.ownerId) ?? remote?.owner;
   const ownerTrust = owner ? calculateUserTrustScores({ leads, listings, partnerships, reports, reviews, sales, user: owner }).seller : undefined;
@@ -374,7 +387,8 @@ export default function ListingDetailScreen() {
   // "Ortak Ol" butonu kapısı: zaten aktif/pending/engelli ortak ya da davetsiz-invite
   // değilse gösterilir. partnerable + non-owner + non-demo şart. Aksi halde yalnız
   // "Satın Al" (tam genişlik) çıkar.
-  const canJoinNow = partnerable && !isOwner && !isDemo && partnership?.status !== "active" && partnership?.status !== "pending" && partnership?.status !== "blocked" && !(isInviteMode && !validInvite);
+  const joinAction = listingJoinAction({ listing: currentListing, status: partnership?.status, isOwner, hasInvite: validInvite, sellerBlocked: isUserBlocked(currentListing.ownerId) });
+  const canJoinNow = joinAction.kind === "apply";
   // İlan MÜSAİT DEĞİLSE (satıldı/duraklatıldı/arşiv/süresi doldu/tükendi) satın alma/ortaklık/teklif
   // AKSİYONLARI kapatılır + üstte durum bandı. Feed status='active' filtreler ama doğrudan/referans/
   // favori/SEO/son-gezdiklerin linki HER statüye ulaşabiliyordu → müsait olmayan ilanda çalışan CTA'lar
@@ -406,14 +420,14 @@ export default function ListingDetailScreen() {
     .filter((l): l is Listing => Boolean(l) && l!.status === "active" && l!.id !== currentListing.id)
     .slice(0, 10);
 
-  function handleJoin() {
+  async function handleJoin() {
     if (isDemo) return demoBlocked();
     if (listingUnavailable) { Alert.alert(unavailableLabel, translateCopy("Bu ilan artık ortaklığa/satışa açık değil. Benzer ürünlere göz atabilirsin.", language)); return; }
     // Anonim kullanıcı: alert'te tıkanmak yerine girişe yönlendir (dönüşte bu ilana gelir).
-    if (!isAuthenticated) { router.push({ pathname: "/auth", params: { redirect: `/listing/${currentListing.id}` } }); return; }
+    if (!isAuthenticated) { router.push({ pathname: "/auth", params: { redirect: listingReturnPath } }); return; }
     // FORM YOK: ortak ol'a basınca doğrudan başvuru gider (davetli/açık → anında aktif,
     // onaylı → pending). Satıcı, satıcı panelinden kabul/ret eder. Ekstra bilgi istenmez.
-    const result = joinListing(currentListing.id, {
+    const result = await joinListing(currentListing.id, {
       inviteCode: validInvite ? (inviteParam ?? "") : ""
     });
     if (!result) {
@@ -428,7 +442,7 @@ export default function ListingDetailScreen() {
   async function handleShare() {
     // MODEL: referans/takip YOK → her zaman DÜZ ürün sayfası linki paylaşılır.
     const url = productUrl(currentListing);
-    const r = await shareOrCopy({ title: currentListing.title, message: `${currentListing.title}\n${moneyIn(currentListing.price, currentListing.currency)}\n${url}`, url });
+    const r = await shareOrCopy({ title: currentTitle, message: `${currentTitle}\n${moneyIn(currentListing.price, currentListing.currency)}\n${url}`, url });
     if (r === "copied") showToast(translateCopy("Bağlantı kopyalandı", language));
   }
 
@@ -457,49 +471,52 @@ export default function ListingDetailScreen() {
     }
   }
 
+  function contactAllowed() {
+    if (isDemo) { demoBlocked(); return false; }
+    if (isOwner || isUserBlocked(currentListing.ownerId)) { showToast("Bu satıcıyla iletişim başlatılamıyor."); return false; }
+    if (listingUnavailable) { Alert.alert(unavailableLabel, translateCopy("Bu ilan artık satışa açık değil. Benzer ürünlere göz atabilirsin.", language)); return false; }
+    if (!isAuthenticated) { router.push({ pathname: "/auth", params: { redirect: listingReturnPath } }); return false; }
+    return true;
+  }
+
   async function handleContact() {
-    if (isDemo) return demoBlocked();
-    if (listingUnavailable) { Alert.alert(unavailableLabel, translateCopy("Bu ilan artık satışa açık değil. Benzer ürünlere göz atabilirsin.", language)); return; }
-    if (!owner) return;
-    // İletişimden önce (varsa) ortağa atıf-lead'i düş — kanal kaynağı iletişim yöntemine göre.
-    attributeReferralLead(currentListing.contactMethod === "whatsapp" ? "whatsapp" : currentListing.contactMethod === "phone" ? "phone" : "web");
-    // Satıcı telefonu feed/detay yanıtında taşınmaz; iletişim anında (girişli
-    // kullanıcı) ayrı çekilir. Anon ziyaretçi boş alır → uygulama-içi mesaja düşer.
-    const sellerPhone = owner.phone || (await fetchSellerPhone(owner.id));
-    const waPhone = trPhoneIntl(sellerPhone);
-    // Dış-link (WhatsApp/telefon) açılabilirse oraya git; açılamazsa (masaüstü
-    // web'de şema desteklenmez/popup engellenir) uygulama-içi mesaja DÜŞ.
-    if (currentListing.contactMethod === "whatsapp") {
-      if (waPhone && await openUrlSafe(`https://wa.me/${waPhone}?text=${encodeURIComponent(`${currentListing.title} ilanı hakkında bilgi almak istiyorum.`)}`)) return;
-    } else if (currentListing.contactMethod === "phone") {
-      const tel = sellerPhone.replace(/[^0-9+]/g, "");
-      if (tel && await openUrlSafe(`tel:${tel}`)) return;
-    }
-    // Uygulama-içi mesaja düşmeden önce anonim ise girişe yönlendir (hayalet konuşma yok).
-    if (!isAuthenticated) { router.push({ pathname: "/auth", params: { redirect: `/listing/${currentListing.id}` } }); return; }
-    const fallbackMessage = `${currentListing.title} ilanı için bilgi almak istiyorum. Fiyat, stok ve teslimat detayları güncel mi?`;
-    // currentListing (store'da yoksa remote) fallback geçilir → paylaşılan/derin-linkli ilanda
-    // da konuşma kurulur. Başarısızsa metni KORU + geri bildir (eskiden sessiz ölü-uçtu).
-    const conversation = startConversation(currentListing.id, owner.id, message.trim() || fallbackMessage, currentListing);
-    if (conversation) { setMessage(""); router.push({ pathname: "/chat/[id]", params: { id: conversation.id } }); }
-    else Alert.alert(translateCopy("Mesaj başlatılamadı", language), translateCopy("Şu an mesaj gönderilemedi. Lütfen tekrar dene.", language));
+    if (mobileContactLock.current || !contactAllowed()) return;
+    mobileContactLock.current = true; setRevealingPhone(true);
+    try {
+      if (currentListing.contactMethod !== "message") {
+        const sellerPhone = owner?.phone || await fetchSellerPhone(currentListing.ownerId, true);
+        if (sellerPhone) {
+          const whatsapp = currentListing.contactMethod === "whatsapp";
+          const phone = whatsapp ? trPhoneIntl(sellerPhone) : sellerPhone.replace(/[^0-9+]/g, "");
+          if (phone) {
+            const url = whatsapp ? `https://wa.me/${phone}?text=${encodeURIComponent(`${currentTitle} ilanı hakkında bilgi almak istiyorum.`)}` : `tel:${phone}`;
+            if (await openUrlSafe(url)) { attributeReferralLead(whatsapp ? "whatsapp" : "phone"); return; }
+          }
+        }
+        showToast("Telefonla iletişim açılamadı. Uygulama içi mesajla devam ediliyor.");
+      }
+      const fallbackMessage = `${currentTitle} ilanı için bilgi almak istiyorum. Fiyat, stok ve teslimat detayları güncel mi?`;
+      const conversation = startConversation(currentListing.id, currentListing.ownerId, message.trim() || fallbackMessage, currentListing);
+      if (conversation) { attributeReferralLead("web"); setMessage(""); router.push({ pathname: "/chat/[id]", params: { id: conversation.id } }); }
+      else Alert.alert(translateCopy("Mesaj başlatılamadı", language), translateCopy("Şu an mesaj gönderilemedi. Lütfen tekrar dene.", language));
+    } catch { showToast("İletişim bilgisi alınamadı. Tekrar dene; yazdığın mesaj korunuyor."); }
+    finally { mobileContactLock.current = false; setRevealingPhone(false); }
   }
 
-  // Sahibinden tarzı "Numarayı Göster": tıklayınca gerçek numarayı çeker (girişli
-  // kullanıcıya). Numara feed'de taşınmaz; yalnız burada, istek üzerine gelir.
   async function revealPhone() {
-    if (isDemo || !owner || revealingPhone) return;
-    setRevealingPhone(true);
-    const p = owner.phone || (await fetchSellerPhone(owner.id));
-    setRevealingPhone(false);
-    if (!p) { Alert.alert(translateCopy("Numara görünmüyor", language), translateCopy("Numarayı görmek için giriş yap; ya da satıcıya mesaj gönder.", language)); return; }
-    attributeReferralLead("phone");
-    setRevealedPhone(p);
+    if (mobileContactLock.current || currentListing.contactMethod === "message" || !contactAllowed()) return;
+    mobileContactLock.current = true; setRevealingPhone(true);
+    try {
+      const phone = owner?.phone || await fetchSellerPhone(currentListing.ownerId, true);
+      if (!phone) { showToast("Satıcının paylaşılmış telefon numarası yok. Mesaj gönderebilirsin."); return; }
+      attributeReferralLead("phone"); setRevealedPhone(phone);
+    } catch { showToast("Telefon bilgisi alınamadı. Tekrar deneyebilirsin."); }
+    finally { mobileContactLock.current = false; setRevealingPhone(false); }
   }
 
-  function handleSaleReview() {
+  async function handleSaleReview() {
     if (!reviewableSale) return;
-    const created = createSaleReview(reviewableSale.id, reviewRating, reviewComment);
+    const created = await createSaleReview(reviewableSale.id, reviewRating, reviewComment);
     if (!created) {
       Alert.alert(translateCopy("Yorum eklenemedi", language), translateCopy("Yorum için tamamlanmış satış ve tekil yorum hakkı gerekli.", language));
       return;
@@ -510,19 +527,19 @@ export default function ListingDetailScreen() {
 
   async function submitReport() {
     if (!reportReason) { Alert.alert(translateCopy("Sebep seç", language), translateCopy("Lütfen bir şikayet nedeni seç.", language)); return; }
-    const details = `${currentListing.title} — ${reportReason}${reportDetail.trim() ? ` · ${reportDetail.trim()}` : ""}`;
+    const details = `${currentTitle} — ${reportReason}${reportDetail.trim() ? ` · ${reportDetail.trim()}` : ""}`;
     const ok = await reportListing(currentListing.id, reportReason, details);
     setReportOpen(false); setReportReason(""); setReportDetail("");
     if (ok) showToast(translateCopy("Bildirim alındı — moderasyon inceleyecek", language));
     else Alert.alert(translateCopy("Giriş gerekli", language), translateCopy("İlan bildirmek için e-posta ile giriş yapmalısın.", language));
   }
 
-  const metaDesc = `${currentListing.title} — ${moneyIn(currentListing.price, currentListing.currency)}. ${currentListing.description}`.replace(/\s+/g, " ").slice(0, 160);
+  const metaDesc = `${currentTitle} — ${moneyIn(currentListing.price, currentListing.currency)}. ${currentListing.description}`.replace(/\s+/g, " ").slice(0, 160);
   const metaUrl = `https://www.ortaksat.com/listing/${currentListing.id}`;
   // Sosyal paylaşımda kazanç kancası — ortak linki paylaşınca önizlemede görünür.
   const ogTitle = partnerable
-    ? `${currentListing.title} — ${moneyIn(currentListing.price, currentListing.currency)} · Ortak ol, ${commissionText(currentListing)} kazan | OrtakSat`
-    : `${currentListing.title} — ${moneyIn(currentListing.price, currentListing.currency)} | OrtakSat`;
+    ? `${currentTitle} — ${moneyIn(currentListing.price, currentListing.currency)} · Ortak ol, ${commissionText(currentListing)} kazan | OrtakSat`
+    : `${currentTitle} — ${moneyIn(currentListing.price, currentListing.currency)} | OrtakSat`;
   const ogDesc = partnerable
     ? `${moneyIn(currentListing.price, currentListing.currency)} · ${commissionText(currentListing)}. Bu ürünü kendi yönteminle tanıt, satışta komisyon kazan. OrtakSat aracıdır; ödeme ve teslimat taraflar arasındadır.`
     : `${moneyIn(currentListing.price, currentListing.currency)} · ${currentListing.category}. Satıcıyla iletişime geç, güvenle satın al. OrtakSat aracıdır; ödeme ve teslimat taraflar arasındadır.`;
@@ -532,7 +549,7 @@ export default function ListingDetailScreen() {
   const productLd = JSON.stringify({
     "@context": "https://schema.org",
     "@type": "Product",
-    name: currentListing.title,
+    name: currentTitle,
     image: [currentListing.image, ...(currentListing.adAssets ?? [])].filter(Boolean).slice(0, 5),
     description: metaDesc,
     category: currentListing.category,
@@ -597,17 +614,56 @@ export default function ListingDetailScreen() {
     itemListElement: [
       { "@type": "ListItem", position: 1, name: "Ana Sayfa", item: "https://www.ortaksat.com/" },
       ...(bcCatSlug ? [{ "@type": "ListItem", position: 2, name: currentListing.category, item: `https://www.ortaksat.com/kategori/${bcCatSlug}` }] : []),
-      { "@type": "ListItem", position: bcCatSlug ? 3 : 2, name: currentListing.title, item: metaUrl }
+      { "@type": "ListItem", position: bcCatSlug ? 3 : 2, name: currentTitle, item: metaUrl }
     ]
   });
 
   // Mobil sabit alt aksiyon çubuğu görünürse içerik onun arkasına gizlenmesin diye ekstra alt boşluk.
+  if (isMobileApp) return <MobileListingDetail listing={currentListing} owner={owner} favorite={favorited} onFavorite={() => toggleFavorite(currentListing.id)} onShare={() => void handleShare()} isOwner={isOwner} unavailable={listingUnavailable ? unavailableLabel : undefined} partnershipStatus={partnership?.status} joinAction={joinAction} contactBusy={revealingPhone} sellerBlocked={isUserBlocked(currentListing.ownerId)}
+    onMessage={() => {
+      if (isDemo) { demoBlocked(); return; }
+      if (!isAuthenticated) { router.push({ pathname: "/auth", params: { redirect: listingReturnPath } }); return; }
+      if (listingUnavailable || isUserBlocked(currentListing.ownerId)) return;
+      attributeReferralLead("web");
+      const conversation = startConversation(currentListing.id, currentListing.ownerId, "", currentListing);
+      if (conversation) router.push(`/chat/${conversation.id}` as never);
+      else showToast("Mesaj başlatılamadı. Lütfen tekrar dene.");
+    }}
+    onCall={() => { void (async () => {
+      if (mobileContactLock.current) return;
+      if (isDemo) { demoBlocked(); return; }
+      if (!isAuthenticated) { router.push({ pathname: "/auth", params: { redirect: listingReturnPath } }); return; }
+      if (listingUnavailable || isUserBlocked(currentListing.ownerId) || currentListing.contactMethod === "message") return;
+      mobileContactLock.current = true; setRevealingPhone(true);
+      try {
+        const phone = owner?.phone || await fetchSellerPhone(currentListing.ownerId, true);
+        if (!phone) { showToast("Satıcının paylaşılmış telefon numarası yok. Mesaj gönderebilirsin."); return; }
+        const whatsapp = currentListing.contactMethod === "whatsapp";
+        const normalized = whatsapp ? trPhoneIntl(phone) : phone.replace(/[^0-9+]/g, "");
+        if (!normalized) { showToast("Telefon numarası kullanılamıyor. Mesaj gönderebilirsin."); return; }
+        attributeReferralLead(whatsapp ? "whatsapp" : "phone");
+        const url = whatsapp ? `https://wa.me/${normalized}?text=${encodeURIComponent(`${currentTitle} ilanı hakkında bilgi almak istiyorum.`)}` : `tel:${normalized}`;
+        if (!await openUrlSafe(url)) showToast("İletişim uygulaması açılamadı. Mesaj gönderebilirsin.");
+      } catch { showToast("Telefon bilgisi alınamadı. Tekrar deneyebilir veya mesaj gönderebilirsin."); }
+      finally { mobileContactLock.current = false; setRevealingPhone(false); }
+    })(); }}
+    onJoin={() => {
+      if (isDemo) { demoBlocked(); return; }
+      if (joinAction.kind === "view" && partnership) { router.push(`/partnership/${partnership.id}` as never); return; }
+      if (listingUnavailable || !canJoinNow) { showToast("Bu ilana şu anda ortaklık talebi gönderilemiyor."); return; }
+      if (!isAuthenticated) {
+        router.push({ pathname: "/auth", params: { redirect: flowPaths.request } }); return;
+      }
+      router.push({ pathname: "/partnership-request/[id]", params: { id: currentListing.id, ...(validInvite ? { invite: inviteParam } : {}) } } as never);
+    }}
+    onReport={(reason) => { void reportListing(currentListing.id, reason, `${currentTitle} — ${reason}`).then((ok) => showToast(ok ? "Bildirimin alındı." : "İlan bildirmek için giriş yapmalısın.")); }} />;
+
   const showMobileActionBar = !isWideWeb && !isDemo && !listingUnavailable;
   return (
     <View style={{ flex: 1 }}>
     <ScrollView style={{ flex: 1 }} keyboardShouldPersistTaps="handled" contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ gap: 12, paddingBottom: (showMobileActionBar ? 132 : 96) + insets.bottom }}>
       <Head>
-        <title>{`${currentListing.title} — OrtakSat`}</title>
+        <title>{`${currentTitle} — OrtakSat`}</title>
         <meta name="description" content={metaDesc} />
         <link rel="canonical" href={metaUrl} />
         <meta property="og:type" content="product" />
@@ -616,7 +672,7 @@ export default function ListingDetailScreen() {
         <meta property="og:title" content={ogTitle} />
         <meta property="og:description" content={ogDesc} />
         <meta property="og:image" content={currentListing.image} />
-        <meta property="og:image:alt" content={currentListing.imageAlt || currentListing.title} />
+        <meta property="og:image:alt" content={currentListing.imageAlt || currentTitle} />
         <meta property="og:url" content={metaUrl} />
         <meta property="product:price:amount" content={String(currentListing.price)} />
         <meta property="product:price:currency" content={currentListing.currency ?? "TRY"} />
@@ -624,7 +680,7 @@ export default function ListingDetailScreen() {
         <meta name="twitter:title" content={ogTitle} />
         <meta name="twitter:description" content={ogDesc} />
         <meta name="twitter:image" content={currentListing.image} />
-        <meta name="twitter:image:alt" content={currentListing.imageAlt || currentListing.title} />
+        <meta name="twitter:image:alt" content={currentListing.imageAlt || currentTitle} />
       </Head>
       <JsonLd id="product" json={productLd} />
       <JsonLd id="breadcrumb" json={breadcrumbLd} />
@@ -643,7 +699,7 @@ export default function ListingDetailScreen() {
           );
         })()}
         <MaterialCommunityIcons name="chevron-right" size={14} color={colors.subtle} />
-        <Text numberOfLines={1} style={{ color: colors.ink, flex: 1, fontSize: 12.5, fontWeight: "800", minWidth: 0 }}>{currentListing.title}</Text>
+        <Text numberOfLines={1} style={{ color: colors.ink, flex: 1, fontSize: 12.5, fontWeight: "800", minWidth: 0 }}>{currentTitle}</Text>
       </View>
       {isDemo ? (
         <View style={{ alignItems: "center", backgroundColor: colors.goldSoft, borderColor: colors.gold, borderRadius: 12, borderWidth: 1, flexDirection: "row", gap: 10, marginHorizontal: isWideWeb ? 0 : 12, padding: 13 }}>
@@ -664,12 +720,15 @@ export default function ListingDetailScreen() {
       {(() => {
         const mainImg = gallery[galleryIdx] ?? currentListing.image;
         // SEO + a11y: ürün görseline açıklayıcı alt (Google Görseller + ekran okuyucu).
-        const imgAlt = `${currentListing.title}${currentListing.category ? ` — ${currentListing.category}` : ""}${currentListing.location ? `, ${currentListing.location}` : ""} · OrtakSat ortak satış ilanı`;
+        const imgAlt = `${currentTitle}${currentListing.category ? ` — ${currentListing.category}` : ""}${currentListing.location ? `, ${currentListing.location}` : ""} · OrtakSat ortak satış ilanı`;
         return (
           <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: isWideWeb ? 18 : 0, borderWidth: isWideWeb ? 1 : 0, marginTop: isWideWeb ? 16 : 0, overflow: "hidden" }}>
             <Pressable
+              testID="listing-web-gallery"
+              disabled={!gallery.length}
+              accessibilityState={{ disabled: !gallery.length }}
               accessibilityRole="imagebutton"
-              accessibilityLabel={translateCopy("Görseli büyüt", language)}
+              accessibilityLabel={translateCopy(gallery.length ? "Görseli büyüt" : "İlan fotoğrafı bulunmuyor", language)}
               onPress={() => { if (inlineSwiped.current) { inlineSwiped.current = false; return; } setLightbox(true); }}
               onTouchStart={(e) => { swipeStartX.current = e.nativeEvent.pageX; inlineSwiped.current = false; }}
               onTouchEnd={(e) => {
@@ -683,9 +742,9 @@ export default function ListingDetailScreen() {
             >
               {/* LCP: ilan detayının kahraman görseli → yüksek öncelik + fade/scrim yok
                   (SafeRemoteImage priority="high" ile eager). Eskiden low+cross-dissolve idi. */}
-              <SafeRemoteImage full uri={mainImg} alt={imgAlt} accessibilityLabel={imgAlt} priority="high" style={{ backgroundColor: colors.line, height: isWideWeb ? 520 : 330, width: "100%" }} contentFit="cover" />
+              {gallery.length ? <SafeRemoteImage full uri={mainImg} alt={imgAlt} accessibilityLabel={imgAlt} priority="high" style={{ backgroundColor: colors.line, height: isWideWeb ? 520 : 330, width: "100%" }} contentFit="cover" /> : <View style={{ height: isWideWeb ? 520 : 330, backgroundColor: colors.surfaceAlt, alignItems: "center", justifyContent: "center", gap: 12 }}><MaterialCommunityIcons name="image-off-outline" size={44} color={colors.muted} /><Text style={{ color: colors.muted }}>{translateCopy("Bu ilanda fotoğraf yok", language)}</Text></View>}
               {/* Kaynak filigranı — dosyaya gömülmez, yalnız görüntüleme katmanı (ürün bozulmaz). */}
-              <ImageWatermark size={isWideWeb ? 20 : 15} />
+              {!!gallery.length && <ImageWatermark size={isWideWeb ? 20 : 15} />}
               {/* Ortaklığa AÇIK ilan rozeti (yeşil, sol üst) — kapalı/normal ilanda gösterilmez. */}
               {partnerable ? (
                 <View style={{ alignItems: "center", backgroundColor: colors.success, borderRadius: 999, flexDirection: "row", gap: 5, left: 12, paddingHorizontal: 11, paddingVertical: 6, position: "absolute", top: 12 }}>
@@ -693,10 +752,10 @@ export default function ListingDetailScreen() {
                   <Text style={{ color: "#FFFFFF", fontSize: 11.5, fontWeight: "900", letterSpacing: 0.2 }}>{translateCopy("Ortaklığa Açık", language)}</Text>
                 </View>
               ) : null}
-              <View style={{ alignItems: "center", backgroundColor: "rgba(0,0,0,0.5)", borderRadius: 999, bottom: 12, flexDirection: "row", gap: 5, paddingHorizontal: 11, paddingVertical: 6, position: "absolute", right: 12 }}>
+              {!!gallery.length && <View testID="listing-web-counter" style={{ alignItems: "center", backgroundColor: "rgba(0,0,0,0.5)", borderRadius: 999, bottom: 12, flexDirection: "row", gap: 5, paddingHorizontal: 11, paddingVertical: 6, position: "absolute", right: 12 }}>
                 <MaterialCommunityIcons name="magnify-plus-outline" size={14} color="#FFFFFF" />
                 <Text style={{ color: "#FFFFFF", fontSize: 11.5, fontWeight: "800" }}>{translateCopy("Büyüt", language)}{gallery.length > 1 ? ` · ${galleryIdx + 1}/${gallery.length}` : ""}</Text>
-              </View>
+              </View>}
               {/* Mobil: birden çok görselde kaydırma ipucu (nokta göstergesi) */}
               {!isWideWeb && gallery.length > 1 ? (
                 <View style={{ alignItems: "center", bottom: 12, flexDirection: "row", gap: 5, justifyContent: "center", left: 0, position: "absolute", right: 0 }}>
@@ -734,7 +793,7 @@ export default function ListingDetailScreen() {
             {partnerable ? <StatusPill label={translateCopy(currentListing.partnershipMode === "open" ? "Anında ortaklık" : isInviteMode ? "Davetle ortaklık" : "Satıcı onaylı", language)} tone={currentListing.partnershipMode === "open" ? "success" : "warning"} /> : null}
           </View>
 
-          <Text selectable accessibilityRole="header" {...({ role: "heading", "aria-level": 1 } as Record<string, unknown>)} style={{ color: colors.ink, fontSize: 23, fontWeight: "900", lineHeight: 29 }}>{currentListing.title}</Text>
+          <Text selectable accessibilityRole="header" {...({ role: "heading", "aria-level": 1 } as Record<string, unknown>)} style={{ color: colors.ink, fontSize: isWideWeb ? 22 : 20, fontWeight: "700", lineHeight: isWideWeb ? 28 : 26 }}>{currentTitle}</Text>
 
           {/* Müsait değil durum bandı — satın alma/ortaklık/teklif kapalı (aksiyon handler'ları da guard'lı). */}
           {listingUnavailable ? (
@@ -792,7 +851,7 @@ export default function ListingDetailScreen() {
 
           {/* Fiyat sayfanın en güçlü öğesi olmalı (ürün sayfası) — ortaklığa açık ilanda turkuaz
               (primaryDark) vurgu, kapalı/normal ilanda nötr ink. */}
-          <Text selectable style={{ color: partnerable ? colors.primaryDark : colors.ink, fontSize: 33, fontWeight: "900", letterSpacing: -0.5 }}>{moneyIn(currentListing.price, currentListing.currency)}</Text>
+          <Text testID="listing-detail-price" selectable style={{ color: partnerable ? colors.primaryDark : colors.ink, fontSize: isWideWeb ? 30 : 27, fontWeight: "700", letterSpacing: -0.3 }}>{moneyIn(currentListing.price, currentListing.currency)}</Text>
 
           {/* ACİL SATIŞ banner — attributes._urgentUntil GELECEKTEyse (fiyatın hemen altında, dikkat çekici). */}
           {(() => {
@@ -843,12 +902,13 @@ export default function ListingDetailScreen() {
                 <View style={{ borderBottomColor: colors.line, borderBottomWidth: 1, paddingHorizontal: 13, paddingVertical: 9 }}>
                   <Text style={{ color: colors.ink, fontSize: 13.5, fontWeight: "900" }}>{translateCopy("Ürün Detayları", language)}</Text>
                 </View>
-                {rows.map((row, i) => (
+                {rows.slice(0, showAllSpecs ? undefined : 4).map((row, i) => (
                   <View key={`${row.label}-${i}`} style={{ backgroundColor: i % 2 === 1 ? colors.surface : "transparent", flexDirection: "row", gap: 10, paddingHorizontal: 13, paddingVertical: 8 }}>
                     <Text style={{ color: colors.muted, flex: 1, fontSize: 12.5, fontWeight: "700", minWidth: 0 }}>{translateCopy(row.label, language)}</Text>
                     <Text selectable style={{ color: colors.ink, flex: 1, fontSize: 12.5, fontWeight: "800", minWidth: 0, textAlign: "right" }}>{translateCopy(row.value, language)}</Text>
                   </View>
                 ))}
+                {rows.length > 4 ? <Pressable accessibilityRole="button" accessibilityLabel={translateCopy("Tüm ilan özellikleri", language)} accessibilityState={{ expanded: showAllSpecs }} onPress={() => setShowAllSpecs((v) => !v)} style={{ minHeight: 38, paddingHorizontal: 13, alignItems: "center", flexDirection: "row", gap: 6, borderTopWidth: 1, borderTopColor: colors.line }}><Text style={{ flex: 1, fontSize: 12, color: colors.primaryDark, fontWeight: "600" }}>{translateCopy(showAllSpecs ? "Daha az göster" : "Tüm özellikler", language)} ({rows.length})</Text><MaterialCommunityIcons name={showAllSpecs ? "chevron-up" : "chevron-down"} size={18} color={colors.primaryDark} /></Pressable> : null}
               </View>
             );
           })()}
@@ -897,65 +957,7 @@ export default function ListingDetailScreen() {
                 })()}
               </View>
             ) : (
-              /* ===== ORTAKLIĞA AÇIK — "Ortaklık Bilgisi" (ORTAK KAZANCI + koşul kutusu birleşti) ===== */
-              (() => {
-                const partnerRegion = currentListing.attributes?._partnerRegion ? String(currentListing.attributes._partnerRegion).trim() : "";
-                const maxPartners = Number(currentListing.attributes?._maxPartners ?? 0) || 0;
-                const conv = categoryConversion(currentListing.category);
-                const bullets = [
-                  maxPartners > 0 ? `${translateCopy("En fazla", language)} ${maxPartners} ${translateCopy("ortak olabilir", language)}` : translateCopy("Birden fazla ortak olabilir", language),
-                  translateCopy("İlk müşteriyi getiren kazanır", language),
-                  partnerRegion ? `${translateCopy("Bölge", language)}: ${partnerRegion}` : translateCopy("Bölge sınırlaması yok", language),
-                  translateCopy("Ortaklar panelinden performans takibi", language)
-                ];
-                return (
-                  <View style={{ backgroundColor: colors.primarySoft, borderRadius: 12, gap: 10, padding: 13 }}>
-                    <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-                      <MaterialCommunityIcons name="handshake" size={17} color={colors.primaryDark} />
-                      <Text style={{ color: colors.primaryDark, flex: 1, fontSize: 14, fontWeight: "900", minWidth: 90 }}>{translateCopy("Ortaklık Bilgisi", language)}</Text>
-                      <View style={{ backgroundColor: colors.surface, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 }}>
-                        <Text style={{ color: colors.primaryDark, fontSize: 12.5, fontVariant: ["tabular-nums"], fontWeight: "900" }}>{currentListing.commissionType === "rate" ? `${translateCopy("Komisyon Oranı", language)}: %${currentListing.commissionValue}` : `${translateCopy("Komisyon", language)}: ${moneyIn(commission, currentListing.currency)}`}</Text>
-                      </View>
-                    </View>
-                    <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600", lineHeight: 16 }}>{commissionText(currentListing)}{" · "}{translateCopy("Bu ürünü sat ya da alıcı getir; her satışta kazan. Komisyonu satıcı öder.", language)}</Text>
-                    <View style={{ gap: 6 }}>
-                      {bullets.map((t, i) => (
-                        <View key={i} style={{ alignItems: "flex-start", flexDirection: "row", gap: 7 }}>
-                          <MaterialCommunityIcons name="check-circle" size={14} color={colors.primaryDark} style={{ marginTop: 1 }} />
-                          <Text selectable style={{ color: colors.ink, flex: 1, fontSize: 12.5, fontWeight: "700", lineHeight: 17, minWidth: 0 }}>{t}</Text>
-                        </View>
-                      ))}
-                    </View>
-                    {/* Sosyal kanıt + atıf penceresi (ORTAK KAZANCI kutusundan taşındı — bilgi korunur). */}
-                    <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 5 }}>
-                      {currentListing.partnerCount > 0 ? (
-                        <View style={{ alignItems: "center", backgroundColor: colors.surface, borderRadius: 999, flexDirection: "row", gap: 4, paddingHorizontal: 8, paddingVertical: 3 }}>
-                          <MaterialCommunityIcons name="account-group" size={13} color={colors.primaryDark} />
-                          <Text style={{ color: colors.primaryDark, fontSize: 11.5, fontVariant: ["tabular-nums"], fontWeight: "900" }}>{currentListing.partnerCount} {translateCopy("ortak tanıtıyor", language)}</Text>
-                        </View>
-                      ) : null}
-                      {currentListing.leadCount > 0 ? (
-                        <View style={{ alignItems: "center", backgroundColor: colors.surface, borderRadius: 999, flexDirection: "row", gap: 4, paddingHorizontal: 8, paddingVertical: 3 }}>
-                          <MaterialCommunityIcons name="account-clock-outline" size={13} color={colors.primaryDark} />
-                          <Text style={{ color: colors.primaryDark, fontSize: 11.5, fontVariant: ["tabular-nums"], fontWeight: "900" }}>{currentListing.leadCount} {translateCopy("talep geldi", language)}</Text>
-                        </View>
-                      ) : null}
-                      <View style={{ alignItems: "center", backgroundColor: colors.surface, borderRadius: 999, flexDirection: "row", gap: 4, paddingHorizontal: 8, paddingVertical: 3 }}>
-                        <MaterialCommunityIcons name="clock-outline" size={13} color={colors.muted} />
-                        <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "800" }}>{translateCopy("Atıf penceresi", language)}: {currentListing.attributionWindowDays} {translateCopy("gün", language)}</Text>
-                      </View>
-                    </View>
-                    {/* Komisyon HANGİ olayda hak edilir (categoryConversion — "Komisyon şu olayda" kutusu birleşti). */}
-                    <View style={{ alignItems: "flex-start", backgroundColor: colors.surface, borderRadius: 9, flexDirection: "row", gap: 7, padding: 9 }}>
-                      <MaterialCommunityIcons name={conv.icon as keyof typeof MaterialCommunityIcons.glyphMap} size={15} color={colors.primaryDark} style={{ marginTop: 1 }} />
-                      <View style={{ flex: 1, gap: 1, minWidth: 0 }}>
-                        <Text style={{ color: colors.ink, fontSize: 11.5, fontWeight: "900" }}>{translateCopy("Komisyon şu olayda hak edilir", language)}: {translateCopy(conv.event, language)}</Text>
-                        <Text style={{ color: colors.muted, fontSize: 11, fontWeight: "600", lineHeight: 15 }}>{translateCopy(conv.hint, language)}</Text>
-                      </View>
-                    </View>
-                  </View>
-                );
-              })()
+              <ListingTermsSummary key={currentListing.id} listing={currentListing} />
             )
           ) : (
             /* ===== ORTAKLIĞA KAPALI (normal ilan) — sade uyarı notu ===== */
@@ -968,7 +970,7 @@ export default function ListingDetailScreen() {
           {/* Y5: Ortaklık şartları — satıcının ortaklardan beklentileri (partnerRules). Ortak,
               istek göndermeden ÖNCE kuralları görür → sürtünme + yanlış-eşleşme azalır. YALNIZ
               ortak satışa açık ilanda ve kural tanımlıysa gösterilir. */}
-          {partnerable && currentListing.partnerRules.length > 0 ? (
+          {partnerable && isDemand && currentListing.partnerRules.length > 0 ? (
             <View style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 12, borderWidth: 1, gap: 8, padding: 12 }}>
               <View style={{ alignItems: "center", flexDirection: "row", gap: 7 }}>
                 <MaterialCommunityIcons name="clipboard-check-outline" size={16} color={colors.primaryDark} />
@@ -997,7 +999,7 @@ export default function ListingDetailScreen() {
                     <Text style={{ color: colors.ink, flex: 1, fontSize: 13, fontWeight: "900" }}>{translateCopy("Ortak davet linki", language)}</Text>
                   </View>
                   <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600", lineHeight: 17 }}>{translateCopy("Bu ilan sadece davetle. Aşağıdaki linki güvendiğin ortaklarla paylaş; linkle gelen kişi anında (ön-onaylı) ortak olur.", language)}</Text>
-                  <ShareRow url={partnerInviteUrl(currentListing)} text={`${currentListing.title} — ${translateCopy("ortak daveti", language)}`} />
+                  <ShareRow url={partnerInviteUrl(currentListing)} text={`${currentTitle} — ${translateCopy("ortak daveti", language)}`} />
                 </View>
               ) : null}
             </View>
@@ -1014,7 +1016,7 @@ export default function ListingDetailScreen() {
                   <MaterialCommunityIcons name="check-decagram" size={17} color={colors.primaryDark} />
                   <Text style={{ color: colors.primaryDark, flex: 1, fontSize: 13, fontWeight: "900" }}>{translateCopy("Ortaksın · ürünü kendi yönteminle tanıt", language)}</Text>
                 </View>
-                {activeShareUrl ? <ShareRow url={activeShareUrl} text={`${currentListing.title} — ${moneyIn(currentListing.price, currentListing.currency)}`} /> : null}
+                {activeShareUrl ? <ShareRow url={activeShareUrl} text={`${currentTitle} — ${moneyIn(currentListing.price, currentListing.currency)}`} /> : null}
                 {partnership?.agreedAt ? (
                   <View style={{ alignItems: "center", flexDirection: "row", gap: 6 }}>
                     <MaterialCommunityIcons name="lock-check" size={13} color={colors.primaryDark} />
@@ -1034,7 +1036,7 @@ export default function ListingDetailScreen() {
                   <Text style={{ color: colors.ink, flex: 1, fontSize: 13.5, fontWeight: "900" }}>{translateCopy("Ortaklık sadece davetle", language)}</Text>
                 </View>
                 <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600", lineHeight: 18 }}>{translateCopy("Bu ürünün ortaklığı herkese açık değil. Ortak olmak istiyorsan satıcıdan davet linki iste; linkle geldiğinde anında ortak olabilirsin.", language)}</Text>
-                <PrimaryButton tone="secondary" icon="message-text-outline" onPress={() => void handleContact()}>{translateCopy("Satıcıdan davet iste", language)}</PrimaryButton>
+                <PrimaryButton tone="secondary" icon="message-text-outline" disabled={revealingPhone || isOwner || isUserBlocked(currentListing.ownerId)} onPress={() => void handleContact()}>{translateCopy("Satıcıdan davet iste", language)}</PrimaryButton>
               </View>
             ) : (
               <View style={{ gap: 10 }}>
@@ -1063,7 +1065,7 @@ export default function ListingDetailScreen() {
                     <MaterialCommunityIcons name="check-decagram" size={17} color={colors.primaryDark} />
                     <Text style={{ color: colors.primaryDark, flex: 1, fontSize: 13, fontWeight: "900" }}>{translateCopy("Ortaksın · ürünü kendi yönteminle tanıt", language)}</Text>
                   </View>
-                  {activeShareUrl ? <ShareRow url={activeShareUrl} text={`${currentListing.title} — ${moneyIn(currentListing.price, currentListing.currency)}`} /> : null}
+                  {activeShareUrl ? <ShareRow url={activeShareUrl} text={`${currentTitle} — ${moneyIn(currentListing.price, currentListing.currency)}`} /> : null}
                   {partnership?.agreedAt ? (
                     <View style={{ alignItems: "center", flexDirection: "row", gap: 6 }}>
                       <MaterialCommunityIcons name="lock-check" size={13} color={colors.primaryDark} />
@@ -1094,18 +1096,18 @@ export default function ListingDetailScreen() {
               ) : null}
 
               {/* Aksiyon: partnerable + katılabilir → [Satın Al | Ortak Ol]; aksi halde tek "Satın Al". */}
-              {canJoinNow ? (
+              {!showMobileActionBar ? (canJoinNow ? (
                 <View style={{ flexDirection: "row", gap: 10 }}>
                   <View style={{ flex: 1, minWidth: 0 }}>
-                    <PrimaryButton tone="secondary" icon="cart-outline" onPress={() => void handleContact()}>{`${translateCopy("Satın Al", language)} (${moneyIn(currentListing.price, currentListing.currency)})`}</PrimaryButton>
+                    <PrimaryButton tone="secondary" icon="message-text-outline" disabled={revealingPhone || isOwner || isUserBlocked(currentListing.ownerId)} onPress={() => void handleContact()}>{translateCopy(contactLabel(currentListing.contactMethod), language)}</PrimaryButton>
                   </View>
                   <View style={{ flex: 1, minWidth: 0 }}>
-                    <PrimaryButton icon="handshake" onPress={handleJoin}>{`${translateCopy("Ortak Ol", language)} (${currentListing.commissionType === "rate" ? `%${currentListing.commissionValue}` : moneyIn(commission, currentListing.currency)} ${translateCopy("Kazan", language)})`}</PrimaryButton>
+                    <PrimaryButton icon="handshake" onPress={handleJoin}>{translateCopy("Ortak Ol", language)}</PrimaryButton>
                   </View>
                 </View>
               ) : (
-                <PrimaryButton icon="cart-outline" onPress={() => void handleContact()}>{`${translateCopy("Satın Al", language)} (${moneyIn(currentListing.price, currentListing.currency)})`}</PrimaryButton>
-              )}
+                <PrimaryButton icon="message-text-outline" disabled={revealingPhone || isOwner || isUserBlocked(currentListing.ownerId)} onPress={() => void handleContact()}>{translateCopy(contactLabel(currentListing.contactMethod), language)}</PrimaryButton>
+              )) : null}
             </View>
           )}
 
@@ -1161,23 +1163,23 @@ export default function ListingDetailScreen() {
                   ) : null}
                 </View>
               ) : (
-                <PrimaryButton tone="secondary" icon="handshake-outline" onPress={() => { if (listingUnavailable) { Alert.alert(unavailableLabel, translateCopy("Bu ilan artık satışa açık değil.", language)); return; } if (!isAuthenticated) { router.push({ pathname: "/auth", params: { redirect: `/listing/${currentListing.id}` } }); return; } setOfferAmount(""); setOfferNote(""); setOfferErr(null); setOfferOpen(true); }}>{translateCopy("Teklif Ver", language)}</PrimaryButton>
+                <PrimaryButton tone="secondary" icon="handshake-outline" onPress={() => { if (listingUnavailable) { Alert.alert(unavailableLabel, translateCopy("Bu ilan artık satışa açık değil.", language)); return; } if (!isAuthenticated) { router.push({ pathname: "/auth", params: { redirect: listingReturnPath } }); return; } setOfferAmount(""); setOfferNote(""); setOfferErr(null); setOfferOpen(true); }}>{translateCopy("Teklif Ver", language)}</PrimaryButton>
               )}
               {/* İletişim butonu: normal sat/ortak ilanda ana "Satın Al" bu akışı (handleContact)
                   zaten çağırır; yalnız talep (arayan) ilanında burada ayrı gösterilir (Satın Al yok). */}
-              {isDemand ? <PrimaryButton tone="secondary" icon={currentListing.contactMethod === "whatsapp" ? "whatsapp" : currentListing.contactMethod === "phone" ? "phone" : "message-text-outline"} onPress={() => void handleContact()}>{translateCopy(contactLabel(currentListing.contactMethod), language)}</PrimaryButton> : null}
+              {isDemand ? <PrimaryButton tone="secondary" icon={currentListing.contactMethod === "whatsapp" ? "whatsapp" : currentListing.contactMethod === "phone" ? "phone" : "message-text-outline"} disabled={revealingPhone || isOwner || isUserBlocked(currentListing.ownerId)} onPress={() => void handleContact()}>{translateCopy(contactLabel(currentListing.contactMethod), language)}</PrimaryButton> : null}
               {/* Numarayı Göster (Sahibinden tarzı) — istek üzerine gerçek numara */}
-              {revealedPhone ? (
+              {currentListing.contactMethod !== "message" && (revealedPhone ? (
                 <Pressable onPress={() => { const tel = revealedPhone.replace(/[^0-9+]/g, ""); if (tel) void openUrlSafe(`tel:${tel}`); }} accessibilityRole="button" accessibilityLabel={`${translateCopy("Ara", language)}: ${revealedPhone}`} style={{ alignItems: "center", backgroundColor: colors.successSoft, borderColor: colors.success, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 8, justifyContent: "center", paddingVertical: 12 }}>
                   <MaterialCommunityIcons name="phone" size={16} color={colors.success} />
                   <Text selectable style={{ color: colors.success, fontSize: 15, fontVariant: ["tabular-nums"], fontWeight: "900" }}>{revealedPhone}</Text>
                 </Pressable>
               ) : (
-                <Pressable onPress={() => void revealPhone()} disabled={revealingPhone} accessibilityRole="button" accessibilityLabel={translateCopy("Numarayı göster", language)} style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 8, justifyContent: "center", opacity: revealingPhone ? 0.7 : 1, paddingVertical: 12 }}>
+                <Pressable onPress={() => void revealPhone()} disabled={revealingPhone || isOwner || isUserBlocked(currentListing.ownerId)} accessibilityRole="button" accessibilityLabel={translateCopy("Numarayı göster", language)} style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 8, justifyContent: "center", opacity: revealingPhone ? 0.7 : 1, paddingVertical: 12 }}>
                   <MaterialCommunityIcons name="phone-outline" size={16} color={colors.primaryDark} />
                   <Text style={{ color: colors.primaryDark, fontSize: 13.5, fontWeight: "900" }}>{revealingPhone ? translateCopy("Yükleniyor…", language) : translateCopy("Numarayı Göster", language)}</Text>
                 </Pressable>
-              )}
+              ))}
             </View>
           ) : null}
 
@@ -1192,7 +1194,7 @@ export default function ListingDetailScreen() {
                 {!isDemo && (owner?.verifiedPhone || owner?.verifiedIdentity) ? <MaterialCommunityIcons name="check-decagram" size={14} color={colors.primary} /> : null}
                 {!isDemo && owner?.rating ? <Text style={{ color: colors.gold, fontSize: 12, fontWeight: "800" }}>★ {owner.rating.toFixed(1)}</Text> : null}
               </View>
-              <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 11.5, fontWeight: "700" }}>{isDemo ? translateCopy("Örnek vitrin satıcısı", language) : `%${ownerTrust?.score ?? 0} ${translateCopy("güven", language)} · %${owner?.responseRate ?? 0} ${translateCopy("yanıt", language)}`}</Text>
+              <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 11.5, fontWeight: "700" }}>{isDemo ? translateCopy("Örnek vitrin satıcısı", language) : translateCopy("Doğrulanmış güven karnesi henüz yok", language)}</Text>
               {!isDemo ? (
                 <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 4, marginTop: 1 }}>
                   <MaterialCommunityIcons name="storefront-outline" size={11} color={colors.subtle} />
@@ -1218,7 +1220,7 @@ export default function ListingDetailScreen() {
       <View style={{ gap: 12, paddingHorizontal: isWideWeb ? 0 : 12 }}>
         {/* Kazanç hesaplayıcı (adet stepper + projeksiyon) KALDIRILDI — kullanıcı istemiyor.
             Kazanç bilgisi zaten "Ortak Ol (%X Kazan)" butonunda + Ürün Detayları tablosunda var. */}
-        <AgreementCard listing={currentListing} partnership={partnership} />
+        {partnership ? <Accordion title={translateCopy("Ortaklık kaydın", language)} icon="file-document-outline"><AgreementCard listing={currentListing} partnership={partnership} /></Accordion> : null}
 
         <View style={{ gap: 10 }}>
           <Accordion title={translateCopy("Ürün açıklaması", language)} icon="text-box-outline" defaultOpen>
@@ -1479,8 +1481,8 @@ export default function ListingDetailScreen() {
             <SafeRemoteImage
               full
               uri={gallery[galleryIdx] ?? currentListing.image}
-              alt={currentListing.title}
-              accessibilityLabel={currentListing.title}
+              alt={currentTitle}
+              accessibilityLabel={currentTitle}
               style={{ height: "100%", transform: [{ scale: zoomed ? 2.2 : 1 }], width: "100%" }}
               contentFit="contain"
             />
@@ -1514,9 +1516,9 @@ export default function ListingDetailScreen() {
         her zaman erişilebilir kalır (Trendyol/Sahibinden deseni). Masaüstünde sağ karar kutusu
         zaten hep görünür; native/dar-web'de yoktu → dönüşüm sızıntısı. Aynı handler'ları kullanır. */}
     {showMobileActionBar ? (
-      <View style={{ alignItems: "center", backgroundColor: colors.surface, borderTopColor: colors.line, borderTopWidth: 1, bottom: 0, elevation: 12, flexDirection: "row", gap: 10, left: 0, paddingBottom: 12 + insets.bottom, paddingHorizontal: 14, paddingTop: 10, position: "absolute", right: 0, shadowColor: "#000", shadowOffset: { width: 0, height: -2 }, shadowOpacity: 0.1, shadowRadius: 8 }}>
-        {!isOwner ? (
-          <View style={{ minWidth: 0 }}>
+      <View testID="listing-detail-actions" style={{ alignItems: "center", backgroundColor: colors.surface, borderTopColor: colors.line, borderTopWidth: 1, bottom: 0, elevation: 12, flexDirection: "row", gap: 10, left: 0, paddingBottom: 12 + insets.bottom, paddingHorizontal: 14, paddingTop: 10, position: "absolute", right: 0, shadowColor: "#000", shadowOffset: { width: 0, height: -2 }, shadowOpacity: 0.1, shadowRadius: 8 }}>
+        {!isOwner && !canJoinNow && width >= 390 ? (
+          <View style={{ minWidth: 0, flexShrink: 1, maxWidth: "35%" }}>
             <Text style={{ color: colors.muted, fontSize: 10.5, fontWeight: "700" }}>{translateCopy("Fiyat", language)}</Text>
             <Text numberOfLines={1} style={{ color: partnerable ? colors.primaryDark : colors.ink, fontSize: 18, fontWeight: "900", letterSpacing: -0.3 }}>{moneyIn(currentListing.price, currentListing.currency)}</Text>
           </View>
@@ -1528,15 +1530,15 @@ export default function ListingDetailScreen() {
             canJoinNow ? (
               <View style={{ flex: 1 }}><PrimaryButton icon="handshake" onPress={handleJoin}>{translateCopy("Ortak Ol", language)}</PrimaryButton></View>
             ) : (
-              <View style={{ flex: 1 }}><PrimaryButton icon="message-text-outline" onPress={() => void handleContact()}>{translateCopy("Mesaj gönder", language)}</PrimaryButton></View>
+              <View style={{ flex: 1 }}><PrimaryButton icon="message-text-outline" disabled={revealingPhone || isOwner || isUserBlocked(currentListing.ownerId)} onPress={() => void handleContact()}>{translateCopy("Mesaj gönder", language)}</PrimaryButton></View>
             )
           ) : canJoinNow ? (
             <>
-              <View style={{ flex: 1 }}><PrimaryButton tone="secondary" icon="cart-outline" onPress={() => void handleContact()}>{translateCopy("Satın Al", language)}</PrimaryButton></View>
+              <View style={{ flex: 1 }}><PrimaryButton tone="secondary" icon="message-text-outline" disabled={revealingPhone || isOwner || isUserBlocked(currentListing.ownerId)} onPress={() => void handleContact()}>{translateCopy(currentListing.contactMethod === "message" ? "Mesaj gönder" : currentListing.contactMethod === "phone" ? "Satıcıyı ara" : "WhatsApp", language)}</PrimaryButton></View>
               <View style={{ flex: 1 }}><PrimaryButton icon="handshake" onPress={handleJoin}>{translateCopy("Ortak Ol", language)}</PrimaryButton></View>
             </>
           ) : (
-            <View style={{ flex: 1 }}><PrimaryButton icon="cart-outline" onPress={() => void handleContact()}>{translateCopy("Satın Al", language)}</PrimaryButton></View>
+            <View style={{ flex: 1 }}><PrimaryButton icon="message-text-outline" disabled={revealingPhone || isOwner || isUserBlocked(currentListing.ownerId)} onPress={() => void handleContact()}>{translateCopy(currentListing.contactMethod === "message" ? "Mesaj gönder" : currentListing.contactMethod === "phone" ? "Satıcıyı ara" : "WhatsApp", language)}</PrimaryButton></View>
           )}
         </View>
       </View>
@@ -1592,10 +1594,11 @@ function RelatedListingsSection({
 
 function IconButton({ active, icon, label, onPress }: { active?: boolean; icon: keyof typeof MaterialCommunityIcons.glyphMap; label: string; onPress: () => void }) {
   const { language } = useLanguage();
+  const wide = useIsWideWeb();
   return (
-    <Pressable accessibilityRole="button" accessibilityState={{ selected: !!active }} accessibilityLabel={translateCopy(label, language)} onPress={onPress} style={({ pressed }) => ({ alignItems: "center", backgroundColor: active ? colors.primarySoft : colors.surfaceAlt, borderRadius: 8, flex: 1, flexDirection: "row", gap: 6, justifyContent: "center", minHeight: 42, opacity: pressed ? 0.72 : 1 })}>
+    <Pressable accessibilityRole="button" accessibilityState={{ selected: !!active }} accessibilityLabel={translateCopy(label, language)} onPress={onPress} style={({ pressed }) => ({ alignItems: "center", backgroundColor: active ? colors.primarySoft : colors.surfaceAlt, borderRadius: 10, flex: 1, minWidth: 0, flexDirection: wide ? "row" : "column", gap: wide ? 6 : 5, justifyContent: "center", minHeight: wide ? 44 : 62, paddingHorizontal: 2, opacity: pressed ? 0.72 : 1 })}>
       <MaterialCommunityIcons name={icon} size={18} color={active ? colors.primaryDark : colors.ink} />
-      <Text ellipsizeMode="tail" numberOfLines={1} selectable style={{ color: active ? colors.primaryDark : colors.ink, flexShrink: 1, fontSize: 13, fontWeight: "900" }}>{translateCopy(label, language)}</Text>
+      <Text ellipsizeMode="tail" numberOfLines={1} style={{ color: active ? colors.primaryDark : colors.ink, flexShrink: 1, fontSize: wide ? 13 : 11, fontWeight: "600" }}>{translateCopy(label, language)}</Text>
     </Pressable>
   );
 }

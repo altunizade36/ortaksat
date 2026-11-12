@@ -1,17 +1,19 @@
+import { LISTING_GRID_PHOTO_RATIO, LISTING_GRID_BODY_HEIGHT, cardPriceFontSize } from "@/lib/card-layout";
+import { ListingCommission } from "@/components/listing-commission";
+import { listingPhotos } from "@/lib/mobile-listing";
+import { displayListingTitle } from "@/lib/listing-title";
 import { MaterialCommunityIcons } from "@/components/icons";
 import { Link } from "expo-router";
 import { memo } from "react";
 import { Pressable, Text, View } from "react-native";
 
-import { colors, shadow } from "@/components/colors";
+import { colors } from "@/components/colors";
 import { ImageWatermark } from "@/components/image-watermark";
 import { SafeRemoteImage } from "@/components/safe-remote-image";
-import { getCategoryIcon, getCategoryShortLabel } from "@/lib/categories";
 import { useCompare } from "@/lib/compare";
 import { useFavoriteFlag } from "@/lib/favorites-cache";
-import { commissionAmount, groupThousands, moneyIn } from "@/lib/format";
+import { moneyIn } from "@/lib/format";
 import { translateCopy, useLanguage } from "@/lib/i18n";
-import { compactNumber, REFERENCE_NOW } from "@/lib/locale";
 import { displayText } from "@/lib/text";
 import type { Listing, User } from "@/lib/types";
 
@@ -23,11 +25,7 @@ function ListingCardBase({ listing, owner, width, priceNote, refCode, onCollecti
   const cardHref = refCode ? `/listing/${listing.id}?ref=${encodeURIComponent(refCode)}&c=shop` : `/listing/${listing.id}`;
   // NORMAL İLAN (ortak satışa kapalı): komisyon rozeti + ortaklık pill + "Ortak ol" CTA GÖSTERİLMEZ;
   // alıcı normal ilan sitesi gibi görür (İncele). Detay sayfasıyla tutarlı.
-  const partnerable = listing.partnershipMode !== "none";
-  const { language, t } = useLanguage();
-  const commission = commissionAmount(listing);
-  const conversionScore = listing.leadCount + listing.partnerCount * 2 + Math.round(listing.favoriteCount / 8);
-  const isHighConversion = conversionScore >= 18;
+    const { language } = useLanguage();
   const isNew = isNewListing(listing.createdAt);
   const featured = Boolean(listing.featured);
   // "0 ortak" ASLA gösterilmez (çirkin + kötü pazarlama: "kimse ilgilenmemiş" izlenimi).
@@ -40,290 +38,40 @@ function ListingCardBase({ listing, owner, width, priceNote, refCode, onCollecti
   // TALEP İLANI (alıcı arıyor, buluş komisyonu): publish attributes._formKey="arayan" yazar.
   // EN ÜST öncelikli "🔎 ARANIYOR" rozeti — bu ilan tipi diğer her şeyin önünde okunmalı.
   const isDemand = listing.attributes?._formKey === "arayan";
-  const statusLabel = isDemand ? translateCopy("🔎 ARANIYOR", language) : urgent ? translateCopy("🔥 Acil", language) : featured ? translateCopy("★ Öne Çıkan", language) : listing.partnershipMode === "open" ? t("instantPartner") : isHighConversion ? t("highConversion") : isNew ? translateCopy("Yeni", language) : listing.partnerCount > 0 ? `${compactNumber(listing.partnerCount)} ${t("partners")}` : translateCopy("Yeni", language);
-  const statusTone: StatusTone = isDemand ? "info" : urgent ? "accent" : featured ? "gold" : listing.partnershipMode === "open" ? "success" : isHighConversion ? "accent" : isNew ? "info" : "dark";
-  // Kartın kategori etiketleri ilanın GERÇEK ağaç kategorisinden gelir. Eski sezgisel
-  // inferListingSubcategory tree-ilanlarda yanlış eşliyordu (kamera → "Araç elektroniği").
-  const rootCat = String(listing.attributes?._root || "").trim();
-  const leafCat = displayText(listing.category);
-  const isVerified = Boolean(owner?.verifiedPhone || owner?.verifiedIdentity);
-  const rating = owner?.rating ?? 0;
-  const hasRating = rating > 0;
-  const sellerSales = owner?.successfulSales ?? 0;
+  const statusLabel = listing.status !== "active" ? translateCopy("İlan kapalı", language) : isDemand ? translateCopy("Aranıyor", language) : urgent ? translateCopy("Acil", language) : featured ? translateCopy("Öne çıkan", language) : isNew ? translateCopy("Yeni ilan", language) : "";
+  const statusTone: StatusTone = urgent ? "accent" : featured ? "gold" : "info";
   const { has, toggle } = useCompare();
   const inCompare = has(listing.id);
   const { isFav, toggle: toggleFav } = useFavoriteFlag(listing.id);
   const imageUri = listing.imageUrl ?? listing.image;
-  const imageAlt = listing.imageAlt ?? `${displayText(listing.title)} ${translateCopy("ilan görseli", language)}`;
-  // Karttaki en önemli 3 yapısal özellik rozeti — kategoriye göre (Sahibinden gibi):
-  // vasıta → yıl · km · yakıt; emlak → oda · m² · ilan tipi; genel → marka · model · durum.
-  const attrSpecs = (() => {
-    const a = listing.attributes;
-    if (!a) return [] as string[];
-    const out: string[] = [];
-    const num = (v: unknown) => (typeof v === "number" ? v : Number(String(v).replace(/[^\d]/g, "")));
-    // Vasıta: yalnız gerçek araç sinyali (km/yakıt/vites) varken. Sadece "year" ile
-    // tetikleme (koleksiyon/antika "üretim yılı") araç sanılıyordu.
-    const isVehicle = a.km != null || a.fuel != null || a.gear != null;
-    if (isVehicle) {
-      if (a.year) out.push(String(a.year));
-      if (a.km != null && String(a.km).trim() !== "") out.push(`${groupThousands(num(a.km))} km`);
-      if (a.fuel) out.push(translateCopy(String(a.fuel), language));
-      if (out.length < 3 && a.gear) out.push(translateCopy(String(a.gear), language));
-      if (out.length) return out.slice(0, 3);
-    }
-    // Emlak
-    if (a.rooms) out.push(String(a.rooms));
-    const m2 = a.grossM2 ?? a.m2 ?? a.totalGrossM2 ?? a.netM2 ?? a.closedM2;
-    if (m2) out.push(`${groupThousands(num(m2))} m²`);
-    if (a.listingType) out.push(translateCopy(String(a.listingType), language));
-    if (out.length < 3 && a.buildingAge) out.push(`${a.buildingAge} ${translateCopy("yaş", language)}`);
-    if (out.length) return out.slice(0, 3);
-    // Genel
-    if (a.brand) out.push(String(a.brand));
-    if (a.model && out.length < 2) out.push(String(a.model));
-    const cond = a.condition ?? a.durum;
-    if (cond && out.length < 3) out.push(translateCopy(String(cond), language));
-    return out.slice(0, 3);
-  })();
-  // İlan etiketleri (Acil / Fırsat / Yatırımlık…) — renkli vurgu rozetleri (spec 72).
-  const etiketler = Array.isArray(listing.attributes?.etiketler) ? (listing.attributes!.etiketler as string[]).slice(0, 2) : [];
-
-  // KART ÇİPLERİ (Sahibinden gibi tek tip). Giderilen sorunlar:
-  //  (a) "Sıfır" hem etiket hem `condition` çipi → İKİ KEZ; (b) "Diğer" gibi çöp çip;
-  //  (c) DURUM ÇELİŞKİSİ: "Sıfır" + "Az Kullanılmış" birlikte (bir ürün ikisi birden olamaz);
-  //  (d) dar kartta 3. çip ortadan kesiliyordu ("Scheppach"→"Sch"). Çözüm: çöp+mükerrer ele,
-  //  DURUM türü çipten yalnız BİRİ, uzun çipler atılır, TOPLAM 2 çip (dar kartta kesilmeden sığar).
-  const JUNK = new Set(["diğer", "diger", "bilinmiyor", "belirtilmemiş", "yok", "-"]);
-  // Durum/kondisyon kelimeleri — bunlardan kartta en fazla BİR tane gösterilir (çelişki engeli).
-  const COND = new Set(["sıfır", "sifir", "ikinci el", "az kullanılmış", "az kullanilmis", "yenilenmiş", "yenilenmis", "sıfır ayarında", "kusursuz", "çok iyi", "iyi", "yıpranmış", "yıpranmis"]);
-  const norm = (v: string) => v.trim().toLocaleLowerCase("tr-TR");
-  const seen = new Set<string>();
-  let condShown = false;
-  const pick = (arr: string[], out: string[], max: number) => {
-    for (const s of arr) {
-      if (out.length >= max) break;
-      const k = norm(s);
-      if (!s || JUNK.has(k) || seen.has(k) || s.length > 16) continue;
-      if (COND.has(k)) { if (condShown) continue; condShown = true; }
-      seen.add(k); out.push(s);
-    }
-  };
-  const shownTags: string[] = [];
-  pick(etiketler, shownTags, 1);        // en fazla 1 promosyon/durum etiketi
-  const shownSpecs: string[] = [];
-  pick(attrSpecs, shownSpecs, 2 - shownTags.length); // kalanı bilgilendirici spec (toplam 2)
-
-  return (
-    <View dataSet={{ vcard: "1" }} style={{ width }}>
-      {/* flex:1 zinciri (sarmalayıcı→Pressable→kart→içerik) + CTA'da marginTop:"auto":
-          kart, ızgara satırındaki EN UZUN kartın yüksekliğine kadar UZAR ve buton hep
-          ALTA sabitlenir → tüm kartlar TEK TİP boy, CTA'lar aynı hizada (Sahibinden gibi).
-          Germeyen (alignItems:flex-start) grid'lerde sarmalayıcı içerik-boyunda kalır →
-          flex:1 no-op, davranış AYNI kalır (regresyon yok). */}
-      <Link href={cardHref as never} asChild style={{ flexGrow: 1, alignSelf: "stretch", width: "100%" }}>
-        <Pressable style={({ pressed }) => ({ opacity: pressed ? 0.9 : 1, width: "100%", flex: 1, alignSelf: "stretch" })}>
-          <View
-            dataSet={{ card: "listing" }}
-            style={{
-              backgroundColor: colors.surface,
-              borderColor: colors.line,
-              borderRadius: 16,
-              borderWidth: 1,
-              flex: 1,
-              overflow: "hidden",
-              ...shadow.card
-            }}
-          >
-            <View style={{ aspectRatio: 1, backgroundColor: colors.surfaceAlt, overflow: "hidden", width: "100%" }}>
-              <SafeRemoteImage
-                uri={imageUri}
-                fallbackUri={listing.fallbackCategoryImage}
-                style={{ height: "100%", width: "100%" }}
-                contentFit="cover"
-                transition={eager ? 0 : 160}
-                priority={eager ? "high" : "low"}
-                alt={imageAlt}
-                accessibilityLabel={imageAlt}
-              />
-              {/* Çapraz "ortaksat.com" filigranı — HER kart görselinde (marka + kaynak koruması). */}
-              <ImageWatermark size={11} opacity={0.16} />
-              {/* Demo ilan: tam-genişlik sarı uyarı çubuğu yerine zarif köşe "ÖRNEK" pili
-                  (dürüst — detay sayfasında tam açıklama banner'ı var; feed gerçek pazar gibi durur). */}
-              {/* ÜST-SOL rozet YALNIZ. Görsel üstündeki kategori pili KALDIRILDI: (a) kategori
-                  zaten görselin ALTINDA yazıyor (mükerrer), (b) sağdaki kalp(right:8)/
-                  karşılaştır(right:50) düğmeleriyle ÇAKIŞIYORdu (metin kesiliyordu).
-                  `right: 92` ile rozet de artık ikonların altına girmez. */}
-              <View style={{ position: "absolute", top: 10, left: 10, right: 92, flexDirection: "row", alignItems: "flex-start" }}>
-                {listing.demo ? (
-                  <View style={{ alignItems: "center", backgroundColor: colors.badgeGold, borderRadius: 999, flexDirection: "row", gap: 3, paddingHorizontal: 8, paddingVertical: 3, ...shadow.badge }}>
-                    <MaterialCommunityIcons name="eye-outline" size={10} color={colors.badgeInk} />
-                    <Text style={{ color: colors.badgeInk, fontSize: 9.5, fontWeight: "900", letterSpacing: 0.4 }}>{translateCopy("ÖRNEK", language)}</Text>
-                  </View>
-                ) : (
-                  <StatusBadge label={statusLabel} tone={statusTone} />
-                )}
-              </View>
-            </View>
-
-            <View style={{ gap: 8, padding: 12, flex: 1 }}>
-              <View style={{ alignItems: "center", flexDirection: "row", gap: 4 }}>
-                {/* Kategori bir ETİKET, başlık değil: eskiden turkuaz+kalın+uppercase olduğu için
-                    başlıkla görsel olarak yarışıyordu. Sessizleştirildi (muted, ince, küçük) →
-                    hiyerarşi netleşti: başlık > fiyat > kazanç > kategori. */}
-                <MaterialCommunityIcons name={getCategoryIcon(listing.category)} size={11} color={colors.subtle} />
-                <Text numberOfLines={1} selectable style={{ color: colors.muted, flex: 1, fontSize: 10.5, fontWeight: "700", letterSpacing: 0.4, textTransform: "uppercase" }}>
-                  {translateCopy(leafCat, language)}
-                </Text>
-              </View>
-              <Text numberOfLines={2} selectable style={{ color: colors.ink, fontSize: 15, fontWeight: "800", lineHeight: 19, minHeight: 38 }}>
-                {displayText(listing.title)}
-              </Text>
-              {/* TEK SATIR, SABİT YÜKSEKLİK: çip olmasa bile yer ayrılır → ızgaradaki tüm
-                  kartlar aynı hizada başlar (ekran görüntüsündeki "biri uzun biri kısa" sorunu). */}
-              <View style={{ flexDirection: "row", gap: 4, height: 18, overflow: "hidden" }}>
-                {shownTags.map((e) => (
-                  <View key={"t" + e} style={{ backgroundColor: colors.accentSoft, borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2 }}>
-                    <Text numberOfLines={1} style={{ color: colors.accent, fontSize: 10.5, fontWeight: "900" }}>{e}</Text>
-                  </View>
-                ))}
-                {shownSpecs.map((s) => (
-                  <View key={"s" + s} style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 6, borderWidth: 1, paddingHorizontal: 6, paddingVertical: 2 }}>
-                    <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 10.5, fontWeight: "800" }}>{s}</Text>
-                  </View>
-                ))}
-              </View>
-
-              <View style={{ gap: 5 }}>
-                <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
-                  <Text numberOfLines={1} selectable style={{ color: colors.ink, fontSize: 19, fontVariant: ["tabular-nums"], fontWeight: "900" }}>
-                    {moneyIn(listing.price, listing.currency)}
-                  </Text>
-                  {priceNote ? (
-                    <View style={{ alignItems: "center", backgroundColor: priceNote.down ? colors.successSoft : colors.warningSoft, borderRadius: 999, flexDirection: "row", gap: 2, paddingHorizontal: 7, paddingVertical: 2 }}>
-                      <MaterialCommunityIcons name={priceNote.down ? "arrow-down-bold" : "arrow-up-bold"} size={11} color={priceNote.down ? colors.success : colors.warning} />
-                      <Text style={{ color: priceNote.down ? colors.success : colors.warning, fontSize: 10.5, fontVariant: ["tabular-nums"], fontWeight: "900" }}>{priceNote.text}</Text>
-                    </View>
-                  ) : null}
-                </View>
-                {partnerable ? (
-                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 5 }}>
-                  <View style={{ backgroundColor: colors.primarySoft, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 3 }}>
-                    <Text numberOfLines={1} style={{ color: colors.primaryDark, fontSize: 11, fontVariant: ["tabular-nums"], fontWeight: "900" }}>
-                      {isDemand ? translateCopy("Bulana", language) : t("earning")} {moneyIn(commission, listing.currency)}{listing.commissionType === "rate" ? ` · %${listing.commissionValue}` : ""}
-                    </Text>
-                  </View>
-                  {/* Ortaklık kabul şekli — ortağın "nasıl ortak olurum" sinyali (ürün mantığı). */}
-                  <View style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 3, paddingHorizontal: 7, paddingVertical: 3 }}>
-                    <MaterialCommunityIcons name={listing.partnershipMode === "open" ? "flash" : listing.partnershipMode === "invite" ? "ticket-outline" : "shield-check-outline"} size={10} color={colors.muted} />
-                    <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 10.5, fontWeight: "800" }}>{listing.partnershipMode === "open" ? translateCopy("Anında ortak", language) : listing.partnershipMode === "invite" ? translateCopy("Davetli ortak", language) : translateCopy("Onaylı ortak", language)}</Text>
-                  </View>
-                  {listing.bonusAmount && listing.bonusAmount > 0 && listing.bonusQuota ? (
-                    <View style={{ alignItems: "center", backgroundColor: colors.warningSoft, borderRadius: 999, flexDirection: "row", gap: 3, paddingHorizontal: 8, paddingVertical: 3 }}>
-                      <MaterialCommunityIcons name="rocket-launch" size={11} color={colors.warning} />
-                      <Text numberOfLines={1} style={{ color: colors.warning, fontSize: 10.5, fontVariant: ["tabular-nums"], fontWeight: "900" }}>
-                        +{moneyIn(listing.bonusAmount, listing.currency)} bonus
-                      </Text>
-                    </View>
-                  ) : null}
-                </View>
-                ) : null}
-              </View>
-
-              {/* Satıcı sinyali + konum: eskiden HEPSİ tek satırdaydı; 177px'lik kartta konum
-                  "…" olup kırpılıyordu ("Yeni satıcı · … ✓ 1 satış" gibi bozuk görünüm).
-                  Artık 2 satır: (1) satıcı güveni, (2) konum. Bilgi aynı, okunurluk net. */}
-              <View style={{ gap: 3 }}>
-                <View style={{ alignItems: "center", flexDirection: "row", gap: 4 }}>
-                  {hasRating ? (
-                    <>
-                      <MaterialCommunityIcons name="star" size={13} color={colors.gold} />
-                      <Text numberOfLines={1} selectable style={{ color: colors.ink, fontSize: 12, fontVariant: ["tabular-nums"], fontWeight: "800" }}>
-                        {rating.toFixed(1)}
-                      </Text>
-                    </>
-                  ) : (
-                    <>
-                      <MaterialCommunityIcons name="sprout-outline" size={13} color={colors.info} />
-                      <Text numberOfLines={1} style={{ color: colors.info, fontSize: 11.5, fontWeight: "800" }}>{translateCopy("Yeni satıcı", language)}</Text>
-                    </>
-                  )}
-                  {isVerified ? <MaterialCommunityIcons name="check-decagram" size={13} color={colors.primary} /> : null}
-                  <View style={{ flex: 1 }} />
-                  {sellerSales > 0 ? (
-                    <>
-                      <MaterialCommunityIcons name="check-circle" size={13} color={colors.success} />
-                      <Text numberOfLines={1} selectable style={{ color: colors.success, fontSize: 11, fontVariant: ["tabular-nums"], fontWeight: "800" }}>
-                        {compactNumber(sellerSales)} {translateCopy("satış", language)}
-                      </Text>
-                    </>
-                  ) : listing.partnerCount > 0 ? (
-                    <>
-                      <MaterialCommunityIcons name="account-group-outline" size={13} color={colors.subtle} />
-                      <Text numberOfLines={1} selectable style={{ color: colors.subtle, fontSize: 11, fontWeight: "700" }}>
-                        {compactNumber(listing.partnerCount)} {translateCopy("ortak", language)}
-                      </Text>
-                    </>
-                  ) : null /* 0 ortak/0 satış: sağ taraf boş → "Yeni satıcı" tam sığar; ortaklık "Ortaklık iste" butonunda */}
-                </View>
-                {displayText(listing.location) ? (
-                  <View style={{ alignItems: "center", flexDirection: "row", gap: 3 }}>
-                    <MaterialCommunityIcons name="map-marker-outline" size={12} color={colors.subtle} />
-                    <Text numberOfLines={1} selectable style={{ color: colors.muted, flex: 1, fontSize: 11.5, fontWeight: "700" }}>
-                      {displayText(listing.location)}
-                    </Text>
-                  </View>
-                ) : null}
-              </View>
-
-              <View style={{ alignItems: "center", backgroundColor: colors.primaryDark, borderRadius: 10, flexDirection: "row", gap: 6, justifyContent: "center", marginTop: "auto", minHeight: 38, paddingHorizontal: 8 }}>
-                <MaterialCommunityIcons name={partnerable ? "handshake-outline" : "eye-outline"} size={16} color="#FFFFFF" />
-                <Text adjustsFontSizeToFit minimumFontScale={0.8} numberOfLines={1} style={{ color: "#FFFFFF", flexShrink: 1, fontSize: 13, fontWeight: "900" }}>
-                  {translateCopy(!partnerable ? "Ürünü İncele" : listing.partnershipMode === "open" ? "Hemen ortak ol" : "Ortaklık iste", language)}
-                </Text>
-              </View>
-            </View>
-          </View>
-        </Pressable>
-      </Link>
-      {!listing.demo ? (
-        <>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityState={{ selected: isFav }}
-            accessibilityLabel={isFav ? translateCopy("Favorilerden çıkar", language) : translateCopy("Favorilere ekle", language)}
-            onPress={toggleFav}
-            hitSlop={8}
-            style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.92)", borderColor: isFav ? colors.accent : colors.line, borderRadius: 999, borderWidth: 1, height: 34, justifyContent: "center", position: "absolute", right: 8, top: 8, width: 34, zIndex: 4 }}
-          >
-            <MaterialCommunityIcons name={isFav ? "heart" : "heart-outline"} size={16} color={isFav ? colors.accent : colors.muted} />
-          </Pressable>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityState={{ selected: inCompare }}
-            accessibilityLabel={inCompare ? translateCopy("Karşılaştırmadan çıkar", language) : translateCopy("Karşılaştır", language)}
-            onPress={() => toggle(listing.id)}
-            hitSlop={8}
-            style={{ alignItems: "center", backgroundColor: inCompare ? colors.primary : "rgba(255,255,255,0.92)", borderColor: inCompare ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, height: 34, justifyContent: "center", position: "absolute", right: 50, top: 8, width: 34, zIndex: 4 }}
-          >
-            <MaterialCommunityIcons name="compare-horizontal" size={16} color={inCompare ? "#FFFFFF" : colors.muted} />
-          </Pressable>
-          {/* Koleksiyon (favori-klasör) — YALNIZ favoriler ekranı onCollection geçer (opt-in). */}
-          {onCollection ? (
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={translateCopy("Koleksiyona ekle", language)}
-              onPress={onCollection}
-              hitSlop={8}
-              style={{ alignItems: "center", backgroundColor: collectionOn ? colors.primary : "rgba(255,255,255,0.92)", borderColor: collectionOn ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, height: 34, justifyContent: "center", position: "absolute", right: 92, top: 8, width: 34, zIndex: 4 }}
-            >
-              <MaterialCommunityIcons name={collectionOn ? "folder" : "folder-outline"} size={16} color={collectionOn ? "#FFFFFF" : colors.muted} />
-            </Pressable>
-          ) : null}
-        </>
-      ) : null}
-    </View>
-  );
+  const imageAlt = listing.imageAlt ?? `${displayListingTitle(listing.title)} ${translateCopy("ilan görseli", language)}`;
+  const compact = width != null && width < 190;
+  const photoCount = listingPhotos(listing).length;
+  const priceLabel = moneyIn(listing.price, listing.currency);
+  const priceSize = cardPriceFontSize(priceLabel, (width ?? 196) - (compact ? 20 : 24), compact ? 18 : 20);
+  return <View testID="listing-card" dataSet={{ vcard: "1", card: "listing" }} style={{ width, flexGrow: 0, flexShrink: 0, backgroundColor: colors.surface, borderWidth: 1, borderColor: "#E3E9EE", borderRadius: 12, overflow: "hidden", boxShadow: "0px 2px 10px #0F172A08" }}>
+    <Link href={cardHref as never} asChild><Pressable accessibilityRole="link" accessibilityLabel={displayListingTitle(listing.title)} style={{ width: "100%" }}>
+      <View testID="listing-card-photo" style={{ aspectRatio: LISTING_GRID_PHOTO_RATIO, width: "100%", backgroundColor: colors.surfaceAlt, overflow: "hidden" }}>
+        <SafeRemoteImage uri={imageUri} fallbackUri={listing.fallbackCategoryImage} style={{ height: "100%", width: "100%" }} contentFit="cover" transition={eager ? 0 : 160} priority={eager ? "high" : "low"} alt={imageAlt} accessibilityLabel={imageAlt}/>
+        <ImageWatermark size={10} opacity={0.09}/>
+        <View style={{ position: "absolute", top: 10, left: 10, right: 62, alignItems: "flex-start" }}>
+          {listing.demo ? <StatusBadge label={translateCopy("ÖRNEK", language)} tone="gold"/> : statusLabel ? <StatusBadge label={statusLabel} tone={statusTone}/> : null}
+        </View>
+        {photoCount > 1 ? <View style={{ position: "absolute", bottom: 8, left: 8, backgroundColor: "#172033B8", borderRadius: 6, paddingHorizontal: 6, paddingVertical: 3, flexDirection: "row", alignItems: "center", gap: 4 }}><MaterialCommunityIcons name="image-multiple-outline" size={12} color="white"/><Text style={{ color: "white", fontSize: 10.5, fontWeight: "600" }}>{photoCount}</Text></View> : null}
+      </View>
+      <View testID="listing-card-body" style={{ height: LISTING_GRID_BODY_HEIGHT, gap: 1, padding: 4 }}>
+        <Text numberOfLines={2} style={{ color: colors.ink, fontSize: 12, fontWeight: "700", lineHeight: 14, height: 28 }}>{displayListingTitle(listing.title)}</Text>
+        <Text testID="listing-card-price" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={{ color: colors.primaryDark, fontSize: priceSize, lineHeight: 20, height: 20, fontWeight: "800", fontVariant: ["tabular-nums"] }}>{priceLabel}</Text>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 3, height: 12 }}><MaterialCommunityIcons name="map-marker-outline" size={11} color={colors.muted}/><Text numberOfLines={1} style={{ color: colors.muted, fontSize: 9.5, lineHeight: 12, flex: 1 }}>{displayText(listing.location) || translateCopy("Konum belirtilmemiş", language)}</Text></View>
+        <ListingCommission listing={listing} compact availableWidth={width ? width - 18 : undefined}/>
+      </View>
+    </Pressable></Link>
+    {!listing.demo ? <>
+      <Pressable accessibilityRole="button" accessibilityState={{ selected: isFav }} accessibilityLabel={isFav ? translateCopy("Favorilerden çıkar", language) : translateCopy("Favorilere ekle", language)} onPress={toggleFav} style={{ position: "absolute", right: 8, top: 8, width: 44, height: 44, borderRadius: 22, backgroundColor: "#FFFFFFF2", alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: "#FFFFFF" }}><MaterialCommunityIcons name={isFav ? "heart" : "heart-outline"} size={21} color={isFav ? colors.accent : colors.ink}/></Pressable>
+      {!compact ? <Pressable testID="listing-card-footer" accessibilityRole="button" accessibilityState={{ selected: inCompare }} accessibilityLabel={inCompare ? translateCopy("Karşılaştırmadan çıkar", language) : translateCopy("Karşılaştır", language)} onPress={() => toggle(listing.id)} style={{ position: "absolute", right: 56, top: 8, width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center", backgroundColor: inCompare ? colors.primarySoft : "#FFFFFFF2", borderWidth: 1, borderColor: "#FFFFFF" }}><MaterialCommunityIcons name="compare-horizontal" size={18} color={colors.primaryDark}/></Pressable> : null}
+      {!compact && onCollection ? <Pressable accessibilityRole="button" accessibilityLabel={translateCopy("Koleksiyona ekle", language)} onPress={onCollection} style={{ position: "absolute", right: 104, top: 8, width: 44, height: 44, borderRadius: 22, backgroundColor: collectionOn ? colors.primarySoft : "#FFFFFFF2", alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: "#FFFFFF" }}><MaterialCommunityIcons name={collectionOn ? "folder" : "folder-outline"} size={18} color={colors.primaryDark}/></Pressable> : null}
+    </> : null}
+  </View>;
 }
 
 // memo: ust bilesen render olsa da ayni listing/owner/width ile yeniden render
@@ -333,10 +81,8 @@ export const ListingCard = memo(ListingCardBase);
 function isNewListing(value: string) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return false;
-  const age = REFERENCE_NOW - date.getTime();
-  // age < 0 = referanstan SONRA oluşturulmuş → kesinlikle YENİ (referans bayatlasa bile
-  // gerçek yeni ilanlar "0 ortak" değil "Yeni" görür). 7 günden yeniyse de yeni.
-  return age <= 7 * 24 * 60 * 60 * 1000;
+  const age = Date.now() - date.getTime();
+  return age >= 0 && age <= 7 * 24 * 60 * 60 * 1000;
 }
 
 function StatusBadge({ label, tone }: { label: string; tone: StatusTone }) {

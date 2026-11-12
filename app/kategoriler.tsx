@@ -1,3 +1,6 @@
+import { isMobileApp } from "@/lib/mobile-app";
+import { listingInCategoryNode, listingRootNode } from "@/lib/category-match";
+import { MobileCategories } from "@/components/mobile/categories";
 import { MaterialCommunityIcons } from "@/components/icons";
 import { Link, useRouter, type Href } from "expo-router";
 import Head from "expo-router/head";
@@ -45,6 +48,10 @@ function groupTr(value: number) {
 }
 
 export default function CategoriesPage() {
+  return isMobileApp ? <MobileCategories /> : <CategoriesPageLegacy />;
+}
+
+function CategoriesPageLegacy() {
   const { language } = useLanguage();
   const { listings, categoryTree } = useStore();
   const router = useRouter();
@@ -62,8 +69,7 @@ export default function CategoriesPage() {
     // BENZERSİZ etiketler: descendantLabels tekrarlı döndürür ("Diğer" ~30 kez,
     // dallar arası tekrar eden yaprak adları) → dedupe etmezsek counts çift sayılıp
     // gerçek ilan sayısını şişirir (ör. 3 aktif ilan "4" görünürdü).
-    const labels = [...new Set(descendantLabels(c))];
-    const real = labels.reduce((sum, lbl) => sum + (counts[lbl] ?? 0), 0);
+    const real = listings.filter((l) => l.status === "active" && listingInCategoryNode(l, c)).length;
     return {
       cat: { key: c.key, label: c.label, shortLabel: c.label, subcategories: (c.children ?? []).map((ch) => ch.label) },
       count: real,

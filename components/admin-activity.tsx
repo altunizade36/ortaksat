@@ -186,11 +186,11 @@ export function AdminActivity({ onData }: { onData?: (a: AdminAnalytics) => void
 
       {/* Grafikler: 14-gün aktif trendi (çizgi+alan) + ilan durumu (donut) */}
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 16 }}>
-        <View onLayout={(e) => setLineW(Math.max(240, Math.round(e.nativeEvent.layout.width) - 36))} style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, flexBasis: 420, flexGrow: 2, gap: 12, minWidth: 300, padding: 18, shadowColor: "#0B3A44", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 12 }}>
+        <View onLayout={(e) => setLineW(Math.max(240, Math.round(e.nativeEvent.layout.width) - 36))} style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, flexBasis: 420, flexGrow: 2, gap: 12, minWidth: 300, padding: 18, shadowColor: "#001449", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 12 }}>
           <Text style={{ color: colors.ink, fontSize: 15, fontWeight: "900" }}>Son 14 gün — aktivite trendi</Text>
           <MultiLineChart labels={trendLabels} series={trendSeries} width={lineW} />
         </View>
-        <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, flexBasis: 300, flexGrow: 1, gap: 12, minWidth: 260, padding: 18, shadowColor: "#0B3A44", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 12 }}>
+        <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, flexBasis: 300, flexGrow: 1, gap: 12, minWidth: 260, padding: 18, shadowColor: "#001449", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 12 }}>
           <Text style={{ color: colors.ink, fontSize: 15, fontWeight: "900" }}>İlan durumu</Text>
           {statusDonut.length ? <DonutChart data={statusDonut} size={150} centerTop={fmt(data.listings_total)} centerBottom="toplam ilan" /> : <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600" }}>Henüz ilan yok.</Text>}
         </View>
@@ -198,7 +198,7 @@ export function AdminActivity({ onData }: { onData?: (a: AdminAnalytics) => void
 
       {/* Top kategoriler (aktif ilan sayısına göre) */}
       {catBars.length > 0 ? (
-        <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 12, padding: 18, shadowColor: "#0B3A44", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 12 }}>
+        <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 12, padding: 18, shadowColor: "#001449", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 12 }}>
           <Text style={{ color: colors.ink, fontSize: 15, fontWeight: "900" }}>En çok ilan olan kategoriler</Text>
           <HBarChart data={catBars} />
         </View>
@@ -206,7 +206,7 @@ export function AdminActivity({ onData }: { onData?: (a: AdminAnalytics) => void
 
       {/* PARA AKIŞI — GMV (satış değeri) + komisyon. Platform PARA TUTMAZ; ödeme satıcı↔ortak
           arasında platform DIŞI yapılır. Bu bölüm sistemden AKAN parayı İZLER (gelir/kesinti YOK). */}
-      <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 14, padding: 18, shadowColor: "#0B3A44", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 12 }}>
+      <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 14, padding: 18, shadowColor: "#001449", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 12 }}>
         <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
           <MaterialCommunityIcons name="cash-multiple" size={18} color={colors.primaryDark} />
           <Text style={{ color: colors.ink, flex: 1, fontSize: 15, fontWeight: "900" }}>Para akışı</Text>

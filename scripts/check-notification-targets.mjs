@@ -1,0 +1,37 @@
+import { createRequire } from 'node:module';
+import { readFileSync, existsSync } from 'node:fs';
+import { resolve, dirname } from 'node:path';
+import vm from 'node:vm';
+import assert from 'node:assert/strict';
+import ts from 'typescript';
+const require = createRequire(import.meta.url), cache = new Map();
+function load(filename) {
+  let path = resolve(filename); if (!existsSync(path)) path += '.ts';
+  if (cache.has(path)) return cache.get(path).exports;
+  const module = { exports: {} }; cache.set(path, module);
+  const code = ts.transpileModule(readFileSync(path, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText;
+  const localRequire = id => id.startsWith('@/') ? load(id.slice(2)) : id.startsWith('.') ? load(resolve(dirname(path), id)) : require(id);
+  vm.runInThisContext(`(function(require,module,exports){${code}\n})`, { filename: path })(localRequire, module, module.exports);
+  return module.exports;
+}
+const { notificationTarget } = load('lib/notification-target.ts');
+const listing = {id:'listing-one',ownerId:'seller'}, partnership = {id:'partner-one',listingId:listing.id,partnerId:'buyer'};
+const conversation = {id:'chat-one',participantIds:['buyer','seller'],listingId:listing.id,lastMessageAt:'2026-10-24'};
+const context = {userId:'buyer',listings:[listing],partnerships:[partnership],conversations:[conversation,{...conversation,id:'private-chat',participantIds:['someone','else']}]};
+const target = (type,metadata={},ctx=context) => notificationTarget({type,metadata},ctx);
+assert.equal(target('message',{conversationId:conversation.id}).href,'/chat/chat-one');
+assert.equal(target('message',{conversationId:'private-chat'}).href,'/messages');
+assert.equal(target('message',{conversationId:'missing',listingId:listing.id}).href,'/messages');
+assert.equal(target('message',{listingId:listing.id}).href,'/chat/chat-one');
+assert.equal(target('message').href,'/messages');
+assert.equal(target('offer',{listingId:listing.id}).href,'/offers');
+assert.equal(target('application',{partnershipId:partnership.id}).href,'/partnership/partner-one');
+assert.equal(target('application',{partnershipId:partnership.id},{...context,userId:'outsider'}),null);
+assert.equal(target('application',{requestId:'request'}).href,'/ortak-araniyor');
+assert.equal(target('payout').href,'/earnings');
+assert.equal(target('price_drop',{listingId:listing.id}).href,'/listing/listing-one');
+assert.equal(target('system',{listingId:'deleted'}),null);
+assert.equal(target('system'),null);
+assert.equal(target('lead',{listingId:listing.id},{...context,userId:'seller'}).href,'/seller?view=advanced&focus=listing-one');
+assert.equal(target('price_drop',{listingId:'../bad/path'}).href,'/listing/..%2Fbad%2Fpath');
+console.log('Passed 15 notification targets: exact/private/missing chat, offers, authorized partnerships, request/earnings/listing and system fallback.');

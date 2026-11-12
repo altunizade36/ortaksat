@@ -88,7 +88,7 @@ export default function KullanimSartlari() {
     <LegalDoc
       title="Kullanım Şartları"
       path="/kullanim-sartlari"
-      updated="11 Temmuz 2026"
+      updated="24 Ekim 2026"
       seoDescription="OrtakSat Kullanım Şartları: aracı platform modeli, kullanıcı yükümlülükleri, ortaklık/komisyon kuralları, sorumluluk ve uygulanacak hukuk."
       intro="OrtakSat'ı kullanmadan önce lütfen bu şartları okuyun. Platform aracı bir hizmettir; satış, ödeme ve teslimat kullanıcılar arasındaki anlaşmalardan ibarettir."
       sections={SECTIONS}

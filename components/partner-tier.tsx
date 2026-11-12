@@ -14,7 +14,7 @@ const TIERS: Array<{ key: string; label: string; min: number; emoji: string; ico
   { key: "bronze", label: "Bronz Ortak", min: 10, emoji: "🥉", icon: "medal-outline", color: "#B45309", tint: "#FFEDD5" },
   { key: "silver", label: "Gümüş Ortak", min: 50, emoji: "🥈", icon: "medal", color: "#64748B", tint: "#F1F5F9" },
   { key: "gold", label: "Altın Ortak", min: 100, emoji: "🥇", icon: "trophy-outline", color: "#CA8A04", tint: colors.goldSoft },
-  { key: "diamond", label: "Elmas Ortak", min: 500, emoji: "💎", icon: "diamond-stone", color: "#0891B2", tint: "#CFFAFE" },
+  { key: "diamond", label: "Elmas Ortak", min: 500, emoji: "💎", icon: "diamond-stone", color: colors.primary, tint: colors.primarySoft },
   { key: "royal", label: "Efsane Ortak", min: 1000, emoji: "👑", icon: "crown-outline", color: "#7C3AED", tint: "#EDE9FE" }
 ];
 

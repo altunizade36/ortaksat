@@ -3,7 +3,7 @@
     "name": "OrtakSat",
     "slug": "ortaksat-mobile",
     "version": "1.0.0",
-    "orientation": "portrait",
+    "orientation": "default",
     "icon": "./assets/icon.png",
     "scheme": "ortaksat",
     "userInterfaceStyle": "light",
@@ -25,7 +25,7 @@
       "package": "com.ortaksat.app",
       "versionCode": 1,
       "adaptiveIcon": {
-        "backgroundColor": "#ECFEFF",
+        "backgroundColor": "#E5F0FF",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
@@ -96,10 +96,10 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/splash-mascot.png",
+          "image": "./assets/brand-head-blue.png",
           "imageWidth": 220,
           "resizeMode": "contain",
-          "backgroundColor": "#ECFEFF"
+          "backgroundColor": "#E5F0FF"
         }
       ],
       "expo-localization",
@@ -110,7 +110,13 @@
         "expo-notifications",
         {
           "icon": "./assets/notification-icon.png",
-          "color": "#0EA5B7"
+          "color": "#0645C9"
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "OrtakSat, yakınındaki ilanları göstermek için konumunu kullanır."
         }
       ]
     ],
@@ -118,17 +124,14 @@
       "typedRoutes": true
     },
     "web": {
-      "favicon": "./assets/favicon.png",
+      "favicon": "./assets/brand-head-blue.png",
       "bundler": "metro",
       "output": "static"
     },
     "extra": {
       "privacyUrl": "https://www.ortaksat.com/gizlilik-politikasi",
       "supportUrl": "https://www.ortaksat.com/iletisim",
-      "termsUrl": "https://www.ortaksat.com/kullanim-sartlari",
-      "eas": {
-        "projectId": "replace-after-eas-init"
-      }
+      "termsUrl": "https://www.ortaksat.com/kullanim-sartlari"
     }
   }
 }

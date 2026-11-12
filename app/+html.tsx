@@ -17,7 +17,7 @@ export default function Root({ children }: PropsWithChildren) {
           name="viewport"
           content="width=device-width, initial-scale=1, shrink-to-fit=no, viewport-fit=cover"
         />
-        <meta name="theme-color" content="#0EA5B7" />
+        <meta name="theme-color" content="#0645C9" />
 
         <title>ortaksat — Ortak satışla kazan</title>
         <meta
@@ -279,7 +279,7 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 #boot-splash {
   position: fixed; inset: 0; z-index: 99999;
   display: flex; flex-direction: column;
-  background: #F0FDFF;
+  background: #F7FAFC;
   transition: opacity .26s ease;
   overflow: hidden;
 }
@@ -290,13 +290,13 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 }
 #boot-splash .bs-mark { width: 40px; height: 40px; flex: none; display: block; }
 #boot-splash .bs-logo { font-size: 19px; font-weight: 900; letter-spacing: -0.3px; color: #0F172A; white-space: nowrap; }
-#boot-splash .bs-logo span { color: #0EA5B7; }
+#boot-splash .bs-logo span { color: #0645C9; }
 #boot-splash .bs-search { flex: 1; max-width: 620px; height: 38px; border-radius: 999px; background: #EEF3F6; }
 #boot-splash .bs-nav { display: none; }
 #boot-splash .bs-body { display: flex; flex: 1; gap: 14px; padding: 12px; }
 #boot-splash .bs-side { display: none; }
 #boot-splash .bs-main { display: flex; flex: 1; flex-direction: column; gap: 12px; min-width: 0; }
-#boot-splash .bs-hero { height: 132px; border-radius: 16px; background: #DFF4F7; }
+#boot-splash .bs-hero { height: 132px; border-radius: 16px; background: #E5F0FF; }
 #boot-splash .bs-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
 #boot-splash .bs-grid i { display: block; height: 132px; border-radius: 12px; background: #FFFFFF; border: 1px solid #E8EEF2; }
 
@@ -330,7 +330,7 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
-  background: #F0FDFF;
+  background: #F7FAFC;
   min-height: 100vh;
   min-height: 100dvh; /* iOS adres çubuğu açılıp kapanınca içerik zıplamaz/kesilmez */
 }
@@ -343,7 +343,7 @@ body {
   min-height: 100vh;
   min-height: 100dvh;
   margin: 0;
-  background: #F0FDFF;
+  background: #E5F0FF;
 }
 
 /* Polished custom scrollbar on desktop */
@@ -361,8 +361,13 @@ body {
    ilk render'dan sonra kartın GERÇEK boyutunu hatırlar (kaydırma zıplaması yok). Tek kural,
    tüm kart yüzeylerini (explore/home/index/store/ortak/favoriler) kapsar; native yok sayar. */
 [data-vcard] {
-  content-visibility: auto;
-  contain-intrinsic-size: auto 340px;
+  content-visibility: visible;
+}
+@media (min-width: 760px) {
+  [data-vcard] {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 340px;
+  }
 }
 /* Kart olmayan ağır satır listeleri (mesaj konuşmaları, kategori/tablo satırları) için
    aynı off-screen atlama; satır yüksekliği ~88px tahmini (kaydırma zıplaması olmadan). */
@@ -429,6 +434,9 @@ input:focus-visible, textarea:focus-visible { outline: none !important; box-shad
     box-shadow: 0 16px 34px rgba(14,165,183,0.20) !important;
     border-color: rgba(14,165,183,0.55) !important;
   }
+  /* İlan ızgarasında kartın yukarı sıçraması komşu kartların çizgisini bozuyor.
+     Sabit geometriyi koru; etkileşim geri bildirimi gölge ve kenarlıkla sürsün. */
+  [data-card="listing"]:hover { transform: none; }
 }
 
 /* Entrance animation for hero / sections (data-reveal) */
@@ -456,6 +464,6 @@ input:focus-visible, textarea:focus-visible { outline: none !important; box-shad
   background:
     radial-gradient(700px 380px at 92% -30%, rgba(229,75,75,0.30), transparent 60%),
     radial-gradient(600px 360px at 0% 120%, rgba(255,255,255,0.14), transparent 55%),
-    linear-gradient(135deg, #0EA5B7 0%, #0891B2 100%) !important;
+    linear-gradient(135deg, #075BEB 0%, #0645C9 100%) !important;
 }
 `;

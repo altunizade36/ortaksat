@@ -1,5 +1,5 @@
+import { UserAvatar } from "@/components/user-avatar";
 import { MaterialCommunityIcons } from "@/components/icons";
-import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import { Pressable, Text, View } from "react-native";
@@ -100,16 +100,10 @@ export function PartnerLeaderboard({
             <View style={{ alignItems: "center", justifyContent: "center", width: 26 }}>
               {medal ? <MaterialCommunityIcons name={medal.icon} size={20} color={medal.color} /> : <Text style={{ color: colors.muted, fontSize: 14, fontWeight: "900" }}>{i + 1}</Text>}
             </View>
-            {isImageAvatar(r.avatar) ? (
-              <Image source={{ uri: r.avatar }} contentFit="cover" style={{ borderRadius: 10, height: 40, width: 40 }} />
-            ) : (
-              <View style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 10, height: 40, justifyContent: "center", width: 40 }}>
-                <Text style={{ color: "#FFFFFF", fontSize: 14, fontWeight: "900" }}>{r.avatar || r.name.slice(0, 2)}</Text>
-              </View>
-            )}
+            <UserAvatar uri={r.avatar} size={40} />
             <View style={{ flex: 1, gap: 2, minWidth: 0 }}>
               <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 14, fontWeight: "800" }}>{r.name}{isMe ? translateCopy(" (sen)", language) : ""}</Text>
-              <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 11.5, fontWeight: "700" }}>{r.sales} {translateCopy("satış", language)}{r.rating ? ` · ⭐ ${r.rating}` : ""}</Text>
+              <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 11.5, fontWeight: "700" }}>{r.sales} {translateCopy("satış", language)}{r.rating ? ` · ⭐ ${r.rating.toFixed(1)}` : ""}</Text>
             </View>
             <View style={{ alignItems: "flex-end", gap: 1 }}>
               <Text style={{ color: colors.primaryDark, fontSize: 14, fontWeight: "900" }}>{money(r.earned)}</Text>

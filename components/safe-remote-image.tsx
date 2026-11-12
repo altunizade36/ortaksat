@@ -5,7 +5,7 @@ import { View } from "react-native";
 import { colors } from "@/components/colors";
 import { cardImageUrl, markThumbnailMissing } from "@/lib/image-url";
 
-const fallbackImage = require("../assets/mascot.png");
+const fallbackImage = require("../public/assets/mascot/webp-512/success.webp");
 
 type SafeRemoteImageProps = Omit<ImageProps, "source"> & {
   uri?: string | null;

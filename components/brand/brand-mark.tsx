@@ -2,7 +2,7 @@ import { Image } from "expo-image";
 import { View } from "react-native";
 
 // Ekranda 36-68px → 128px WebP (7kB); büyük PNG her sayfada inmesin.
-const brandHead = require("../../assets/brand-head.webp");
+const brandHead = require("../../assets/brand-head-blue.png");
 
 // OrtakSat LOGOSU (turkuaz halka + tokalaşma). Şeffaf zeminli — beyaz/açık zeminlere
 // temiz oturur. Header, giriş üst-barı, mobil menü başlığı, giriş kapısı hep bunu kullanır.

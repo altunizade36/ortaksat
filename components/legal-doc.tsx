@@ -1,99 +1,26 @@
-import { MaterialCommunityIcons } from "@/components/icons";
+import { useState } from "react";
 import { Link } from "expo-router";
-import { Pressable, ScrollView, Text, View } from "react-native";
-
+import { Pressable, Text, TextInput, View } from "react-native";
+import { MaterialCommunityIcons as Icon } from "@/components/icons";
+import { InformationPage } from "@/components/information-page";
 import { colors } from "@/components/colors";
-import { Seo } from "@/components/seo";
-import { WebFooter } from "@/components/web-landing";
 import { SUPPORT_EMAIL } from "@/lib/contact";
-import { useIsWideWeb } from "@/lib/layout";
+import { searchKey } from "@/lib/locale";
 
 export type LegalSection = { heading: string; paragraphs: string[]; bullets?: string[] };
-
-// Mağaza-uyumlu düz yasal belge sunucusu (gizlilik/şartlar/çerez). Okunur, tek sütun,
-// bölümlü; başlık + son-güncelleme + Seo + footer. Sahte veri yok — gerçek politika metni.
-export function LegalDoc({
-  title,
-  path,
-  updated,
-  intro,
-  sections,
-  seoDescription
-}: {
-  title: string;
-  path: string;
-  updated: string;
-  intro: string;
-  sections: LegalSection[];
-  seoDescription: string;
+export function LegalDoc({ title, path, updated, intro, sections, seoDescription }: {
+  title: string; path: string; updated: string; intro: string; sections: LegalSection[]; seoDescription: string;
 }) {
-  const isWideWeb = useIsWideWeb();
-  const body = (
-    <View style={{ alignSelf: "center", gap: 18, maxWidth: 820, paddingHorizontal: isWideWeb ? 20 : 14, paddingTop: 16, width: "100%" }}>
-      <Seo title={`${title} | OrtakSat`} description={seoDescription} path={path} />
-      <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
-        <Link href="/" asChild><Pressable><Text style={{ color: colors.muted, fontSize: 13, fontWeight: "700" }}>Ana Sayfa</Text></Pressable></Link>
-        <MaterialCommunityIcons name="chevron-right" size={15} color={colors.subtle} />
-        <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "800" }}>{title}</Text>
-      </View>
-
-      <View style={{ gap: 8 }}>
-        <View style={{ alignItems: "center", flexDirection: "row", gap: 12 }}>
-          <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 12, height: 48, justifyContent: "center", width: 48 }}>
-            <MaterialCommunityIcons name="shield-check-outline" size={26} color={colors.primaryDark} />
-          </View>
-          <Text style={{ color: colors.ink, flex: 1, fontSize: isWideWeb ? 30 : 25, fontWeight: "900", lineHeight: isWideWeb ? 36 : 30 }}>{title}</Text>
-        </View>
-        <Text style={{ color: colors.subtle, fontSize: 12.5, fontWeight: "700" }}>Son güncelleme: {updated}</Text>
-        <Text style={{ color: colors.muted, fontSize: 14.5, fontWeight: "600", lineHeight: 22 }}>{intro}</Text>
-      </View>
-
-      {sections.map((s, i) => (
-        <View key={s.heading} style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 10, padding: 18 }}>
-          <View style={{ alignItems: "flex-start", flexDirection: "row", gap: 10 }}>
-            <View style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderRadius: 8, height: 26, justifyContent: "center", minWidth: 26 }}>
-              <Text style={{ color: colors.primaryDark, fontSize: 12.5, fontVariant: ["tabular-nums"], fontWeight: "900" }}>{i + 1}</Text>
-            </View>
-            <Text style={{ color: colors.ink, flex: 1, fontSize: 17, fontWeight: "900", lineHeight: 23 }}>{s.heading}</Text>
-          </View>
-          {s.paragraphs.map((p, pi) => (
-            <Text key={pi} style={{ color: colors.muted, fontSize: 13.5, fontWeight: "500", lineHeight: 21 }}>{p}</Text>
-          ))}
-          {s.bullets ? (
-            <View style={{ gap: 6, marginTop: 2 }}>
-              {s.bullets.map((b, bi) => (
-                <View key={bi} style={{ alignItems: "flex-start", flexDirection: "row", gap: 8 }}>
-                  <MaterialCommunityIcons name="circle-medium" size={18} color={colors.primary} style={{ marginTop: 1 }} />
-                  <Text style={{ color: colors.ink, flex: 1, fontSize: 13.5, fontWeight: "600", lineHeight: 20 }}>{b}</Text>
-                </View>
-              ))}
-            </View>
-          ) : null}
-        </View>
-      ))}
-
-      <View style={{ alignItems: "flex-start", backgroundColor: colors.primarySoft, borderRadius: 14, flexDirection: "row", gap: 10, padding: 16 }}>
-        <MaterialCommunityIcons name="email-outline" size={19} color={colors.primaryDark} style={{ marginTop: 1 }} />
-        <View style={{ flex: 1, gap: 3 }}>
-          <Text style={{ color: colors.ink, fontSize: 13.5, fontWeight: "900" }}>Sorularınız için</Text>
-          <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "800" }}>{SUPPORT_EMAIL}</Text>
-          <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600", lineHeight: 17 }}>OrtakSat çağrı merkezi/telefon hattı işletmez; tüm başvuru ve iletişim bu e-posta üzerinden yürür.</Text>
-        </View>
-      </View>
-    </View>
-  );
-
-  if (isWideWeb) {
-    return (
-      <ScrollView contentInsetAdjustmentBehavior="automatic" showsVerticalScrollIndicator={false} contentContainerStyle={{ backgroundColor: colors.background, paddingBottom: 0 }} style={{ backgroundColor: colors.background }}>
-        {body}
-        <View style={{ marginTop: 22 }}><WebFooter /></View>
-      </ScrollView>
-    );
-  }
-  return (
-    <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ backgroundColor: colors.background, paddingBottom: 96 }} style={{ backgroundColor: colors.background }}>
-      {body}
-    </ScrollView>
-  );
+  const [query, setQuery] = useState("");
+  const [section, setSection] = useState<string | null>(null);
+  const needle = searchKey(query).trim();
+  const shown = sections.filter(s => (!section || s.heading === section) && (!needle || searchKey([s.heading, ...s.paragraphs, ...(s.bullets || [])].join(" ")).includes(needle)));
+  return <InformationPage title={title} intro={intro || seoDescription} path={path} icon="shield-check-outline">
+    <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, justifyContent: "space-between", alignItems: "center" }}><Text style={{ color: colors.muted, fontSize: 12 }}>Son güncelleme: {updated}</Text><Text style={{ color: colors.primaryDark, fontSize: 12 }}>{sections.length} bölüm · {Math.max(1, Math.ceil(sections.map(s => [...s.paragraphs, ...(s.bullets || [])].join(" ")).join(" ").split(/\s+/).length / 200))} dk okuma</Text></View>
+    <View style={{ flexDirection: "row", alignItems: "center", gap: 8, backgroundColor: "white", paddingHorizontal: 12, borderWidth: 1, borderColor: colors.line, borderRadius: 12 }}><Icon name="magnify" size={21} color={colors.muted} /><TextInput accessibilityLabel="Belgede ara" placeholder="Belgede ara…" value={query} onChangeText={setQuery} style={{ flex: 1, minHeight: 48, fontSize: 14, color: colors.ink }} />{query && <Pressable accessibilityRole="button" accessibilityLabel="Belge aramasını temizle" onPress={() => setQuery("")} style={{ padding: 12 }}><Icon name="close" size={18} color={colors.muted} /></Pressable>}</View>
+    <View style={{ gap: 8 }}><Text style={{ color: colors.ink, fontSize: 15, fontWeight: "800" }}>Bölümlere göz at</Text><View style={{ flexDirection: "row", flexWrap: "wrap", gap: 7 }}><Pressable accessibilityRole="button" accessibilityState={{ selected: !section }} onPress={() => setSection(null)} style={{ minHeight: 44, justifyContent: "center", paddingHorizontal: 12, borderRadius: 10, backgroundColor: !section ? colors.primarySoft : "white", borderWidth: 1, borderColor: colors.line }}><Text style={{ color: colors.primaryDark, fontSize: 12 }}>Tüm bölümler</Text></Pressable>{sections.map((s, i) => <Pressable key={s.heading} accessibilityRole="button" accessibilityState={{ selected: section === s.heading }} onPress={() => setSection(section === s.heading ? null : s.heading)} style={{ minHeight: 44, justifyContent: "center", paddingHorizontal: 12, maxWidth: "100%", borderWidth: 1, borderColor: section === s.heading ? colors.primary : colors.line, borderRadius: 10, backgroundColor: section === s.heading ? colors.primarySoft : "white" }}><Text style={{ color: colors.ink, fontSize: 12, lineHeight: 18 }}>{i + 1}. {s.heading}</Text></Pressable>)}</View></View>
+    {!shown.length && <View style={{ padding: 18, backgroundColor: "white", borderRadius: 14, gap: 12 }}><Text style={{ color: colors.muted }}>Aramana uygun bölüm bulunamadı.</Text><Pressable accessibilityRole="button" onPress={() => { setQuery(""); setSection(null); }} style={{ minHeight: 44, justifyContent: "center" }}><Text style={{ color: colors.primaryDark, fontWeight: "700" }}>Tüm metni göster</Text></Pressable></View>}
+    {shown.map(s => <View key={s.heading} style={{ backgroundColor: "white", borderRadius: 16, borderWidth: 1, borderColor: colors.line, padding: 18, gap: 12 }}><Text accessibilityRole="header" style={{ color: colors.ink, fontSize: 18, fontWeight: "800", lineHeight: 25 }}>{sections.indexOf(s) + 1}. {s.heading}</Text>{s.paragraphs.map((p, i) => <Text selectable key={i} style={{ color: colors.muted, fontSize: 14, lineHeight: 23 }}>{p}</Text>)}{s.bullets?.map((b, i) => <View key={i} style={{ flexDirection: "row", gap: 9 }}><Text style={{ color: colors.primary }}>•</Text><Text selectable style={{ flex: 1, color: colors.muted, fontSize: 14, lineHeight: 23 }}>{b}</Text></View>)}</View>)}
+    <View style={{ backgroundColor: colors.primarySoft, padding: 18, borderRadius: 14, gap: 8 }}><Text style={{ color: colors.ink, fontWeight: "800", fontSize: 16 }}>Soruların veya bir başvurun mu var?</Text><Text selectable style={{ color: colors.muted, lineHeight: 21 }}>{SUPPORT_EMAIL}</Text><Link href="/iletisim" asChild><Pressable accessibilityRole="link" style={{ minHeight: 44, justifyContent: "center" }}><Text style={{ color: colors.primaryDark, fontWeight: "700" }}>İletişim ve başvuru seçenekleri →</Text></Pressable></Link></View>
+  </InformationPage>;
 }

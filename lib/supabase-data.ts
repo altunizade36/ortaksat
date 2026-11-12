@@ -49,6 +49,7 @@ export type PublicListingCardRow = {
 };
 
 type ProfileRow = {
+  username?:string|null;district_id?:number|null;website_url?:string|null;instagram_handle?:string|null;
   id: string;
   full_name: string;
   phone: string | null;
@@ -77,7 +78,19 @@ type ProfileRow = {
 // anon'a kolon-bazlı SELECT grant'ı ZATEN var (doğrulandı) → 401 riski yok; mapProfile
 // zaten row.created_at'i okur (bkz [[anon-column-grant-gotcha]]).
 const PUBLIC_PROFILE_COLUMNS =
-  "id, full_name, avatar_url, bio, verified_phone, verified_identity, verified_instagram, rating, response_rate, role, status, successful_sales, follower_count, invite_code, expertise_categories, city, created_at" as const;
+  "id, full_name, avatar_url, bio, verified_phone, verified_identity, verified_instagram, rating, response_rate, role, status, successful_sales, follower_count, invite_code, expertise_categories, city, created_at, username, district_id, website_url, instagram_handle" as const;
+
+export async function fetchPublicProfiles(ids:string[]):Promise<User[]>{
+ if(!supabase)throw Error("Service unavailable");const keys=[...new Set(ids.filter(Boolean))].slice(0,300);if(!keys.length)return [];
+ const{data,error}=await supabase.from("profiles").select(PUBLIC_PROFILE_COLUMNS).in("id",keys);if(error)throw error;return (data||[]).map(row=>mapProfile(row as ProfileRow));
+}
+
+export async function fetchPublicSeller(id:string):Promise<User|null>{
+  if(!supabase)return null;
+  const{data,error}=await supabase.from("profiles").select(PUBLIC_PROFILE_COLUMNS).eq("id",id).maybeSingle();
+  if(error)throw error;
+  return data?mapProfile(data as ProfileRow):null;
+}
 
 export type MarketplaceSnapshot = {
   listings: Listing[];
@@ -141,6 +154,7 @@ function mapProfile(row: ProfileRow): User {
     followerCount: toNumber(row.follower_count),
     inviteCode: row.invite_code ?? undefined,
     expertiseCategories: row.expertise_categories ?? [],
+    username:row.username||undefined,districtId:row.district_id||undefined,website:row.website_url||undefined,instagram:row.instagram_handle||undefined,
     city: typeof row.city === "string" && row.city.trim() ? row.city : undefined,
     responseRate: row.response_rate ?? 0,
     role: row.role ?? "user",
@@ -149,7 +163,7 @@ function mapProfile(row: ProfileRow): User {
 }
 
 export function mapListing(row: PublicListingCardRow): Listing {
-  const baseImage = row.image_url ?? "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=1200";
+  const baseImage = row.image_url?.trim() || (Array.isArray(row.ad_assets) ? row.ad_assets.find(uri => typeof uri === "string" && uri.trim())?.trim() : "") || "";
   const title = displayText(row.title);
   const category = displayText(row.category);
   const demoImage = Boolean(row.demo) ? getDemoProductImageMeta({ title, category, image: baseImage }) : undefined;
@@ -224,13 +238,14 @@ export async function fetchListingById(id: string): Promise<{ listing: Listing; 
 // boş ("") alır → uygulama uygulama-içi mesaja/girişe düşer. Girişli kullanıcı
 // gerçek numarayı alıp WhatsApp/tel bağlantısını kurar. Telefon hiçbir zaman
 // listeleme/feed yanıtında taşınmaz (kazıma yüzeyi kapalı).
-export async function fetchSellerPhone(ownerId: string): Promise<string> {
+export async function fetchSellerPhone(ownerId: string, reportErrors = false): Promise<string> {
   if (!supabase || !ownerId) return "";
   // Telefon artık SECURITY DEFINER RPC ile döner: doğrudan profiles.phone SELECT grant'ı
   // KALDIRILDI (girişli kullanıcı `select phone from profiles` ile TÜM numaraları
   // toplayabiliyordu → PII sızıntısı). RPC tek-satıcı/id başına döner. Bkz migration
   // 20260813130000_phone_reveal_rpc.
   const { data, error } = await supabase.rpc("reveal_seller_phone", { p_seller: ownerId });
+  if (error && reportErrors) throw error;
   if (error || !data) return "";
   return typeof data === "string" ? data : "";
 }
@@ -602,6 +617,15 @@ export async function fetchListingsByCategory(labels: string[]): Promise<{ listi
   return { listings: feedListings, users: feedUsers };
 }
 
+/** Refresh this inbox independently; a failed query must never replace it with an empty list. */
+export async function fetchUserNotifications(userId: string): Promise<Notification[]> {
+  if (!supabase) throw new Error("Notifications unavailable");
+  const { data, error } = await supabase.from("notifications").select("*").eq("user_id", userId).order("created_at", { ascending: false }).limit(200);
+  if (error) throw error;
+  type Row = { id: string; user_id: string; type: Notification["type"]; title: string; body: string; read: boolean; created_at: string; metadata?: unknown };
+  return ((data ?? []) as Row[]).map(row => ({ id: row.id, userId: row.user_id, type: row.type, title: row.title, body: row.body, read: row.read, createdAt: row.created_at, metadata: parseNotifMeta(row.metadata) }));
+}
+
 export async function loadAccountSnapshot(userId: string): Promise<AccountSnapshot | null> {
   if (!supabase) return null;
 
@@ -745,6 +769,7 @@ export async function loadAccountSnapshot(userId: string): Promise<AccountSnapsh
       helpfulCount: Number(row.helpful_count ?? 0)
     })),
     favorites: (favoritesResult.data ?? []).map((row) => ({
+      createdAt: row.created_at ?? undefined,
       id: row.id,
       listingId: row.listing_id,
       userId: row.user_id,

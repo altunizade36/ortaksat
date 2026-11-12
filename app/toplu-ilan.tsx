@@ -50,7 +50,7 @@ type ParsedRow = {
   errors: string[];
 };
 
-const MAX_IMAGES = 10; // ilan başına kapak + 9 ek görsel (create akışıyla uyumlu üst sınır)
+const MAX_IMAGES = 5; // ilan başına kapak dahil en fazla 5 görsel (create/edit akışıyla aynı sınır)
 
 // Basit ama tırnak-farkında CSV satır ayrıştırıcı (alan içinde ayraç destekler).
 function splitCsvLine(line: string, delim: string = ","): string[] {
@@ -232,7 +232,8 @@ function BulkUploadInner() {
       // ÇOKLU GÖRSEL: gorsel_url'de | (veya boşlukla ayrılmış birden çok http) → galeri.
       // İlki kapak, kalanı ek görsel (adAssets). CSV'de görsel yoksa sıralı toplu-foto.
       const rawImage = get("image");
-      const imageList = rawImage.split(/[|\n]/).map((s) => s.trim()).filter(Boolean).slice(0, MAX_IMAGES);
+      const rawImageItems = rawImage.split(/[|\n]/).map((s) => s.trim()).filter(Boolean);
+      const imageList = rawImageItems.slice(0, MAX_IMAGES);
       const images = imageList.length ? imageList : (bulkImages[idx] ? [bulkImages[idx]] : []);
       const image = images[0] || "";
       // KATEGORİ-ÖZEL ALANLAR: satırın kategorisinin şemasına göre aday sütunları eşle.
@@ -270,6 +271,7 @@ function BulkUploadInner() {
       }
       // Komisyon yalnız ortak satış AÇIK/ONAYLI iken anlamlı; normal ilanda (none) atlanır.
       if (partnershipMode !== "none" && (commission <= 0 || commission > 90)) errors.push(translateCopy("Komisyon 1–90 arası olmalı", language));
+      if (rawImageItems.length > MAX_IMAGES) errors.push(translateCopy(`İlan başına en fazla ${MAX_IMAGES} görsel eklenebilir. Fazla görselleri kaldır.`, language));
       // Mükerrer SKU (aynı partide iki kez) → upsert çakışması; reddet.
       if (sku && seenSkus.has(sku)) errors.push(translateCopy("Bu harici kod (SKU) partide zaten var (mükerrer)", language));
       else if (sku) seenSkus.add(sku);
@@ -388,7 +390,7 @@ function BulkUploadInner() {
           const extraAssets = uploaded.slice(1);
           const auto = autoFillListing({ title: r.title, category: leaf.label, price: r.price, commission: r.commission, currency: "TRY" });
           const location = formatLocation({ provinceId: r.provinceId, districtId: r.districtId }, "neighborhood") || getProvince(r.provinceId)?.name || "Türkiye";
-          createListing({
+          await createListing({
             externalId: r.sku || undefined,
             title: r.title,
             description: r.description || auto.description,
@@ -486,7 +488,7 @@ function BulkUploadInner() {
         {/* Adım 1: şablon */}
         <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 14, borderWidth: 1, gap: 10, padding: 16 }}>
           <Text style={{ color: colors.ink, fontSize: 15, fontWeight: "900" }}>1) {translateCopy("Şablonu kullan", language)}</Text>
-          <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600", lineHeight: 18 }}>{translateCopy("Sütunlar: harici_kod, baslik, aciklama, fiyat, kategori, il, ilce, komisyon, stok, gorsel_url. Birden çok görsel için gorsel_url'e URL'leri | ile ayır (ilki kapak olur). Excel'de düzenleyip CSV olarak kaydet, sonra buraya yapıştır.", language)}</Text>
+          <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600", lineHeight: 18 }}>{translateCopy(`Sütunlar: harici_kod, baslik, aciklama, fiyat, kategori, il, ilce, komisyon, stok, gorsel_url. Birden çok görsel için gorsel_url'e URL'leri | ile ayır; ilan başına en fazla ${MAX_IMAGES} görsel eklenir, ilki kapak olur. Excel'de düzenleyip CSV olarak kaydet, sonra buraya yapıştır.`, language)}</Text>
           <View style={{ alignItems: "flex-start", backgroundColor: colors.infoSoft, borderRadius: 10, flexDirection: "row", gap: 8, padding: 11 }}>
             <MaterialCommunityIcons name="barcode-scan" size={16} color={colors.info} style={{ marginTop: 1 }} />
             <Text style={{ color: colors.muted, flex: 1, fontSize: 11.5, fontWeight: "600", lineHeight: 16 }}>

@@ -1,0 +1,17 @@
+import assert from 'node:assert/strict';
+import {mobileAuthFixture} from './mobile-auth-fixture.mjs';
+const f=await mobileAuthFixture({authenticated:true});const{page,browser,go,api,listing,me,shot,errors}=f;
+let row=null,fail=true;const queries=[];
+try{
+ await page.route(`${api}/rest/v1/buyer_requests**`,async route=>{const req=route.request();if(req.method()==='POST'||req.method()==='PATCH'){if(fail){await route.fulfill({status:503,json:{message:'Local save failure'}});return;}row={...row,...req.postDataJSON(),created_at:new Date().toISOString(),updated_at:new Date().toISOString()};await route.fulfill({json:{id:row.id}});return;}const single=req.headers().accept?.includes('vnd.pgrst.object');await route.fulfill({headers:{'content-range':row?'0-0/1':'*/0'},json:single?row:row?[row]:[]});});
+ await page.route(`${api}/rest/v1/rpc/mobile_catalogue_page`,async route=>{queries.push(route.request().postDataJSON().params);await route.fulfill({json:{listings:[listing],total:1}});});
+ await go('/buyer-requests');await page.getByRole('button',{name:'Talep Oluştur',exact:true}).click();
+ await page.getByRole('button',{name:'Kategori Seç *',exact:true}).click();await page.getByRole('textbox',{name:'Kategorilerde ara',exact:true}).fill('BMW');await page.getByRole('button',{name:'Vasıta / Otomobil / BMW',exact:true}).click();await page.getByRole('button',{name:'Bu kategoriyi seç',exact:true}).click();
+ await page.getByRole('textbox',{name:'Talep Başlığı',exact:true}).fill('BMW 320i arıyorum');await page.getByRole('textbox',{name:'Açıklama',exact:true}).fill('Bakımlı, otomatik vitesli ve belgeleri eksiksiz BMW 320i arıyorum.');await page.getByRole('textbox',{name:'Min. Bütçe',exact:true}).fill('2000000');await page.getByRole('textbox',{name:'Maks. Bütçe',exact:true}).fill('3000000');
+ await page.getByRole('button',{name:'Talebi Yayınla',exact:true}).click();await page.getByRole('alert').filter({hasText:'Talep kaydedilemedi'}).waitFor();assert.equal(await page.getByRole('textbox',{name:'Talep Başlığı',exact:true}).inputValue(),'BMW 320i arıyorum');assert.equal(row,null);
+ fail=false;await page.getByRole('button',{name:'Talebi Yayınla',exact:true}).click();await page.getByRole('button',{name:'Talebimi Yönet',exact:true}).waitFor({state:'hidden'});await page.getByRole('button',{name:'Talebi Düzenle',exact:true}).waitFor();await page.getByRole('button',{name:`İlanı aç: ${listing.title}`,exact:true}).waitFor().catch(()=>{});
+ await page.waitForTimeout(500);assert.equal(row.user_id,me);assert.deepEqual(row.category_trail,['Vasıta','Otomobil','BMW']);assert.equal(queries.at(-1).filters.currency,'TRY');assert.equal(queries.at(-1).filters.min,'2000000');assert.equal(queries.at(-1).filters.max,'3000000');assert.equal(queries.at(-1).filters.excludeOwner,me);
+ await shot({path:'audit/mobile-v4/buyer-request-detail-390.png'});await page.getByRole('button',{name:'Ürün Önerileri',exact:true}).click();await page.getByText('Henüz ürün önerisi gelmedi.',{exact:true}).waitFor();
+ await go('/buyer-requests');await page.getByRole('button',{name:'Talebimi Yönet',exact:true}).waitFor();await shot({path:'audit/mobile-v4/buyer-centre-390.png'});
+ assert.equal(errors.length,0,JSON.stringify(errors));console.log('Passed isolated buyer flow: real request fields, save failure retained, UUID retry, category/budget/currency matching, owner exclusion, empty offers and request centre.');
+}catch(error){console.error(page.url(),(await page.locator('body').innerText()).slice(0,2200));throw error;}finally{await browser.close();}

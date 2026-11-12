@@ -1,3 +1,10 @@
+import { parseListingMoney, parseListingRate, listingCommissionError, listingNumberInput, LISTING_MONEY_ERROR } from "@/lib/listing-numbers";
+import { ListingLocationFields } from "@/components/listing-location-fields";
+import { ListingTitleField } from "@/components/listing-title-field";
+import { validateListingTitle } from "@/lib/listing-title";
+import { isMobileApp } from "@/lib/mobile-app";
+import { MobileListingEditor } from "@/components/mobile/listing-editor";
+import { ScreenSkeleton } from "@/components/screen-skeleton";
 import { MaterialCommunityIcons } from "@/components/icons";
 import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
@@ -10,7 +17,7 @@ import { showToast } from "@/lib/toast";
 
 import { AttributeFields } from "@/components/attribute-fields";
 import { colors } from "@/components/colors";
-import { LocationSelector, type LocationValue } from "@/components/location-selector";
+import { type LocationValue } from "@/components/location-selector";
 import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { Card, EmptyState, PrimaryButton, SectionTitle, StatusPill } from "@/components/ui";
 import { CategoryPicker as TreeCategoryPicker } from "@/components/category-picker";
@@ -18,7 +25,7 @@ import { getFormSchema, resolveFormKey, type CategoryNode } from "@/lib/category
 import { type CurrencyCode } from "@/lib/format";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { uploadListingImage } from "@/lib/live-service";
-import { formatLocation, getProvince, type AddressVisibility } from "@/lib/locations";
+import { formatLocation, getProvince, validateListingLocation, type AddressVisibility } from "@/lib/locations";
 import type { CommissionType, Listing, PartnershipMode } from "@/lib/types";
 import { useStore } from "@/lib/use-store";
 import { parseTrPrice } from "@/lib/validation";
@@ -26,13 +33,16 @@ import { parseTrPrice } from "@/lib/validation";
 type ContactMethod = Listing["contactMethod"];
 
 const fallbackImage = "https://images.unsplash.com/photo-1556742502-ec7c0e9f34b1?w=1200";
+const MAX_LISTING_PHOTOS = 5;
+const MAX_AD_ASSETS = MAX_LISTING_PHOTOS - 1;
 
 export default function ListingEditRoute() {
   const { language } = useLanguage();
-  const { id } = useLocalSearchParams<{ id: string }>();
-  const { currentUser, findListing } = useStore();
+  const { id, view } = useLocalSearchParams<{ id: string; view?: string }>();
+  const { currentUser, findListing, authReady, accountLoaded, marketplaceInitialLoading } = useStore();
   const listing = findListing(id);
 
+  if (!authReady || !accountLoaded || marketplaceInitialLoading) return <ScreenSkeleton />;
   if (!listing || listing.ownerId !== currentUser.id) {
     return (
       <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ padding: 16 }}>
@@ -41,7 +51,7 @@ export default function ListingEditRoute() {
     );
   }
 
-  return <ListingEditForm listing={listing} />;
+  return isMobileApp && view !== "advanced" ? <MobileListingEditor key={listing.id} listing={listing} /> : <ListingEditForm key={listing.id} listing={listing} />;
 }
 
 function ListingEditForm({ listing }: { listing: Listing }) {
@@ -51,9 +61,9 @@ function ListingEditForm({ listing }: { listing: Listing }) {
   const isLiveAccount = backendMode === "supabase" && currentUser.id.includes("-");
   const [title, setTitle] = useState(listing.title);
   const [description, setDescription] = useState(listing.description);
-  const [price, setPrice] = useState(`${listing.price}`);
+  const [price, setPrice] = useState(listingNumberInput(listing.price));
   const [commissionType, setCommissionType] = useState<CommissionType>(listing.commissionType);
-  const [commissionValue, setCommissionValue] = useState(`${listing.commissionValue}`);
+  const [commissionValue, setCommissionValue] = useState(listingNumberInput(listing.commissionValue));
   const [partnershipMode, setPartnershipMode] = useState<PartnershipMode>(listing.partnershipMode);
   const [category, setCategory] = useState(listing.category);
   const [catPath, setCatPath] = useState<CategoryNode[]>([]);
@@ -63,7 +73,7 @@ function ListingEditForm({ listing }: { listing: Listing }) {
   // Kademeli komisyon (yalnız yüzde) — mevcut kademelerden yüklenir.
   const [tiers, setTiers] = useState<Array<{ minSales: string; rate: string }>>((listing.commissionTiers ?? []).map((tr) => ({ minSales: String(tr.minSales), rate: String(tr.rate) })));
   // Yapısal konum (create ile aynı): il/ilçe korunur; boş metin-alan bug'ı giderildi.
-  const [loc, setLoc] = useState<LocationValue>({ provinceId: listing.provinceId ?? undefined, districtId: listing.districtId ?? undefined });
+  const [loc, setLoc] = useState<LocationValue>({ provinceId: listing.provinceId ?? undefined, districtId: listing.districtId ?? undefined, neighborhood: listing.locationNote, neighborhoodId: listing.neighborhoodId });
   const [visibility, setVisibility] = useState<AddressVisibility>((listing.addressVisibility as AddressVisibility) ?? "neighborhood");
   const [stockCount, setStockCount] = useState(`${listing.stockCount}`);
   const [minPartnerRating, setMinPartnerRating] = useState(`${listing.minPartnerRating}`);
@@ -118,16 +128,15 @@ function ListingEditForm({ listing }: { listing: Listing }) {
       Alert.alert(translateCopy("İzin gerekli", language), translateCopy("Ek fotoğraf seçmek için galeri izni vermelisin.", language));
       return;
     }
-    // Kapak (image) dışı ek görseller: create akışı MAX_PHOTOS=15 (kapak + 14) → edit de 14.
-    // ESKİDEN 4'e kırpıyordu: 15 fotoluk ilanı düzenleyen satıcı kalıcı olarak 5'e düşürüyordu (VERİ KAYBI).
-    const result = await ImagePicker.launchImageLibraryAsync({ allowsMultipleSelection: true, mediaTypes: ["images"], quality: 0.82, selectionLimit: 14 });
+    // Kapak (image) dışı ek görseller: create akışıyla aynı, toplam en fazla 5 fotoğraf.
+    const result = await ImagePicker.launchImageLibraryAsync({ allowsMultipleSelection: true, mediaTypes: ["images"], quality: 0.82, selectionLimit: MAX_AD_ASSETS });
     if (result.canceled) return;
     const uris = result.assets.map((a) => a.uri).filter(Boolean);
-    setAdAssets((s) => [...s, ...uris].slice(0, 14));
+    setAdAssets((s) => [...s, ...uris].slice(0, MAX_AD_ASSETS));
   }
 
   async function submit() {
-    const parsedPrice = parseTrPrice(price); // "1.500.000" gibi TR biçimini doğru okur (Number NaN veriyordu)
+    const parsedPrice = parseListingMoney(price.trim() ? price : 0); // "1.500.000" gibi TR biçimini doğru okur (Number NaN veriyordu)
     // Fiyat, şemada price alanı yoksa (İş İlanı) veya opsiyonelse (hayvan/hizmet/ders
     // "Teklif al") zorunlu değildir — create ile parite. Aksi hâlde edit bu ilanları kilitliyordu.
     const priceSchemaField = attrSchema?.fields.find((f) => f.key === "price") ?? attrSchema?.fields.find((f) => f.type === "number" && f.suffix === "₺");
@@ -136,9 +145,9 @@ function ListingEditForm({ listing }: { listing: Listing }) {
     // 1.5 ₺ yapardı → sessizce yanlış komisyonla KAYDEDİLİR. Sabit=TR-binlik parseTrPrice;
     // oran=% ondalık olabilir (12,5) → virgülü noktaya çevir. Stok da TR-binlik olabilir.
     const parsedCommission = commissionType === "rate"
-      ? (parseFloat(String(commissionValue).replace(",", ".")) || 0)
-      : (parseTrPrice(String(commissionValue)) || 0);
-    const parsedStock = parseTrPrice(String(stockCount)) || 0;
+      ? parseListingRate(String(commissionValue))
+      : parseListingMoney(String(commissionValue));
+    const parsedStock = parseListingMoney(String(stockCount));
     const parsedMinRating = Number(minPartnerRating);
     const parsedCommissionDueDays = Number(commissionDueDays);
     const parsedReturnWindowDays = Number(returnWindowDays);
@@ -146,7 +155,7 @@ function ListingEditForm({ listing }: { listing: Listing }) {
     const salesPitch = pitch.split("\n").map((item) => item.trim()).filter(Boolean);
     const parsedRules = partnerRules.split("\n").map((item) => item.trim()).filter(Boolean);
     const parsedTags = tags.split(",").map((item) => item.trim()).filter(Boolean);
-    const parsedAdAssets = adAssets.slice(0, 14); // kapak + 14 ek = 15 (create ile parite; 4'e kırpma VERİ KAYBIYDI)
+    const parsedAdAssets = adAssets.slice(0, MAX_AD_ASSETS);
 
     // Yapısal özellikleri düzenleyiciden yeniden kur (create ile aynı mantık);
     // şema yoksa mevcut değerleri koru. _leaf/_root/_formKey meta bilgisi saklanır.
@@ -186,6 +195,12 @@ function ListingEditForm({ listing }: { listing: Listing }) {
       tiktokText
     });
 
+    if (!Number.isFinite(parsedPrice) || parsedPrice > 999_999_999_999) { Alert.alert("Fiyatı kontrol et", LISTING_MONEY_ERROR); return; }
+    const commissionError = partnershipMode !== "none" ? listingCommissionError(commissionType, commissionValue) : "";
+    if (commissionError) { Alert.alert("Komisyonu kontrol et", commissionError); return; }
+    if (!Number.isSafeInteger(parsedStock) || parsedStock < 0) { Alert.alert("Stok", "Stok sıfır veya daha büyük bir tam sayı olmalı."); return; }
+    const titleCheck = validateListingTitle(title);
+    if (titleCheck.error) { Alert.alert("Başlığı düzenleyin", titleCheck.error); return; }
     if (
       !title.trim() ||
       !description.trim() ||
@@ -214,6 +229,9 @@ function ListingEditForm({ listing }: { listing: Listing }) {
       }
     }
 
+    const locationError = validateListingLocation(loc);
+    if (locationError) { Alert.alert(translateCopy("Konum", language), translateCopy(locationError, language)); return; }
+
     // Yapısal konumdan metni kur (il/ilçe korunur); serbest metin bug'ı giderildi.
     const locText = formatLocation(loc, visibility) || getProvince(loc.provinceId)?.name || listing.location || "Türkiye";
     const bonusNum = parseTrPrice(String(bonusAmount)) || 0; // TR-binlik ("1.000"→1000, Number 1 yapardı)
@@ -221,12 +239,11 @@ function ListingEditForm({ listing }: { listing: Listing }) {
     const hasBonus = bonusNum > 0 && quotaNum > 0;
 
     setSaving(true);
-    const uploadedImage = isLiveAccount ? await uploadListingImage(image.trim() || fallbackImage, currentUser.id) : image.trim();
-    const uploadedAssets = isLiveAccount
-      ? await Promise.all(parsedAdAssets.map((uri) => uploadListingImage(uri, currentUser.id)))
-      : parsedAdAssets;
+    let uploadedImage=image.trim(),uploadedAssets=parsedAdAssets;
+    try {if(isLiveAccount){uploadedImage=await uploadListingImage(image.trim()||fallbackImage,currentUser.id);uploadedAssets=await Promise.all(parsedAdAssets.map(uri=>uploadListingImage(uri,currentUser.id)));}}
+    catch {setSaving(false);Alert.alert("Fotoğraf yüklenemedi","İlan kaydedilmedi; görsellerini ve bağlantını kontrol ederek tekrar dene.");return;}
     const ok = await updateListing(listing.id, {
-      title: title.trim(),
+      title: titleCheck.title,
       description: description.trim(),
       salesPitch: salesPitch.length > 0 ? salesPitch : ["Ürünün ana faydasını kısa ve net anlat."],
       shareTemplates,
@@ -246,6 +263,8 @@ function ListingEditForm({ listing }: { listing: Listing }) {
       location: locText,
       provinceId: loc.provinceId,
       districtId: loc.districtId,
+      neighborhoodId: loc.neighborhoodId,
+      locationNote: loc.neighborhood?.trim() || undefined,
       addressVisibility: visibility,
       currency,
       bonusAmount: partnershipMode !== "none" && hasBonus ? bonusNum : undefined,
@@ -274,8 +293,8 @@ function ListingEditForm({ listing }: { listing: Listing }) {
   // Paylaşım şablonu metni için komisyonu doğru oku (submit'teki parsedCommission ile aynı mantık;
   // sabit "1.500" TR-binlik Number ile 1.5 ₺ olup yanlış pazarlama metni üretmesin).
   const commissionNum = commissionType === "rate"
-    ? (parseFloat(String(commissionValue).replace(",", ".")) || 0)
-    : (parseTrPrice(String(commissionValue)) || 0);
+    ? parseListingRate(String(commissionValue))
+    : parseListingMoney(String(commissionValue));
 
   return (
     <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ flex: 1 }}>
@@ -314,7 +333,7 @@ function ListingEditForm({ listing }: { listing: Listing }) {
 
         <Card>
           <SectionTitle title={translateCopy("Ürün bilgileri", language)} />
-          <Field label="Başlık" value={title} onChangeText={setTitle} />
+          <ListingTitleField value={title} onChange={setTitle} />
           <Field label="Açıklama" value={description} onChangeText={setDescription} multiline />
           <View style={{ flexDirection: "row", gap: 10 }}>
             <View style={{ flex: 1 }}>
@@ -339,18 +358,7 @@ function ListingEditForm({ listing }: { listing: Listing }) {
           </View>
           <View style={{ gap: 8 }}>
             <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "800" }}>{translateCopy("Konum", language)}</Text>
-            <LocationSelector value={loc} onChange={setLoc} showNeighborhood showAddressLine mode="listing" />
-            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-              {([["district_only", "Sadece il/ilçe"], ["neighborhood", "İl/ilçe/mahalle"], ["full_address_private", "Açık adres yalnızca onay sonrası"]] as const).map(([k, lbl]) => {
-                const on = visibility === k;
-                return (
-                  <Pressable key={k} onPress={() => setVisibility(k)} style={{ backgroundColor: on ? colors.primary : colors.surfaceAlt, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 13, paddingVertical: 8 }}>
-                    <Text style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 12.5, fontWeight: "800" }}>{translateCopy(lbl, language)}</Text>
-                  </Pressable>
-                );
-              })}
-            </View>
-            <Text style={{ color: colors.subtle, fontSize: 11.5, fontWeight: "600" }}>{formatLocation(loc, visibility) || translateCopy("İl/ilçe seçildikçe konum güncellenir.", language)}</Text>
+            <ListingLocationFields value={loc} onChange={setLoc} visibility={visibility} onVisibility={setVisibility} />
           </View>
         </Card>
 
@@ -452,7 +460,7 @@ function ListingEditForm({ listing }: { listing: Listing }) {
           <Field label="WhatsApp paylaşım mesajı" value={whatsappText} onChangeText={setWhatsappText} multiline />
           <Field label="Kısa TikTok açıklaması" value={tiktokText} onChangeText={setTiktokText} multiline />
           <View style={{ gap: 8 }}>
-            <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Ek görseller (en fazla 14)", language)}</Text>
+            <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "800" }}>{translateCopy(`Ek görseller (en fazla ${MAX_AD_ASSETS})`, language)}</Text>
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
               {adAssets.map((img, i) => (
                 <View key={img + i} style={{ borderColor: colors.line, borderRadius: 10, borderWidth: 1, height: 84, overflow: "hidden", width: 84 }}>
@@ -462,7 +470,7 @@ function ListingEditForm({ listing }: { listing: Listing }) {
                   </Pressable>
                 </View>
               ))}
-              {adAssets.length < 14 ? (
+              {adAssets.length < MAX_AD_ASSETS ? (
                 <Pressable onPress={() => void pickAdAssets()} style={{ alignItems: "center", borderColor: colors.line, borderRadius: 10, borderStyle: "dashed", borderWidth: 1.5, gap: 3, height: 84, justifyContent: "center", width: 84 }}>
                   <MaterialCommunityIcons name="image-plus" size={22} color={colors.primary} />
                   <Text style={{ color: colors.primaryDark, fontSize: 10.5, fontWeight: "800" }}>{translateCopy("Ekle", language)}</Text>

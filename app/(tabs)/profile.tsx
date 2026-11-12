@@ -1,5 +1,8 @@
-﻿import { MaterialCommunityIcons } from "@/components/icons";
-import { Image } from "expo-image";
+import { CompactFooter } from "@/components/compact-footer";
+import { isMobileApp } from "@/lib/mobile-app";
+import { MobileProfile } from "@/components/mobile/profile";
+import { UserAvatar } from "@/components/user-avatar";
+import { MaterialCommunityIcons } from "@/components/icons";
 import { Link, type Href } from "expo-router";
 import { Platform, Pressable, RefreshControl, ScrollView, Text, View } from "react-native";
 
@@ -22,10 +25,6 @@ import { compactNumber } from "@/lib/locale";
 import { calculateUserTrustScores } from "@/lib/trust-score";
 import { useStore } from "@/lib/use-store";
 import { WebContainer } from "@/components/web-container";
-
-function isImageAvatar(value: string) {
-  return value.startsWith("http") || value.startsWith("file");
-}
 
 function ProfileScreenInner() {
   const { backendMode, blockedUserIds, conversations, currentUser, favorites, followedSellerIds, leads, listings, messages, notifications, offers, partnerships, refreshUserData, reports, reviews, sales, signOut } = useStore();
@@ -56,6 +55,8 @@ function ProfileScreenInner() {
   const openReports = reports.filter((report) => report.reporterId === currentUser.id && (report.status === "open" || report.status === "reviewing"));
   const trust = calculateUserTrustScores({ leads, listings, partnerships, reports, reviews, sales, user: currentUser });
   const isWideWeb = useIsWideWeb();
+  // Puan yokken "0 puan" yerine dürüst boş-durum; varsa tek ondalık (4.666… taşmasın).
+  const ratingLabel = currentUser.rating > 0 ? `${currentUser.rating.toFixed(1)} ${translateCopy("puan", language)}` : translateCopy("Henüz puan yok", language);
   // Yönetim Paneli girişi — yalnız staff. Hesabım'da belirgin dursun (kullanıcı "bulamıyorum" dedi).
   const isStaff = currentUser.role === "admin" || currentUser.role === "moderator" || currentUser.role === "super_admin";
 
@@ -77,8 +78,8 @@ function ProfileScreenInner() {
     const stats: Array<{ icon: keyof typeof MaterialCommunityIcons.glyphMap; tint: string; color: string; value: string; title: string; sub: string; href: Href }> = [
       { icon: "cash-multiple", tint: colors.successSoft, color: colors.success, value: money(totalCommission), title: translateCopy("Kayıtlı komisyon", language), sub: translateCopy("Taraflar arası anlaşma", language), href: "/earnings" as Href },
       { icon: "clock-outline", tint: colors.goldSoft, color: colors.gold, value: money(pendingCommission), title: translateCopy("Bekleyen komisyon", language), sub: translateCopy("Onay sürecinde", language), href: "/earnings" as Href },
-      { icon: "storefront-outline", tint: colors.primarySoft, color: colors.primaryDark, value: `${activeListings.length}`, title: translateCopy("Aktif ilan", language), sub: `${myListings.length} toplam ilan`, href: "/(tabs)/seller" as Href },
-      { icon: "handshake-outline", tint: colors.violetSoft, color: colors.violet, value: `${activePartnerships.length}`, title: translateCopy("Aktif ortaklık", language), sub: `${pendingPartnerships.length} bekliyor`, href: "/(tabs)/partner" as Href }
+      { icon: "storefront-outline", tint: colors.primarySoft, color: colors.primaryDark, value: `${activeListings.length}`, title: translateCopy("Aktif ilan", language), sub: `${myListings.length} ${translateCopy("toplam ilan", language)}`, href: "/(tabs)/seller" as Href },
+      { icon: "handshake-outline", tint: colors.violetSoft, color: colors.violet, value: `${activePartnerships.length}`, title: translateCopy("Aktif ortaklık", language), sub: `${pendingPartnerships.length} ${translateCopy("bekliyor", language)}`, href: "/(tabs)/partner" as Href }
     ];
 
     return (
@@ -87,7 +88,7 @@ function ProfileScreenInner() {
         {/* Welcome banner */}
         <View style={{ backgroundColor: colors.primaryDark, borderRadius: 18, flexDirection: "row", gap: 16, overflow: "hidden", padding: 22 }}>
           <View style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.14)", borderRadius: 999, height: 66, justifyContent: "center", overflow: "hidden", width: 66 }}>
-            {isImageAvatar(currentUser.avatar) ? <Image source={{ uri: currentUser.avatar }} accessibilityLabel={currentUser.name} contentFit="cover" style={{ height: 66, width: 66 }} /> : <Text style={{ color: "#FFFFFF", fontSize: 24, fontWeight: "900" }}>{currentUser.avatar}</Text>}
+            <UserAvatar uri={currentUser.avatar} size={66} />
           </View>
           <View style={{ flex: 1, gap: 6, justifyContent: "center", minWidth: 0 }}>
             <Text style={{ color: "#FFFFFF", fontSize: 24, fontWeight: "900" }}>{translateCopy("Merhaba,", language)} {firstName} 👋</Text>
@@ -95,11 +96,11 @@ function ProfileScreenInner() {
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 2 }}>
               <View style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.14)", borderRadius: 999, flexDirection: "row", gap: 5, paddingHorizontal: 10, paddingVertical: 4 }}>
                 <MaterialCommunityIcons name="star" size={13} color={colors.gold} />
-                <Text style={{ color: "#FFFFFF", fontSize: 12, fontWeight: "800" }}>{currentUser.rating} {translateCopy("puan", language)}</Text>
+                <Text style={{ color: "#FFFFFF", fontSize: 12, fontWeight: "800" }}>{ratingLabel}</Text>
               </View>
               <View style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.14)", borderRadius: 999, flexDirection: "row", gap: 5, paddingHorizontal: 10, paddingVertical: 4 }}>
                 <MaterialCommunityIcons name="shield-check" size={13} color="#FFFFFF" />
-                <Text style={{ color: "#FFFFFF", fontSize: 12, fontWeight: "800" }}>%{trust.overall} {translateCopy("güven", language)}</Text>
+                <Text style={{ color: "#FFFFFF", fontSize: 12, fontWeight: "800" }}>{trust.overall == null ? translateCopy("Henüz güven karnesi yok", language) : `%${trust.overall}`}</Text>
               </View>
               <View style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.14)", borderRadius: 999, flexDirection: "row", gap: 5, paddingHorizontal: 10, paddingVertical: 4 }}>
                 <MaterialCommunityIcons name="cart-check" size={13} color="#FFFFFF" />
@@ -238,18 +239,14 @@ function ProfileScreenInner() {
   }
 
   return (
-    <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ gap: 12, padding: 12, paddingBottom: Platform.OS === "web" ? 28 : 96 }} refreshControl={Platform.OS === "web" ? undefined : <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} colors={[colors.primary]} />}>
-      <WebContainer max={1280} padding={0} style={{ gap: 12 }}>
+    <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ flexGrow: 1, gap: 12, padding: 12, paddingBottom: 0 }} refreshControl={Platform.OS === "web" ? undefined : <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} colors={[colors.primary]} />}>
+      <WebContainer max={1280} padding={0} style={{ alignSelf: "center", gap: 12, maxWidth: 760 }}>
       {/* Marka hero (mobil) — masaüstü welcome-banner paritesi: yuvarlak avatar + isim
           + puan/güven/satış çipleri. Eskiden düz kare-avatar kartıydı. */}
       <View style={{ backgroundColor: colors.primaryDark, borderRadius: 18, gap: 13, overflow: "hidden", padding: 16 }}>
         <View style={{ alignItems: "center", flexDirection: "row", gap: 12 }}>
           <View style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.16)", borderRadius: 999, height: 60, justifyContent: "center", overflow: "hidden", width: 60 }}>
-            {isImageAvatar(currentUser.avatar) ? (
-              <Image source={{ uri: currentUser.avatar }} accessibilityLabel={currentUser.name} contentFit="cover" style={{ height: 60, width: 60 }} />
-            ) : (
-              <Text adjustsFontSizeToFit numberOfLines={1} style={{ color: "#FFFFFF", fontSize: 22, fontWeight: "900", paddingHorizontal: 4 }}>{currentUser.avatar}</Text>
-            )}
+            <UserAvatar uri={currentUser.avatar} size={60} />
           </View>
           <View style={{ flex: 1, gap: 2, minWidth: 0 }}>
             <Text selectable numberOfLines={1} style={{ color: "#FFFFFF", fontSize: 20, fontWeight: "900" }}>{currentUser.name}</Text>
@@ -264,11 +261,11 @@ function ProfileScreenInner() {
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
           <View style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.14)", borderRadius: 999, flexDirection: "row", gap: 5, paddingHorizontal: 10, paddingVertical: 5 }}>
             <MaterialCommunityIcons name="star" size={13} color={colors.gold} />
-            <Text style={{ color: "#FFFFFF", fontSize: 12, fontWeight: "800" }}>{currentUser.rating} {translateCopy("puan", language)}</Text>
+            <Text style={{ color: "#FFFFFF", fontSize: 12, fontWeight: "800" }}>{ratingLabel}</Text>
           </View>
           <View style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.14)", borderRadius: 999, flexDirection: "row", gap: 5, paddingHorizontal: 10, paddingVertical: 5 }}>
             <MaterialCommunityIcons name="shield-check" size={13} color="#FFFFFF" />
-            <Text style={{ color: "#FFFFFF", fontSize: 12, fontWeight: "800" }}>%{trust.overall} {translateCopy("güven", language)}</Text>
+            <Text style={{ color: "#FFFFFF", fontSize: 12, fontWeight: "800" }}>{trust.overall == null ? translateCopy("Henüz güven karnesi yok", language) : `%${trust.overall}`}</Text>
           </View>
           <View style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.14)", borderRadius: 999, flexDirection: "row", gap: 5, paddingHorizontal: 10, paddingVertical: 5 }}>
             <MaterialCommunityIcons name="cart-check" size={13} color="#FFFFFF" />
@@ -393,19 +390,21 @@ function ProfileScreenInner() {
       </Card>
 
       </WebContainer>
+      {!isWideWeb && <CompactFooter />}
     </ScrollView>
   );
 }
 
 
-function DeskTrustBar({ label, value }: { label: string; value: number }) {
+function DeskTrustBar({ label, value }: { label: string; value: number | null }) {
+  const { language } = useLanguage();
   return (
     <View style={{ gap: 6 }}>
       <View style={{ alignItems: "center", flexDirection: "row", justifyContent: "space-between" }}>
         <Text style={{ color: colors.ink, fontSize: 12.5, fontWeight: "700" }}>{label}</Text>
-        <Text style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "900" }}>%{value}</Text>
+        <Text style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "900" }}>{value == null ? translateCopy("Henüz karne yok", language) : `%${value}`}</Text>
       </View>
-      <ProgressBar value={value} />
+      {value != null && <ProgressBar value={value} />}
     </View>
   );
 }
@@ -435,7 +434,7 @@ function MenuRow({ detail, icon, label, value, href }: { detail: string; icon: k
   const inner = (
     <View style={{ alignItems: "center", borderTopColor: colors.line, borderTopWidth: 1, flexDirection: "row", gap: 10, paddingTop: 11 }}>
       <MaterialCommunityIcons name={icon} size={20} color={colors.primary} />
-      <View style={{ flex: 1, gap: 2 }}>
+      <View style={{ flex: 1, gap: 2, minWidth: 0 }}>
         <Text selectable numberOfLines={1} style={{ color: colors.ink, fontSize: 14, fontWeight: "900" }}>{translateCopy(label, language)}</Text>
         <Text numberOfLines={1} selectable style={{ color: colors.muted, fontSize: 12, fontWeight: "700" }}>{translateCopy(detail, language)}</Text>
       </View>
@@ -466,5 +465,5 @@ export default function ProfileScreen() {
   if (!mounted) return <ScreenSkeleton />; // hidrasyon-gate (#418)
   if (!auth.authReady) return <ScreenSkeleton />; // oturum geri-yüklenene kadar bekle (auth-flash önle)
   if (!auth.isAuthenticated) return <AuthRequired title={translateCopy("Hesabım için giriş yapın", language)} />;
-  return <ProfileScreenInner />;
+  return isMobileApp ? <MobileProfile /> : <ProfileScreenInner />;
 }

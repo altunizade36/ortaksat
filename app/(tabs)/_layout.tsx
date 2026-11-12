@@ -1,3 +1,5 @@
+import { isMobileApp } from "@/lib/mobile-app";
+import { MobileBottomNav } from "@/components/mobile/ui";
 import { MaterialCommunityIcons } from "@/components/icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { Tabs } from "expo-router";
@@ -14,17 +16,17 @@ type TabKey = "index" | "explore" | "create-action" | "partner" | "menu";
 
 const tabIcons: Record<TabKey, keyof typeof MaterialCommunityIcons.glyphMap> = {
   index: "home-outline",
-  explore: "play-box-multiple-outline",
+  explore: "compass-outline",
   "create-action": "store-plus-outline",
-  partner: "handshake-outline",
+  partner: "account-group-outline",
   menu: "menu"
 };
 
 const activeIcons: Record<TabKey, keyof typeof MaterialCommunityIcons.glyphMap> = {
   index: "home",
-  explore: "play-box-multiple",
+  explore: "compass-outline",
   "create-action": "store-plus",
-  partner: "handshake",
+  partner: "account-group",
   menu: "menu"
 };
 
@@ -35,17 +37,17 @@ function tabIcon(name: TabKey) {
       return (
         <View style={{ alignItems: "center", height: 58, justifyContent: "center", marginBottom: 22, width: 58 }}>
           <LinearGradient
-            colors={focused ? ["#0EA5B7", "#0891B2"] : ["#14B8C4", "#0891B2"]}
+            colors={focused ? ["#075BEB", "#0645C9"] : ["#0645C9", "#09275E"]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={{
               alignItems: "center",
               borderColor: colors.surface,
-              borderRadius: 20,
+              borderRadius: 999,
               borderWidth: 4,
               height: 58,
               justifyContent: "center",
-              shadowColor: "#0891B2",
+              shadowColor: "#0645C9",
               shadowOffset: { width: 0, height: 8 },
               shadowOpacity: 0.4,
               shadowRadius: 14,
@@ -64,7 +66,7 @@ function tabIcon(name: TabKey) {
       <View
         style={{
           alignItems: "center",
-          backgroundColor: focused ? colors.primarySoft : "transparent",
+          backgroundColor: "transparent",
           borderRadius: 999,
           height: 34,
           justifyContent: "center",
@@ -82,14 +84,15 @@ export default function TabsLayout() {
   const { t } = useLanguage();
   // Web'de (masaüstü VE mobil tarayıcı) alt tab bar GİZLİ — normal web sitesi gibi üstteki
   // header + hamburger menü ile gezinilir. Alt bar yalnız native mobil uygulamada kalır.
-  const isWeb = Platform.OS === "web";
 
   return (
     <Tabs
+      backBehavior="fullHistory"
+      tabBar={isMobileApp ? ({ state }) => <MobileBottomNav active={({ index: "home", explore: "explore", "create-action": "create", partner: "partner", seller: "menu", profile: "menu", messages: "menu", menu: "menu" } as Record<string, string>)[state.routes[state.index].name] || "menu"} /> : undefined}
       screenOptions={{
         header: () => <AppHeader />,
         sceneStyle: { backgroundColor: colors.background },
-        tabBarActiveTintColor: colors.primary,
+        tabBarActiveTintColor: "#0645C9",
         tabBarBadgeStyle: {
           backgroundColor: colors.accent,
           color: "#FFFFFF",
@@ -99,31 +102,31 @@ export default function TabsLayout() {
         tabBarHideOnKeyboard: true,
         tabBarInactiveTintColor: colors.subtle,
         tabBarItemStyle: {
-          height: 64,
+          height: 61,
           paddingTop: 6
         },
         tabBarLabelPosition: "below-icon",
         tabBarLabelStyle: {
           fontSize: 10,
-          fontWeight: "800",
+          fontWeight: "600",
           letterSpacing: 0.1,
           lineHeight: 12,
           marginTop: 3
         },
-        tabBarStyle: isWeb ? { display: "none" } : {
-          backgroundColor: colors.surface,
-          borderColor: colors.line,
-          borderRadius: 28,
+        tabBarStyle: Platform.OS === "web" ? { display: "none" } : {
+          backgroundColor: "#FFFFFF",
+          borderColor: "#E8EDF1",
+          borderTopLeftRadius: 22,
+          borderTopRightRadius: 22,
           borderTopWidth: 1,
-          borderWidth: 1,
-          bottom: Math.max(insets.bottom, 12),
-          height: 70,
-          left: 14,
-          paddingBottom: 8,
+          bottom: 0,
+          height: 70 + insets.bottom,
+          left: 0,
+          paddingBottom: Math.max(insets.bottom, 8),
           paddingTop: 9,
           position: "absolute",
-          right: 14,
-          shadowColor: "#0B3A44",
+          right: 0,
+          shadowColor: "#001449",
           shadowOffset: { width: 0, height: 12 },
           shadowOpacity: 0.16,
           shadowRadius: 24,
@@ -131,16 +134,16 @@ export default function TabsLayout() {
         }
       }}
     >
-      <Tabs.Screen name="index" options={{ title: t("home"), tabBarLabel: t("home"), tabBarIcon: tabIcon("index") }} listeners={{ tabPress: () => haptic.selection() }} />
-      <Tabs.Screen name="explore" options={{ title: t("explore"), tabBarLabel: t("explore"), tabBarIcon: tabIcon("explore") }} listeners={{ tabPress: () => haptic.selection() }} />
-      <Tabs.Screen name="create-action" options={{ title: t("createListing"), tabBarLabel: () => null, tabBarIcon: tabIcon("create-action") }} listeners={{ tabPress: () => haptic.selection() }} />
+      <Tabs.Screen name="index" options={{ headerShown: !isMobileApp, title: t("home"), tabBarLabel: t("home"), tabBarIcon: tabIcon("index") }} listeners={{ tabPress: () => haptic.selection() }} />
+      <Tabs.Screen name="explore" options={{ headerShown: !isMobileApp, title: t("explore"), tabBarLabel: t("explore"), tabBarIcon: tabIcon("explore") }} listeners={{ tabPress: () => haptic.selection() }} />
+      <Tabs.Screen name="create-action" options={{ title: t("createListing"), tabBarLabel: t("createListing"), tabBarIcon: tabIcon("create-action") }} listeners={{ tabPress: () => haptic.selection() }} />
       <Tabs.Screen name="partner" options={{ title: t("partnerSales"), tabBarLabel: t("partnerSales"), tabBarIcon: tabIcon("partner") }} listeners={{ tabPress: () => haptic.selection() }} />
       <Tabs.Screen name="menu" options={{ title: t("menu"), tabBarLabel: t("menu"), tabBarIcon: tabIcon("menu") }} listeners={{ tabPress: () => haptic.selection() }} />
       <Tabs.Screen name="notifications-tab" options={{ href: null }} />
       <Tabs.Screen name="explore-feed/[id]" options={{ href: null, headerShown: false, tabBarStyle: { display: "none" } }} />
       <Tabs.Screen name="seller" options={{ href: null }} />
       <Tabs.Screen name="trust-action" options={{ href: null }} />
-      <Tabs.Screen name="messages" options={{ href: null }} />
+      <Tabs.Screen name="messages" options={{ href: null, headerShown: !isMobileApp }} />
       <Tabs.Screen name="profile" options={{ href: null }} />
     </Tabs>
   );

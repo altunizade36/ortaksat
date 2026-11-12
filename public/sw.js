@@ -5,7 +5,7 @@
    karıştırıp "Requiring unknown module" hatasına yol açıyordu. */
 // v24: KRİTİK DÜZELTME — JS/CSS artık SW cache'ine ALINMIYOR (bayat-chunk/module-ID
 // karışımı sona erdi). Sürüm yükseltildi ki eski (JS içeren) cache tüm cihazlarda temizlensin.
-const CACHE = "ortaksat-static-v24";
+const CACHE = "ortaksat-static-v25";
 const OFFLINE_URL = "/offline.html";
 const PRECACHE = [OFFLINE_URL, "/logo-mark.png"];
 

@@ -1,7 +1,13 @@
+import { useContentWidth } from "@/lib/layout";
+import { listingInCategoryNode, listingRootNode } from "@/lib/category-match";
+import { marketplaceCardGrid } from "@/lib/card-layout";
+import { ListingCard } from "@/components/listing-card";
+import { displayListingTitle } from "@/lib/listing-title";
+import { UserAvatar } from "@/components/user-avatar";
 import { MaterialCommunityIcons } from "@/components/icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { Link, useRouter, type Href } from "expo-router";
-import { memo, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 
 import { BrandFilter } from "@/components/brand-filter";
@@ -9,7 +15,6 @@ import { Mascot } from "@/components/brand/Mascot";
 import { colors, heroGradient, shadow } from "@/components/colors";
 import { PressLink } from "@/components/ui";
 import { SafeRemoteImage } from "@/components/safe-remote-image";
-import { useCompare } from "@/lib/compare";
 import { getCategoryIcon, getCategoryShortLabel } from "@/lib/categories";
 import { getFormSchema, resolveFormKey, type CategoryNode, type FieldDef } from "@/lib/category-tree";
 import { LocationSelector, type LocationValue } from "@/components/location-selector";
@@ -34,6 +39,9 @@ function descendantLabels(node: CategoryNode, out: string[] = []): string[] {
 }
 
 export function HomeDesktop() {
+  const pageWidth = useContentWidth();
+  const [gridWidth, setGridWidth] = useState(0);
+  const cardGrid = marketplaceCardGrid({ available: gridWidth || Math.max(300, Math.min(1280, pageWidth - 40) - 268), gap: 14, minCardWidth: 170, maxCardWidth: 210, minColumns: 2, maxColumns: 7 });
   const { language } = useLanguage();
   const router = useRouter();
   const { categoryTree, listings, findUser, isFavorite, toggleFavorite, marketplaceInitialLoading, marketplaceLoadFailed, retryMarketplace } = useStore();
@@ -100,15 +108,7 @@ export function HomeDesktop() {
   const setNum = (key: string, side: "min" | "max", v: string) => setNumRange((s) => ({ ...s, [key]: { min: s[key]?.min ?? "", max: s[key]?.max ?? "", [side]: v } }));
   // Kategori değişince facet/sayısal seçimler kategoriye özel olduğundan sıfırlanır.
   useEffect(() => { setAttrFilters({}); setNumRange({}); }, [selectedNode?.key]);
-  const matchesCat = (l: Listing) => {
-    if (!catLabelSet) return true;
-    const c = l.category.toLocaleLowerCase("tr-TR").trim();
-    const short = getCategoryShortLabel(l.category).toLocaleLowerCase("tr-TR").trim();
-    if (catLabelSet.has(c) || catLabelSet.has(short)) return true;
-    // explore/kategori yüzeyleriyle aynı bulanık eşleşme (yüzeyler arası tutarlılık):
-    // önceden home tam-eşitlik yapıp aynı ilanları gizleyebiliyordu.
-    return [...catLabelSet].some((label) => c === label || c.includes(label) || label.includes(c));
-  };
+  const matchesCat = (l: Listing) => !selectedNode || listingInCategoryNode(l, selectedNode);
 
   const filtered = useMemo(() => {
     return active.filter((l) => {
@@ -438,7 +438,7 @@ export function HomeDesktop() {
                     </View>
                   </View>
                   <View style={{ gap: 4, padding: 9 }}>
-                    <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 12, fontWeight: "800" }}>{displayText(l.title)}</Text>
+                    <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 12, fontWeight: "800" }}>{displayListingTitle(l.title)}</Text>
                     <Text style={{ color: colors.muted, fontSize: 11, fontWeight: "700" }}>{moneyIn(l.price, l.currency)}</Text>
                     <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 8, paddingVertical: 6 }}>
                       <Text style={{ color: colors.primaryDark, fontSize: 11.5, fontWeight: "900" }}>{translateCopy("Ortak Ol", language)}</Text>
@@ -466,7 +466,7 @@ export function HomeDesktop() {
               {featuredPartners.map((p) => (
                 <Pressable key={p.partnerId} onPress={() => router.push(`/ortak/${p.partnerId}`)} style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 6, padding: 14, width: 150 }}>
                   <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 999, height: 56, justifyContent: "center", overflow: "hidden", width: 56 }}>
-                    {p.avatarUrl && p.avatarUrl.startsWith("http") ? <SafeRemoteImage uri={p.avatarUrl} style={{ height: 56, width: 56 }} contentFit="cover" /> : <MaterialCommunityIcons name="account" size={28} color={colors.primaryDark} />}
+                    <UserAvatar uri={p.avatarUrl} style={{ height: 56, width: 56 }} />
                   </View>
                   <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 13, fontWeight: "900", maxWidth: 128 }}>{p.fullName}</Text>
                   <View style={{ alignItems: "center", flexDirection: "row", gap: 4 }}>
@@ -491,7 +491,7 @@ export function HomeDesktop() {
                 <Pressable key={l.id} onPress={() => router.push(`/listing/${l.id}`)} style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 14, borderWidth: 1, overflow: "hidden", width: 150 }}>
                   <SafeRemoteImage uri={l.image} style={{ height: 96, width: "100%" }} contentFit="cover" />
                   <View style={{ gap: 3, padding: 9 }}>
-                    <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 12, fontWeight: "800" }}>{displayText(l.title)}</Text>
+                    <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 12, fontWeight: "800" }}>{displayListingTitle(l.title)}</Text>
                     <Text style={{ color: colors.ink, fontSize: 13.5, fontWeight: "900" }}>{moneyIn(l.price, l.currency)}</Text>
                   </View>
                 </Pressable>
@@ -603,9 +603,9 @@ export function HomeDesktop() {
           </View>
         ) : (
           <>
-            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 14 }}>
+            <View testID="home-listings-grid" onLayout={(event) => { const next = event.nativeEvent.layout.width;setGridWidth((previous) => Math.abs(previous - next) > 1 ? next : previous); }} style={{ flexDirection: "row", flexWrap: "wrap", gap: 14, alignItems: "flex-start" }}>
               {grid.map((l) => (
-                <HomeCard key={l.id} listing={l} favorited={isFavorite(l.id)} onFav={() => toggleFavorite(l.id)} onOpen={() => router.push(`/listing/${l.id}`)} />
+                <ListingCard key={l.id} listing={l} owner={findUser(l.ownerId)} width={cardGrid.cardWidth} />
               ))}
             </View>
             {visibleCount < filtered.length ? (
@@ -654,82 +654,6 @@ function FilterPill({ label, on, onPress, icon }: { label: string; on: boolean; 
     </Pressable>
   );
 }
-
-function HomeCardBase({ listing, favorited, onFav, onOpen }: { listing: Listing; favorited: boolean; onFav: () => void; onOpen: () => void }) {
-  const { language } = useLanguage();
-  const { has, toggle } = useCompare();
-  const inCompare = has(listing.id);
-  const commission = commissionAmount(listing);
-  const ageDays = (Date.now() - Date.parse(listing.createdAt ?? "")) / 86400000;
-  const isNew = Number.isFinite(ageDays) && ageDays >= 0 && ageDays <= 7;
-  const lowStock = listing.stockCount > 0 && listing.stockCount <= 3;
-  // Rozet = ortağa AKTİF çağrı ("Ortak Ol"), pasif tanım ("Ortak Satışa") değil. Yalnız
-  // ortaklığa AÇIK ilanlarda gösterilir (partnershipMode !== "none").
-  const partnerable = listing.partnershipMode !== "none";
-  return (
-    <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, flexBasis: 176, flexGrow: 1, maxWidth: 240, minWidth: 0, overflow: "hidden", ...shadow.card }}>
-      <Pressable onPress={onOpen}>
-        <View style={{ backgroundColor: colors.surfaceAlt, height: 150, width: "100%" }}>
-          <SafeRemoteImage uri={listing.image} alt={`${listing.title} — ${listing.category} · OrtakSat ilanı`} accessibilityLabel={listing.title} style={{ height: 150, width: "100%" }} contentFit="cover" />
-          {partnerable ? (
-          <View style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 8, flexDirection: "row", gap: 4, left: 10, paddingHorizontal: 8, paddingVertical: 4, position: "absolute", top: 10 }}>
-            <MaterialCommunityIcons name="handshake-outline" size={12} color="#FFFFFF" />
-            <Text style={{ color: "#FFFFFF", fontSize: 10.5, fontWeight: "900" }}>{translateCopy("Ortak Ol", language)}</Text>
-          </View>
-          ) : null}
-          {listing.demo ? (
-            <View style={{ alignItems: "center", backgroundColor: colors.badgeGold, borderRadius: 999, bottom: 10, flexDirection: "row", gap: 3, paddingHorizontal: 8, paddingVertical: 3, position: "absolute", right: 10, ...shadow.badge }}>
-              <MaterialCommunityIcons name="eye-outline" size={10} color={colors.badgeInk} />
-              <Text style={{ color: colors.badgeInk, fontSize: 9.5, fontWeight: "900", letterSpacing: 0.4 }}>{translateCopy("ÖRNEK", language)}</Text>
-            </View>
-          ) : null}
-          <Pressable accessibilityRole="button" accessibilityState={{ selected: favorited }} accessibilityLabel={favorited ? translateCopy("Favorilerden çıkar", language) : translateCopy("Favorilere ekle", language)} onPress={onFav} style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.92)", borderRadius: 999, height: 30, justifyContent: "center", position: "absolute", right: 10, top: 10, width: 30 }}>
-            <MaterialCommunityIcons name={favorited ? "heart" : "heart-outline"} size={17} color={favorited ? colors.accent : colors.muted} />
-          </Pressable>
-          <Pressable accessibilityRole="button" accessibilityState={{ selected: inCompare }} accessibilityLabel={translateCopy("Karşılaştır", language)} hitSlop={8} onPress={() => toggle(listing.id)} style={{ alignItems: "center", backgroundColor: inCompare ? colors.primary : "rgba(255,255,255,0.92)", borderRadius: 999, height: 30, justifyContent: "center", position: "absolute", right: 10, top: 46, width: 30 }}>
-            <MaterialCommunityIcons name="compare-horizontal" size={16} color={inCompare ? "#FFFFFF" : colors.muted} />
-          </Pressable>
-          {isNew && !listing.demo ? (
-            <View style={{ backgroundColor: colors.info, borderRadius: 6, bottom: 10, left: 10, paddingHorizontal: 7, paddingVertical: 2, position: "absolute" }}>
-              <Text style={{ color: "#FFFFFF", fontSize: 9.5, fontWeight: "900" }}>{translateCopy("YENİ", language)}</Text>
-            </View>
-          ) : null}
-        </View>
-      </Pressable>
-      <Pressable onPress={onOpen} style={{ gap: 6, padding: 12 }}>
-        <Text numberOfLines={2} style={{ color: colors.ink, fontSize: 14, fontWeight: "800", lineHeight: 18, minHeight: 36 }}>{displayText(listing.title)}</Text>
-        <View style={{ alignItems: "center", flexDirection: "row", gap: 6, justifyContent: "space-between" }}>
-          <Text numberOfLines={1} style={{ color: colors.muted, flex: 1, fontSize: 11, fontWeight: "700" }}>{getCategoryShortLabel(listing.category)}</Text>
-          {lowStock ? <Text style={{ color: colors.accent, fontSize: 10.5, fontWeight: "900" }}>{translateCopy("Son", language)} {listing.stockCount} {translateCopy("ürün", language)}</Text> : null}
-        </View>
-        <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 6, justifyContent: "space-between" }}>
-          <Text style={{ color: colors.ink, fontSize: 17, fontWeight: "900" }}>{moneyIn(listing.price, listing.currency)}</Text>
-          <View style={{ backgroundColor: colors.primarySoft, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 3 }}>
-            <Text style={{ color: colors.primaryDark, fontSize: 10.5, fontWeight: "900" }}>{translateCopy("Kazanç", language)} {moneyIn(commission, listing.currency)}{listing.commissionType === "rate" ? ` · %${listing.commissionValue}` : ""}</Text>
-          </View>
-        </View>
-        {listing.bonusAmount && listing.bonusAmount > 0 && listing.bonusQuota ? (
-          <View style={{ alignItems: "center", alignSelf: "flex-start", backgroundColor: colors.warningSoft, borderRadius: 999, flexDirection: "row", gap: 4, paddingHorizontal: 8, paddingVertical: 3 }}>
-            <MaterialCommunityIcons name="rocket-launch" size={11} color={colors.warning} />
-            <Text style={{ color: colors.warning, fontSize: 10, fontWeight: "900" }}>ilk {listing.bonusQuota} satışa +{moneyIn(listing.bonusAmount, listing.currency)}</Text>
-          </View>
-        ) : null}
-        <View style={{ alignItems: "center", borderTopColor: colors.line, borderTopWidth: 1, flexDirection: "row", gap: 5, marginTop: 4, paddingTop: 8 }}>
-          <MaterialCommunityIcons name="map-marker-outline" size={12} color={colors.subtle} />
-          <Text numberOfLines={1} style={{ color: colors.muted, flex: 1, fontSize: 11, fontWeight: "700" }}>{displayText(listing.location)}</Text>
-          <MaterialCommunityIcons name={listing.partnershipMode === "open" ? "flash" : listing.partnershipMode === "invite" ? "ticket-outline" : "shield-check-outline"} size={12} color={colors.primary} />
-          <Text numberOfLines={1} style={{ color: colors.primaryDark, fontSize: 10.5, fontWeight: "800" }}>{listing.partnershipMode === "open" ? translateCopy("Anında ortak", language) : listing.partnershipMode === "invite" ? translateCopy("Davetli ortak", language) : translateCopy("Onaylı ortak", language)}</Text>
-        </View>
-      </Pressable>
-    </View>
-  );
-}
-
-// Grid'de ~90 kart; parent (mesaj/favori/loading gibi) re-render'larında hepsi
-// boşuna render olmasın. Yalnız listing kimliği veya favori durumu değişince
-// render et. onFav/onOpen kimliği yok sayılır (davranışsal olarak sabit: id'ye
-// göre favori toggle / ilana git).
-const HomeCard = memo(HomeCardBase, (a, b) => a.listing === b.listing && a.favorited === b.favorited);
 
 function SwitchRow({ label, on, onPress }: { label: string; on: boolean; onPress: () => void }) {
   return (

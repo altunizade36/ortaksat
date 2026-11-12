@@ -1,95 +1,29 @@
-import { MaterialCommunityIcons } from "@/components/icons";
+import { useState } from "react";
 import { Link } from "expo-router";
-import Head from "expo-router/head";
-import { Platform, Pressable, ScrollView, Text, View } from "react-native";
-
+import { Pressable, Text, TextInput, View } from "react-native";
+import * as Clipboard from "expo-clipboard";
+import { InformationPage } from "@/components/information-page";
 import { colors } from "@/components/colors";
-import { PressLink } from "@/components/ui";
+import { MobileButton, MobileSelect } from "@/components/mobile/ui";
+import { SUPPORT_EMAIL } from "@/lib/contact";
 import { openUrlSafe } from "@/lib/link";
-import { WebFooter } from "@/components/web-landing";
-import { SUPPORT_EMAIL, SUPPORT_EMAIL_MAILTO } from "@/lib/contact";
-import { translateCopy, useLanguage } from "@/lib/i18n";
+import { showToast } from "@/lib/toast";
 
-type IconName = keyof typeof MaterialCommunityIcons.glyphMap;
-
-const REASONS: Array<{ icon: IconName; title: string; body: string }> = [
-  { icon: "flag-outline", title: "Şikayet & bildirim", body: "Bir ilan, satıcı, ortak veya kullanıcı hakkında şikayetini ilet. Ekran görüntüsü ve varsa ilan bağlantısını eklersen daha hızlı ilerleriz." },
-  { icon: "shield-alert-outline", title: "Dolandırıcılık / güvenlik", body: "Şüpheli işlem, sahte ilan veya güvenlik endişesi için bize yaz. Maddi kayıp/suç şüphesinde ayrıca 155 (Polis) / 156 (Jandarma)." },
-  { icon: "file-document-outline", title: "Yasal & KVKK başvurusu", body: "Kişisel verilerine ilişkin talepler (erişim, düzeltme, silme) ve yasal başvurular için bu adresi kullanabilirsin." },
-  { icon: "help-circle-outline", title: "Genel bilgi & destek", body: "Hesap, ilan, ortak satış veya komisyon süreçleriyle ilgili sorularını ilet." }
-];
-
+const topics = ["Genel bilgi", "Hesap ve giriş", "İlan ve ortaklık", "Güvenlik ve şikayet", "Kişisel veri başvurusu"];
 export default function ContactScreen() {
-  const { language } = useLanguage();
-  function openMail() {
-    void openUrlSafe(SUPPORT_EMAIL_MAILTO);
+  const [topic, setTopic] = useState(topics[0]);
+  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
+  async function compose() {
+    if (message.trim().length < 20) { setError("Konuyu anlayabilmemiz için en az 20 karakter yaz."); return; }
+    setError("");
+    const ok = await openUrlSafe(`mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(`OrtakSat · ${topic}`)}&body=${encodeURIComponent(message.trim())}`);
+    if (ok === false) setError(`E-posta uygulaması açılamadı. ${SUPPORT_EMAIL} adresini kopyalayarak yazabilirsin.`);
   }
-  return (
-    <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ paddingBottom: 0, paddingTop: 16 }} style={{ backgroundColor: colors.background }}>
-      <Head>
-        <title>{translateCopy("İletişim — OrtakSat destek, şikayet ve başvuru", language)}</title>
-        <meta name="description" content={translateCopy("OrtakSat ile iletişim: şikayet, dolandırıcılık bildirimi, KVKK/yasal başvuru ve genel destek için destek@ortaksat.com. OrtakSat aracı platformdur; iletişim e-posta üzerinden yürür.", language)} />
-        <meta property="og:title" content={translateCopy("İletişim — OrtakSat", language)} />
-        <meta property="og:description" content={translateCopy("Şikayet, bilgi, yasal başvuru ve destek: destek@ortaksat.com", language)} />
-      </Head>
-      <View style={{ alignSelf: "center", gap: 18, maxWidth: 820, paddingHorizontal: 20, width: "100%" }}>
-        {/* Breadcrumb */}
-        <View style={{ alignItems: "center", flexDirection: "row", gap: 4 }}>
-          <PressLink href="/" accessibilityLabel={translateCopy("Ana sayfa", language)} pressedOpacity={0.7} style={{ alignItems: "center", flexDirection: "row", gap: 3 }}>
-            <MaterialCommunityIcons name="home-outline" size={14} color={colors.primaryDark} />
-            <Text style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Ana sayfa", language)}</Text>
-          </PressLink>
-          <MaterialCommunityIcons name="chevron-right" size={15} color={colors.subtle} />
-          <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "700" }}>{translateCopy("İletişim", language)}</Text>
-        </View>
-
-        <View style={{ gap: 8 }}>
-          <Text accessibilityRole="header" {...({ role: "heading", "aria-level": 1 } as Record<string, unknown>)} style={{ color: colors.ink, fontSize: 30, fontWeight: "900", lineHeight: 36 }}>
-            {translateCopy("İletişim", language)}
-          </Text>
-          <Text style={{ color: colors.muted, fontSize: 15.5, fontWeight: "600", lineHeight: 23 }}>
-            {translateCopy("OrtakSat bir aracı platformdur; çağrı merkezi/telefon hattı işletmez. Şikayet, bilgi, yasal başvuru ve destek talepleri için bize e-posta ile ulaşabilirsin. Genellikle 1–3 iş günü içinde dönüş yaparız.", language)}
-          </Text>
-        </View>
-
-        {/* Prominent e-posta kartı */}
-        <Pressable onPress={openMail} style={({ pressed }) => ({ backgroundColor: colors.primarySoft, borderColor: colors.primary, borderRadius: 16, borderWidth: 1, gap: 6, opacity: pressed ? 0.9 : 1, padding: 20 })}>
-          <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
-            <MaterialCommunityIcons name="email-outline" size={20} color={colors.primaryDark} />
-            <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "900", textTransform: "uppercase" }}>{translateCopy("E-posta", language)}</Text>
-          </View>
-          <Text selectable {...(Platform.OS === "web" ? ({ href: SUPPORT_EMAIL_MAILTO } as Record<string, unknown>) : {})} style={{ color: colors.ink, fontSize: 22, fontWeight: "900" }}>
-            {SUPPORT_EMAIL}
-          </Text>
-          <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "600" }}>{translateCopy("Yazmak için dokun — varsayılan e-posta uygulaman açılır.", language)}</Text>
-        </Pressable>
-
-        {/* Ne için yazabilirsin */}
-        <View style={{ gap: 12 }}>
-          {REASONS.map((r) => (
-            <View key={r.title} style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 14, borderWidth: 1, flexDirection: "row", gap: 12, padding: 16 }}>
-              <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 10, height: 40, justifyContent: "center", width: 40 }}>
-                <MaterialCommunityIcons name={r.icon} size={20} color={colors.primaryDark} />
-              </View>
-              <View style={{ flex: 1, gap: 3, minWidth: 0 }}>
-                <Text style={{ color: colors.ink, fontSize: 15, fontWeight: "900" }}>{translateCopy(r.title, language)}</Text>
-                <Text style={{ color: colors.muted, fontSize: 13.5, fontWeight: "500", lineHeight: 20 }}>{translateCopy(r.body, language)}</Text>
-              </View>
-            </View>
-          ))}
-        </View>
-
-        <View style={{ backgroundColor: colors.surfaceAlt, borderRadius: 12, gap: 4, padding: 14 }}>
-          <Text style={{ color: colors.ink, fontSize: 13.5, fontWeight: "800" }}>{translateCopy("Önemli", language)}</Text>
-          <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "500", lineHeight: 19 }}>
-            {translateCopy("OrtakSat ödeme tutmaz, kargo/teslimat yürütmez. Satış, ödeme ve teslimat satıcı ile alıcı arasında gerçekleşir. Alışverişle ilgili anlaşmazlıklarda önce karşı tarafla platform mesajlaşmasında iletişim kurman, kayıtların korunması açısından önemlidir.", language)}
-          </Text>
-          <Link href="/legal" asChild>
-            <Pressable style={{ marginTop: 4 }}><Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "900" }}>{translateCopy("Yasal & Destek belgeleri", language)} →</Text></Pressable>
-          </Link>
-        </View>
-      </View>
-      <WebFooter />
-    </ScrollView>
-  );
+  return <InformationPage title="İletişim" path="/iletisim" icon="email-outline" intro="Sorunu doğru kanaldan ilet, yanıtını kolayca takip et. Hesabın ve ilanların için destek talebi oluşturabilir veya bize e-posta yazabilirsin.">
+    <View style={{ borderRadius: 16, padding: 18, backgroundColor: "white", borderWidth: 1, borderColor: colors.line, gap: 12 }}><Text accessibilityRole="header" style={{ fontSize: 18, fontWeight: "800", color: colors.ink }}>Uygulama içinden destek</Text><Text style={{ color: colors.muted, lineHeight: 22, fontSize: 14 }}>İlan bağlantısı, sorun açıklaması ve gerekirse ekran görüntüsü ekle. Talebinin durumunu ve yanıtları Destek Taleplerim ekranından takip et.</Text><Link href="/support" asChild><Pressable accessibilityRole="link" style={{ minHeight: 48, paddingHorizontal: 14, backgroundColor: colors.primary, borderRadius: 11, justifyContent: "center", alignItems: "center" }}><Text style={{ color: "white", fontWeight: "700" }}>Destek Taleplerime Git</Text></Pressable></Link></View>
+    <View style={{ padding: 18, backgroundColor: "#EAEFFA", borderRadius: 16, gap: 10 }}><Text style={{ color: colors.ink, fontWeight: "800", fontSize: 18 }}>E-posta ile iletişim</Text><Text selectable style={{ color: colors.primaryDark, fontSize: 19, fontWeight: "800" }}>{SUPPORT_EMAIL}</Text><MobileButton secondary icon="content-copy" onPress={() => { void Clipboard.setStringAsync(SUPPORT_EMAIL).then(() => showToast("E-posta adresi kopyalandı.")).catch(() => setError("Adres kopyalanamadı; e-posta adresini basılı tutarak seçebilirsin.")); }}>E-posta Adresini Kopyala</MobileButton></View>
+    <View style={{ borderRadius: 16, padding: 18, backgroundColor: "white", borderWidth: 1, borderColor: colors.line, gap: 12 }}><Text accessibilityRole="header" style={{ fontSize: 18, fontWeight: "800", color: colors.ink }}>Mesajını hazırla</Text><MobileSelect label="İletişim konusu" value={topic} options={topics} onChange={setTopic} /><TextInput accessibilityLabel="İletişim mesajı" value={message} onChangeText={setMessage} maxLength={2000} multiline placeholder="Konuyu ve varsa ilgili ilan / talep numarasını yaz. Şifre veya kart bilgisi paylaşma." style={{ minHeight: 140, borderWidth: 1, borderColor: colors.line, borderRadius: 11, padding: 12, color: colors.ink, fontSize: 14, lineHeight: 22, textAlignVertical: "top" }} /><Text style={{ color: colors.muted, textAlign: "right", fontSize: 11 }}>{message.length}/2000</Text>{error && <Text accessibilityRole="alert" style={{ color: colors.accent, lineHeight: 20 }}>{error}</Text>}<MobileButton icon="email-outline" onPress={() => void compose()}>E-posta Taslağını Aç</MobileButton><Text style={{ color: colors.muted, fontSize: 12, lineHeight: 19 }}>Bu düğme e-posta uygulamanda bir taslak açar. Mesaj, e-posta uygulamasında Gönder dediğinde iletilir.</Text></View>
+    <Text style={{ color: colors.muted, fontSize: 13, lineHeight: 21 }}>Hesap güvenliği sorunlarında ayrıntıları destek ekibine ilet. Ödeme, teslimat ve komisyon anlaşmazlıklarında ilgili kayıtları koru; ürünün satıcısıyla platform mesajlaşması üzerinden iletişim kur.</Text>
+  </InformationPage>;
 }

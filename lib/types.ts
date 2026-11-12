@@ -16,6 +16,7 @@ export type ConversationRole = "buyer" | "seller" | "partner" | "admin";
 export type ReviewType = "seller" | "partner" | "product";
 
 export type User = {
+  username?: string; districtId?: number; website?: string; instagram?: string;
   id: string;
   name: string;
   phone: string;
@@ -186,6 +187,8 @@ export type Order = {
 };
 
 export type Review = {
+  experienceTags?: string[];
+  mediaPaths?: string[];
   id: string;
   listingId: string;
   saleId?: string;
@@ -205,6 +208,7 @@ export type Review = {
 };
 
 export type Favorite = {
+  createdAt?: string;
   id: string;
   listingId: string;
   userId: string;
@@ -253,7 +257,7 @@ export type Message = {
 
 // Bildirimin ilgili olduğu kayıtlar (derin link için). DB trigger notify_on_lead
 // bunları jsonb metadata olarak yazar; istemci bildirime tıklayınca ilana götürür.
-export type NotificationMeta = { listingId?: string; leadId?: string; partnershipId?: string; conversationId?: string; requestId?: string };
+export type NotificationMeta = { trust_transaction_id?: string; trust_agreement_id?: string; trust_event?: string; trust_action?: string; listingId?: string; leadId?: string; partnershipId?: string; conversationId?: string; requestId?: string };
 
 export type Notification = {
   id: string;

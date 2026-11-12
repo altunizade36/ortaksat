@@ -70,6 +70,7 @@ async function submit(urls, key) {
 }
 
 async function main() {
+  if (process.env.SKIP_INDEXNOW === "1") { console.log("IndexNow: test deployment, submission skipped."); return; }
   const key = readKey();
   if (!key) return; // anahtar yok → sessizce atla (build kırılmaz)
   const argv = process.argv.slice(2);

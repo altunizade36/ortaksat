@@ -1,3 +1,5 @@
+import { WebAccountMenu } from "@/components/web-account-menu";
+import { CompactFooter } from "@/components/compact-footer";
 import { MaterialCommunityIcons } from "@/components/icons";
 import Constants from "expo-constants";
 import { Link, type Href } from "expo-router";
@@ -11,11 +13,12 @@ import { PressLink } from "@/components/ui";
 import { ScreenSkeleton } from "@/components/screen-skeleton";
 import { WebContainer } from "@/components/web-container";
 import { getCategoryIcon } from "@/lib/categories";
-import { useMounted } from "@/lib/layout";
+import { useIsWideWeb, useMounted } from "@/lib/layout";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { searchKey } from "@/lib/locale";
 import { type CategoryNode } from "@/lib/category-tree";
 import { useStore } from "@/lib/use-store";
+import { isMobileApp } from "@/lib/mobile-app";
 
 type MenuGroup = {
   title: string;
@@ -49,7 +52,11 @@ const landing = (slug: string): Href => ({ pathname: "/kategori/[slug]", params:
 // menu = uygulama-içi navigasyon (SEO-kritik değil): mount-gate ile #418 önlenir.
 // Kategori/blog SEO gereği gate'lenmez; menu içeriği zaten /kategori sayfalarında baked.
 export default function MenuScreen() {
-  return useMounted() ? <MenuScreenInner /> : <ScreenSkeleton />;
+  const wide = useIsWideWeb();
+  const mounted = useMounted();
+  if (!mounted) return <ScreenSkeleton />;
+  if (Platform.OS === "web" && !wide && !isMobileApp) return <ScrollView contentContainerStyle={{ flexGrow: 1, backgroundColor: colors.surface }}><WebAccountMenu /><CompactFooter /></ScrollView>;
+  return <MenuScreenInner />;
 }
 
 function MenuScreenInner() {
@@ -70,7 +77,7 @@ function MenuScreenInner() {
         ...(top.children ?? []).map((c: CategoryNode) => ({ label: c.label, href: landing(c.slug) }))
       ]
     }));
-    return [partnerGroup, ...catGroups];
+    return [partnerGroup, ...(isMobileApp ? [{ title: "Hesap ve Yardım", icon: "account-cog-outline" as const, children: [{ label: "Hesap Ayarları", href: "/account-settings" as Href }, { label: "Yardım Merkezi", href: "/sss" as Href }, { label: "Destek Taleplerim", href: "/support" as Href }] }] : []), ...catGroups];
   }, [categoryTree]);
 
   const visibleGroups = useMemo(() => {
@@ -86,7 +93,7 @@ function MenuScreenInner() {
   }, [groups, language, tokens]);
 
   return (
-    <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ backgroundColor: "#FFFFFF", gap: 8, padding: 12, paddingBottom: Platform.OS === "web" ? 28 : 108 }}>
+    <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ flexGrow: 1, backgroundColor: colors.surface, gap: 8, padding: 12, paddingBottom: 0 }}>
       <WebContainer max={1280} padding={0} style={{ gap: 8 }}>
       <View style={{ gap: 8, marginBottom: 4 }}>
         <Text selectable style={{ color: colors.ink, fontSize: 20, fontWeight: "900" }}>
@@ -115,7 +122,7 @@ function MenuScreenInner() {
             placeholder={translateCopy("Kategori, ürün veya ortak satış ara", language)}
             placeholderTextColor={colors.muted}
             returnKeyType="search"
-            style={{ color: colors.ink, flex: 1, fontSize: 15, fontWeight: "700", minHeight: 48 }}
+            style={{ color: colors.ink, flex: 1, fontSize: 16, fontWeight: "700", minHeight: 48, minWidth: 0 }}
           />
           {query ? (
             <Pressable onPress={() => setQuery("")} hitSlop={10} accessibilityRole="button" accessibilityLabel={translateCopy("Aramayı temizle", language)}>
@@ -144,9 +151,10 @@ function MenuScreenInner() {
       {/* Uygulama sürümü — destek/güncelleme için. */}
       <View style={{ alignItems: "center", gap: 3, paddingBottom: 10, paddingTop: 14 }}>
         <Text style={{ color: colors.subtle, fontSize: 12, fontWeight: "800" }}>OrtakSat v{APP_VERSION}</Text>
-        <Text style={{ color: colors.subtle, fontSize: 11, fontWeight: "600" }}>© 2026 OrtakSat · Aracı platform</Text>
+        <Text style={{ color: colors.subtle, fontSize: 11, fontWeight: "600" }}>© 2026 OrtakSat · {translateCopy("Aracı platform", language)}</Text>
       </View>
       </WebContainer>
+      <CompactFooter />
     </ScrollView>
   );
 }
@@ -155,12 +163,15 @@ function AccordionCard({ expanded, group, language, onPress }: { expanded: boole
   const isPartner = group.tone === "partner";
 
   return (
-    <View style={{ backgroundColor: "#FFFFFF", borderColor: expanded ? colors.primary : "#C8D4DC", borderRadius: 14, borderWidth: expanded ? 1.5 : 1, overflow: "hidden" }}>
+    <View style={{ backgroundColor: colors.surface, borderColor: expanded ? colors.primary : colors.line, borderRadius: 14, borderWidth: expanded ? 1.5 : 1, overflow: "hidden" }}>
       <Pressable
         onPress={onPress}
+        accessibilityRole="button"
+        accessibilityLabel={translateCopy(group.title, language)}
+        accessibilityState={{ expanded }}
         style={({ pressed }) => ({
           alignItems: "center",
-          backgroundColor: isPartner ? colors.primarySoft : "#FFFFFF",
+          backgroundColor: isPartner ? colors.primarySoft : colors.surface,
           flexDirection: "row",
           gap: 12,
           minHeight: 52,
@@ -169,7 +180,7 @@ function AccordionCard({ expanded, group, language, onPress }: { expanded: boole
           paddingVertical: 7
         })}
       >
-        <View style={{ alignItems: "center", backgroundColor: isPartner ? "#FFFFFF" : "#F1F7F6", borderRadius: 11, height: 38, justifyContent: "center", width: 38 }}>
+        <View style={{ alignItems: "center", backgroundColor: isPartner ? colors.surface : colors.surfaceAlt, borderRadius: 11, height: 38, justifyContent: "center", width: 38 }}>
           <MaterialCommunityIcons name={group.icon} size={23} color={isPartner ? colors.primary : colors.primaryDark} />
         </View>
         <Text selectable numberOfLines={1} style={{ color: colors.ink, flex: 1, fontSize: 14, fontWeight: "800" }}>

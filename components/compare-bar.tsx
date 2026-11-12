@@ -1,3 +1,4 @@
+import { displayListingTitle } from "@/lib/listing-title";
 import { MaterialCommunityIcons } from "@/components/icons";
 import { useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
@@ -143,8 +144,8 @@ export function CompareBar() {
                             <MaterialCommunityIcons name="close" size={14} color="#FFFFFF" />
                           </Pressable>
                         </View>
-                        <Text numberOfLines={2} style={{ color: colors.ink, fontSize: 13, fontWeight: "800", lineHeight: 17, minHeight: 34 }}>{displayText(l.title)}</Text>
-                        <Pressable onPress={() => { setOpen(false); router.push(`/listing/${l.id}`); }} accessibilityRole="button" accessibilityLabel={`${displayText(l.title)} ${translateCopy("ilanını aç", language)}`} style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 8, paddingVertical: 7 }}>
+                        <Text numberOfLines={2} style={{ color: colors.ink, fontSize: 13, fontWeight: "800", lineHeight: 17, minHeight: 34 }}>{displayListingTitle(l.title)}</Text>
+                        <Pressable onPress={() => { setOpen(false); router.push(`/listing/${l.id}`); }} accessibilityRole="button" accessibilityLabel={`${displayListingTitle(l.title)} ${translateCopy("ilanını aç", language)}`} style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 8, paddingVertical: 7 }}>
                           <Text style={{ color: colors.primaryDark, fontSize: 11.5, fontWeight: "900" }}>{translateCopy("İlanı Aç", language)}</Text>
                         </Pressable>
                       </View>

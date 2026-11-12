@@ -1,0 +1,11 @@
+alter table public.profiles add column if not exists username text;
+alter table public.profiles add column if not exists district_id integer;
+alter table public.profiles add column if not exists website_url text;
+alter table public.profiles add column if not exists instagram_handle text;
+alter table public.profiles add constraint mobile_profile_username_valid check(username is null or username ~ '^[a-z0-9_]{3,30}$');
+alter table public.profiles add constraint mobile_profile_district_valid check(district_id is null or district_id>0);
+alter table public.profiles add constraint mobile_profile_website_valid check(website_url is null or (char_length(website_url)<=200 and website_url ~* '^https://[^[:space:]]+$'));
+alter table public.profiles add constraint mobile_profile_instagram_valid check(instagram_handle is null or instagram_handle ~ '^[A-Za-z0-9_.]{1,30}$');
+create unique index if not exists profiles_mobile_username_unique on public.profiles(username) where username is not null;
+grant select(username,district_id,website_url,instagram_handle) on public.profiles to anon,authenticated;
+grant update(username,district_id,website_url,instagram_handle) on public.profiles to authenticated;

@@ -1,7 +1,8 @@
+import { UserAvatar } from "@/components/user-avatar";
+import { hasProfilePhoto } from "@/lib/profile-photo";
 import { MaterialCommunityIcons } from "@/components/icons";
-import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, Switch, Text, TextInput, View } from "react-native";
 
@@ -22,14 +23,23 @@ import { changePasswordLive, reauthenticateLive, uploadProfileAvatar } from "@/l
 import { actionLabel, fetchLoginHistory, type LoginEvent } from "@/lib/security-history";
 import { useStore } from "@/lib/use-store";
 import { passwordStrength } from "@/lib/validation";
+import { isMobileApp } from "@/lib/mobile-app";
+import { MobileProfileEditor } from "@/components/mobile/profile-editor";
 
 type SettingsSection = "personal" | "security" | "notifications" | "store" | "verification";
 
-function isImageAvatar(value: string) {
-  return value.startsWith("http") || value.startsWith("file");
+// RN-web Switch: açıkken başparmak `thumbColor`'ı DEĞİL `activeThumbColor`'ı kullanır; verilmezse
+// varsayılan #009688 (turkuaz) çıkar. Web'e özel prop → tip dışı yayılır.
+const webSwitchProps = Platform.OS === "web" ? ({ activeThumbColor: "#FFFFFF" } as object) : {};
+
+/** Mobil web (iOS Safari) 16px altı input'a odaklanınca sayfayı yakınlaştırır → dar web'de 16px. */
+function useInputFontSize(): number {
+  const wide = useIsWideWeb();
+  return Platform.OS === "web" && !wide ? 16 : 14;
 }
 
 function ProfileEditScreenInner() {
+  const params = useLocalSearchParams<{ section?: string }>();
   const { language } = useLanguage();
   const router = useRouter();
   const { authError, backendMode, currentUser, updateProfile, savePreferences, setEmailNotifications, requestAccountDeletion, requestVerification, signOut, signOutAllDevices } = useStore();
@@ -56,7 +66,8 @@ function ProfileEditScreenInner() {
   const [citySearch, setCitySearch] = useState("");
   const [saving, setSaving] = useState(false);
   const isWideWeb = useIsWideWeb();
-  const [section, setSection] = useState<SettingsSection>("personal");
+  const inputFontSize = useInputFontSize();
+  const [section, setSection] = useState<SettingsSection>(["security", "notifications", "store", "verification"].includes(params.section || "") ? params.section as SettingsSection : "personal");
   const [storeName, setStoreName] = useState(currentUser.name);
   const [igHandle, setIgHandle] = useState((prefs0.instagram_handle as string) ?? "");
   // Şifre değiştir (mevcut şifre + yeni + tekrar). Güvenlik: Supabase mevcut
@@ -112,9 +123,20 @@ function ProfileEditScreenInner() {
     setStoreSaving(true);
     // OrtakSat PARA TUTMAZ: IBAN/ödeme bilgisi toplanmaz. Komisyon ödemesi ortak ile satıcı
     // arasında Platform DIŞINDA, doğrudan yapılır. Burada yalnız mağaza adı güncellenir.
-    const ok = await updateProfile({ name: storeName.trim() || name, phone, avatar, bio, expertiseCategories: expertise });
-    setStoreSaving(false);
-    if (ok) showToast(translateCopy("Mağaza bilgilerin güncellendi", language));
+    // YALNIZ mağaza adı yazılır; diğer alanlar KAYITLI profilden gelir. Eskiden formdaki
+    // kaydedilmemiş `avatar` state'i de gönderiliyordu → yeni seçilmiş ama yüklenmemiş yerel
+    // görsel (blob:/file:) kalıcı avatar olarak yazılıyor, başka cihazda kırık görünüyordu.
+    const nextName = storeName.trim() || currentUser.name;
+    let ok = false;
+    try {
+      ok = await updateProfile({ name: nextName, phone: currentUser.phone, avatar: currentUser.avatar, bio: currentUser.bio, expertiseCategories: currentUser.expertiseCategories ?? [] });
+    } catch { ok = false; } finally { setStoreSaving(false); }
+    if (ok) {
+      // Ad ve mağaza adı AYNI alandır: kişisel formdaki adı da eşitle, yoksa sonraki
+      // "Profili kaydet" eski adı geri yazardı.
+      setName(nextName);
+      showToast(translateCopy("Mağaza bilgilerin güncellendi", language));
+    }
     else Alert.alert(translateCopy("Kaydedilemedi", language), authError ?? translateCopy("Bir sorun oluştu.", language));
   }
 
@@ -224,14 +246,17 @@ function ProfileEditScreenInner() {
     // yükleme gerektirmez. Yalnız GERÇEK yerel görsel URI'sinde (file/blob/data/content) kontrol et.
     const av = avatar.trim();
     const localAvatarPicked = isLiveAccount && /^(file|blob|data|content):/i.test(av);
-    const uploadedAvatar = isLiveAccount ? await uploadProfileAvatar(av, currentUser.id) : av;
+    let uploadedAvatar=av;
+    try { if(isLiveAccount&&/^(https?:|file:|content:|blob:|data:)/i.test(av))uploadedAvatar=await uploadProfileAvatar(av,currentUser.id); } catch {setSaving(false);Alert.alert("Fotoğraf yüklenemedi","Fotoğrafın yüklenemedi; tekrar dene. Bilgilerin korunuyor.");return;}
     if (localAvatarPicked && !/^https?:\/\//i.test(uploadedAvatar)) {
       setSaving(false);
       Alert.alert(translateCopy("Fotoğraf yüklenemedi", language), translateCopy("Profil fotoğrafın yüklenemedi. Bağlantını kontrol edip tekrar dene.", language));
       return;
     }
-    const ok = await updateProfile({ name, phone, avatar: uploadedAvatar, bio, expertiseCategories: expertise, city });
-    setSaving(false);
+    let ok = false;
+    try { ok = await updateProfile({ name, phone, avatar: uploadedAvatar, bio, expertiseCategories: expertise, city }); }
+    catch { ok = false; }
+    finally { setSaving(false); }
 
     if (!ok) {
       Alert.alert(translateCopy("Kaydedilemedi", language), translateCopy(authError ?? "Profil güncellenemedi.", language));
@@ -239,7 +264,11 @@ function ProfileEditScreenInner() {
     }
 
     showToast(translateCopy("Profil güncellendi", language));
-    router.back();
+    // Doğrudan bağlantıyla / yenilemeyle açıldıysa geri gidilecek geçmiş yoktur (web'de
+    // router.back() hiçbir şey yapmaz) → kullanıcı kaydettiği formda kalırdı.
+    setAvatar(uploadedAvatar);
+    setStoreName(name.trim() || storeName);
+    if (router.canGoBack()) router.back(); else router.replace("/profile");
   }
 
   // Hesap silme onay modalı (şifre doğrulaması + 30 gün geri alma) — her iki düzende ortak.
@@ -247,6 +276,7 @@ function ProfileEditScreenInner() {
   const filteredProvinces = cityQuery ? TR_PROVINCES.filter((p) => citySlug(p).includes(citySlug(cityQuery))) : TR_PROVINCES;
   const cityModal = (
     <Modal visible={cityOpen} transparent animationType="fade" onRequestClose={() => setCityOpen(false)}>
+      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={{ flex: 1 }}>
       <Pressable onPress={() => setCityOpen(false)} style={{ alignItems: "center", backgroundColor: "rgba(0,0,0,0.5)", flex: 1, justifyContent: "center", padding: 20 }}>
         <Pressable onPress={() => undefined} style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 18, borderWidth: 1, gap: 12, maxHeight: 560, maxWidth: 440, padding: 18, width: "100%" }}>
           <View style={{ alignItems: "center", flexDirection: "row", gap: 10 }}>
@@ -261,7 +291,7 @@ function ProfileEditScreenInner() {
           </View>
           <View style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 8, paddingHorizontal: 12 }}>
             <MaterialCommunityIcons name="magnify" size={18} color={colors.muted} />
-            <TextInput value={citySearch} onChangeText={setCitySearch} placeholder={translateCopy("İl ara…", language)} placeholderTextColor={colors.muted} style={{ color: colors.ink, flex: 1, fontSize: 14, paddingVertical: 11 }} />
+            <TextInput value={citySearch} onChangeText={setCitySearch} placeholder={translateCopy("İl ara…", language)} placeholderTextColor={colors.muted} style={{ color: colors.ink, flex: 1, fontSize: inputFontSize, minWidth: 0, paddingVertical: 11 }} />
             {citySearch ? <Pressable onPress={() => setCitySearch("")} hitSlop={8}><MaterialCommunityIcons name="close-circle" size={16} color={colors.subtle} /></Pressable> : null}
           </View>
           <ScrollView style={{ maxHeight: 372 }} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
@@ -285,11 +315,12 @@ function ProfileEditScreenInner() {
           </ScrollView>
         </Pressable>
       </Pressable>
+      </KeyboardAvoidingView>
     </Modal>
   );
   const deleteModal = (
     <Modal visible={deleteOpen} transparent animationType="fade" onRequestClose={() => setDeleteOpen(false)}>
-      <View style={{ backgroundColor: "rgba(0,0,0,0.55)", flex: 1, justifyContent: "center", padding: 20 }}>
+      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={{ backgroundColor: "rgba(0,0,0,0.55)", flex: 1, justifyContent: "center", padding: 20 }}>
         <View style={{ alignSelf: "center", backgroundColor: colors.background, borderRadius: 18, gap: 14, maxWidth: 440, padding: 22, width: "100%" }}>
           <View style={{ alignItems: "center", flexDirection: "row", gap: 10 }}>
             <View style={{ alignItems: "center", backgroundColor: colors.accentSoft, borderRadius: 12, height: 44, justifyContent: "center", width: 44 }}>
@@ -302,7 +333,7 @@ function ProfileEditScreenInner() {
           </Text>
           <DeskField icon="lock-outline" label={translateCopy("Devam etmek için şifreni gir", language)} secure value={deletePw} onChangeText={setDeletePw} placeholder={translateCopy("Şifren", language)} />
           <DeskField icon="comment-outline" label={translateCopy("Sebep (opsiyonel)", language)} value={deleteReason} onChangeText={setDeleteReason} placeholder={translateCopy("Ayrılma sebebini yazabilirsin", language)} />
-          <View style={{ flexDirection: "row", gap: 10, justifyContent: "flex-end" }}>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10, justifyContent: "flex-end" }}>
             <Pressable onPress={() => setDeleteOpen(false)} style={{ alignItems: "center", borderColor: colors.line, borderRadius: 10, borderWidth: 1, paddingHorizontal: 18, paddingVertical: 11 }}>
               <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "800" }}>{translateCopy("Vazgeç", language)}</Text>
             </Pressable>
@@ -311,7 +342,7 @@ function ProfileEditScreenInner() {
             </Pressable>
           </View>
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 
@@ -330,7 +361,7 @@ function ProfileEditScreenInner() {
       { label: translateCopy(currentUser.verifiedInstagram ? "Instagram bağlandı" : "Instagram hesabını bağla", language), done: !!currentUser.verifiedInstagram }
     ];
     const doneCount = verifications.filter((v) => v.done).length;
-    const completion = Math.round(((doneCount + (bio ? 1 : 0) + (avatar ? 1 : 0)) / 5) * 100);
+    const completion = Math.round(((doneCount + (bio ? 1 : 0) + (hasProfilePhoto(avatar) ? 1 : 0)) / 5) * 100);
 
     return (
       <ScrollView contentInsetAdjustmentBehavior="automatic" showsVerticalScrollIndicator={false} contentContainerStyle={{ backgroundColor: colors.background, flexGrow: 1, paddingBottom: 0 }} style={{ backgroundColor: colors.background }}>
@@ -366,8 +397,8 @@ function ProfileEditScreenInner() {
               <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 16, padding: 22 }}>
                 <Text style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>{translateCopy("Kişisel Bilgiler", language)}</Text>
                 <View style={{ alignItems: "center", flexDirection: "row", gap: 16 }}>
-                  <View style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 16, height: 80, justifyContent: "center", overflow: "hidden", width: 80 }}>
-                    {isImageAvatar(avatar.trim()) ? <Image source={{ uri: avatar.trim() }} contentFit="cover" style={{ height: 80, width: 80 }} /> : <Text style={{ color: "#FFFFFF", fontSize: 26, fontWeight: "900" }}>{avatar.trim() || "OS"}</Text>}
+                  <View style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderRadius: 999, height: 80, justifyContent: "center", overflow: "hidden", width: 80 }}>
+                    <UserAvatar uri={avatar.trim()} size={80} />
                   </View>
                   <View style={{ gap: 8 }}>
                     <Pressable accessibilityRole="button" accessibilityLabel={translateCopy("Fotoğraf yükle", language)} onPress={() => void pickAvatar()} style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 10, flexDirection: "row", gap: 7, paddingHorizontal: 16, paddingVertical: 10 }}>
@@ -385,7 +416,7 @@ function ProfileEditScreenInner() {
                 <CityField value={city} onPress={() => { setCitySearch(""); setCityOpen(true); }} />
                 <ExpertisePicker value={expertise} onChange={setExpertise} />
                 <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600", lineHeight: 17 }}>{translateCopy("Rol, puan, yanıt oranı ve doğrulama durumu güvenlik nedeniyle elle değiştirilemez.", language)}</Text>
-                <Pressable disabled={saving} onPress={() => void submit()} style={{ alignItems: "center", alignSelf: "flex-start", backgroundColor: colors.primary, borderRadius: 10, flexDirection: "row", gap: 7, paddingHorizontal: 22, paddingVertical: 12 }}>
+                <Pressable disabled={saving} accessibilityRole="button" accessibilityState={{ disabled: saving }} onPress={() => void submit()} style={{ alignItems: "center", alignSelf: "flex-start", backgroundColor: colors.primary, borderRadius: 10, flexDirection: "row", gap: 7, opacity: saving ? 0.6 : 1, paddingHorizontal: 22, paddingVertical: 12 }}>
                   <MaterialCommunityIcons name="content-save-outline" size={17} color="#FFFFFF" />
                   <Text style={{ color: "#FFFFFF", fontSize: 13.5, fontWeight: "900" }}>{saving ? translateCopy("Kaydediliyor…", language) : translateCopy("Değişiklikleri kaydet", language)}</Text>
                 </Pressable>
@@ -530,25 +561,19 @@ function ProfileEditScreenInner() {
     { label: translateCopy(currentUser.verifiedIdentity ? "Kimlik doğrulandı" : "Kimliğini doğrula", language), done: currentUser.verifiedIdentity },
     { label: translateCopy(currentUser.verifiedInstagram ? "Instagram bağlandı" : "Instagram hesabını bağla", language), done: !!currentUser.verifiedInstagram }
   ];
-  const mobileCompletion = Math.round(((mobileVerifs.filter((v) => v.done).length + (bio ? 1 : 0) + (avatar ? 1 : 0)) / 5) * 100);
+  const mobileCompletion = Math.round(((mobileVerifs.filter((v) => v.done).length + (bio ? 1 : 0) + (hasProfilePhoto(avatar) ? 1 : 0)) / 5) * 100);
 
   return (
     <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ flex: 1 }}>
       {deleteModal}
       {cityModal}
-      <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ gap: 14, padding: 16, paddingBottom: 110 }}>
+      <ScrollView contentInsetAdjustmentBehavior="automatic" keyboardShouldPersistTaps="handled" contentContainerStyle={{ alignSelf: "center", gap: 14, maxWidth: 760, padding: 16, paddingBottom: 110, width: "100%" }}>
         <Card>
           <View style={{ alignItems: "center", flexDirection: "row", gap: 12 }}>
-            <View style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 14, height: 64, justifyContent: "center", overflow: "hidden", width: 64 }}>
-              {isImageAvatar(avatar.trim()) ? (
-                <Image source={{ uri: avatar.trim() }} contentFit="cover" style={{ height: 64, width: 64 }} />
-              ) : (
-                <Text adjustsFontSizeToFit numberOfLines={1} style={{ color: "#FFFFFF", fontSize: 20, fontWeight: "900", paddingHorizontal: 4 }}>
-                  {avatar.trim() || "OS"}
-                </Text>
-              )}
+            <View style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderRadius: 999, height: 64, justifyContent: "center", overflow: "hidden", width: 64 }}>
+              <UserAvatar uri={avatar.trim()} size={64} />
             </View>
-            <View style={{ flex: 1, gap: 6 }}>
+            <View style={{ flex: 1, gap: 6, minWidth: 0 }}>
               <Text selectable style={{ color: colors.ink, fontSize: 21, fontWeight: "900", lineHeight: 26 }}>
                 {translateCopy("Profil bilgileri", language)}
               </Text>
@@ -587,7 +612,6 @@ function ProfileEditScreenInner() {
           <SectionTitle title={translateCopy("Genel profil", language)} />
           <Field label="Ad soyad / mağaza adı" value={name} onChangeText={setName} icon="account-outline" />
           <Field label="Telefon" value={phone} onChangeText={setPhone} icon="phone-outline" keyboardType="phone-pad" />
-          <Field label="Avatar kısa adı veya görsel adresi" value={avatar} onChangeText={setAvatar} icon="image-outline" />
           <Field label="Bio" value={bio} onChangeText={setBio} icon="text-account" multiline />
           <CityField value={city} onPress={() => { setCitySearch(""); setCityOpen(true); }} />
           <ExpertisePicker value={expertise} onChange={setExpertise} />
@@ -596,7 +620,7 @@ function ProfileEditScreenInner() {
           </Text>
         </Card>
 
-        <PrimaryButton icon="content-save-outline" onPress={() => void submit()}>{saving ? translateCopy("Kaydediliyor", language) : translateCopy("Profili kaydet", language)}</PrimaryButton>
+        <PrimaryButton icon="content-save-outline" disabled={saving} onPress={() => void submit()}>{saving ? translateCopy("Kaydediliyor", language) : translateCopy("Profili kaydet", language)}</PrimaryButton>
 
         {/* Mobil paritesi: şifre/bildirim/mağaza/doğrulama/hesap web'de vardı, mobilde yoktu. */}
         {isLiveAccount ? (
@@ -608,7 +632,7 @@ function ProfileEditScreenInner() {
               <PasswordStrengthMeter password={pwNew} />
               <DeskField icon="lock-check-outline" label={translateCopy("Yeni şifre (tekrar)", language)} secure value={pwNew2} onChangeText={setPwNew2} placeholder={translateCopy("Tekrar", language)} />
               {pwMsg ? <Text style={{ color: pwMsg.tone === "ok" ? colors.success : colors.accent, fontSize: 12.5, fontWeight: "800" }}>{pwMsg.text}</Text> : null}
-              <PrimaryButton icon="key-outline" tone="secondary" onPress={() => void changePassword()}>{pwSaving ? translateCopy("Güncelleniyor", language) : translateCopy("Şifreyi güncelle", language)}</PrimaryButton>
+              <PrimaryButton icon="key-outline" tone="secondary" disabled={pwSaving} onPress={() => void changePassword()}>{pwSaving ? translateCopy("Güncelleniyor", language) : translateCopy("Şifreyi güncelle", language)}</PrimaryButton>
             </Card>
             <LoginHistoryCard compact history={loginHistory} loading={historyLoading} isLive={isLiveAccount} onRefresh={() => void loadHistory()} onSignOutAll={() => void signOutEverywhere()} signingOutAll={signingOutAll} />
           </>
@@ -628,7 +652,7 @@ function ProfileEditScreenInner() {
             <MaterialCommunityIcons name="shield-check-outline" size={16} color={colors.info} style={{ marginTop: 1 }} />
             <Text style={{ color: colors.muted, flex: 1, fontSize: 11.5, fontWeight: "600", lineHeight: 16 }}>{translateCopy("OrtakSat ödeme almaz veya tutmaz; IBAN/ödeme bilgisi istemez. Komisyon ödemesi ortak ile satıcı arasında doğrudan yapılır.", language)}</Text>
           </View>
-          <PrimaryButton icon="content-save-outline" tone="secondary" onPress={() => void saveStore()}>{storeSaving ? translateCopy("Kaydediliyor", language) : translateCopy("Mağaza adını kaydet", language)}</PrimaryButton>
+          <PrimaryButton icon="content-save-outline" tone="secondary" disabled={storeSaving} onPress={() => void saveStore()}>{storeSaving ? translateCopy("Kaydediliyor", language) : translateCopy("Mağaza adını kaydet", language)}</PrimaryButton>
         </Card>
 
         <Card>
@@ -753,12 +777,13 @@ function ToggleRow({ busy, desc, icon, label, onValueChange, value }: { busy?: b
         <Text style={{ color: colors.ink, fontSize: 14, fontWeight: "900" }}>{translateCopy(label, language)}</Text>
         <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600", lineHeight: 16 }}>{translateCopy(desc, language)}</Text>
       </View>
-      <Switch value={value} onValueChange={onValueChange} disabled={busy} accessibilityRole="switch" accessibilityLabel={translateCopy(label, language)} accessibilityState={{ checked: value, disabled: !!busy }} trackColor={{ false: colors.line, true: colors.primary }} thumbColor="#FFFFFF" ios_backgroundColor={colors.line} />
+      <Switch value={value} onValueChange={onValueChange} disabled={busy} accessibilityRole="switch" accessibilityLabel={translateCopy(label, language)} accessibilityState={{ checked: value, disabled: !!busy }} trackColor={{ false: colors.line, true: colors.primary }} thumbColor="#FFFFFF" ios_backgroundColor={colors.line} {...webSwitchProps} />
     </View>
   );
 }
 
 function DeskField({ icon, keyboardType, label, multiline, onChangeText, placeholder, secure, value }: { icon: keyof typeof MaterialCommunityIcons.glyphMap; keyboardType?: "default" | "phone-pad" | "email-address"; label: string; multiline?: boolean; onChangeText: (v: string) => void; placeholder?: string; secure?: boolean; value: string }) {
+  const fontSize = useInputFontSize();
   return (
     <View style={{ gap: 6 }}>
       <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "800" }}>{label}</Text>
@@ -772,7 +797,7 @@ function DeskField({ icon, keyboardType, label, multiline, onChangeText, placeho
           keyboardType={keyboardType}
           placeholder={placeholder}
           placeholderTextColor={colors.subtle}
-          style={{ color: colors.ink, flex: 1, fontSize: 14, minHeight: multiline ? 90 : 46, paddingVertical: 10, textAlignVertical: multiline ? "top" : "center" }}
+          style={{ color: colors.ink, flex: 1, fontSize, minHeight: multiline ? 90 : 46, minWidth: 0, paddingVertical: 10, textAlignVertical: multiline ? "top" : "center" }}
         />
       </View>
     </View>
@@ -795,6 +820,7 @@ function Field({
   value: string;
 }) {
   const { language } = useLanguage();
+  const fontSize = useInputFontSize();
   return (
     <View style={{ gap: 6 }}>
       <Text selectable style={{ color: colors.muted, fontSize: 12.5, fontWeight: "800" }}>
@@ -808,7 +834,7 @@ function Field({
           keyboardType={keyboardType}
           multiline={multiline}
           placeholderTextColor={colors.muted}
-          style={{ color: colors.ink, flex: 1, fontSize: 14, minHeight: multiline ? 90 : 46, paddingVertical: 10, textAlignVertical: multiline ? "top" : "center" }}
+          style={{ color: colors.ink, flex: 1, fontSize, minHeight: multiline ? 90 : 46, minWidth: 0, paddingVertical: 10, textAlignVertical: multiline ? "top" : "center" }}
         />
       </View>
     </View>
@@ -832,11 +858,16 @@ function CityField({ value, onPress }: { value: string; onPress: () => void }) {
 }
 
 export default function ProfileEditScreen() {
+  const params = useLocalSearchParams<{ view?: string }>();
   const { language } = useLanguage();
   const auth = useStore();
   const mounted = useMounted();
   if (!mounted) return <ScreenSkeleton />; // hidrasyon-gate (#418)
   if (!auth.authReady) return <ScreenSkeleton />; // oturum geri-yüklenene kadar bekle (auth-flash önle)
   if (!auth.isAuthenticated) return <AuthRequired title={translateCopy("Ayarlar için giriş yapın", language)} />;
+  if (isMobileApp && params.view !== "advanced") {
+    if (!auth.accountLoaded) return <ScreenSkeleton />;
+    return <MobileProfileEditor key={auth.currentUser.id} />;
+  }
   return <ProfileEditScreenInner />;
 }
