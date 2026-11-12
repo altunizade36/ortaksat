@@ -30,6 +30,11 @@ const activeIcons: Record<TabKey, keyof typeof MaterialCommunityIcons.glyphMap> 
   menu: "menu"
 };
 
+// SDK 58: `href: null` artık rotayı "hidden" sayıyor ve o rota odaklanınca İLK SEKMEYE yönlendiriyor
+// (/messages, /profile, /seller … ana sayfaya düşüyordu). SDK 54'teki davranışı — sekme düğmesi yok ama
+// rota açılabilir — korumak için düğmeyi SDK 54'ün yaptığı gibi elle gizliyoruz.
+const hiddenTab = { tabBarItemStyle: { display: "none" as const }, tabBarButton: () => null };
+
 function tabIcon(name: TabKey) {
   return ({ color, focused }: { color: ColorValue; focused: boolean }) => {
     // Merkez "İlan Ver" — premium yükseltilmiş gradient FAB (bar'ın üstüne taşar).
@@ -139,12 +144,12 @@ export default function TabsLayout() {
       <Tabs.Screen name="create-action" options={{ title: t("createListing"), tabBarLabel: t("createListing"), tabBarIcon: tabIcon("create-action") }} listeners={{ tabPress: () => haptic.selection() }} />
       <Tabs.Screen name="partner" options={{ title: t("partnerSales"), tabBarLabel: t("partnerSales"), tabBarIcon: tabIcon("partner") }} listeners={{ tabPress: () => haptic.selection() }} />
       <Tabs.Screen name="menu" options={{ headerShown: !isMobileApp, title: t("menu"), tabBarLabel: t("menu"), tabBarIcon: tabIcon("menu") }} listeners={{ tabPress: () => haptic.selection() }} />
-      <Tabs.Screen name="notifications-tab" options={{ href: null }} />
-      <Tabs.Screen name="explore-feed/[id]" options={{ href: null, headerShown: false, tabBarStyle: { display: "none" } }} />
-      <Tabs.Screen name="seller" options={{ href: null }} />
-      <Tabs.Screen name="trust-action" options={{ href: null }} />
-      <Tabs.Screen name="messages" options={{ href: null, headerShown: !isMobileApp }} />
-      <Tabs.Screen name="profile" options={{ href: null }} />
+      <Tabs.Screen name="notifications-tab" options={hiddenTab} />
+      <Tabs.Screen name="explore-feed/[id]" options={{ ...hiddenTab, headerShown: false, tabBarStyle: { display: "none" } }} />
+      <Tabs.Screen name="seller" options={hiddenTab} />
+      <Tabs.Screen name="trust-action" options={hiddenTab} />
+      <Tabs.Screen name="messages" options={{ ...hiddenTab, headerShown: !isMobileApp }} />
+      <Tabs.Screen name="profile" options={hiddenTab} />
     </Tabs>
   );
 }
