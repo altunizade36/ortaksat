@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Modal, Platform, Pressable, StyleSheet, View, useWindowDimensions } from "react-native";
+import { Modal, Platform, Pressable, StyleSheet, View, useWindowDimensions, type ViewInstance } from "react-native";
 import type { ViewStyle } from "react-native";
 
 import { colors } from "@/components/colors";
@@ -15,7 +15,7 @@ export type AnchorRect = { x: number; y: number; width: number; height: number }
  * sabit ekran koordinatında kalıp kutudan KOPUYOR ("açılınca kayma" sorunu).
  */
 export function useAnchor(active = false) {
-  const ref = useRef<View>(null);
+  const ref = useRef<ViewInstance>(null);
   const [rect, setRect] = useState<AnchorRect | null>(null);
   const measure = useCallback(() => {
     ref.current?.measureInWindow?.((x, y, width, height) => {

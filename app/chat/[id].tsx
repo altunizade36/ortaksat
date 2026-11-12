@@ -10,7 +10,7 @@ import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { memo, useEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, Text, TextInput, View, type ScrollViewInstance } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { AuthRequired } from "@/components/auth-gate";
@@ -99,7 +99,7 @@ function ChatScreenInner() {
   // örtmesin diye SADECE bu ekrana klavye inset'i uygulanır (genel kök değil → başka
   // sayfalarda "ekran komple kayıyor" olmaz).
   const kbInset = useKeyboardInset();
-  const scrollRef = useRef<ScrollView>(null);
+  const scrollRef = useRef<ScrollViewInstance>(null);
   // Kullanıcı geçmişi okumak için yukarı kaydırdıysa, gelen mesaj/görsel yüklenmesi
   // onu zorla aşağı çekmesin. Yalnızca dibe yakınken otomatik aşağı in.
   const nearBottomRef = useRef(true);

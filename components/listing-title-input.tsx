@@ -1,5 +1,5 @@
 import { useState, type Ref } from "react";
-import { Text, TextInput, View } from "react-native";
+import { Text, TextInput, View, type TextInputInstance } from "react-native";
 
 import { colors } from "@/components/colors";
 import { translateCopy, useLanguage } from "@/lib/i18n";
@@ -12,7 +12,7 @@ import { LISTING_TITLE_HELP, LISTING_TITLE_LIMITS, listingTitleLength, validateL
  * ("Audi A4") kullanıcı tek tuşa basmadan kırmızı hata basıyordu. Yasak karakter / çok uzun başlık gibi
  * YAZARKEN oluşan hatalar ise anında gösterilmeye devam eder.
  */
-export function ListingTitleInput({ value, onChange, invalid = false, inputRef, placeholder }: { value: string; onChange: (value: string) => void; invalid?: boolean; inputRef?: Ref<TextInput>; placeholder?: string }) {
+export function ListingTitleInput({ value, onChange, invalid = false, inputRef, placeholder }: { value: string; onChange: (value: string) => void; invalid?: boolean; inputRef?: Ref<TextInputInstance>; placeholder?: string }) {
   const { language } = useLanguage();
   const [touched, setTouched] = useState(false);
   const result = validateListingTitle(value);

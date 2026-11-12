@@ -8,7 +8,7 @@ import { MaterialCommunityIcons } from "@/components/icons";
 import { type Href, useLocalSearchParams, useRouter } from "expo-router";
 import Head from "expo-router/head";
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
-import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, Text, TextInput, View, useWindowDimensions } from "react-native";
+import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, Text, TextInput, View, useWindowDimensions, type ViewInstance } from "react-native";
 
 import { Alert } from "@/lib/alert";
 import { showToast } from "@/lib/toast";
@@ -144,7 +144,7 @@ export default function ListingDetailScreen() {
   const refCapturedFor = useRef<string>(""); // aynı ref'i aynı ilan için tekrar çözme/loglama kilidi
   const contactLeadDone = useRef(false); // iletişimde tek bir atıf-lead üret
   // Ortak panelinden "Ortak ol" ile gelince (apply=1): ortaklık aksiyonunu ekrana kaydır.
-  const joinAnchorRef = useRef<View>(null);
+  const joinAnchorRef = useRef<ViewInstance>(null);
   const router = useRouter();
 
   // KRİTİK GİZLİLİK: web'de aynı /listing/[id] bileşeni ilanlar arası YENİDEN KULLANILIR

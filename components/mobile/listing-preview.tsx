@@ -1,7 +1,7 @@
 import { HorizontalScroll } from "@/components/horizontal-scroll";
 import { displayListingTitle } from "@/lib/listing-title";
 import { useRef, useState, type ReactNode } from "react";
-import { Modal, Pressable, ScrollView, Text, View } from "react-native";
+import { Modal, Pressable, ScrollView, Text, View, type ScrollViewInstance } from "react-native";
 import { MaterialCommunityIcons as Icon } from "@/components/icons";
 import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { describeAttributes } from "@/lib/category-tree";
@@ -20,7 +20,7 @@ export function MobileListingPreview({ listing: l, onEdit, onBack, onConfirm, bu
 }) {
   const { maxWidth, width: screenWidth, height: screenHeight, tablet, insets } = useMobileLayout();
   const [index, setIndex] = useState(0), [lightbox, setLightbox] = useState(false);
-  const gallery = useRef<ScrollView>(null);
+  const gallery = useRef<ScrollViewInstance>(null);
   // adAssets'in sonundaki TEK video fotoğraf galerisine karışmaz; ayrı bir blokta gösterilir.
   const photos = listingPhotos(l).filter(uri => !isListingVideoUrl(uri)), width = maxWidth - 32;
   const video = splitListingMedia(l.adAssets).video;

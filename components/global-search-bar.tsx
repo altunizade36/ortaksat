@@ -2,7 +2,7 @@ import { displayListingTitle } from "@/lib/listing-title";
 import { MaterialCommunityIcons } from "@/components/icons";
 import { useGlobalSearchParams, useRouter } from "expo-router";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
-import { Platform, Pressable, ScrollView, Text, TextInput, View, type ViewProps } from "react-native";
+import { Platform, Pressable, ScrollView, Text, TextInput, View, type ViewProps, type TextInputInstance } from "react-native";
 
 import { colors } from "@/components/colors";
 import { SafeRemoteImage } from "@/components/safe-remote-image";
@@ -26,7 +26,7 @@ export function GlobalSearchBar() {
   const [value, setValue] = useState("");
   const [focused, setFocused] = useState(false);
   const [recents, setRecents] = useState<string[]>([]);
-  const inputRef = useRef<TextInput>(null);
+  const inputRef = useRef<TextInputInstance>(null);
   const blurTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [activeIndex, setActiveIndex] = useState(-1);
   const suggestionId = useId();

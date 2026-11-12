@@ -8,7 +8,7 @@ import { ListingVideoField, type ListingVideoStatus } from "@/components/listing
 import { withListingVideo, type ListingVideoValue } from "@/lib/listing-video";
 import { validateListingTitle, normalizeListingTitle } from "@/lib/listing-title";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { BackHandler, Keyboard, Modal, Platform, Pressable, ScrollView, Switch, Text, TextInput, View } from "react-native";
+import { BackHandler, Keyboard, Modal, Platform, Pressable, ScrollView, Switch, Text, TextInput, View, type TextInputInstance, type ScrollViewInstance, type ViewInstance } from "react-native";
 import { useFocusEffect } from "expo-router";
 import { useBackNavigation } from "@/lib/use-back-navigation";
 import { MaterialCommunityIcons as Icon } from "@/components/icons";
@@ -57,7 +57,7 @@ export function MobileCreateFlow(p: Props) {
   const [step, setStep] = useState(0);
   const [keyboardOpen, setKeyboardOpen] = useState(false);
   const [invalidField, setInvalidField] = useState("");
-  const titleRef = useRef<TextInput>(null);
+  const titleRef = useRef<TextInputInstance>(null);
   useEffect(() => {
     const show = Keyboard.addListener("keyboardDidShow", () => {
       setKeyboardOpen(true);
@@ -69,8 +69,8 @@ export function MobileCreateFlow(p: Props) {
     return () => { show.remove(); hide.remove(); };
   }, []);
   const [validation, setValidation] = useState("");
-  const scroll = useRef<ScrollView>(null);
-  const content = useRef<View>(null);
+  const scroll = useRef<ScrollViewInstance>(null);
+  const content = useRef<ViewInstance>(null);
   const positions = useRef<Record<number, number>>({});
   useEffect(() => {
     if (photoIndex !== null && photoIndex >= p.images.length) setPhotoIndex(p.images.length ? p.images.length - 1 : null);

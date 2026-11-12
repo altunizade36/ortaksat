@@ -5,7 +5,7 @@ import { ListingLocationFields } from "@/components/listing-location-fields";
 import { ListingTitleField } from "@/components/listing-title-field";
 import { validateListingTitle, normalizeListingTitle } from "@/lib/listing-title";
 import { useCallback, useRef, useState } from "react";
-import { BackHandler, Pressable, ScrollView, Switch, Text, View } from "react-native";
+import { BackHandler, Pressable, ScrollView, Switch, Text, View, type ScrollViewInstance } from "react-native";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
 import { MaterialCommunityIcons as Icon } from "@/components/icons";
@@ -65,7 +65,7 @@ export function MobileListingEditor({ listing }: {listing:Listing}) {
   const [categoryOpen,setCategoryOpen]=useState(false),[photoMenu,setPhotoMenu]=useState(false),[advanced,setAdvanced]=useState(false);
   const [preview,setPreview]=useState(params.section==="preview"),[saving,setSaving]=useState(false),[error,setError]=useState("");
   const [uploading,setUploading]=useState(false);
-  const sectionApplied=useRef(false),locked=useRef(false),scroll=useRef<ScrollView>(null),sections=useRef<Record<string,number>>({});
+  const sectionApplied=useRef(false),locked=useRef(false),scroll=useRef<ScrollViewInstance>(null),sections=useRef<Record<string,number>>({});
   // Şema: kategori değiştiyse seçilen yoldan; değişmediyse KAYITLI _formKey (çözülen yol bir tahmin
   // olabilir — eskiden tahminin şeması gösterilip kaydederken _formKey sessizce değişiyordu).
   const savedFormKey=String(listing.attributes?._formKey||"");

@@ -3,7 +3,7 @@ import { isMobileApp } from "@/lib/mobile-app";
 import { MaterialCommunityIcons } from "@/components/icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
-import { BackHandler, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { BackHandler, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View, type ViewInstance } from "react-native";
 import { Alert } from "@/lib/alert";
 import { showToast } from "@/lib/toast";
 
@@ -45,7 +45,7 @@ export default function AuthScreen() {
   // Sade onay: tek toplu kutu (metinler mavi altı-çizili link, 18 yaş dahil).
   const [acceptedAll, setAcceptedAll] = useState(false);
   const [consentHint, setConsentHint] = useState(false);
-  const consentRef = useRef<View>(null);
+  const consentRef = useRef<ViewInstance>(null);
   const [openDocKey, setOpenDocKey] = useState<keyof typeof LEGAL_DOCS | null>(null);
   const allAccepted = acceptedAll;
   const [loading, setLoading] = useState(false);

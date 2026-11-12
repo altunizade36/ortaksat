@@ -17,7 +17,7 @@ import { MaterialCommunityIcons } from "@/components/icons";
 import { Link, useLocalSearchParams, useRouter } from "expo-router";
 import Head from "expo-router/head";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Modal, NativeScrollEvent, NativeSyntheticEvent, Platform, Pressable, RefreshControl, ScrollView, Text, TextInput, View, useWindowDimensions } from "react-native";
+import { Modal, NativeScrollEvent, NativeSyntheticEvent, Platform, Pressable, RefreshControl, ScrollView, Text, TextInput, View, useWindowDimensions, type ScrollViewInstance } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { BrandFilter } from "@/components/brand-filter";
@@ -331,7 +331,7 @@ function ExploreScreenLegacy() {
   ];
   // Aktif filtre çipi ekran dışındaysa (Trend/Yeni yatay-kaydırmada sağda kalır — özellikle
   // ?tab=hot derin-linkinde) ona kaydır → hangi filtrenin aktif olduğu tek bakışta görünür.
-  const feedScrollRef = useRef<ScrollView>(null);
+  const feedScrollRef = useRef<ScrollViewInstance>(null);
   const chipX = useRef<Record<string, number>>({});
   useEffect(() => {
     const x = chipX.current[filter];
@@ -339,7 +339,7 @@ function ExploreScreenLegacy() {
   }, [filter]);
   // Aynı desen mobil kategori şeridi için: derin-link (?cat=vasita) veya kayıtlı-arama geri
   // yüklenince seçili kök kategori şeridin sağında/ekran-dışında kalabiliyordu → ona kaydır.
-  const catScrollRef = useRef<ScrollView>(null);
+  const catScrollRef = useRef<ScrollViewInstance>(null);
   const catChipX = useRef<Record<string, number>>({});
   useEffect(() => {
     const key = catPath[0];

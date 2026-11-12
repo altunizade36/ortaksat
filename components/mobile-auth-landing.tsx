@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
-import { Platform, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
+import { Platform, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions, type ScrollViewInstance, type ViewInstance } from "react-native";
 import { useContentWidth } from "@/lib/layout";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { MobileBrand } from "@/components/mobile-brand";
@@ -36,8 +36,8 @@ const IOS_SOCIAL_LOGIN_ENABLED = false;
 const socialLogin = Platform.OS !== "ios" || IOS_SOCIAL_LOGIN_ENABLED;
 
 export function MobileAuthLanding({ mode, onModeChange, onEmail, onGoogle, onSkip, consent, accepted, busy, error, form, formTitle, onBack, showTabs = true }: Props) {
-  const scrollRef = useRef<ScrollView>(null);
-  const consentRef = useRef<View>(null);
+  const scrollRef = useRef<ScrollViewInstance>(null);
+  const consentRef = useRef<ViewInstance>(null);
   const scrollY = useRef(0);
   const insets = useSafeAreaInsets();
   const { height } = useWindowDimensions();

@@ -1,8 +1,8 @@
 import { useState, type Ref } from "react";
-import { Text, TextInput, View } from "react-native";
+import { Text, TextInput, View, type TextInputInstance } from "react-native";
 import { LISTING_TITLE_HELP, LISTING_TITLE_LIMITS, listingTitleLength, validateListingTitle } from "@/lib/listing-title";
 
-export function ListingTitleField({ value, onChange, invalid = false, inputRef }: { value: string; onChange: (value: string) => void; invalid?: boolean; inputRef?: Ref<TextInput> }) {
+export function ListingTitleField({ value, onChange, invalid = false, inputRef }: { value: string; onChange: (value: string) => void; invalid?: boolean; inputRef?: Ref<TextInputInstance> }) {
   const [touched, setTouched] = useState(false);
   const result = validateListingTitle(value);
   const error = (value.length > 0 || touched || invalid) ? result.error : null;

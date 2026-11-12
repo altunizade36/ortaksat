@@ -1,7 +1,7 @@
 import { MaterialCommunityIcons } from "@/components/icons";
 import { Link, useRouter } from "expo-router";
 import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, Text, TextInput, useWindowDimensions, View } from "react-native";
+import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, Text, TextInput, useWindowDimensions, View, type ScrollViewInstance } from "react-native";
 
 import { Alert } from "@/lib/alert";
 
@@ -287,7 +287,7 @@ function AdminScreenInner() {
   );
   const [adminNavOpen, setAdminNavOpen] = useState(false);
   // Mobil bölüm sekmeleri: aktif sekme yatay şeritte görünür alana kaydırılır.
-  const tabsRef = useRef<ScrollView>(null);
+  const tabsRef = useRef<ScrollViewInstance>(null);
   const tabX = useRef<Record<string, number>>({});
   useEffect(() => {
     tabsRef.current?.scrollTo({ x: Math.max(0, (tabX.current[section] ?? 0) - 48), animated: true });

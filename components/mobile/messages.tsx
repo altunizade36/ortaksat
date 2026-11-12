@@ -11,7 +11,7 @@ import {BlockUserSheet} from "./block-user-sheet";
 import {Alert} from "@/lib/alert";
 import { UserAvatar } from "@/components/user-avatar";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Modal, Platform, Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { Modal, Platform, Pressable, ScrollView, Text, TextInput, View, type ScrollViewInstance } from "react-native";
 import { useRouter } from "expo-router";
 import * as Location from "expo-location";
 import * as ImagePicker from "expo-image-picker";
@@ -96,7 +96,7 @@ export function MobileConversation({ id, embedded = false }: { id: string; embed
   const [phoneConfirm, setPhoneConfirm] = useState(false);
   const [showQuick, setShowQuick] = useState(false);
   const busy = useRef(false);
-  const scroll = useRef<ScrollView>(null);
+  const scroll = useRef<ScrollViewInstance>(null);
   const nearBottom = useRef(true);
   const conversation = store.findConversation(id);
   // Yerel id sunucudaki mevcut konuşmaya eşlenmiş olabilir (store alias) → mesajlar gerçek id ile.

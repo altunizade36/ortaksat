@@ -16,7 +16,7 @@ import { Link, useLocalSearchParams, type Href } from "expo-router";
 
 import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Modal, Pressable, RefreshControl, ScrollView, Text, TextInput, View } from "react-native";
+import { Modal, Pressable, RefreshControl, ScrollView, Text, TextInput, View, type ScrollViewInstance } from "react-native";
 
 import { Alert } from "@/lib/alert";
 
@@ -158,7 +158,7 @@ function MessagesScreenInner() {
   // Yıldız / takip / arşiv artık kullanıcıya göre kalıcı (web localStorage).
   const { starred, following, archivedIds, toggleStar, toggleFollow, toggleArchive } = useInboxPrefs(currentUser.id);
   const [showArchived, setShowArchived] = useState(false);
-  const deskScrollRef = useRef<ScrollView>(null);
+  const deskScrollRef = useRef<ScrollViewInstance>(null);
   // Yukarı kaydırıldıysa gelen mesaj/görsel zorla aşağı çekmesin (dibe yakınken in).
   const deskNearBottomRef = useRef(true);
   const sendingDraftRef = useRef(false); // çift-gönderim (hızlı Enter) koruması

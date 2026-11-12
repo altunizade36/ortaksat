@@ -5,7 +5,7 @@ import { useBackNavigation } from "@/lib/use-back-navigation";
 import { HorizontalScroll } from "@/components/horizontal-scroll";
 import { displayListingTitle } from "@/lib/listing-title";
 import { useEffect, useRef, useState } from "react";
-import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Modal, Pressable, ScrollView, StyleSheet, Text, View, type ScrollViewInstance } from "react-native";
 import { Stack, useRouter } from "expo-router";
 import { MaterialCommunityIcons as Icon } from "@/components/icons";
 import { SafeRemoteImage } from "@/components/safe-remote-image";
@@ -39,7 +39,7 @@ export function MobileListingDetail({ listing: l, owner, favorite, onFavorite, o
   const [lightbox, setLightbox] = useState(false);
   const [menu, setMenu] = useState(false);
   const [report, setReport] = useState(false);
-  const galleryRef = useRef<ScrollView>(null);
+  const galleryRef = useRef<ScrollViewInstance>(null);
   const selectedImage = useRef(image); selectedImage.current = image;
   // Fotoğraflar + (varsa) TEK video. Video kapak olmaz; galeride daima SON öğedir.
   const media = splitListingMedia(listingMedia(l));
