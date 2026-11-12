@@ -544,7 +544,97 @@ function patchDynamicSeo() {
   return { hubs, cities };
 }
 
+// ───────────── SDK 58: expo-router/head (react-helmet) artık statik HTML'e YAZMIYOR ─────────────
+// SDK 54'te <Head>/<Seo> etiketleri export edilen HTML'in <head> BAŞINA `data-rh="true"` ile
+// basılıyordu (ilk etiket geçerli olduğundan +html.tsx'teki genel başlığı eziyordu). SDK 58'de
+// bu etiketler yalnız JS yüklenince ekleniyor → JS çalıştırmayan okuyucular (paylaşım önizlemesi,
+// bazı botlar) ROUTES/blog/kategori yamalarının DIŞINDA kalan sayfalarda genel başlığı görürdü.
+// Aynı etiketleri aynı yere ve aynı `data-rh` işaretiyle burada basıyoruz: çıktı SDK 54 ile eş,
+// istemcide react-helmet bu etiketleri eskisi gibi devralır (çift meta oluşmaz).
+// DİKKAT: metinler ilgili sayfadaki <Seo>/<Head> ile AYNI kalmalı (sayfa metni değişirse burayı da güncelle).
+const RH_DEFAULT_TITLE = "OrtakSat — Ortak satış ve ilan platformu"; // app/_layout.tsx varsayılan <Head>
+const RH_DEFAULT_DESC = "OrtakSat: ürünlerini ortak sat, komisyon kazan. Emlak, vasıta, elektronik ve daha fazlası. Aracı platform — ödeme ve teslimat taraflar arasında gerçekleşir.";
+const rhMark = (tag) => tag.replace(/^<(\w+)/, '<$1 data-rh="true"');
+
+// components/seo.tsx <Seo> ile AYNI etiketler, AYNI sıra.
+function rhSeo({ title, description, path: p, noindex }) {
+  const url = p ? `${BASE}${p}` : null;
+  return [
+    `<title>${escText(title)}</title>`,
+    `<meta name="description" content="${escAttr(description)}"/>`,
+    noindex ? '<meta name="robots" content="noindex, follow"/>' : null,
+    '<meta property="og:type" content="website"/>',
+    '<meta property="og:site_name" content="OrtakSat"/>',
+    `<meta property="og:title" content="${escAttr(title)}"/>`,
+    `<meta property="og:description" content="${escAttr(description)}"/>`,
+    url ? `<meta property="og:url" content="${escAttr(url)}"/>` : null,
+    `<meta property="og:image" content="${OG_IMG}"/>`,
+    '<meta name="twitter:card" content="summary_large_image"/>',
+    `<meta name="twitter:title" content="${escAttr(title)}"/>`,
+    `<meta name="twitter:description" content="${escAttr(description)}"/>`,
+    `<meta name="twitter:image" content="${OG_IMG}"/>`,
+    url ? `<link rel="canonical" href="${escAttr(url)}"/>` : null
+  ].filter(Boolean);
+}
+// Doğrudan <Head> kullanan sayfalar: yalnız başlık/açıklama (+ robots/canonical).
+function rhBasic({ title = RH_DEFAULT_TITLE, description = RH_DEFAULT_DESC, noindex, canonical }) {
+  return [
+    `<title>${escText(title)}</title>`,
+    `<meta name="description" content="${escAttr(description)}"/>`,
+    noindex ? '<meta name="robots" content="noindex, follow"/>' : null,
+    canonical ? `<link rel="canonical" href="${escAttr(canonical)}"/>` : null
+  ].filter(Boolean);
+}
+const RH_PAGES = {
+  "auth.html": rhSeo({ title: "Giriş yap veya ücretsiz üye ol | OrtakSat", description: "OrtakSat hesabına giriş yap ya da saniyeler içinde ücretsiz üye ol; ilan ver, ortak ol, kazanmaya başla.", path: "/auth", noindex: true }),
+  "cerez-politikasi.html": rhSeo({ title: "Çerez Politikası | OrtakSat", description: "OrtakSat, sizi izleyen üçüncü taraf çerezleri kullanmaz. Yalnızca hizmetin çalışması için gerekli işlevsel depolamayı kullanırız.", path: "/cerez-politikasi" }),
+  "gizlilik-politikasi.html": rhSeo({ title: "Gizlilik Politikası | OrtakSat", description: "Gizliliğiniz bizim için önemlidir. Bu politika, OrtakSat'ı kullanırken kişisel verilerinizin nasıl toplandığını, işlendiğini ve korunduğunu açıklar.", path: "/gizlilik-politikasi" }),
+  "kullanim-sartlari.html": rhSeo({ title: "Kullanım Şartları | OrtakSat", description: "OrtakSat'ı kullanmadan önce lütfen bu şartları okuyun. Platform aracı bir hizmettir; satış, ödeme ve teslimat kullanıcılar arasındaki anlaşmalardan ibarettir.", path: "/kullanim-sartlari" }),
+  "guven-merkezi.html": rhSeo({ title: "Güven ve İşlem Merkezi | OrtakSat", description: "Anlaşmalarını, satış ve komisyon sürecini takip et.", noindex: true }),
+  "guven-profili.html": rhSeo({ title: "Güven Karnesi | OrtakSat", description: "Gerçek ve doğrulanmış işlem geçmişine dayanan rol bazlı değerlendirmeler.", noindex: true }),
+  "guven-yonlendirme.html": rhSeo({ title: "Alıcı Yönlendirme | OrtakSat", description: "Alıcı yönlendirmesini doğrula.", noindex: true }),
+  "i/[slug].html": rhSeo({ title: "Ürüne yönlendiriliyorsun — OrtakSat", description: "OrtakSat ürün sayfası.", path: "/i", noindex: true }),
+  "onay/[token].html": rhSeo({ title: "Satış onayı — OrtakSat", description: "OrtakSat satış onay sayfası.", path: "/onay", noindex: true }),
+  "hosgeldin.html": rhBasic({ title: "Hoş geldin — Nasıl başlamak istersin? | OrtakSat", description: "OrtakSat'a hoş geldin. Satıcı olarak ürününü komisyonla sattır, ortak olarak sosyal medyadan komisyon kazan, ya da ürünleri keşfet.", noindex: true, canonical: `${BASE}/hosgeldin` }),
+  "davet/index.html": rhBasic({ title: "Arkadaşını Davet Et | OrtakSat" }),
+  "davet/[code].html": rhBasic({ title: "Bir arkadaşın seni OrtakSat'a davet etti", noindex: true }),
+  "(tabs)/index.html": rhBasic({ title: "OrtakSat — Komisyonla Ortak Satış Platformu | İlan Ver, Ortak Ol Kazan", description: "OrtakSat: ürününü ücretsiz listele, komisyonunu belirle; ortaklar kendi yöntemiyle tanıtıp senin için satsın. Sıfır sermaye ile ortak ol, satışta komisyon kazan.", canonical: `${BASE}/` })
+};
+// <Seo> kullanan ve rewriteSeoHead ile yamalanan bilgi sayfaları: başlık/açıklama orada yeniden
+// yazılır; <Seo>'dan geriye og:type + og:site_name kalırdı.
+const RH_SITE_PAGES = ["hakkimizda.html", "hesap-silme.html", "iletisim.html", "kvkk.html", "legal.html", "sss.html", "trust.html"];
+const RH_SITE_TAGS = ['<meta property="og:type" content="website"/>', '<meta property="og:site_name" content="OrtakSat"/>'];
+// Blog yazıları (app/blog/[slug].tsx): makale türü + site adı + yerel ayar kalırdı.
+const RH_BLOG_TAGS = ['<meta property="og:type" content="article"/>', '<meta property="og:site_name" content="OrtakSat"/>', '<meta property="og:locale" content="tr_TR"/>'];
+
+function injectHelmetHead() {
+  const blogFiles = new Set(blogPosts().map((p) => `blog/${p.slug}.html`));
+  let n = 0;
+  (function walk(dir, rel) {
+    for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+      const r = rel ? `${rel}/${e.name}` : e.name;
+      const fp = path.join(dir, e.name);
+      if (e.isDirectory()) { walk(fp, r); continue; }
+      if (!e.name.endsWith(".html") || r === "_sitemap.html") continue;
+      let html = fs.readFileSync(fp, "utf8");
+      // Yalnız uygulama sayfaları (public/ kopyaları — offline.html — hariç); tekrar çalıştırmada atla.
+      if (!html.includes('id="root"') || html.includes('data-rh="true"')) continue;
+      const tags = RH_PAGES[r] ?? (blogFiles.has(r) ? RH_BLOG_TAGS : RH_SITE_PAGES.includes(r) ? RH_SITE_TAGS : rhBasic({}));
+      const block = tags.map(rhMark).join("");
+      const next = html.replace(/<head>(<meta charSet="utf-8"\/>)?/i, (m) => m + block);
+      if (next === html) continue;
+      fs.writeFileSync(fp, next, "utf8");
+      n++;
+    }
+  })(DIST, "");
+  return n;
+}
+
 export function patchSeo() {
+  // İLK adım: SDK 54'ün statik çıktısındaki react-helmet etiketlerini geri koy; aşağıdaki
+  // yamalar (rewriteSeoHead / patch) girdiyi SDK 54'teki haliyle görsün.
+  const rhN = injectHelmetHead();
+  console.log(`post-export: sayfa <head> etiketleri (expo-router/head eşleniği) yazıldı — ${rhN} html`);
   let n = 0;
   // Statik landing/bilgi sayfaları: rewriteSeoHead → +html.tsx'ten kalan GENERIC og/desc/title
   // dubleleri SİLİNİR (patch() sadece ilkini değiştirip ikinciyi bırakıyordu → çift meta).

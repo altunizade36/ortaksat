@@ -1,4 +1,4 @@
-import { ScrollViewStyleReset } from "expo-router/html";
+import { ScrollViewStyleReset, useServerDocumentContext } from "expo-router/html";
 import type { PropsWithChildren } from "react";
 
 /**
@@ -8,8 +8,11 @@ import type { PropsWithChildren } from "react";
  * stretching full-bleed.
  */
 export default function Root({ children }: PropsWithChildren) {
+  // SDK 58: CSS/JS bundle etiketlerini expo-router artık HTML'e kendisi eklemiyor — kök belge
+  // bunları bağlamdan alıp basmak ZORUNDA (bodyNodes atlanırsa uygulama hidrasyon yapmaz).
+  const { htmlAttributes, bodyAttributes, headNodes, bodyNodes } = useServerDocumentContext();
   return (
-    <html lang="tr">
+    <html lang="tr" {...htmlAttributes}>
       <head>
         <meta charSet="utf-8" />
         <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
@@ -121,8 +124,9 @@ export default function Root({ children }: PropsWithChildren) {
         <script dangerouslySetInnerHTML={{ __html: prefetchScript }} />
         {/* JS kapalıysa iskelet ekranı gizle — içerik DOM'da zaten var (SEO/crawler güvenli). */}
         <noscript dangerouslySetInnerHTML={{ __html: "<style>#boot-splash{display:none!important}</style>" }} />
+        {headNodes}
       </head>
-      <body>
+      <body {...bodyAttributes}>
         {children}
         {/* Açılış ekranı — JS/veri yüklenene kadar boş beyaz sıçrama yerine markalı,
             yumuşak bir yükleme gösterir; uygulama hazır olunca kaybolur. */}
@@ -146,6 +150,7 @@ export default function Root({ children }: PropsWithChildren) {
           </div>
         </div>
         <script dangerouslySetInnerHTML={{ __html: bootScript }} />
+        {bodyNodes}
       </body>
     </html>
   );
