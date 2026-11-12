@@ -242,8 +242,8 @@ export function HomeDesktop() {
           </View>
 
           {/* Fiyat aralığı: min/max + hazır aralıklar */}
-          <View style={{ gap: 8 }}>
-            <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>{translateCopy("Fiyat Aralığı (₺)", language)}</Text>
+          <View style={{ borderTopColor: colors.line, borderTopWidth: 1, gap: 8, paddingTop: 12 }}>
+            <Text style={{ color: colors.ink, fontSize: 12.5, fontWeight: "900" }}>{translateCopy("Fiyat Aralığı (₺)", language)}</Text>
             <View style={{ alignItems: "center", flexDirection: "row", gap: 6 }}>
               <TextInput value={priceMin} onChangeText={setPriceMin} keyboardType="numeric" placeholder={translateCopy("En az", language)} placeholderTextColor={colors.subtle} style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 9, borderWidth: 1, color: colors.ink, flexBasis: 0, flexGrow: 1, fontSize: 12.5, fontWeight: "700", minHeight: 40, minWidth: 0, paddingHorizontal: 8, textAlign: "center" }} />
               <Text style={{ color: colors.subtle, fontSize: 13, fontWeight: "800" }}>—</Text>
@@ -258,14 +258,14 @@ export function HomeDesktop() {
           </View>
 
           {/* Konum: tüm 81 il + ilçe (keşfet/kategori ile aynı LocationSelector) */}
-          <View style={{ gap: 8 }}>
-            <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>{translateCopy("Konum (İl / İlçe)", language)}</Text>
+          <View style={{ borderTopColor: colors.line, borderTopWidth: 1, gap: 8, paddingTop: 12 }}>
+            <Text style={{ color: colors.ink, fontSize: 12.5, fontWeight: "900" }}>{translateCopy("Konum (İl / İlçe)", language)}</Text>
             <LocationSelector mode="filter" showNeighborhood={false} value={loc} onChange={setLoc} />
           </View>
 
           {/* Ortak kazancı (min komisyon ₺) */}
-          <View style={{ gap: 8 }}>
-            <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>{translateCopy("En Az Ortak Kazancı", language)}</Text>
+          <View style={{ borderTopColor: colors.line, borderTopWidth: 1, gap: 8, paddingTop: 12 }}>
+            <Text style={{ color: colors.ink, fontSize: 12.5, fontWeight: "900" }}>{translateCopy("En Az Ortak Kazancı", language)}</Text>
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
               {COMMISSION_PRESETS.map(([v, lbl]) => {
                 const on = minCommission === v;
@@ -275,8 +275,8 @@ export function HomeDesktop() {
           </View>
 
           {/* Komisyon ORANI (%) — ortakların en çok baktığı */}
-          <View style={{ gap: 8 }}>
-            <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>{translateCopy("En Az Komisyon Oranı (%)", language)}</Text>
+          <View style={{ borderTopColor: colors.line, borderTopWidth: 1, gap: 8, paddingTop: 12 }}>
+            <Text style={{ color: colors.ink, fontSize: 12.5, fontWeight: "900" }}>{translateCopy("En Az Komisyon Oranı (%)", language)}</Text>
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
               {[10, 15, 20, 25].map((r) => {
                 const on = minRate === r;
@@ -286,8 +286,8 @@ export function HomeDesktop() {
           </View>
 
           {/* Komisyon tipi */}
-          <View style={{ gap: 8 }}>
-            <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>{translateCopy("Komisyon Tipi", language)}</Text>
+          <View style={{ borderTopColor: colors.line, borderTopWidth: 1, gap: 8, paddingTop: 12 }}>
+            <Text style={{ color: colors.ink, fontSize: 12.5, fontWeight: "900" }}>{translateCopy("Komisyon Tipi", language)}</Text>
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
               {([["all", translateCopy("Tümü", language)], ["rate", translateCopy("Oran %", language)], ["fixed", translateCopy("Sabit ₺", language)]] as Array<["all" | "rate" | "fixed", string]>).map(([v, lbl]) => {
                 const on = commTypeFilter === v;
@@ -297,8 +297,8 @@ export function HomeDesktop() {
           </View>
 
           {/* Satıcı puanı */}
-          <View style={{ gap: 8 }}>
-            <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>{translateCopy("Satıcı Puanı", language)}</Text>
+          <View style={{ borderTopColor: colors.line, borderTopWidth: 1, gap: 8, paddingTop: 12 }}>
+            <Text style={{ color: colors.ink, fontSize: 12.5, fontWeight: "900" }}>{translateCopy("Satıcı Puanı", language)}</Text>
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
               {[4, 4.5].map((r) => {
                 const on = minRating === r;
@@ -308,7 +308,7 @@ export function HomeDesktop() {
           </View>
 
           {/* Hızlı anahtarlar */}
-          <View style={{ gap: 10 }}>
+          <View style={{ borderTopColor: colors.line, borderTopWidth: 1, gap: 11, paddingTop: 12 }}>
             <SwitchRow label={translateCopy("Sadece ortak satışa açık", language)} on={onlyOpen} onPress={() => setOnlyOpen((v) => !v)} />
             <SwitchRow label={translateCopy("Öne çıkan ilanlar", language)} on={onlyFeatured} onPress={() => setOnlyFeatured((v) => !v)} />
             <SwitchRow label={translateCopy("Doğrulanmış satıcı", language)} on={onlyVerified} onPress={() => setOnlyVerified((v) => !v)} />
@@ -527,7 +527,7 @@ export function HomeDesktop() {
             </Link>
           </View>
           <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
-            <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>{translateCopy("Sırala:", language)}</Text>
+            <Text style={{ color: colors.ink, fontSize: 12.5, fontWeight: "900" }}>{translateCopy("Sırala:", language)}</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 7, paddingRight: 12 }}>
               {SORTS.map(([key, lbl]) => {
                 const on = sortMode === key;
@@ -647,10 +647,10 @@ function FilterPill({ label, on, onPress, icon }: { label: string; on: boolean; 
       accessibilityLabel={label}
       hitSlop={6}
       onPress={onPress}
-      style={{ alignItems: "center", backgroundColor: on ? colors.primary : colors.surfaceAlt, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 3, justifyContent: "center", minHeight: 30, paddingHorizontal: 11, paddingVertical: 5 }}
+      style={{ alignItems: "center", backgroundColor: on ? colors.primary : colors.surfaceAlt, borderColor: on ? colors.primary : colors.line, borderRadius: 9, borderWidth: 1, flexDirection: "row", flexGrow: 1, gap: 3, justifyContent: "center", minHeight: 32, paddingHorizontal: 10, paddingVertical: 5 }}
     >
       {icon ? <MaterialCommunityIcons name={icon} size={12} color={on ? "#FFFFFF" : colors.gold} /> : null}
-      <Text style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 11, fontWeight: "800" }}>{label}</Text>
+      <Text numberOfLines={1} style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 11.5, fontWeight: "800" }}>{label}</Text>
     </Pressable>
   );
 }

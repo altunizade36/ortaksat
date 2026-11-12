@@ -742,12 +742,12 @@ export default function ListingDetailScreen() {
             >
               {/* LCP: ilan detayının kahraman görseli → yüksek öncelik + fade/scrim yok
                   (SafeRemoteImage priority="high" ile eager). Eskiden low+cross-dissolve idi. */}
-              {gallery.length ? <SafeRemoteImage full uri={mainImg} alt={imgAlt} accessibilityLabel={imgAlt} priority="high" style={{ backgroundColor: colors.line, height: isWideWeb ? 520 : 330, width: "100%" }} contentFit="cover" /> : <View style={{ height: isWideWeb ? 520 : 330, backgroundColor: colors.surfaceAlt, alignItems: "center", justifyContent: "center", gap: 12 }}><MaterialCommunityIcons name="image-off-outline" size={44} color={colors.muted} /><Text style={{ color: colors.muted }}>{translateCopy("Bu ilanda fotoğraf yok", language)}</Text></View>}
+              {gallery.length ? <SafeRemoteImage full uri={mainImg} alt={imgAlt} accessibilityLabel={imgAlt} priority="high" style={{ backgroundColor: colors.line, height: isWideWeb ? 520 : 290, width: "100%" }} contentFit="cover" /> : <View style={{ height: isWideWeb ? 520 : 290, backgroundColor: colors.surfaceAlt, alignItems: "center", justifyContent: "center", gap: 12 }}><MaterialCommunityIcons name="image-off-outline" size={44} color={colors.muted} /><Text style={{ color: colors.muted }}>{translateCopy("Bu ilanda fotoğraf yok", language)}</Text></View>}
               {/* Kaynak filigranı — dosyaya gömülmez, yalnız görüntüleme katmanı (ürün bozulmaz). */}
               {!!gallery.length && <ImageWatermark size={isWideWeb ? 20 : 15} />}
               {/* Ortaklığa AÇIK ilan rozeti (yeşil, sol üst) — kapalı/normal ilanda gösterilmez. */}
               {partnerable ? (
-                <View style={{ alignItems: "center", backgroundColor: colors.success, borderRadius: 999, flexDirection: "row", gap: 5, left: 12, paddingHorizontal: 11, paddingVertical: 6, position: "absolute", top: 12 }}>
+                <View style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 999, flexDirection: "row", gap: 5, left: 12, paddingHorizontal: 11, paddingVertical: 6, position: "absolute", top: 12 }}>
                   <MaterialCommunityIcons name="check-decagram" size={14} color="#FFFFFF" />
                   <Text style={{ color: "#FFFFFF", fontSize: 11.5, fontWeight: "900", letterSpacing: 0.2 }}>{translateCopy("Ortaklığa Açık", language)}</Text>
                 </View>
@@ -765,7 +765,7 @@ export default function ListingDetailScreen() {
                 </View>
               ) : null}
             </Pressable>
-            {gallery.length > 1 ? (
+            {gallery.length > 1 && isWideWeb ? (
               <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, paddingHorizontal: 12, paddingTop: 12 }}>
                 {gallery.map((img, i) => (
                   <Pressable key={img + i} onPress={() => setActiveImage(i)} style={{ borderColor: i === galleryIdx ? colors.primary : colors.line, borderRadius: 10, borderWidth: i === galleryIdx ? 2 : 1, height: 64, overflow: "hidden", width: 64 }}>
@@ -774,7 +774,7 @@ export default function ListingDetailScreen() {
                 ))}
               </View>
             ) : null}
-            <View style={{ flexDirection: "row", gap: 8, padding: 12 }}>
+            <View style={{ flexDirection: "row", gap: isWideWeb ? 8 : 6, padding: isWideWeb ? 12 : 8 }}>
               <IconButton active={favorited} icon={favorited ? "heart" : "heart-outline"} label={translateCopy("Beğen", language)} onPress={() => toggleFavorite(currentListing.id)} />
               {!isDemo ? <IconButton active={inCompare} icon={inCompare ? "compare-remove" : "compare-horizontal"} label={translateCopy("Karşılaştır", language)} onPress={() => toggleCompare(currentListing.id)} /> : null}
               <IconButton icon="share-variant-outline" label={translateCopy("Paylaş", language)} onPress={() => void handleShare()} />
@@ -1596,7 +1596,7 @@ function IconButton({ active, icon, label, onPress }: { active?: boolean; icon: 
   const { language } = useLanguage();
   const wide = useIsWideWeb();
   return (
-    <Pressable accessibilityRole="button" accessibilityState={{ selected: !!active }} accessibilityLabel={translateCopy(label, language)} onPress={onPress} style={({ pressed }) => ({ alignItems: "center", backgroundColor: active ? colors.primarySoft : colors.surfaceAlt, borderRadius: 10, flex: 1, minWidth: 0, flexDirection: wide ? "row" : "column", gap: wide ? 6 : 5, justifyContent: "center", minHeight: wide ? 44 : 62, paddingHorizontal: 2, opacity: pressed ? 0.72 : 1 })}>
+    <Pressable accessibilityRole="button" accessibilityState={{ selected: !!active }} accessibilityLabel={translateCopy(label, language)} onPress={onPress} style={({ pressed }) => ({ alignItems: "center", backgroundColor: active ? colors.primarySoft : colors.surfaceAlt, borderRadius: 10, flex: 1, minWidth: 0, flexDirection: "row", gap: wide ? 6 : 4, justifyContent: "center", minHeight: wide ? 44 : 40, paddingHorizontal: 2, opacity: pressed ? 0.72 : 1 })}>
       <MaterialCommunityIcons name={icon} size={18} color={active ? colors.primaryDark : colors.ink} />
       <Text ellipsizeMode="tail" numberOfLines={1} style={{ color: active ? colors.primaryDark : colors.ink, flexShrink: 1, fontSize: wide ? 13 : 11, fontWeight: "600" }}>{translateCopy(label, language)}</Text>
     </Pressable>

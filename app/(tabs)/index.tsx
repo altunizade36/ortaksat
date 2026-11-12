@@ -330,7 +330,8 @@ function DesktopHomeScreen() {
               ))}
             </ScrollView>
             <View style={{ alignItems: "center", flexDirection: "row", gap: 10 }}>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingRight: 12 }} style={{ flex: 1 }}>
+              <MaterialCommunityIcons name="sort" size={17} color={colors.muted} />
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6, paddingRight: 12 }} style={{ flex: 1 }}>
                 {(Object.keys(sortLabels) as SortMode[]).map((item) => (
                   <SortChip key={item} active={sortMode === item} label={sortLabels[item]} onPress={() => setSortMode(item)} />
                 ))}
@@ -340,7 +341,7 @@ function DesktopHomeScreen() {
                 accessibilityLabel={translateCopy("Gelişmiş filtre", language)}
                 accessibilityState={{ expanded: advancedOpen }}
                 onPress={() => setAdvancedOpen((v) => !v)}
-                style={{ alignItems: "center", backgroundColor: advancedOpen || hasAdvanced ? colors.primary : colors.surface, borderColor: hasAdvanced ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 5, paddingHorizontal: 13, paddingVertical: 8 }}
+                style={{ alignItems: "center", backgroundColor: advancedOpen || hasAdvanced ? colors.primary : colors.surface, borderColor: hasAdvanced ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 5, paddingHorizontal: 13, paddingVertical: 7 }}
               >
                 <MaterialCommunityIcons name="tune-variant" size={15} color={advancedOpen || hasAdvanced ? "#FFFFFF" : colors.primaryDark} />
                 <Text style={{ color: advancedOpen || hasAdvanced ? "#FFFFFF" : colors.primaryDark, fontSize: 12.5, fontWeight: "900" }}>{translateCopy("Filtrele", language)}</Text>
@@ -753,7 +754,7 @@ function CategoryShowcase({ categoryTree, listings, isWideWeb }: { categoryTree:
             ) : null}
           </View>
           <Text numberOfLines={2} style={{ color: colors.ink, fontSize: 11.5, fontWeight: "800", lineHeight: 14, maxWidth: tileW, minHeight: 28, textAlign: "center" }}>
-            {translateCopy(getCategoryShortLabel(node.label), language)}
+            {translateCopy(getCategoryShortLabel(node.label), language).split(",")[0]}
           </Text>
           {n > 0 ? (
             <View style={{ backgroundColor: colors.primarySoft, borderRadius: 999, paddingHorizontal: 7, paddingVertical: 1 }}>
@@ -821,17 +822,17 @@ function SortChip({ active, label, onPress }: { active?: boolean; label: string;
       onPress={onPress}
       style={({ pressed }) => ({
         alignItems: "center",
-        backgroundColor: active ? colors.ink : colors.surface,
-        borderColor: active ? colors.ink : colors.line,
+        backgroundColor: active ? colors.primarySoft : "transparent",
+        borderColor: active ? colors.primary : colors.line,
         borderRadius: 999,
         borderWidth: 1,
         justifyContent: "center",
-        minHeight: 36,
+        minHeight: 32,
         opacity: pressed ? 0.72 : 1,
-        paddingHorizontal: 14
+        paddingHorizontal: 12
       })}
     >
-      <Text adjustsFontSizeToFit minimumFontScale={0.8} numberOfLines={1} selectable style={{ color: active ? "#FFFFFF" : colors.ink, fontSize: 13, fontWeight: "900" }}>
+      <Text adjustsFontSizeToFit minimumFontScale={0.8} numberOfLines={1} selectable style={{ color: active ? colors.primary : colors.muted, fontSize: 12.5, fontWeight: "800" }}>
         {label}
       </Text>
     </Pressable>
@@ -841,7 +842,7 @@ function SortChip({ active, label, onPress }: { active?: boolean; label: string;
 function FilterChip({ active, icon, label, onPress }: { active?: boolean; icon: IconName; label: string; onPress: () => void }) {
   const { language } = useLanguage();
   const translatedLabel = translateCopy(label, language);
-  const chipWidth = Math.min(178, Math.max(104, translatedLabel.length * 8 + 48));
+
 
   return (
     <Pressable
@@ -854,14 +855,13 @@ function FilterChip({ active, icon, label, onPress }: { active?: boolean; icon: 
         borderWidth: 1,
         flexDirection: "row",
         gap: 6,
-        minHeight: 38,
+        minHeight: 36,
         opacity: pressed ? 0.72 : 1,
-        paddingHorizontal: 12,
-        width: chipWidth
+        paddingHorizontal: 13
       })}
     >
       <MaterialCommunityIcons name={icon} size={15} color={active ? "#FFFFFF" : colors.primary} style={{ flexShrink: 0 }} />
-      <Text adjustsFontSizeToFit minimumFontScale={0.78} numberOfLines={1} ellipsizeMode="tail" style={{ color: active ? "#FFFFFF" : colors.ink, flex: 1, fontSize: 13, fontWeight: "900" }}>
+      <Text numberOfLines={1} style={{ color: active ? "#FFFFFF" : colors.ink, fontSize: 13, fontWeight: "800" }}>
         {translatedLabel}
       </Text>
     </Pressable>
