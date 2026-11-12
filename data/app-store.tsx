@@ -2,6 +2,9 @@ import { validateListingTitle } from "@/lib/listing-title";
 import { clearOAuthConsent, prepareOAuthConsent, recordExplicitOAuthConsent } from "@/lib/oauth-consent";
 import { hasProfilePhoto } from "@/lib/profile-photo";
 ﻿import { createContext, PropsWithChildren, useEffect, useMemo, useRef, useState } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { cardImageUrl } from "@/lib/image-url";
+import { Image as ExpoImage } from "expo-image";
 import { Platform } from "react-native";
 import Constants from "expo-constants";
 import * as WebBrowser from "expo-web-browser";
@@ -373,6 +376,19 @@ type AppStore = {
   isFavorite: (listingId: string) => boolean;
 };
 
+/** En-iyi-çaba: kart küçük görsellerini disk önbelleğine indirir; hata sessizce yutulur. */
+function prefetchListingImages(items: Listing[]): void {
+  try {
+    const urls = items.map((item) => cardImageUrl(item.imageUrl || item.image)).filter((url): url is string => typeof url === "string" && url.startsWith("http"));
+    if (urls.length) void ExpoImage.prefetch(urls, "memory-disk").catch(() => {});
+  } catch { /* görsel modülü yoksa atla */ }
+}
+
+// Uygulamada açılış önbelleği: son başarılı ilan listesinin ilk bölümü (herkese açık veri) cihazda tutulur.
+const MARKETPLACE_CACHE_KEY = "ortaksat.marketplaceCache.v1";
+const MARKETPLACE_CACHE_LISTINGS = 48;
+const MARKETPLACE_CACHE_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
+
 export const StoreContext = createContext<AppStore | null>(null);
 
 function slugify(value: string) {
@@ -647,12 +663,29 @@ export function StoreProvider({ children }: PropsWithChildren) {
 
     async function hydrateFromSupabase() {
       if (!isSupabaseConfigured) return;
+      // UYGULAMA: son başarılı ilan listesi cihazda saklanır ve açılışta AĞI BEKLEMEDEN gösterilir
+      // (yavaş/kopuk bağlantıda boş ekran ve bekleme olmaz); ağ yanıtı gelince güncel veriyle değişir.
+      let showedCache = false;
+      if (Platform.OS !== "web") {
+        try {
+          const cachedRaw = await AsyncStorage.getItem(MARKETPLACE_CACHE_KEY);
+          const cached = cachedRaw ? JSON.parse(cachedRaw) as { at: number; listings: Listing[]; users: User[] } : null;
+          if (mounted && cached && Array.isArray(cached.listings) && cached.listings.length > 0 && Date.now() - cached.at < MARKETPLACE_CACHE_MAX_AGE_MS) {
+            setUsers(cached.users ?? []);
+            setListings(cached.listings);
+            setBackendMode("supabase");
+            setMarketplaceInitialLoading(false);
+            showedCache = true;
+            prefetchListingImages(cached.listings.slice(0, 12));
+          }
+        } catch { /* önbellek okunamadı → normal yükleme */ }
+      }
       try {
         const snapshot = await loadMarketplaceSnapshot();
         if (!mounted) return;
         if (!snapshot) {
-          // Ağ/sunucu hatası veya boş yanıt → boş sayfa yerine "yeniden dene".
-          setMarketplaceLoadFailed(true);
+          // Ağ/sunucu hatası veya boş yanıt → boş sayfa yerine "yeniden dene" (önbellek gösteriliyorsa o kalır).
+          if (!showedCache) setMarketplaceLoadFailed(true);
           return;
         }
         // Canlı: yalnızca gerçek Supabase verisi (demo/mock birleştirme yok).
@@ -662,6 +695,15 @@ export function StoreProvider({ children }: PropsWithChildren) {
         mpOffsetRef.current = snapshot.listings.length;
         setMarketplaceHasMore(snapshot.listings.length >= 90);
         setBackendMode("supabase");
+        // İlanlar hazır: açılış/iskelet ikincil verileri (ayar, blog, kategori) BEKLEMEDEN kapanır.
+        setMarketplaceInitialLoading(false);
+        if (Platform.OS !== "web") {
+          // İlk ekrandaki kart görsellerini önceden indir: liste çizildiğinde görseller hazır olur (gri kutu görünmez).
+          prefetchListingImages(snapshot.listings.slice(0, 12));
+          const keep = snapshot.listings.slice(0, MARKETPLACE_CACHE_LISTINGS);
+          const owners = new Set(keep.map((item) => item.ownerId));
+          void AsyncStorage.setItem(MARKETPLACE_CACHE_KEY, JSON.stringify({ at: Date.now(), listings: keep, users: snapshot.users.filter((u) => owners.has(u.id)) })).catch(() => {});
+        }
         // İkincil veriler (ayar/blog/kategori): biri hata verse bile ilanlar yüklendi;
         // her birini ayrı sararak birinin hatası diğerlerini engellemesin.
         const settings = await loadPlatformSettings().catch(() => null);
@@ -681,7 +723,7 @@ export function StoreProvider({ children }: PropsWithChildren) {
         setHiddenCategoriesModule(hidden);
         setHiddenCategoriesState(hidden);
       } catch {
-        if (mounted) setMarketplaceLoadFailed(true);
+        if (mounted && !showedCache) setMarketplaceLoadFailed(true);
       } finally {
         // Ne olursa olsun skeleton'ı kapat — sonsuz yükleme yaşanmasın.
         if (mounted) setMarketplaceInitialLoading(false);

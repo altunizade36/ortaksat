@@ -75,7 +75,7 @@ const Tile = memo(function Tile({ listing: l, size, large, eager, onOpen }: { li
       dataSet={{ card: "listing", tile: "mosaic" }}
       style={({ pressed }) => ({ backgroundColor: colors.neutralSoft, height: size, opacity: pressed ? 0.86 : 1, overflow: "hidden", width: size })}
     >
-      <SafeRemoteImage uri={l.imageUrl || l.image} full={large} alt={title} contentFit="cover" priority={eager ? "high" : "low"} transition={eager ? 0 : 140} style={{ height: "100%", width: "100%" }} />
+      <SafeRemoteImage uri={l.imageUrl || l.image} full={large} alt={title} contentFit="cover" priority={eager ? "high" : undefined} transition={eager ? 0 : 140} style={{ height: "100%", width: "100%" }} />
       <LinearGradient pointerEvents="none" colors={["rgba(0,10,40,0)", "rgba(0,10,40,0.72)"]} style={{ bottom: 0, height: large ? 96 : 52, left: 0, position: "absolute", right: 0 }} />
       {photoCount > 1 ? (
         <View pointerEvents="none" style={{ position: "absolute", right: 6, top: 6 }}>

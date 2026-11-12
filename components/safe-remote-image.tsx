@@ -1,6 +1,6 @@
 import { Image, type ImageProps } from "expo-image";
 import { useEffect, useState } from "react";
-import { View } from "react-native";
+import { Platform, View } from "react-native";
 
 import { colors } from "@/components/colors";
 import { cardImageUrl, markThumbnailMissing } from "@/lib/image-url";
@@ -49,11 +49,13 @@ export function SafeRemoteImage({ fallback = fallbackImage, fallbackUri, full, o
         accessibilityLabel={a11yAlt}
         style={{ height: "100%", width: "100%" }}
         source={!shown || failed ? resolvedFallback : { uri: shown }}
-        transition={transition ?? (eager ? 0 : { duration: 260, effect: "cross-dissolve" })}
+        // Uygulamada geçiş kısa tutulur: 260 ms'lik erime, hızlı kaydırmada görsellerin "geç geldiği" hissini veriyordu.
+        transition={transition ?? (eager ? 0 : { duration: Platform.OS === "web" ? 260 : 110, effect: "cross-dissolve" })}
         recyclingKey={(failed ? fallbackUri : shown) ?? undefined}
         cachePolicy="memory-disk"
         placeholderContentFit="cover"
-        priority={props.priority ?? "low"}
+        // Web'de varsayılan "low" (LCP görseli öne geçsin); uygulamada tüm kart görselleri olağan öncelikle iner.
+        priority={props.priority ?? (Platform.OS === "web" ? "low" : "normal")}
         onLoadStart={() => {
           setLoading(true);
           onLoadStart?.();
