@@ -1,5 +1,13 @@
 import { mkdir, writeFile } from "node:fs/promises";
 
+// DİKKAT: Bu betik dış kaynaktan (Wikimedia) görsel bağlantısı toplar. İl kapakları artık
+// yalnız kendi ürettiğimiz çizimlerden gelir (scripts/city-covers/generate.py); telif riski
+// nedeniyle dış kaynak kullanılmaz. Yanlışlıkla çalıştırılıp manifesti ezmesin diye durdurulur.
+if (!process.argv.includes("--dis-kaynak-kullan")) {
+  console.error("Durduruldu: il kapakları dış kaynaktan çekilmez. Özgün görseller için: python scripts/city-covers/generate.py");
+  process.exit(1);
+}
+
 const landmarks = {
   Adana: "Adana Taşköprü Seyhan river panorama",
   Adıyaman: "Mount Nemrut Adıyaman Turkey",
