@@ -49,6 +49,43 @@ export function CookieConsent() {
   };
   const narrow = width > 0 && width < 640;
 
+  // İlk karşılama: ince, tek sıralık bant (dar ekranda metin + tek sıra düğme). Ayrıntılı açıklama ve
+  // kategori anahtarları yalnız "Tercihleri Yönet"e basılınca ya da alt bilgiden açılan panelde gösterilir.
+  if (mode === "banner") {
+    const stacked = width > 0 && width < 820;
+    return (
+      <View
+        testID="cookie-consent"
+        accessibilityRole={"dialog" as never}
+        accessibilityLabel={tr("Çerez tercihleri")}
+        style={{
+          position: "fixed" as never, bottom: narrow ? 8 : 14, left: narrow ? 8 : 16, right: narrow ? 8 : 16, zIndex: 9000,
+          alignItems: "center", pointerEvents: "box-none"
+        }}
+      >
+        <View style={{
+          alignItems: stacked ? "stretch" : "center", backgroundColor: "#FFFFFF", borderColor: "#DCE5F8", borderRadius: 14, borderWidth: 1,
+          boxShadow: "0 6px 22px rgba(9,39,94,0.13)" as never, flexDirection: stacked ? "column" : "row", gap: stacked ? 8 : 14,
+          maxWidth: 1040, paddingHorizontal: stacked ? 12 : 16, paddingVertical: stacked ? 10 : 8, width: "100%"
+        }}>
+          <Text style={{ color: "#33425F", flex: stacked ? undefined : 1, fontSize: 13, lineHeight: 18, minWidth: 0 }}>
+            {metaPixelEnabled
+              ? tr("Zorunlu kayıtların dışında, yalnız izin verirsen analitik ve reklam ölçümü araçlarını çalıştırırız.")
+              : tr("Zorunlu kayıtların dışında, yalnız izin verirsen analitik araçlarını çalıştırırız.")}
+            {" "}
+            <Link href={"/cerez-politikasi" as Href} style={{ color: colors.primaryDark, fontWeight: "700", textDecorationLine: "underline" }}>{tr("Ayrıntılar")}</Link>
+          </Text>
+          {/* Üç seçenek de bilinçli olarak AYNI görünümde (rehber: kabul / reddet / tercihler eşit görünürlükte olmalı). */}
+          <View style={{ alignItems: "center", flexDirection: "row", gap: 6 }}>
+            <SlimButton label={tr("Tercihleri Yönet")} onPress={() => setMode("preferences")} testID="cookie-manage" grow={stacked} />
+            <SlimButton label={tr("Reddet")} onPress={() => decide({ analytics: false, marketing: false })} testID="cookie-reject" grow={stacked} />
+            <SlimButton label={tr("Kabul Et")} onPress={() => decide({ analytics: true, marketing: true })} testID="cookie-accept" grow={stacked} />
+          </View>
+        </View>
+      </View>
+    );
+  }
+
   return (
     <View
       testID="cookie-consent"
@@ -65,16 +102,12 @@ export function CookieConsent() {
       }}>
         <ScrollView style={{ flexGrow: 0 }} contentContainerStyle={{ gap: 10 }} keyboardShouldPersistTaps="handled">
           <Text accessibilityRole="header" style={{ color: "#09275E", fontSize: 16, fontWeight: "800" }}>
-            {mode === "banner" ? tr("Çerezler ve benzeri teknolojiler") : tr("Çerez tercihlerin")}
+            {tr("Çerez tercihlerin")}
           </Text>
           <Text style={{ color: "#33425F", fontSize: 13.5, lineHeight: 20 }}>
-            {mode === "banner"
-              ? (metaPixelEnabled
-                ? tr("Sitenin çalışması için zorunlu kayıtları kullanırız. İzin verirsen kullanım istatistikleri ve reklam ölçümü için ek araçları da çalıştırırız; izin vermezsen hiçbiri yüklenmez.")
-                : tr("Sitenin çalışması için zorunlu kayıtları kullanırız. İzin verirsen kullanım istatistikleri için analitik araçlarını da çalıştırırız; izin vermezsen hiçbiri yüklenmez."))
-              : (metaPixelEnabled
-                ? tr("OrtakSat'ın çalışması için zorunlu olan oturum, güvenlik ve tercih kayıtlarını kullanırız; bunlar için izin gerekmez. İzin verirsen site kullanımını ölçen analitik araçlarını ve reklam ölçümü çerezlerini de çalıştırırız. İzin vermezsen bunlar hiç yüklenmez ve siteyi aynı şekilde kullanmaya devam edersin.")
-                : tr("OrtakSat'ın çalışması için zorunlu olan oturum, güvenlik ve tercih kayıtlarını kullanırız; bunlar için izin gerekmez. İzin verirsen site kullanımını ölçen analitik araçlarını da çalıştırırız. İzin vermezsen bunlar hiç yüklenmez ve siteyi aynı şekilde kullanmaya devam edersin."))}
+            {metaPixelEnabled
+              ? tr("OrtakSat'ın çalışması için zorunlu olan oturum, güvenlik ve tercih kayıtlarını kullanırız; bunlar için izin gerekmez. İzin verirsen site kullanımını ölçen analitik araçlarını ve reklam ölçümü çerezlerini de çalıştırırız. İzin vermezsen bunlar hiç yüklenmez ve siteyi aynı şekilde kullanmaya devam edersin.")
+              : tr("OrtakSat'ın çalışması için zorunlu olan oturum, güvenlik ve tercih kayıtlarını kullanırız; bunlar için izin gerekmez. İzin verirsen site kullanımını ölçen analitik araçlarını da çalıştırırız. İzin vermezsen bunlar hiç yüklenmez ve siteyi aynı şekilde kullanmaya devam edersin.")}
           </Text>
 
           {mode === "preferences" ? (
@@ -115,11 +148,7 @@ export function CookieConsent() {
             {/* Üç düğme de bilinçli olarak AYNI renk, boyut ve puntoda (rehber: kabul / reddet / tercihler eşit görünürlükte olmalı). */}
             <ChoiceButton label={tr("Reddet")} onPress={() => decide({ analytics: false, marketing: false })} testID="cookie-reject" narrow={narrow} />
             <ChoiceButton label={tr("Kabul Et")} onPress={() => decide({ analytics: true, marketing: true })} testID="cookie-accept" narrow={narrow} />
-            {mode === "banner" ? (
-              <ChoiceButton label={tr("Tercihleri Yönet")} onPress={() => setMode("preferences")} testID="cookie-manage" narrow={narrow} />
-            ) : (
-              <ChoiceButton label={tr("Seçimimi Kaydet")} onPress={() => decide({ analytics, marketing })} testID="cookie-save" narrow={narrow} />
-            )}
+            <ChoiceButton label={tr("Seçimimi Kaydet")} onPress={() => decide({ analytics, marketing })} testID="cookie-save" narrow={narrow} />
           </View>
         </ScrollView>
       </View>
@@ -134,6 +163,23 @@ function PolicyLink({ href, label }: { href: Href; label: string }) {
         <Text style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "700", textDecorationLine: "underline" }}>{label}</Text>
       </Pressable>
     </Link>
+  );
+}
+
+function SlimButton({ label, onPress, testID, grow }: { label: string; onPress: () => void; testID: string; grow: boolean }) {
+  return (
+    <Pressable
+      testID={testID}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      onPress={onPress}
+      style={({ pressed }) => ({
+        alignItems: "center", backgroundColor: pressed ? "#EEF3FF" : "#FFFFFF", borderColor: "#B9C8EC", borderRadius: 10, borderWidth: 1,
+        flexGrow: grow ? 1 : 0, justifyContent: "center", minHeight: grow ? 40 : 34, minWidth: 0, paddingHorizontal: grow ? 8 : 14
+      })}
+    >
+      <Text numberOfLines={1} style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "700" }}>{label}</Text>
+    </Pressable>
   );
 }
 
