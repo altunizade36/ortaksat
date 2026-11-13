@@ -24,7 +24,7 @@ const SECTIONS: LegalSection[] = [
     heading: "Verileri Nasıl Topluyoruz",
     paragraphs: [
       "Verileri doğrudan sizden (kayıt, profil, ilan, mesaj vb.) ve platformu kullanımınız sırasında otomatik olarak (oturum/günlük kayıtları) toplarız.",
-      "Google ile giriş yapmayı seçerseniz, Google hesabınızdan yalnızca e-posta ve ad bilgisi alınır; şifreniz veya başka veri alınmaz."
+      "Google veya Apple ile giriş yapmayı seçerseniz, o hesabınızdan yalnızca e-posta ve (paylaşırsanız) ad bilgisi alınır; şifreniz veya başka veri alınmaz. Apple ile girişte e-postanızı gizlemeyi seçerseniz Apple'ın sizin için ürettiği aktarma adresi kaydedilir."
     ]
   },
   {
@@ -54,6 +54,7 @@ const SECTIONS: LegalSection[] = [
       "Vercel — web barındırma ve içerik dağıtımı (ABD merkezli; küresel uç sunucular). Ziyaret istatistikleri (Web Analytics, Speed Insights) yalnızca çerez tercihlerinde izin verirsen çalışır; çerez yerleştirmez.",
       "Resend — işlemsel/bildirim e-postalarının gönderimi.",
       "Google — yalnızca 'Google ile giriş' seçilirse kimlik doğrulama.",
+      "Apple — yalnızca iOS uygulamasında 'Apple ile giriş' seçilirse kimlik doğrulama.",
       "Meta (Facebook / Instagram) Pixel — yalnızca etkinleştirildiği dönemlerde ve yalnızca 'Pazarlama' iznini verirsen reklam ölçümü."
     ]
   },

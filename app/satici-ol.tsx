@@ -131,6 +131,18 @@ export default function SellerLandingPage() {
           </View>
         </View>
 
+        {/* Çok ürünlü satıcılar için kurumsal sayfaya geçiş */}
+        <Link href="/kurumsal" asChild>
+          <Pressable accessibilityRole="link" style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 14, borderWidth: 1, flexDirection: "row", gap: 12, padding: 16 }}>
+            <MaterialCommunityIcons name="domain" size={22} color={colors.primaryDark} />
+            <View style={{ flex: 1, gap: 2, minWidth: 0 }}>
+              <Text style={{ color: colors.ink, fontSize: 14.5, fontWeight: "900" }}>{translateCopy("Çok ürünün mü var?", language)}</Text>
+              <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600", lineHeight: 18 }}>{translateCopy("Kataloğunu XML ya da CSV ile tek seferde yükle. Kurumsal satıcı sayfasına git.", language)}</Text>
+            </View>
+            <MaterialCommunityIcons name="chevron-right" size={22} color={colors.muted} />
+          </Pressable>
+        </Link>
+
         {/* CTA */}
         <View style={{ alignItems: isWideWeb ? "center" : "stretch", backgroundColor: colors.primarySoft, borderRadius: 18, flexDirection: isWideWeb ? "row" : "column", gap: 16, padding: 22 }}>
           <View style={{ flex: 1, gap: 4, minWidth: 0 }}>

@@ -76,6 +76,7 @@ const STATIC = [
   ["/ortak-satis-nedir", "monthly", "0.7"],
   ["/ortak-kazanc", "weekly", "0.7"],
   ["/satici-ol", "weekly", "0.75"],
+  ["/kurumsal", "weekly", "0.75"],
   ["/sosyal-medya-kazanc", "weekly", "0.75"],
   ["/alici", "weekly", "0.7"],
   ["/trust", "monthly", "0.6"],

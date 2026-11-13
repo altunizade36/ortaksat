@@ -8,6 +8,7 @@ import { Image as ExpoImage } from "expo-image";
 import { Platform } from "react-native";
 import Constants from "expo-constants";
 import * as WebBrowser from "expo-web-browser";
+import { showToast } from "@/lib/toast";
 
 import {
   conversations as initialConversations,
@@ -198,9 +199,26 @@ const LEGAL_DOCUMENT_TYPES = ["privacy", "terms", "kvkk", "seller_rules"] as con
 // `window.location.origin` okumak kayıt ve şifre sıfırlamayı native'de ÇÖKERTİYORDU
 // ("Bağlantı hatası"). Web'de site adresi, native'de uygulama şeması döner.
 function authRedirectUrl(): string {
-  return Platform.OS === "web" && typeof window !== "undefined" && window.location?.origin
-    ? `${window.location.origin}/auth`
-    : "ortaksat://auth";
+  if (Platform.OS === "web" && typeof window !== "undefined" && window.location?.origin) return `${window.location.origin}/auth`;
+  // Expo Go deneme uygulaması `ortaksat://` şemasını TANIMAZ (Google dönüşü tarayıcıda boş sayfada kalıyor,
+  // cihazda OrtakSat uygulaması da kuruluysa oturum ORAYA gidiyordu). Orada dönüş adresi deneme uygulamasının
+  // kendi adresidir (exp://<bilgisayar>:8081/--/auth); bu adres Supabase yönlendirme izin listesinde TEK TEK
+  // tanımlıdır (joker yok — başka bir adrese oturum taşınamaz).
+  const host = expoGoHost();
+  if (host) return `exp://${host}/--/auth`;
+  return "ortaksat://auth";
+}
+
+/**
+ * Expo Go deneme uygulamasında çalışıyorsak geliştirme sunucusunun adresi ("192.168.1.3:8081"), değilse null.
+ * DİKKAT: SDK 58 Expo Go'da `Constants.executionEnvironment` "bare" döner ("storeClient" DEĞİL) ve
+ * `Linking.createURL` uygulama şemasını (ortaksat://) verir → ikisi de Expo Go'yu ayırt etmek için kullanılamaz
+ * (2026-11-13, emülatörde ölçüldü). Güvenilir işaret `Constants.expoGoConfig`'tir.
+ */
+function expoGoHost(): string | null {
+  if (Platform.OS === "web" || !Constants.expoGoConfig) return null;
+  const host = Constants.expoConfig?.hostUri ?? (Constants.expoGoConfig as { debuggerHost?: string }).debuggerHost;
+  return host ? host.split("?")[0].replace(/\/+$/, "") : null;
 }
 
 // Supabase/GoTrue İngilizce hata mesajlarını Türkçeye çevirir (site Türkçe).
@@ -215,6 +233,7 @@ function translateAuthError(msg?: string | null): string | undefined {
   if (m.includes("unable to validate email") || m.includes("invalid format") || m.includes("email address") && m.includes("invalid")) return "Geçerli bir e-posta adresi gir.";
   if (m.includes("for security purposes") || m.includes("rate limit") || m.includes("too many requests")) return "Çok sık denendi. Lütfen biraz sonra tekrar dene.";
   if (m.includes("token has expired") || m.includes("otp_expired") || m.includes("invalid token") || m.includes("expired or is invalid")) return "Kod hatalı veya süresi dolmuş. Yeniden kod iste.";
+  if (m.includes("different from the old password") || m.includes("same_password")) return "Yeni şifren eskisinden farklı olmalı.";
   if (m.includes("signups not allowed") || m.includes("signup is disabled")) return "Yeni kayıtlar şu anda geçici olarak kapalı.";
   if (m.includes("user not found")) return "Bu e-posta ile kayıt bulunamadı.";
   if (m.includes("email link is invalid") || m.includes("otp") && m.includes("invalid")) return "Doğrulama bağlantısı/kodu geçersiz. Yeniden dene.";
@@ -284,6 +303,7 @@ type AppStore = {
   updatePasswordWithEmail: (password: string) => Promise<boolean>;
   resetPasswordWithCode: (email: string, code: string, newPassword: string) => Promise<boolean>;
   signInWithGoogle: (legalAccepted: boolean) => Promise<boolean>;
+  signInWithApple: (legalAccepted: boolean) => Promise<boolean>;
   verifyEmailCode: (email: string, code: string) => Promise<boolean>;
   resendEmailCode: (email: string) => Promise<boolean>;
   /**
@@ -909,7 +929,7 @@ export function StoreProvider({ children }: PropsWithChildren) {
       const user = data.session?.user;
       if (user) {
         setEmailVerified(Boolean(user.email_confirmed_at));
-        if (user.app_metadata?.provider === "google") void recordExplicitOAuthConsent(user.id);
+        if (user.app_metadata?.provider === "google" || user.app_metadata?.provider === "apple") void recordExplicitOAuthConsent(user.id);
         // authReady'yi loadProfile BİTİNCE (authUser set olduktan sonra) işaretle. Eskiden aşağıda
         // KOŞULSUZ set ediliyordu → loadProfile async olduğundan authReady=true olurken authUser
         // henüz null → korumalı ekranlar (favoriler/mesajlar…) yenilemede AuthRequired FLAŞ ediyordu.
@@ -938,7 +958,7 @@ export function StoreProvider({ children }: PropsWithChildren) {
       const user = session?.user;
       if (user) {
         setEmailVerified(Boolean(user.email_confirmed_at));
-        if (user.app_metadata?.provider === "google") void recordExplicitOAuthConsent(user.id);
+        if (user.app_metadata?.provider === "google" || user.app_metadata?.provider === "apple") void recordExplicitOAuthConsent(user.id);
         // authReady loadProfile bitince (authUser set) → AuthRequired flaşı olmaz (getSession ile aynı).
         void loadProfile(user.id, user.phone, user.user_metadata?.full_name, user.user_metadata?.avatar_url || user.user_metadata?.picture)
           .catch((e) => console.warn("loadProfile failed", e));
@@ -1616,9 +1636,10 @@ export function StoreProvider({ children }: PropsWithChildren) {
         const token = code.replace(/\D/g, "");
         if (token.length < 6) { setAuthError("6 haneli kodu eksiksiz gir."); return false; }
         const { error: vErr } = await supabase.auth.verifyOtp({ email: cleanEmail, token, type: "recovery" });
-        if (vErr) { setAuthError(vErr.message); return false; }
+        // Hata metinleri Türkçeleştirilir (yanlış kodda ekranda "Token has expired or is invalid" çıkıyordu).
+        if (vErr) { setAuthError(translateAuthError(vErr.message)); return false; }
         const { error: uErr } = await supabase.auth.updateUser({ password: newPassword });
-        setAuthError(uErr?.message);
+        setAuthError(translateAuthError(uErr?.message));
         return !uErr;
       },
       async signInWithGoogle(legalAccepted) {
@@ -1626,12 +1647,6 @@ export function StoreProvider({ children }: PropsWithChildren) {
 
         if (!supabase) {
           setAuthError("Google ile giriş yalnızca canlı (Supabase) modda çalışır.");
-          return false;
-        }
-        // Expo Go deneme uygulaması `ortaksat://` şemasını TANIMAZ: Google dönüşü tarayıcıda boş bir sayfada kalır
-        // (gerçek cihaz testinde görüldü). Yalnız uygulamanın kendi derlemesinde çalışır → açık mesaj ver.
-        if (Platform.OS !== "web" && Constants.executionEnvironment === "storeClient") {
-          setAuthError("Google ile giriş Expo Go deneme uygulamasında çalışmaz; OrtakSat uygulamasının kendi kurulumunda çalışır. Şimdilik e-posta ile giriş yapabilirsin.");
           return false;
         }
         try { await prepareOAuthConsent(); }
@@ -1670,6 +1685,70 @@ export function StoreProvider({ children }: PropsWithChildren) {
         }
         setAuthError(undefined);
         return true;
+      },
+      // APPLE İLE GİRİŞ (yalnız iOS uygulaması). Apple'ın yerel penceresi kimlik belirteci (identity token)
+      // verir; Supabase bu belirteci doğrulayıp oturum açar — tarayıcı yönlendirmesi ve gizli anahtar gerekmez.
+      // Tek kullanımlık değer (nonce): ham değer Supabase'e, SHA-256 özeti Apple'a gider; belirteç başka bir
+      // oturumda yeniden kullanılamaz. Modüller tembel yüklenir (Android / eski derlemede yoktur).
+      async signInWithApple(legalAccepted) {
+        if (legalAccepted !== true) { setAuthError("Önce yasal metinleri kabul etmelisin."); return false; }
+        if (!supabase) { setAuthError("Apple ile giriş yalnızca canlı (Supabase) modda çalışır."); return false; }
+        if (Platform.OS !== "ios") { setAuthError("Apple ile giriş yalnızca iPhone ve iPad uygulamasında kullanılabilir."); return false; }
+        try { await prepareOAuthConsent(); }
+        catch { setAuthError("Onay kaydedilemedi. Lütfen tekrar dene."); return false; }
+        try {
+          const Apple = require("expo-apple-authentication") as typeof import("expo-apple-authentication");
+          const Crypto = require("expo-crypto") as typeof import("expo-crypto");
+          if (!(await Apple.isAvailableAsync())) {
+            await clearOAuthConsent();
+            setAuthError("Bu cihazda Apple ile giriş kullanılamıyor. E-posta ile giriş yapabilirsin.");
+            return false;
+          }
+          const rawNonce = `${Crypto.randomUUID()}${Crypto.randomUUID()}`;
+          const hashedNonce = await Crypto.digestStringAsync(Crypto.CryptoDigestAlgorithm.SHA256, rawNonce);
+          const credential = await Apple.signInAsync({
+            requestedScopes: [Apple.AppleAuthenticationScope.FULL_NAME, Apple.AppleAuthenticationScope.EMAIL],
+            nonce: hashedNonce
+          });
+          if (!credential.identityToken) {
+            await clearOAuthConsent();
+            setAuthError("Apple kimlik bilgisi alınamadı. Lütfen tekrar dene.");
+            return false;
+          }
+          const { data, error } = await supabase.auth.signInWithIdToken({ provider: "apple", token: credential.identityToken, nonce: rawNonce });
+          if (error || !data.user) {
+            await clearOAuthConsent();
+            const message = error?.message ?? "";
+            setAuthError(
+              /provider.*not enabled|not enabled|unsupported/i.test(message)
+                ? "Apple ile giriş henüz etkin değil."
+                : /audience|client[_ ]id|unacceptable/i.test(message)
+                  ? "Apple ile giriş bu uygulama kurulumu için tanımlı değil. E-posta ile giriş yapabilirsin."
+                  : translateAuthError(message) ?? "Apple oturumu tamamlanamadı, lütfen tekrar dene."
+            );
+            return false;
+          }
+          // Apple adı YALNIZ ilk girişte ve yalnız cihaza verir (belirteçte yoktur) → hesaba ve profile yaz.
+          const fullName = [credential.fullName?.givenName, credential.fullName?.familyName].map((part) => (part ?? "").trim()).filter(Boolean).join(" ");
+          if (fullName && !data.user.user_metadata?.full_name) {
+            const userId = data.user.id;
+            await supabase.auth.updateUser({ data: { full_name: fullName } }).then(() => undefined, () => undefined);
+            await supabase.from("profiles").update({ full_name: fullName }).eq("id", userId).then(() => undefined, () => undefined);
+            setAuthUser((current) => (current && current.id === userId ? { ...current, name: fullName } : current));
+          } else if (!fullName && !data.user.user_metadata?.full_name) {
+            // Apple bu girişte ad vermedi (daha önce yetki verilmiş cihazlarda hiç vermez) → profil adı nötr
+            // yer tutucudur ("OrtakSat Kullanıcısı"); kullanıcıya adını ekleyebileceği söylenir.
+            showToast("Apple adını paylaşmadı. Adını Profil › Profili Düzenle bölümünden ekleyebilirsin.");
+          }
+          setAuthError(undefined);
+          return true;
+        } catch (e) {
+          await clearOAuthConsent();
+          // Kullanıcı Apple penceresini kapattı → sessiz.
+          if ((e as { code?: string } | null)?.code === "ERR_REQUEST_CANCELED") return false;
+          setAuthError("Apple ile bağlantı kurulamadı, lütfen tekrar dene.");
+          return false;
+        }
       },
       // E-posta doğrulama KODU ile: kayıt sonrası kullanıcı e-postasına gelen 6 haneli
       // kodu aynı ekranda girer; link/uygulama-değiştirme yok. Supabase native (harici

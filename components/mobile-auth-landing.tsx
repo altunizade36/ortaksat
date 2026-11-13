@@ -14,6 +14,7 @@ type Props = {
   onModeChange: (mode: "login" | "register") => void;
   onEmail: () => void;
   onGoogle: () => void;
+  onApple?: () => void;
   onSkip: () => void;
   consent: ReactNode;
   accepted: boolean;
@@ -26,16 +27,15 @@ type Props = {
 };
 const messages = ["Ürününü paylaş, ortak bul,", "Ücretsiz ilan ver, birlikte sat,", "Ortak ol, paylaş, kazan,"];
 
-// iOS SOSYAL GİRİŞ ANAHTARI. App Store kuralı 4.8: üçüncü taraf girişi (Google) sunan iOS
-// uygulaması "Apple ile Giriş"i de sunmak ZORUNDA. Apple girişi henüz yok (hesap sahibinin
-// Apple Developer + Supabase Apple sağlayıcı kurulumu gerekiyor) → iOS'ta Google düğmesi de
-// gizlenir. Apple girişi eklendiği gün bu değer `true` yapılır (ikisi BİRLİKTE açılır).
-// Android'de Google her zaman açık; e-posta ile giriş/kayıt her iki platformda da tam çalışır.
-// Çalışmayan "Yakında" düğmeleri (Apple / telefon) mağaza incelemesinde ret sebebi olduğu için kaldırıldı.
-const IOS_SOCIAL_LOGIN_ENABLED = false;
-const socialLogin = Platform.OS !== "ios" || IOS_SOCIAL_LOGIN_ENABLED;
+// iOS SOSYAL GİRİŞ. App Store kuralı 4.8: üçüncü taraf girişi (Google) sunan iOS uygulaması
+// "Apple ile Giriş"i de sunmak ZORUNDA → iOS'ta ikisi BİRLİKTE gösterilir, Apple düğmesi üstte.
+// Apple girişi yalnız iOS'ta vardır (yerel pencere): iOS'ta Apple ve Google YAN YANA iki eşit düğmedir,
+// Android'de yalnız Google (tam genişlik) görünür. Çalışmayan "Yakında" düğmeleri mağaza incelemesinde
+// ret sebebidir; ekleme.
+const appleLogin = Platform.OS === "ios";
+const socialLogin = true;
 
-export function MobileAuthLanding({ mode, onModeChange, onEmail, onGoogle, onSkip, consent, accepted, busy, error, form, formTitle, onBack, showTabs = true }: Props) {
+export function MobileAuthLanding({ mode, onModeChange, onEmail, onGoogle, onApple, onSkip, consent, accepted, busy, error, form, formTitle, onBack, showTabs = true }: Props) {
   const scrollRef = useRef<ScrollViewInstance>(null);
   const consentRef = useRef<ViewInstance>(null);
   const scrollY = useRef(0);
@@ -59,12 +59,24 @@ export function MobileAuthLanding({ mode, onModeChange, onEmail, onGoogle, onSki
   const sceneHeight = Platform.OS !== "web" && !tablet
     ? form ? 180 : Math.max(300, Math.min(400, width * 1.02, nativeViewport.current.height * 0.44))
     : form ? 150 : Math.max(340, Math.min(480, width * 1.12));
-  function continueWithGoogle() {
+  function showConsentIfMissing() {
     if (!accepted) consentRef.current?.measureInWindow((_x, y) => {
       scrollRef.current?.scrollTo({ y: Math.max(0, scrollY.current + y - insets.top - 20), animated: true });
     });
+  }
+  function continueWithGoogle() {
+    showConsentIfMissing();
     onGoogle();
   }
+  function continueWithApple() {
+    showConsentIfMissing();
+    onApple?.();
+  }
+  // SOSYAL GİRİŞ DÜĞMELERİ: iOS'ta Apple (siyah) + Google (beyaz) yan yana; Android'de yalnız Google.
+  const socialButtons = <View style={{ flexDirection: "row", gap: 10 }}>
+    {appleLogin ? <Pressable accessibilityRole="button" accessibilityLabel={tr("Apple ile devam et")} disabled={busy} accessibilityState={{ disabled: busy, busy }} onPress={continueWithApple} style={[s.button, s.apple, s.half, { opacity: busy ? 0.6 : 1 }]}><Icon name="apple" size={24} color="white" /><Text style={[s.buttonText, { color: "white" }]}>Apple</Text></Pressable> : null}
+    <Pressable accessibilityRole="button" accessibilityLabel={tr("Google ile devam et")} disabled={busy} accessibilityState={{ disabled: busy, busy }} onPress={continueWithGoogle} style={[s.button, s.half, { opacity: busy ? 0.6 : 1 }]}><GoogleMark /><Text style={s.buttonText}>{appleLogin ? "Google" : tr(busy ? "Bağlanıyor…" : "Google ile devam et")}</Text></Pressable>
+  </View>;
   return <ScrollView ref={scrollRef} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" onScroll={event => { scrollY.current = event.nativeEvent.contentOffset.y; }} scrollEventThrottle={16} style={s.screen} contentContainerStyle={{ flexGrow: 1 }}>
     <View testID="auth-responsive-frame" style={{ flexGrow: 1, width: "100%", maxWidth: 1440, alignSelf: "center", flexDirection: tablet ? "row" : "column", minHeight: tablet ? Math.max(height, 680) : undefined }}>
     <View testID="auth-scene" style={{ ...(tablet ? { width: "52%", minHeight: Math.max(height, 680), alignSelf: "stretch" } : { height: sceneHeight + insets.top, width: "100%" }), overflow: "hidden" }}>
@@ -97,14 +109,14 @@ export function MobileAuthLanding({ mode, onModeChange, onEmail, onGoogle, onSki
           <View style={{ alignItems: "center", flexDirection: "row", gap: 12, marginBottom: 14 }}><View style={{ backgroundColor: "#DCE6F5", flex: 1, height: 1 }} /><Text style={{ color: "#667085", fontSize: 12.5, fontWeight: "700" }}>{tr("veya")}</Text><View style={{ backgroundColor: "#DCE6F5", flex: 1, height: 1 }} /></View>
           {/* Kayıt sekmesinde yasal onay kutusu formun içindedir; giriş sekmesinde Google için burada gösterilir. */}
           {mode === "login" ? <View ref={consentRef} collapsable={false} style={{ marginBottom: 12 }}>{consent}</View> : null}
-          <Pressable accessibilityRole="button" accessibilityLabel={tr("Google ile devam et")} disabled={busy} accessibilityState={{ disabled: busy, busy }} onPress={continueWithGoogle} style={[s.button, { opacity: busy ? 0.6 : 1 }]}><GoogleMark /><Text style={s.buttonText}>{tr(busy ? "Bağlanıyor…" : "Google ile devam et")}</Text></Pressable>
+          {socialButtons}
         </View> : null}
       </> : <>
       <Pressable accessibilityRole="button" accessibilityLabel={tr("E-posta ile devam et")} disabled={busy} onPress={onEmail} style={[s.button, s.email]}><Icon name="email" size={25} color="white" /><Text style={[s.buttonText, { color: "white" }]}>{tr("E-posta ile devam et")}</Text></Pressable>
       {/* Yasal onay kutusu yalnız sosyal giriş için gerekir (e-posta kaydı onayı kendi formunda alır). */}
       {socialLogin ? <>
       <View ref={consentRef} collapsable={false} style={{ marginBottom: 14, marginTop: 3 }}>{consent}</View>
-      <Pressable accessibilityRole="button" accessibilityLabel={tr("Google ile devam et")} disabled={busy} accessibilityState={{ disabled: busy, busy }} onPress={continueWithGoogle} style={[s.button, { opacity: busy ? 0.6 : 1 }]}><GoogleMark /><Text style={s.buttonText}>{tr(busy ? "Bağlanıyor…" : "Google ile devam et")}</Text></Pressable>
+      {socialButtons}
       </> : null}
       {error ? <Text accessibilityRole="alert" style={s.error}>{tr(error)}</Text> : null}
       {socialLogin && !accepted && <Text style={s.legal}>{tr("Sosyal giriş için önce yukarıdaki yasal onay kutusunu işaretle.")}</Text>}
@@ -128,5 +140,5 @@ const s = StyleSheet.create({
   screen: { flex: 1, backgroundColor: "white" }, skip: { position: "absolute", right: 19, zIndex: 2, flexDirection: "row", alignItems: "center", minHeight: 44 }, skipText: { color: "#101827", fontSize: 14 }, intro: { alignItems: "center", paddingHorizontal: 20 }, slogan: { color: "#0F172A", fontWeight: "700", fontSize: 21, marginTop: 3 }, subSlogan: { color: "#0F172A", fontSize: 20, marginTop: 1 },
   features: { flexDirection: "row", justifyContent: "center", gap: 9, marginTop: 18 }, feature: { alignItems: "center", width: 86 }, featureIcon: { width: 50, height: 50, borderRadius: 25, alignItems: "center", justifyContent: "center" }, featureText: { marginTop: 5, textAlign: "center", fontSize: 12, fontWeight: "600", lineHeight: 16, color: "#101827" },
   message: { position: "absolute", bottom: 34, alignSelf: "center", backgroundColor: "#FFFFFFDE", borderRadius: 40, flexDirection: "row", gap: 11, alignItems: "center", paddingHorizontal: 19, paddingVertical: 9 }, messageIcon: { width: 31, height: 31, borderRadius: 16, backgroundColor: "#0040BB", alignItems: "center", justifyContent: "center" }, messageText: { fontSize: 13, lineHeight: 18, color: "#172033" }, dots: { position: "absolute", bottom: 18, alignSelf: "center", flexDirection: "row", gap: 9 }, dot: { width: 9, height: 9, borderRadius: 5, backgroundColor: "#FFFFFFCC" },
-  sheet: { backgroundColor: "white", borderTopLeftRadius: 30, borderTopRightRadius: 30, paddingHorizontal: 22, paddingTop: 25, marginTop: -12 }, tabs: { flexDirection: "row", marginBottom: 17, borderBottomWidth: 1, borderColor: "#DCE6F5" }, tab: { flex: 1, alignItems: "center", paddingVertical: 11, borderBottomWidth: 3, borderColor: "transparent", marginBottom: -1 }, activeTab: { borderColor: "#0645C9" }, tabText: { fontSize: 15, fontWeight: "700", color: "#667085" }, button: { borderRadius: 15, minHeight: 52, borderWidth: 1, borderColor: "#DCE6F5", flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 14, marginBottom: 8, paddingHorizontal: 10, paddingVertical: 9, backgroundColor: "#FFFFFF", boxShadow: "0px 3px 8px #09275E12" }, email: { backgroundColor: "#0645C9", borderColor: "#0645C9" }, buttonText: { fontSize: 15, fontWeight: "600", color: "#09275E" }, legal: { color: "#667085", fontSize: 11, lineHeight: 17, textAlign: "center", marginTop: 8, marginBottom: 12 }, legalLink: { color: "#0645C9", fontWeight: "600" }, error: { color: "#B42318", fontSize: 12, lineHeight: 18, textAlign: "center", marginVertical: 5 },
+  sheet: { backgroundColor: "white", borderTopLeftRadius: 30, borderTopRightRadius: 30, paddingHorizontal: 22, paddingTop: 25, marginTop: -12 }, tabs: { flexDirection: "row", marginBottom: 17, borderBottomWidth: 1, borderColor: "#DCE6F5" }, tab: { flex: 1, alignItems: "center", paddingVertical: 11, borderBottomWidth: 3, borderColor: "transparent", marginBottom: -1 }, activeTab: { borderColor: "#0645C9" }, tabText: { fontSize: 15, fontWeight: "700", color: "#667085" }, button: { borderRadius: 15, minHeight: 52, borderWidth: 1, borderColor: "#DCE6F5", flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 14, marginBottom: 8, paddingHorizontal: 10, paddingVertical: 9, backgroundColor: "#FFFFFF", boxShadow: "0px 3px 8px #09275E12" }, email: { backgroundColor: "#0645C9", borderColor: "#0645C9" }, apple: { backgroundColor: "#000000", borderColor: "#000000" }, half: { flex: 1, minWidth: 0, gap: 10 }, buttonText: { fontSize: 15, fontWeight: "600", color: "#09275E" }, legal: { color: "#667085", fontSize: 11, lineHeight: 17, textAlign: "center", marginTop: 8, marginBottom: 12 }, legalLink: { color: "#0645C9", fontWeight: "600" }, error: { color: "#B42318", fontSize: 12, lineHeight: 18, textAlign: "center", marginVertical: 5 },
 });

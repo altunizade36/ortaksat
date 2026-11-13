@@ -24,7 +24,8 @@
         "CFBundleLocalizations": [
           "tr"
         ]
-      }
+      },
+      "usesAppleSignIn": true
     },
     "android": {
       "package": "com.ortaksat.app",
@@ -176,7 +177,8 @@
             "enableShrinkResourcesInReleaseBuilds": true
           }
         }
-      ]
+      ],
+      "expo-apple-authentication"
     ],
     "experiments": {
       "typedRoutes": true

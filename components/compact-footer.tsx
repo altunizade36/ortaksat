@@ -9,6 +9,7 @@ import { isMobileApp } from "@/lib/mobile-app";
 
 const links: Array<{ label: string; href: Href }> = [
   { label: "Hakkımızda", href: "/hakkimizda" },
+  { label: "Kurumsal", href: "/kurumsal" as Href },
   { label: "Yardım", href: "/sss" },
   { label: "İletişim", href: "/iletisim" },
   { label: "Gizlilik", href: "/gizlilik-politikasi" },

@@ -26,6 +26,7 @@ import { uploadListingImage, fetchMyListingSkus, updateListingFieldsLive, fetchM
 import { isListingVideoUrl } from "@/lib/listing-video";
 import { useStore } from "@/lib/use-store";
 import { parseTrPrice, validateListing } from "@/lib/validation";
+import { looksLikeXml, parseXmlFeed, type FeedTable } from "@/lib/xml-feed";
 
 const TEMPLATE = `harici_kod,baslik,aciklama,fiyat,kategori,il,ilce,komisyon,stok,gorsel_url
 URUN-1001,Örnek Ürün Adı,Ürünün kısa açıklaması burada,1500,Elektronik,İstanbul,Kadıköy,15,3,https://...jpg
@@ -59,6 +60,20 @@ type ParsedRow = {
 };
 
 const MAX_IMAGES = 5; // ilan başına kapak dahil en fazla 5 görsel (create/edit akışıyla aynı sınır)
+// Spam/hız koruması: tek partide üst sınır. XML akışı daha büyükse partilere bölünür.
+const MAX_BULK = 200;
+
+/** Dosya baytlarını, XML bildirimindeki kodlamaya göre metne çevirir (eski akışlar windows-1254 / iso-8859-9 olabilir). */
+function decodeFileBytes(buffer: ArrayBuffer): string {
+  const bytes = new Uint8Array(buffer);
+  let head = "";
+  for (let i = 0; i < Math.min(bytes.length, 200); i++) head += String.fromCharCode(bytes[i]);
+  const declared = /<\?xml[^>]*encoding=["']([\w-]+)["']/i.exec(head)?.[1]?.toLowerCase();
+  if (declared && declared !== "utf-8" && declared !== "utf8") {
+    try { return new TextDecoder(declared).decode(bytes); } catch { /* tanınmayan kodlama → UTF-8 dene */ }
+  }
+  return new TextDecoder("utf-8").decode(bytes);
+}
 
 // Basit ama tırnak-farkında CSV satır ayrıştırıcı (alan içinde ayraç destekler).
 function splitCsvLine(line: string, delim: string = ","): string[] {
@@ -213,6 +228,24 @@ function BulkUploadInner() {
   const [existingSkus, setExistingSkus] = useState<Map<string, SkuEntry>>(new Map());
   const [deactivateMissing, setDeactivateMissing] = useState(false);
   const [exporting, setExporting] = useState(false);
+  // XML ÜRÜN AKIŞI: ayrıştırılmış tablo bellekte durur; MAX_BULK'luk partilerle önizlenir/yüklenir.
+  const [feed, setFeed] = useState<FeedTable | null>(null);
+  const [feedStart, setFeedStart] = useState(0);
+  // VARSAYILANLAR: satırda kategori / il yoksa (XML akışlarında il hiç yoktur) YENİ ilanlara uygulanır.
+  const [defCategory, setDefCategory] = useState("");
+  const [defProvince, setDefProvince] = useState("");
+  const [defDistrict, setDefDistrict] = useState("");
+  const defCatMatch = useMemo(() => {
+    const raw = defCategory.trim();
+    if (!raw) return undefined;
+    return PATH_SEP.test(raw) ? matchCategoryLabelPath(categoryTree, raw) : matchCategoryByName(raw);
+  }, [defCategory, categoryTree]);
+  const defProvMatch = useMemo(() => (defProvince.trim() ? resolveProvinceByName(defProvince) : undefined), [defProvince]);
+  const defDistMatch = useMemo(() => {
+    const name = defDistrict.toLocaleLowerCase("tr-TR").trim();
+    if (!defProvMatch || !name) return undefined;
+    return districtsOfProvince(defProvMatch.id).find((x) => x.name.toLocaleLowerCase("tr-TR").trim() === name);
+  }, [defDistrict, defProvMatch]);
   const alive = useRef(true);
   const navTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
@@ -228,20 +261,47 @@ function BulkUploadInner() {
   }, [currentUser.id]);
   useEffect(() => { void loadSkus(); }, [loadSkus]);
 
-  const parse = () => {
-    setNotice(null);
-    // BOM'u at (Excel UTF-8 CSV başına ﻿ ekler → ilk sütun adı bozulur).
-    const clean = csv.replace(/^﻿/, "");
-    const lines = clean.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
-    if (lines.length < 2) { Alert.alert(translateCopy("Boş veri", language), translateCopy("Başlık satırı + en az 1 ürün satırı gerekli.", language)); return; }
-    // Spam/hız koruması: tek partide üst sınır (Trendyol'da da parti tavanı vardır).
-    const MAX_BULK = 200;
-    if (lines.length - 1 > MAX_BULK) {
-      Alert.alert(translateCopy("Çok fazla satır", language), `${translateCopy("Tek seferde en fazla", language)} ${MAX_BULK} ${translateCopy("ürün yükleyebilirsin. Partiyi böl.", language)}`);
-      return;
+  const parse = (override?: { feed: FeedTable; start: number; keepNotice?: boolean }) => {
+    if (!override?.keepNotice) setNotice(null);
+    let activeFeed = override ? override.feed : feed;
+    const start = override ? override.start : feedStart;
+    let headers: string[];
+    let dataRows: string[][];
+    // BOM'u at (Excel UTF-8 CSV başına \uFEFF ekler → ilk sütun adı bozulur).
+    const clean = csv.replace(/^\uFEFF/, "");
+    let batchStart = start;
+    if (!activeFeed && clean.trim() && looksLikeXml(clean)) {
+      // Yapıştırılan metin XML: tabloya çevir, metin alanını boşalt (akış kartı gösterilir).
+      try {
+        activeFeed = parseXmlFeed(clean);
+      } catch (e) {
+        Alert.alert(translateCopy("XML okunamadı", language), translateCopy(e instanceof Error ? e.message : "XML dosyası ayrıştırılamadı.", language));
+        return;
+      }
+      batchStart = 0;
+      setFeed(activeFeed);
+      setFeedStart(0);
+      setCsv("");
     }
-    const delim = detectDelimiter(lines[0]); // TR Excel ; ayracını otomatik yakala
-    const headers = splitCsvLine(lines[0], delim);
+    if (activeFeed) {
+      if (!activeFeed.rows.length) {
+        Alert.alert(translateCopy("Yüklenecek ürün yok", language), translateCopy("XML akışındaki ürünlerin tamamı stokta yok görünüyor.", language));
+        return;
+      }
+      headers = activeFeed.headers;
+      dataRows = activeFeed.rows.slice(batchStart, batchStart + MAX_BULK);
+    } else {
+      const lines = clean.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+      if (lines.length < 2) { Alert.alert(translateCopy("Boş veri", language), translateCopy("Başlık satırı + en az 1 ürün satırı gerekli.", language)); return; }
+      if (lines.length - 1 > MAX_BULK) {
+        Alert.alert(translateCopy("Çok fazla satır", language), `${translateCopy("Tek seferde en fazla", language)} ${MAX_BULK} ${translateCopy("ürün yükleyebilirsin. Partiyi böl.", language)}`);
+        return;
+      }
+      const delim = detectDelimiter(lines[0]); // TR Excel ; ayracını otomatik yakala
+      headers = splitCsvLine(lines[0], delim);
+      dataRows = lines.slice(1).map((line) => splitCsvLine(line, delim));
+    }
+    const fromFeed = !!activeFeed;
     const col = resolveHeader(headers);
     // Base olmayan (harici_kod/baslik/... dışındaki) başlık sütunları = kategori-özel
     // ADAY alanlar. Satırın kategorisine göre şema alanıyla eşleşirse attributes'a yazılır.
@@ -256,8 +316,7 @@ function BulkUploadInner() {
     const seenTitles = new Set<string>();
     const seenSkus = new Set<string>();
     const bos = translateCopy("(boş)", language);
-    const parsed: ParsedRow[] = lines.slice(1).map((line, idx) => {
-      const cells = splitCsvLine(line, delim);
+    const parsed: ParsedRow[] = dataRows.map((cells, idx) => {
       const get = (k: string) => (col[k] !== undefined ? (cells[col[k]] ?? "") : "");
       const sku = get("sku").trim();
       // SKU EŞLEŞMESİ: bu satırın SKU'su satıcının mevcut bir ilanına denk geliyorsa GÜNCELLEME modu.
@@ -271,7 +330,17 @@ function BulkUploadInner() {
       // için (Satılık, Diğer, marka/model adları) ada göre eşleme en sığ/dallı düğümü TAHMİN eder.
       // Yol yazılmış ama ağaçta yoksa kelime-benzerliğine DÜŞÜLMEZ (yanlış kategoriye gitmesin) → satır hatası.
       const isPathText = PATH_SEP.test(categoryRaw);
-      const category = !categoryRaw ? undefined : isPathText ? matchCategoryLabelPath(categoryTree, categoryRaw) : matchCategoryByName(categoryRaw);
+      let category = !categoryRaw ? undefined : isPathText ? matchCategoryLabelPath(categoryTree, categoryRaw) : matchCategoryByName(categoryRaw);
+      // VARSAYILAN KATEGORİ (yalnız YENİ ilan): satırın kategorisi boş ya da ağaçta yoksa satıcının seçtiği
+      // kategori kullanılır. XML akışında varsayılan da yoksa yolun SON adına göre eşleme denenir
+      // (mağazanın kendi kategori ağacı bizimkiyle birebir örtüşmez); sonuç önizlemede tam yol olarak görünür.
+      if (!category && mode === "new") {
+        if (defCatMatch) category = defCatMatch;
+        else if (fromFeed && isPathText) {
+          const last = categoryRaw.split(PATH_SEP).map((p) => p.trim()).filter(Boolean).pop();
+          if (last) category = matchCategoryByName(last);
+        }
+      }
       // GÜNCELLEMEDE KATEGORİ: tek ad / bulanık eşleşme HER ZAMAN yok sayılır (dışa aktarılıp geri yüklenen
       // ilanın etiketi sessizce değişmesin). Yalnız kökten yaprağa TAM ve TEK yol, mevcut yoldan FARKLIYSA yazılır.
       let categoryChange: ParsedRow["categoryChange"];
@@ -292,10 +361,12 @@ function BulkUploadInner() {
           }
         }
       }
-      const prov = resolveProvinceByName(get("province"));
+      // VARSAYILAN İL / İLÇE (yalnız YENİ ilan, satırda il yazmıyorsa).
+      const useDefaultProvince = mode === "new" && !get("province").trim() && !!defProvMatch;
+      const prov = useDefaultProvince ? defProvMatch : resolveProvinceByName(get("province"));
       let districtId: number | undefined;
       if (prov) {
-        const dName = get("district").toLocaleLowerCase("tr-TR").trim();
+        const dName = (useDefaultProvince && !get("district").trim() ? defDistrict : get("district")).toLocaleLowerCase("tr-TR").trim();
         const d = districtsOfProvince(prov.id).find((x) => x.name.toLocaleLowerCase("tr-TR").trim() === dName);
         districtId = d?.id;
       }
@@ -376,13 +447,13 @@ function BulkUploadInner() {
     setNotice(`${uris.length} ${translateCopy("fotoğraf seçildi — satırlara sırayla atanacak (görsel_url boş olanlara). \"Ayrıştır\"a tekrar bas.", language)}`);
   }
 
-  // DOSYADAN YÜKLE (web) — .csv seç → metni oku → yapıştırma alanına doldur.
-  // Excel için: "Farklı Kaydet → CSV UTF-8" (xlsx kütüphanesi bundle'ı şişirmesin diye taşımıyoruz).
+  // DOSYADAN YÜKLE (web) — .csv ya da .xml seç. CSV metni yapıştırma alanına dolar; XML tabloya çevrilip
+  // akış kartı olarak gösterilir. Excel için: "Farklı Kaydet → CSV UTF-8" (xlsx kütüphanesi bundle'ı şişirmesin diye taşımıyoruz).
   function pickCsvFile() {
     if (Platform.OS !== "web" || typeof document === "undefined") return;
     const input = document.createElement("input");
     input.type = "file";
-    input.accept = ".csv,text/csv,text/plain";
+    input.accept = ".csv,.xml,text/csv,text/xml,application/xml,text/plain";
     input.onchange = () => {
       const file = input.files && input.files[0];
       if (!file) return;
@@ -393,12 +464,57 @@ function BulkUploadInner() {
       }
       const reader = new FileReader();
       reader.onload = () => {
-        setCsv(String(reader.result || "").replace(/^﻿/, ""));
+        let text = "";
+        try { text = decodeFileBytes(reader.result as ArrayBuffer).replace(/^\uFEFF/, ""); } catch { text = ""; }
+        if (name.endsWith(".xml") || looksLikeXml(text)) {
+          try {
+            const table = parseXmlFeed(text);
+            setFeed(table);
+            setFeedStart(0);
+            setCsv("");
+            setRows(null);
+            setFailedRows([]);
+            setNotice(`${file.name} — ${table.total} ${translateCopy("ürün bulundu. Varsayılan il ve komisyonu belirleyip 'Ayrıştır ve önizle'ye bas.", language)}`);
+          } catch (e) {
+            setNotice(translateCopy(e instanceof Error ? e.message : "XML dosyası ayrıştırılamadı.", language));
+          }
+          return;
+        }
+        setFeed(null);
+        setFeedStart(0);
+        setCsv(text);
         setNotice(`${file.name} — ${translateCopy("yüklendi. 'Ayrıştır ve önizle'ye bas.", language)}`);
       };
-      reader.readAsText(file, "utf-8");
+      reader.onerror = () => setNotice(translateCopy("Dosya okunamadı. Tekrar dene.", language));
+      reader.readAsArrayBuffer(file);
     };
     input.click();
+  }
+
+  function clearFeed() {
+    setFeed(null);
+    setFeedStart(0);
+    setRows(null);
+    setNotice(null);
+  }
+
+  // XML akışında parti değiştir: önceki/sonraki MAX_BULK ürün.
+  function goToBatch(start: number) {
+    if (!feed) return;
+    const next = Math.max(0, Math.min(start, Math.max(0, feed.rows.length - 1)));
+    setFeedStart(next);
+    parse({ feed, start: next });
+  }
+
+  // HATALI SATIRLARI İNDİR (web) — XML akışında satır düzenlenemez; hatalılar Excel'de düzeltilip CSV olarak yüklenir.
+  function downloadErrorRows() {
+    const bad = (rows ?? []).filter((r) => r.errors.length > 0);
+    if (!bad.length) return;
+    downloadCsv(
+      "toplu-ilan-hatali-satirlar.csv",
+      ["harici_kod", "baslik", "aciklama", "fiyat", "kategori", "il", "ilce", "komisyon", "stok", "gorsel_url", "hata"],
+      bad.map((r) => [r.sku, r.title, r.description, r.price ? String(r.price).replace(".", ",") : "", r.categoryRaw, r.provinceName ?? "", "", String(r.commission), String(r.stock), r.images.join("|"), r.errors.join(" · ")])
+    );
   }
 
   // MEVCUT KATALOĞU DIŞA AKTAR (web) — satıcının ilanlarını şablon sütunlarında CSV'ye döker.
@@ -528,7 +644,10 @@ function BulkUploadInner() {
     // Yalnız hatasız partide çalışır (yarım dosyayla yanlışlıkla ilan gizlenmesin).
     if (deactivateMissing && failures.length === 0) {
       const toPause: string[] = [];
-      existingSkus.forEach((v) => { if (!touchedIds.has(v.id) && v.status === "active") toPause.push(v.id); });
+      // XML akışı partilere bölündüğü için "dosyada yok" kararı PARTİYE değil AKIŞIN TAMAMINA göre verilir
+      // (yoksa sonraki partilerdeki ilanlar pasife alınırdı). Stokta olmayan ürünler akış kodlarında yoktur → pasife alınır.
+      const fullSkus = feed ? new Set(feed.skus) : null;
+      existingSkus.forEach((v, sku) => { if (!touchedIds.has(v.id) && v.status === "active" && !(fullSkus && fullSkus.has(sku))) toPause.push(v.id); });
       for (const id of toPause) {
         try { if (await updateListingFieldsLive(id, { status: "paused" })) pausedCount++; } catch { /* yut — tek ilan takılmasın */ }
       }
@@ -546,9 +665,19 @@ function BulkUploadInner() {
       if (updated) parts.push(`${updated} ${translateCopy("mevcut ilan güncellendi", language)}`);
       if (recategorized) parts.push(`${recategorized} ${translateCopy("ilanın kategorisi değişti", language)}`);
       if (pausedCount) parts.push(`${pausedCount} ${translateCopy("ilan pasife alındı", language)}`);
+      const nextStart = feed ? feedStart + MAX_BULK : 0;
+      if (feed && nextStart < feed.rows.length) {
+        // XML akışında sıradaki parti: ekranda kal, sonraki MAX_BULK ürünü önizlemeye getir.
+        setNotice(`${parts.join(" · ")}. ${translateCopy("Sıradaki parti önizlemede:", language)} ${nextStart + 1}–${Math.min(nextStart + MAX_BULK, feed.rows.length)} / ${feed.rows.length}.`);
+        setFeedStart(nextStart);
+        parse({ feed, start: nextStart, keepNotice: true });
+        return;
+      }
       setNotice(`${parts.join(" · ")}.`);
       setRows(null);
       setCsv("");
+      setFeed(null);
+      setFeedStart(0);
       setBulkImages([]);
       if (navTimer.current) clearTimeout(navTimer.current);
       navTimer.current = setTimeout(() => router.replace("/(tabs)/seller"), 2400);
@@ -570,7 +699,7 @@ function BulkUploadInner() {
     <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ backgroundColor: colors.background, flexGrow: 1, paddingBottom: 0 }} style={{ backgroundColor: colors.background }}>
       <Head>
         <title>{translateCopy("Toplu İlan Yükle — OrtakSat", language)}</title>
-        <meta name="description" content={translateCopy("CSV ile toplu ürün yükle, kategori/il eşle, komisyonu toplu belirle. İlanlar admin onayından sonra yayına alınır.", language)} />
+        <meta name="description" content={translateCopy("CSV veya XML ürün akışıyla toplu ürün yükle, kategori/il eşle, komisyonu toplu belirle. İlanlar admin onayından sonra yayına alınır.", language)} />
       </Head>
       <WebContainer max={1100} padding={16} style={{ gap: 16, paddingTop: 16 }}>
         <Pressable onPress={() => (router.canGoBack() ? router.back() : router.replace("/(tabs)/seller"))} accessibilityRole="button" style={({ pressed }) => ({ alignItems: "center", alignSelf: "flex-start", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 6, opacity: pressed ? 0.7 : 1, paddingHorizontal: 14, paddingVertical: 8 })}>
@@ -580,7 +709,7 @@ function BulkUploadInner() {
 
         <View style={{ gap: 4 }}>
           <Text style={{ color: colors.ink, fontSize: 26, fontWeight: "900" }}>{translateCopy("Toplu ilan yükleme", language)}</Text>
-          <Text style={{ color: colors.muted, fontSize: 14, fontWeight: "600" }}>{translateCopy("Yüzlerce ürünü tek tek girmek yerine CSV ile yükle. Kategori ve il otomatik eşlenir, komisyonu toplu belirlersin. İlanlar admin onayından sonra yayına alınır.", language)}</Text>
+          <Text style={{ color: colors.muted, fontSize: 14, fontWeight: "600" }}>{translateCopy("Yüzlerce ürünü tek tek girmek yerine CSV dosyasıyla ya da e-ticaret sitenin ürün XML'iyle yükle. Kategori ve il otomatik eşlenir, komisyonu toplu belirlersin. İlanlar admin onayından sonra yayına alınır.", language)}</Text>
         </View>
 
         {/* Adım 1: şablon */}
@@ -610,6 +739,14 @@ function BulkUploadInner() {
               <Text style={{ color: colors.ink, fontWeight: "800" }}>{translateCopy("ortak_satis (opsiyonel):", language)}</Text>
               {" "}
               {translateCopy("Ortaklık modunu satır bazında seç — onaylı (varsayılan: ortakları onaylarsın), açık (herkes ortak olabilir) veya kapalı (normal ilan, ortaksız/komisyonsuz). Boş bırakırsan onaylı.", language)}
+            </Text>
+          </View>
+          <View style={{ alignItems: "flex-start", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 8, padding: 11 }}>
+            <MaterialCommunityIcons name="xml" size={16} color={colors.primaryDark} style={{ marginTop: 1 }} />
+            <Text style={{ color: colors.muted, flex: 1, fontSize: 11.5, fontWeight: "600", lineHeight: 16 }}>
+              <Text style={{ color: colors.ink, fontWeight: "800" }}>{translateCopy("XML ürün akışı:", language)}</Text>
+              {" "}
+              {translateCopy("E-ticaret siten ürün XML'i veriyorsa şablona gerek yok; XML dosyasını 2. adımda yükle. Ürün adı, kodu, fiyatı, stoğu, kategorisi, markası ve görselleri otomatik tanınır (Google Merchant ürün akışı dahil).", language)}
             </Text>
           </View>
           <View style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 10, borderWidth: 1, padding: 10 }}>
@@ -642,15 +779,64 @@ function BulkUploadInner() {
         {/* Adım 2: yapıştır + toplu ayarlar */}
         <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 14, borderWidth: 1, gap: 12, padding: 16 }}>
           <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-            <Text style={{ color: colors.ink, flex: 1, fontSize: 15, fontWeight: "900" }}>2) {translateCopy("CSV yükle veya yapıştır", language)}</Text>
+            <Text style={{ color: colors.ink, flex: 1, fontSize: 15, fontWeight: "900" }}>2) {translateCopy("CSV veya XML yükle ya da yapıştır", language)}</Text>
             {Platform.OS === "web" ? (
               <Pressable onPress={pickCsvFile} style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 9, flexDirection: "row", gap: 6, paddingHorizontal: 14, paddingVertical: 9 }}>
                 <MaterialCommunityIcons name="file-upload-outline" size={15} color={colors.primaryDark} />
-                <Text style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Dosyadan yükle (.csv)", language)}</Text>
+                <Text style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Dosyadan yükle (.csv / .xml)", language)}</Text>
               </Pressable>
             ) : null}
           </View>
-          <TextInput value={csv} onChangeText={setCsv} multiline placeholder={translateCopy("CSV içeriğini buraya yapıştır…", language)} placeholderTextColor={colors.subtle} style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 11, borderWidth: 1, color: colors.ink, fontFamily: Platform.OS === "ios" ? "Courier" : "monospace", fontSize: 12.5, minHeight: 150, paddingHorizontal: 12, paddingVertical: 10, textAlignVertical: "top" }} />
+          {feed ? (
+            <View testID="feed-card" style={{ backgroundColor: colors.infoSoft, borderRadius: 12, gap: 8, padding: 14 }}>
+              <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
+                <MaterialCommunityIcons name="xml" size={18} color={colors.info} />
+                <Text style={{ color: colors.ink, flex: 1, fontSize: 13.5, fontWeight: "900" }}>{translateCopy("XML ürün akışı yüklendi", language)} · {feed.total} {translateCopy("ürün", language)}</Text>
+                <Pressable onPress={clearFeed} accessibilityRole="button" accessibilityLabel={translateCopy("XML akışını kaldır", language)} style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 8, borderWidth: 1, flexDirection: "row", gap: 5, minHeight: 36, paddingHorizontal: 10 }}>
+                  <MaterialCommunityIcons name="close" size={14} color={colors.muted} />
+                  <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>{translateCopy("Kaldır", language)}</Text>
+                </Pressable>
+              </View>
+              <Text style={{ color: colors.ink, fontSize: 12.5, fontWeight: "700", lineHeight: 18 }}>
+                {feed.rows.length} {translateCopy("ürün yüklenebilir", language)}
+                {feed.outOfStock ? ` · ${feed.outOfStock} ${translateCopy("ürün stokta olmadığı için alınmadı", language)}` : ""}
+                {feed.foreignCurrency ? ` · ${feed.foreignCurrency} ${translateCopy("ürünün fiyatı TL değil, fiyatı boş bırakıldı", language)}` : ""}
+              </Text>
+              <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600", lineHeight: 17 }}>{translateCopy("XML akışlarında il ve komisyon bulunmaz: aşağıdan varsayılan ili ve komisyonu belirle. Mağazanın kategorileri OrtakSat kategorileriyle eşleşmezse varsayılan kategori kullanılır. Aynı ürün koduyla tekrar yüklediğinde ilanlar güncellenir, yenisi açılmaz.", language)}</Text>
+              {feed.rows.length > MAX_BULK ? (
+                <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+                  <Text style={{ color: colors.ink, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Parti", language)}: {feedStart + 1}–{Math.min(feedStart + MAX_BULK, feed.rows.length)} / {feed.rows.length}</Text>
+                  <Pressable disabled={feedStart === 0 || publishing} onPress={() => goToBatch(feedStart - MAX_BULK)} accessibilityRole="button" style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 8, borderWidth: 1, justifyContent: "center", minHeight: 36, opacity: feedStart === 0 || publishing ? 0.5 : 1, paddingHorizontal: 12 }}>
+                    <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "800" }}>{translateCopy("Önceki parti", language)}</Text>
+                  </Pressable>
+                  <Pressable disabled={feedStart + MAX_BULK >= feed.rows.length || publishing} onPress={() => goToBatch(feedStart + MAX_BULK)} accessibilityRole="button" style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 8, borderWidth: 1, justifyContent: "center", minHeight: 36, opacity: feedStart + MAX_BULK >= feed.rows.length || publishing ? 0.5 : 1, paddingHorizontal: 12 }}>
+                    <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "800" }}>{translateCopy("Sonraki parti", language)}</Text>
+                  </Pressable>
+                  <Text style={{ color: colors.muted, flex: 1, fontSize: 11.5, fontWeight: "600", minWidth: 180 }}>{translateCopy("Ürünler 200'lük partilerle yüklenir; bir parti bitince sıradaki önizlemeye gelir.", language)}</Text>
+                </View>
+              ) : null}
+            </View>
+          ) : (
+            <TextInput value={csv} onChangeText={setCsv} multiline placeholder={translateCopy("CSV veya XML içeriğini buraya yapıştır…", language)} placeholderTextColor={colors.subtle} style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 11, borderWidth: 1, color: colors.ink, fontFamily: Platform.OS === "ios" ? "Courier" : "monospace", fontSize: 12.5, minHeight: 150, paddingHorizontal: 12, paddingVertical: 10, textAlignVertical: "top" }} />
+          )}
+          {/* VARSAYILANLAR — satırında il / kategori yazmayan YENİ ilanlara uygulanır (XML akışlarında il hiç yoktur). */}
+          <View style={{ gap: 7 }}>
+            <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>{translateCopy("Varsayılanlar — satırda yazmıyorsa yeni ilanlara uygulanır (opsiyonel)", language)}</Text>
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
+              <View style={{ gap: 4 }}>
+                <TextInput value={defProvince} onChangeText={setDefProvince} accessibilityLabel={translateCopy("Varsayılan il", language)} placeholder={translateCopy("Varsayılan il, örn. İstanbul", language)} placeholderTextColor={colors.subtle} style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 10, borderWidth: 1, color: colors.ink, fontSize: 13.5, minHeight: 44, paddingHorizontal: 12, width: 220 }} />
+                {defProvince.trim() ? <Text style={{ color: defProvMatch ? colors.primaryDark : colors.accent, fontSize: 11.5, fontWeight: "700" }}>{defProvMatch ? defProvMatch.name : translateCopy("İl bulunamadı", language)}</Text> : null}
+              </View>
+              <View style={{ gap: 4 }}>
+                <TextInput value={defDistrict} onChangeText={setDefDistrict} accessibilityLabel={translateCopy("Varsayılan ilçe", language)} placeholder={translateCopy("Varsayılan ilçe, örn. Kadıköy", language)} placeholderTextColor={colors.subtle} style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 10, borderWidth: 1, color: colors.ink, fontSize: 13.5, minHeight: 44, paddingHorizontal: 12, width: 220 }} />
+                {defDistrict.trim() ? <Text style={{ color: defDistMatch ? colors.primaryDark : colors.accent, fontSize: 11.5, fontWeight: "700" }}>{defDistMatch ? defDistMatch.name : translateCopy(defProvMatch ? "Bu ilde böyle bir ilçe yok" : "Önce ili yaz", language)}</Text> : null}
+              </View>
+              <View style={{ flexGrow: 1, gap: 4, minWidth: 240 }}>
+                <TextInput value={defCategory} onChangeText={setDefCategory} accessibilityLabel={translateCopy("Varsayılan kategori", language)} placeholder={translateCopy("Varsayılan kategori, örn. Elektronik", language)} placeholderTextColor={colors.subtle} style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 10, borderWidth: 1, color: colors.ink, fontSize: 13.5, minHeight: 44, paddingHorizontal: 12 }} />
+                {defCategory.trim() ? <Text style={{ color: defCatMatch ? colors.primaryDark : colors.accent, fontSize: 11.5, fontWeight: "700" }}>{defCatMatch ? defCatMatch.path.map((n) => translateCopy(n.label, language)).join(" › ") : translateCopy("Kategori bulunamadı — adı ya da yolu (Üst > Alt) yaz", language)}</Text> : null}
+              </View>
+            </View>
+          </View>
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
             <View style={{ gap: 5, minWidth: 200 }}>
               <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>{translateCopy("Komisyonu toplu belirle (%) — opsiyonel", language)}</Text>
@@ -664,7 +850,7 @@ function BulkUploadInner() {
               </Pressable>
             </View>
           </View>
-          <Pressable onPress={parse} style={{ alignItems: "center", alignSelf: "flex-start", backgroundColor: colors.primary, borderRadius: 11, flexDirection: "row", gap: 7, paddingHorizontal: 20, paddingVertical: 12 }}>
+          <Pressable onPress={() => parse()} style={{ alignItems: "center", alignSelf: "flex-start", backgroundColor: colors.primary, borderRadius: 11, flexDirection: "row", gap: 7, paddingHorizontal: 20, paddingVertical: 12 }}>
             <MaterialCommunityIcons name="table-check" size={17} color="#FFFFFF" />
             <Text style={{ color: "#FFFFFF", fontSize: 13.5, fontWeight: "900" }}>{translateCopy("Ayrıştır ve önizle", language)}</Text>
           </Pressable>
@@ -816,6 +1002,17 @@ function BulkUploadInner() {
                 })}
               </View>
             </ScrollView>
+
+            {Platform.OS === "web" && rows.length > validRows.length ? (
+              <View style={{ alignItems: "center", backgroundColor: colors.accentSoft, borderRadius: 10, flexDirection: "row", flexWrap: "wrap", gap: 10, padding: 11 }}>
+                <MaterialCommunityIcons name="alert-circle-outline" size={16} color={colors.accent} />
+                <Text style={{ color: colors.ink, flex: 1, fontSize: 12, fontWeight: "700", lineHeight: 17, minWidth: 200 }}>{rows.length - validRows.length} {translateCopy("satır hatalı; bunlar yüklenmez. Dosyayı indirip Excel'de düzelt, sonra CSV olarak yükle.", language)}</Text>
+                <Pressable onPress={downloadErrorRows} accessibilityRole="button" style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.accent, borderRadius: 8, borderWidth: 1, flexDirection: "row", gap: 5, minHeight: 36, paddingHorizontal: 12 }}>
+                  <MaterialCommunityIcons name="download" size={14} color={colors.accent} />
+                  <Text style={{ color: colors.accent, fontSize: 12, fontWeight: "800" }}>{translateCopy("Hatalı satırları indir (.csv)", language)}</Text>
+                </Pressable>
+              </View>
+            ) : null}
 
             {/* TAM-KATALOG SENKRONU — yalnız satıcının SKU'lu aktif ilanı varsa göster (yoksa anlamsız). */}
             {existingSkus.size > 0 ? (

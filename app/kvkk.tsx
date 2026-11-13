@@ -61,6 +61,7 @@ const SECTIONS: Section[] = [
       "Supabase (sunucular AB / İrlanda): veritabanı, kimlik doğrulama, dosya depolama.",
       "Resend (ABD): doğrulama ve bildirim e-postalarının gönderimi.",
       "Google: yalnızca \"Google ile giriş\"i seçersen kimlik doğrulama.",
+      "Apple: yalnızca iOS uygulamasında \"Apple ile giriş\"i seçersen kimlik doğrulama.",
       "Yalnızca çerez tercihlerinde izin verirsen: Vercel Web Analytics (ziyaret istatistikleri) ve etkinleştirildiği dönemlerde Meta Pixel (reklam ölçümü)."
     ]
   },

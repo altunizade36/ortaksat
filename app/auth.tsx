@@ -29,7 +29,7 @@ export default function AuthScreen() {
   const router = useRouter();
   const mobileAccess = useMobileAccess();
   const params = useLocalSearchParams<{ redirect?: string; mode?: string }>();
-  const { authAttempt, authError, currentUser, isAuthenticated, pendingVerifyEmail, clearPendingVerify, verifyEmailCode, resendEmailCode, resetPasswordWithEmail, resetPasswordWithCode, signInWithEmail, signInWithGoogle, signUpWithEmail } = useStore();
+  const { authAttempt, authError, currentUser, isAuthenticated, pendingVerifyEmail, clearPendingVerify, verifyEmailCode, resendEmailCode, resetPasswordWithEmail, resetPasswordWithCode, signInWithEmail, signInWithGoogle, signInWithApple, signUpWithEmail } = useStore();
   const [mode, setMode] = useState<AuthMode>("login");
   useEffect(() => { if (params.mode === "register" || params.mode === "login" || params.mode === "reset") setMode(params.mode); }, [params.mode]);
   // E-posta + şifre alanları HER platformda doğrudan görünür (eskiden uygulamada önce "E-posta ile devam et"e
@@ -127,7 +127,7 @@ export default function AuthScreen() {
     setLoading(true);
     try {
       const { ok, error } = await authAttempt(() => resetPasswordWithCode(cleanEmail, resetCode, newPassword));
-      if (ok) { setResetSent(false); setResetCode(""); setNewPassword(""); setMode("login"); showToast(translateCopy("Şifren güncellendi — yeni şifrenle giriş yap", language)); }
+      if (ok) { setResetSent(false); setResetCode(""); setNewPassword(""); setMode("login"); showToast(translateCopy("Şifren güncellendi", language)); }
       else { const m = error ?? translateCopy("Kod hatalı/süresi dolmuş olabilir ya da şifre çok kısa.", language); setFormError(m); Alert.alert(translateCopy("Güncellenemedi", language), translateCopy(m, language)); }
     } catch {
       const m = translateCopy("Bağlantı hatası. Lütfen tekrar dene.", language);
@@ -245,6 +245,32 @@ export default function AuthScreen() {
     } catch {
       const m = translateCopy("Google ile bağlantı kurulamadı. Lütfen tekrar dene.", language);
       setFormError(m); Alert.alert(translateCopy("Google ile giriş yapılamadı", language), m);
+    } finally {
+      authOperation.current = false;
+      setLoading(false);
+    }
+  }
+  async function loginWithApple() {
+    if (loading || authOperation.current) return;
+    if (!acceptedAll) {
+      setFormError(null);
+      setConsentHint(true);
+      return;
+    }
+    setConsentHint(false);
+    setFormError(null);
+    setRememberSession(true);
+    authOperation.current = true;
+    setLoading(true);
+    try {
+      const { ok, error } = await authAttempt(() => signInWithApple(acceptedAll));
+      // Başarılıysa oturum açılır (yönlendirme aşağıdaki isAuthenticated etkisinde). Başarısızsa hata authError'da.
+      if (!ok && error) {
+        Alert.alert(language === "en" ? "Could not continue with Apple" : "Apple ile giriş yapılamadı", translateCopy(error, language));
+      }
+    } catch {
+      const m = translateCopy("Apple ile bağlantı kurulamadı. Lütfen tekrar dene.", language);
+      setFormError(m); Alert.alert(translateCopy("Apple ile giriş yapılamadı", language), m);
     } finally {
       authOperation.current = false;
       setLoading(false);
@@ -488,7 +514,7 @@ export default function AuthScreen() {
   // Android: "height" davranışı klavye kapandıktan sonra altta boş bir şerit bırakıyordu (gerçek cihazda görüldü) → "padding".
   return <KeyboardAvoidingView behavior={Platform.OS === "web" ? undefined : "padding"} style={{ flex: 1 }}>
     {seoHead}
-    <MobileAuthLanding mode={mode === "register" ? "register" : "login"} onModeChange={setMode} onEmail={() => setEmailFormOpen(true)} onGoogle={loginWithGoogle} onSkip={() => mobileAccess.skip(skipTarget)} consent={legalChecks} accepted={acceptedAll} busy={loading} error={formError || authError}
+    <MobileAuthLanding mode={mode === "register" ? "register" : "login"} onModeChange={setMode} onEmail={() => setEmailFormOpen(true)} onGoogle={loginWithGoogle} onApple={loginWithApple} onSkip={() => mobileAccess.skip(skipTarget)} consent={legalChecks} accepted={acceptedAll} busy={loading} error={formError || authError}
       form={emailFormOpen || mode === "reset" ? emailForm : undefined} formTitle={mode === "reset" ? "Şifreni yenile" : Platform.OS === "web" && emailFormOpen ? mode === "register" ? "Hesabını oluştur" : "E-posta ile giriş yap" : undefined} showTabs={mode !== "reset"}
       onBack={mode === "reset" ? () => setMode("login") : undefined}/>
     {legalModal}

@@ -565,6 +565,30 @@ async function compressImageBlob(
 
 // Görseli Supabase storage'a yükler ve public URL döndürür. Web (blob:/data:) ve
 // native (file:) URI'lerini destekler. Zaten yüklü http(s) URL'leri aynen döner.
+/**
+ * UYGULAMADA yerel görsel okuma: `fetch(file://…)` YERİNE görsel işleyicinin verdiği base64 kullanılır.
+ * Neden: yerel dosyayı fetch ile okumak bazı ortamlarda (Expo Go'nun kodlanmış önbellek yolu) dosya yerine
+ * "File not found" metnini döndürüyor; profil fotoğrafı yolu bu yanıtı denetlemeden yüklediği için sunucuya
+ * 14 baytlık bozuk dosya yazılıyor, fotoğraf hiç görünmüyordu (2026-11-13, emülatörde doğrulandı).
+ */
+function base64ToArrayBuffer(base64: string): ArrayBuffer {
+  const decoded = atob(base64);
+  const bytes = new Uint8Array(decoded.length);
+  for (let i = 0; i < decoded.length; i++) bytes[i] = decoded.charCodeAt(i);
+  return bytes.buffer;
+}
+
+/** Yüklenen şeyin gerçekten görsel olduğunu ilk baytlardan doğrular (JPEG / PNG / WebP / GIF). */
+function looksLikeImage(buffer: ArrayBuffer): boolean {
+  const b = new Uint8Array(buffer.slice(0, 12));
+  if (b.length < 12) return false;
+  if (b[0] === 0xff && b[1] === 0xd8) return true; // JPEG
+  if (b[0] === 0x89 && b[1] === 0x50 && b[2] === 0x4e && b[3] === 0x47) return true; // PNG
+  if (b[0] === 0x47 && b[1] === 0x49 && b[2] === 0x46) return true; // GIF
+  if (b[0] === 0x52 && b[1] === 0x49 && b[2] === 0x46 && b[3] === 0x46 && b[8] === 0x57 && b[9] === 0x45) return true; // WebP
+  return false;
+}
+
 export async function uploadListingImage(uri: string, userId: string) {
   if (!supabase) return uri;
   if (!uuidPattern.test(userId) || !uri) throw new Error("Görsel için geçerli hesap ve dosya gerekli.");
@@ -580,30 +604,38 @@ export async function uploadListingImage(uri: string, userId: string) {
   // bu yüzden yükleme öncesi expo-image-manipulator ile 1600px'e ölçekle + sıkıştır.
   // Web'de aşağıdaki compressImageBlob (canvas) yolu kullanılır.
   let workUri = uri;
+  let nativeBytes: ArrayBuffer | null = null; // uygulamada: görsel işleyiciden doğrudan baytlar (fetch yok)
   if (!isVideo && Platform.OS !== "web") {
     try {
-      const manip = await manipulateAsync(uri, [{ resize: { width: 1600 } }], { compress: 0.8, format: SaveFormat.JPEG });
+      const manip = await manipulateAsync(uri, [{ resize: { width: 1600 } }], { compress: 0.8, format: SaveFormat.JPEG, base64: true });
       workUri = manip.uri;
       contentType = "image/jpeg";
       ext = "jpg";
+      if (manip.base64) {
+        const bytes = base64ToArrayBuffer(manip.base64);
+        if (looksLikeImage(bytes)) nativeBytes = bytes;
+      }
     } catch (e) {
       console.warn("Görsel ölçeklenemedi, orijinal yüklenecek:", (e as Error)?.message);
     }
   }
 
-  let response: Response;
-  try {
-    response = await fetch(workUri);
-  } catch (e) {
-    console.warn("Görsel okunamadı:", (e as Error)?.message);
-    throw new Error("Görsel yüklenemedi. Dosyanı ve bağlantını kontrol et.");
+  let body: Blob = new Blob([]);
+  if (!nativeBytes) {
+    let response: Response;
+    try {
+      response = await fetch(workUri);
+    } catch (e) {
+      console.warn("Görsel okunamadı:", (e as Error)?.message);
+      throw new Error("Görsel yüklenemedi. Dosyanı ve bağlantını kontrol et.");
+    }
+    if (response.status && !response.ok) throw new Error("Görsel okunamadı.");
+    body = await response.blob();
   }
-  if (response.status && !response.ok) throw new Error("Görsel okunamadı.");
-  let body = await response.blob();
 
   // Görselleri (video değil) hedef MB altına OTOMATİK sıkıştır/ölçekle (web: canvas;
   // native: yukarıda zaten ölçeklendi, burada boyut yine yüksekse ikinci geçiş).
-  if (!isVideo) {
+  if (!isVideo && !nativeBytes) {
     // ANA görsel WebP (JPEG'e göre ~%25-35 küçük → hızlı LCP + az bant); desteklenmezse JPEG.
     const compressed = await compressImageBlob(body, 1600, 0.82, MAX_IMAGE_BYTES, "image/webp");
     body = compressed.blob;
@@ -614,14 +646,15 @@ export async function uploadListingImage(uri: string, userId: string) {
   // Video sıkıştırılamadığı için hard limiti aşarsa reddet. Görsel ise sıkıştırma
   // zaten en aza indirdi; nadiren limit üstü kalırsa yine de yüklemeyi dener
   // (kullanıcıya "çok büyük" hatası çıkarmamak için).
-  if (!body.size || body.size > (isVideo ? MAX_MEDIA_BYTES : MAX_IMAGE_BYTES)) {
-    console.warn(`Video çok büyük (${Math.round(body.size / 1024 / 1024)}MB > ${Math.round(MAX_MEDIA_BYTES / 1024 / 1024)}MB)`);
+  const bodySize = nativeBytes ? nativeBytes.byteLength : body.size;
+  if (!bodySize || bodySize > (isVideo ? MAX_MEDIA_BYTES : MAX_IMAGE_BYTES)) {
+    console.warn(`Video çok büyük (${Math.round(bodySize / 1024 / 1024)}MB > ${Math.round(MAX_MEDIA_BYTES / 1024 / 1024)}MB)`);
     throw new Error("Görsel yüklenemedi. Dosyanı ve bağlantını kontrol et.");
   }
 
   const id = makeUuid();
   const path = `${userId}/${id}.${ext}`;
-  const { error } = await supabase.storage.from("listing-images").upload(path, await storageBody(body), { contentType, upsert: false });
+  const { error } = await supabase.storage.from("listing-images").upload(path, nativeBytes ?? await storageBody(body), { contentType, upsert: false });
   if (error) {
     console.warn("Supabase listing image upload failed", error);
     throw new Error("Görsel yüklenemedi. Dosyanı ve bağlantını kontrol et.");
@@ -634,6 +667,7 @@ export async function uploadListingImage(uri: string, userId: string) {
   if (!isVideo) {
     try {
       let thumbBlob: Blob | null = null;
+      let thumbBytes: ArrayBuffer | null = null;
       if (Platform.OS === "web") {
         // Thumbnail JPEG kalır (-t.jpg): cardImageUrl her zaman -t.jpg ister; küçük olduğu
         // için WebP kazancı ihmal edilebilir, format tutarlılığı (eski+yeni) daha değerli.
@@ -646,13 +680,20 @@ export async function uploadListingImage(uri: string, userId: string) {
       } else {
         // NATIVE: compressImageBlob canvas'a dayanır ve burada blob'u AYNEN döndürür.
         // Gerçek küçültme için image-manipulator şart.
-        const small = await manipulateAsync(workUri, [{ resize: { width: 512 } }], { compress: 0.7, format: SaveFormat.JPEG });
-        thumbBlob = await (await fetch(small.uri)).blob();
+        const small = await manipulateAsync(workUri, [{ resize: { width: 512 } }], { compress: 0.7, format: SaveFormat.JPEG, base64: true });
+        if (small.base64) {
+          const bytes = base64ToArrayBuffer(small.base64);
+          if (looksLikeImage(bytes)) thumbBytes = bytes;
+        }
+        if (!thumbBytes) {
+          const smallResponse = await fetch(small.uri);
+          if (!smallResponse.status || smallResponse.ok) thumbBlob = await smallResponse.blob();
+        }
       }
-      if (thumbBlob && thumbBlob.size > 0) {
+      if (thumbBytes || (thumbBlob && thumbBlob.size > 0)) {
         await supabase.storage
           .from("listing-images")
-          .upload(`${userId}/${id}-t.jpg`, await storageBody(thumbBlob), { contentType: "image/jpeg", upsert: true });
+          .upload(`${userId}/${id}-t.jpg`, thumbBytes ?? await storageBody(thumbBlob!), { contentType: "image/jpeg", upsert: true });
       }
     } catch (e) {
       console.warn("Kart varyantı üretilemedi (orijinal kullanılacak):", (e as Error)?.message);
@@ -668,20 +709,37 @@ export async function uploadProfileAvatar(uri: string, userId: string) {
   // Zaten uzak URL ise tekrar yükleme (web blob:/data: ve native file: desteklenir).
   if (/^https?:\/\//i.test(uri)) return uri;
 
-  let response: Response;
-  try {
-    response = await fetch(uri);
-  } catch (e) {
-    console.warn("Avatar okunamadı:", (e as Error)?.message);
-    throw new Error("Görsel yüklenemedi. Dosyanı ve bağlantını kontrol et.");
-  }
-  // Avatar için 512px yeterli; hedef MB altına otomatik sıkıştır.
-  const compressed = await compressImageBlob(await response.blob(), 512, 0.85, MAX_IMAGE_BYTES);
-  const body = compressed.blob;
-  if (!body.size || body.size>MAX_IMAGE_BYTES) throw new Error("Görsel en fazla 5 MB olabilir.");
   const path = `${userId}/avatar-${makeUuid()}.jpg`;
-  const { error } = await supabase.storage.from("profile-avatars").upload(path, await storageBody(body), {
-    contentType: compressed.contentType,
+  let upload: { body: Blob | ArrayBuffer; contentType: string };
+  if (Platform.OS !== "web") {
+    // UYGULAMA: 512 px'e küçült ve baytları doğrudan görsel işleyiciden al (yerel dosyayı fetch ile okuma).
+    let bytes: ArrayBuffer | null = null;
+    try {
+      const manip = await manipulateAsync(uri, [{ resize: { width: 512 } }], { compress: 0.85, format: SaveFormat.JPEG, base64: true });
+      if (manip.base64) bytes = base64ToArrayBuffer(manip.base64);
+    } catch (e) {
+      console.warn("Avatar işlenemedi:", (e as Error)?.message);
+    }
+    if (!bytes || !looksLikeImage(bytes)) throw new Error("Görsel okunamadı. Başka bir fotoğraf seçip tekrar dene.");
+    if (bytes.byteLength > MAX_IMAGE_BYTES) throw new Error("Görsel en fazla 5 MB olabilir.");
+    upload = { body: bytes, contentType: "image/jpeg" };
+  } else {
+    let response: Response;
+    try {
+      response = await fetch(uri);
+    } catch (e) {
+      console.warn("Avatar okunamadı:", (e as Error)?.message);
+      throw new Error("Görsel yüklenemedi. Dosyanı ve bağlantını kontrol et.");
+    }
+    if (response.status && !response.ok) throw new Error("Görsel okunamadı. Başka bir fotoğraf seçip tekrar dene.");
+    // Avatar için 512px yeterli; hedef MB altına otomatik sıkıştır.
+    const compressed = await compressImageBlob(await response.blob(), 512, 0.85, MAX_IMAGE_BYTES);
+    const body = compressed.blob;
+    if (!body.size || body.size>MAX_IMAGE_BYTES) throw new Error("Görsel en fazla 5 MB olabilir.");
+    upload = { body: await storageBody(body), contentType: compressed.contentType };
+  }
+  const { error } = await supabase.storage.from("profile-avatars").upload(path, upload.body, {
+    contentType: upload.contentType,
     upsert: false
   });
 

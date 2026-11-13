@@ -6,22 +6,28 @@ import { AccessibilityInfo, Animated, Easing, StyleSheet, Text, View } from "rea
 
 import { isMobileApp } from "@/lib/mobile-app";
 
+/** Açılış sesi şimdilik tümden kapalı (yukarıdaki nota bak). false iken ses çalmaz, Ayarlar'daki anahtar da gizlenir. */
+export const INTRO_SOUND_ENABLED = false;
+
 /** Kullanıcı açılış sesini kapattıysa "1" (Ayarlar → Açılış sesi). */
 export const INTRO_SOUND_OFF_KEY = "ortaksat.introSoundOff";
 
 const BACKGROUND = "#E5F0FF"; // app.json → expo-splash-screen backgroundColor ile AYNI (geçiş görünmesin)
 const LOGO = 220; // app.json → imageWidth ile AYNI
-const HOLD_AFTER_MS = 520; // animasyon bittikten sonra en az bu kadar görünür kalır
-const MAX_WAIT_MS = 4200; // uygulama verisi gecikse de açılış en geç bu sürede kapanır
+const HOLD_AFTER_MS = 650; // animasyon bittikten sonra en az bu kadar görünür kalır
+const MAX_WAIT_MS = 4800; // uygulama verisi gecikse de açılış en geç bu sürede kapanır
 
 /**
  * UYGULAMA AÇILIŞ ANİMASYONU (yalnız iOS/Android, soğuk açılışta bir kez).
  *
  * Yerel açılış ekranı yalnız mavi HALKAYI gösterir; bu katman aynı halkayı aynı yerde çizer, sonra
  * iki el iki yandan gelip halkanın altında BİRLEŞİR (el sıkışma), halka hafifçe nabız atar, marka adı
- * belirir ve katman eriyerek uygulamayı açar. Kısa, özgün bir çan motifi eşlik eder (assets/sounds/intro.wav
- * — üç yükselen nota; herhangi bir markanın melodisi değildir). Ses kısık çalınır, sessiz modda çalmaz
- * ve Ayarlar'dan kapatılabilir. "Hareketi azalt" açıksa eller kaymaz, yalnız kısa bir geçiş olur.
+ * belirir ve katman eriyerek uygulamayı açar. "Hareketi azalt" açıksa eller kaymaz, yalnız kısa bir geçiş olur.
+ *
+ * SES KAPALI (INTRO_SOUND_ENABLED = false). Kullanıcı 2026-11-13'te açılışta YALNIZ animasyon istedi;
+ * denenen sesleri (üç notalı çan, konuşan ses, koro/synth vokal, müzik kutusu melodisi, piyano cümlesi)
+ * beğenmedi. Yeniden açılacaksa önce kullanıcının onayladığı gerçek bir ses dosyası gerekir — bilgisayarla
+ * üretilmiş melodi koyup açma. Açılırsa ses telefonun sessiz anahtarına uyar ve Ayarlar'dan kapatılabilir.
  */
 export function IntroSplash({ ready }: { ready: boolean }) {
   const [visible, setVisible] = useState(isMobileApp);
@@ -51,22 +57,24 @@ export function IntroSplash({ ready }: { ready: boolean }) {
       Animated.timing(word, { toValue: 1, duration: 260, useNativeDriver: true }).start(() => setAnimationDone(true));
       return;
     }
-    void playChime();
+    if (INTRO_SOUND_ENABLED) void playChime();
+    // TEMPO (kullanıcı isteği, 2026-11-13): eller GÖRÜLEREK yaklaşsın — eski telefon açılışlarındaki gibi
+    // sakin bir buluşma. Yaklaşma ~1 sn, sıkışma + sallanma ~0,9 sn; toplam açılış yaklaşık 3 sn'yi geçmez.
     Animated.sequence([
-      Animated.delay(90),
-      // Eller iki yandan gelir ve tam ortada buluşur.
-      Animated.timing(hands, { toValue: 1, duration: 540, easing: Easing.out(Easing.back(1.35)), useNativeDriver: true }),
+      Animated.delay(160),
+      // Eller iki yandan gelir ve tam ortada buluşur (sıçramasız, yavaşlayarak).
+      Animated.timing(hands, { toValue: 1, duration: 980, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
       Animated.parallel([
         // Buluşma: küçük bir sıkma + dışa yayılan nabız + özgün logoya geçiş.
         Animated.sequence([
-          Animated.timing(squeeze, { toValue: 1, duration: 130, easing: Easing.out(Easing.quad), useNativeDriver: true }),
-          Animated.spring(squeeze, { toValue: 0, friction: 5, tension: 120, useNativeDriver: true })
+          Animated.timing(squeeze, { toValue: 1, duration: 160, easing: Easing.out(Easing.quad), useNativeDriver: true }),
+          Animated.spring(squeeze, { toValue: 0, friction: 5, tension: 110, useNativeDriver: true })
         ]),
-        Animated.timing(pulse, { toValue: 1, duration: 620, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
-        // El sıkışma: birleşen eller iki kez hafifçe aşağı-yukarı sallanır (melodinin üçüncü notasıyla birlikte).
-        Animated.timing(shake, { toValue: 1, duration: 520, delay: 60, easing: Easing.inOut(Easing.quad), useNativeDriver: true }),
-        Animated.timing(exact, { toValue: 1, duration: 180, delay: 600, useNativeDriver: true }),
-        Animated.timing(word, { toValue: 1, duration: 420, delay: 380, easing: Easing.out(Easing.cubic), useNativeDriver: true })
+        Animated.timing(pulse, { toValue: 1, duration: 760, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
+        // El sıkışma: birleşen eller iki kez hafifçe aşağı-yukarı sallanır.
+        Animated.timing(shake, { toValue: 1, duration: 680, delay: 80, easing: Easing.inOut(Easing.quad), useNativeDriver: true }),
+        Animated.timing(exact, { toValue: 1, duration: 200, delay: 780, useNativeDriver: true }),
+        Animated.timing(word, { toValue: 1, duration: 480, delay: 430, easing: Easing.out(Easing.cubic), useNativeDriver: true })
       ])
     ]).start(() => setAnimationDone(true));
   }
@@ -89,18 +97,18 @@ export function IntroSplash({ ready }: { ready: boolean }) {
   if (!visible) return null;
 
   const leftStyle = {
-    opacity: hands.interpolate({ inputRange: [0, 0.25, 1], outputRange: [0, 1, 1] }),
+    opacity: hands.interpolate({ inputRange: [0, 0.18, 1], outputRange: [0, 1, 1] }),
     transform: [
-      { translateX: hands.interpolate({ inputRange: [0, 1], outputRange: [-LOGO * 0.62, 0] }) },
+      { translateX: hands.interpolate({ inputRange: [0, 1], outputRange: [-LOGO * 0.92, 0] }) },
       { translateY: hands.interpolate({ inputRange: [0, 1], outputRange: [LOGO * 0.1, 0] }) },
       { rotate: hands.interpolate({ inputRange: [0, 1], outputRange: ["-16deg", "0deg"] }) },
       { scale: squeeze.interpolate({ inputRange: [0, 1], outputRange: [1, 1.05] }) }
     ]
   };
   const rightStyle = {
-    opacity: hands.interpolate({ inputRange: [0, 0.25, 1], outputRange: [0, 1, 1] }),
+    opacity: hands.interpolate({ inputRange: [0, 0.18, 1], outputRange: [0, 1, 1] }),
     transform: [
-      { translateX: hands.interpolate({ inputRange: [0, 1], outputRange: [LOGO * 0.62, 0] }) },
+      { translateX: hands.interpolate({ inputRange: [0, 1], outputRange: [LOGO * 0.92, 0] }) },
       { translateY: hands.interpolate({ inputRange: [0, 1], outputRange: [LOGO * 0.1, 0] }) },
       { rotate: hands.interpolate({ inputRange: [0, 1], outputRange: ["16deg", "0deg"] }) },
       { scale: squeeze.interpolate({ inputRange: [0, 1], outputRange: [1, 1.05] }) }

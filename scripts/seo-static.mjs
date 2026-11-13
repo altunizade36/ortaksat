@@ -173,6 +173,12 @@ const ROUTES = {
       }
     ])
   },
+  "kurumsal.html": {
+    title: "Kurumsal Satıcılar — XML ile Toplu İlan ve Komisyonlu Satış Ağı | OrtakSat",
+    description:
+      "Ürün kataloğunu XML ya da CSV ile OrtakSat'a yükle, komisyonunu belirle; ortaklar ürünlerini tanıtsın. Ücretsiz; yalnız satış gerçekleşince komisyon ödersin.",
+    canonical: "/kurumsal"
+  },
   "satici-ol.html": {
     title: "Satıcı ol — Ürününü ortaklarla daha çok kişiye sattır | OrtakSat",
     description:
