@@ -29,7 +29,8 @@ import { parseTrPrice, validateListing } from "@/lib/validation";
 import { parseListingRate } from "@/lib/listing-numbers";
 import { LISTING_TITLE_LIMITS, listingTitleLength } from "@/lib/listing-title";
 import { looksLikeXml, parseXmlFeed, type FeedTable } from "@/lib/xml-feed";
-import { FEED_INTERVALS, deleteMyFeed, describeFeedSummary, fetchFeedFromUrl, getMyFeed, saveMyFeed, syncMyFeedNow, type ListingFeed } from "@/lib/listing-feeds";
+import { fetchFeedFromUrl } from "@/lib/listing-feeds";
+import { FeedManager } from "@/components/feed-manager";
 
 const TEMPLATE = `harici_kod,baslik,aciklama,fiyat,kategori,il,ilce,komisyon,stok,gorsel_url
 URUN-1001,Örnek Ürün Adı,Ürünün kısa açıklaması burada,1500,Elektronik,İstanbul,Kadıköy,15,3,https://...jpg
@@ -82,14 +83,6 @@ function shortenTitle(title: string, max: number): string {
   const space = cut.lastIndexOf(" ");
   const base = space >= Math.floor(max * 0.6) ? cut.slice(0, space) : cut;
   return base.replace(/[\s.,'’"()/:+&%\-]+$/u, "").trim();
-}
-
-/** "13.11.2026 21:40" — yerel saatle kısa tarih (Intl kullanmadan). */
-function shortDate(iso: string): string {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return "";
-  const two = (n: number) => String(n).padStart(2, "0");
-  return `${two(d.getDate())}.${two(d.getMonth() + 1)}.${d.getFullYear()} ${two(d.getHours())}:${two(d.getMinutes())}`;
 }
 
 /** Sunucunun saatlik ilan sınırı hatası (throttle_listing_inserts). */
@@ -272,13 +265,9 @@ function BulkUploadInner() {
   const [shortenTitles, setShortenTitles] = useState(false); // 70 karakteri aşan başlıkları kelime sınırında kısalt
   // Satırında ortak_satis yazmayan (XML akışlarında hiç yoktur) ilanlara uygulanacak ortaklık türü.
   const [defPartnership, setDefPartnership] = useState<PartnershipMode>("approval");
-  // XML BAĞLANTISI + otomatik eşitleme (kayıtlı bağlantı sunucuda belirli aralıklarla fiyat/stok günceller).
+  // XML BAĞLANTISI (tek seferlik içe aktarma). Kayıtlı bağlantılar ve otomatik eşitleme: components/feed-manager.tsx.
   const [feedUrl, setFeedUrl] = useState("");
   const [fetchingUrl, setFetchingUrl] = useState(false);
-  const [savedFeed, setSavedFeed] = useState<ListingFeed | null>(null);
-  const [feedBusy, setFeedBusy] = useState(false);
-  const [syncInterval, setSyncInterval] = useState<number>(6);
-  const [syncPauseMissing, setSyncPauseMissing] = useState(false);
   const defCatMatch = useMemo(() => {
     const raw = defCategory.trim();
     if (!raw) return undefined;
@@ -304,18 +293,6 @@ function BulkUploadInner() {
     } catch { /* eşleşme haritası yüklenemedi → satırlar "yeni" görünür; DB tekil index mükerreri engeller */ }
   }, [currentUser.id]);
   useEffect(() => { void loadSkus(); }, [loadSkus]);
-  useEffect(() => {
-    let active = true;
-    void getMyFeed(currentUser.id).then((saved) => {
-      if (!active || !saved) return;
-      setSavedFeed(saved);
-      setFeedUrl(saved.url);
-      setSyncInterval(saved.intervalHours);
-      setSyncPauseMissing(saved.pauseMissing);
-    }).catch(() => {});
-    return () => { active = false; };
-  }, [currentUser.id]);
-
   const parse = (override?: { feed: FeedTable; start: number; keepNotice?: boolean }) => {
     if (!override?.keepNotice) setNotice(null);
     let activeFeed = override ? override.feed : feed;
@@ -588,48 +565,6 @@ function BulkUploadInner() {
     }
   }
 
-  async function saveFeedSettings(enabled: boolean) {
-    if (feedBusy) return;
-    setFeedBusy(true);
-    try {
-      const saved = await saveMyFeed(currentUser.id, { url: feedUrl, enabled, intervalHours: syncInterval, pauseMissing: syncPauseMissing });
-      if (!alive.current) return;
-      if (!saved) { setNotice(translateCopy("Bağlantı kaydedilemedi. Adresin http:// ya da https:// ile başladığını kontrol et.", language)); return; }
-      setSavedFeed(saved);
-      setNotice(translateCopy("Bağlantı kaydedildi. Fiyat ve stoklar seçtiğin aralıkla kendiliğinden eşitlenecek.", language));
-    } finally {
-      if (alive.current) setFeedBusy(false);
-    }
-  }
-
-  async function syncNow() {
-    if (!savedFeed || feedBusy) return;
-    setFeedBusy(true);
-    try {
-      const result = await syncMyFeedNow(savedFeed.id);
-      if (!alive.current) return;
-      setNotice(result.ok ? `${translateCopy("Eşitlendi", language)}: ${translateCopy(describeFeedSummary(result.summary), language)}` : translateCopy(result.error, language));
-      const fresh = await getMyFeed(currentUser.id);
-      if (alive.current && fresh) setSavedFeed(fresh);
-      if (result.ok) void loadSkus();
-    } finally {
-      if (alive.current) setFeedBusy(false);
-    }
-  }
-
-  async function removeFeed() {
-    if (feedBusy) return;
-    setFeedBusy(true);
-    try {
-      const ok = await deleteMyFeed(currentUser.id);
-      if (!alive.current) return;
-      if (ok) { setSavedFeed(null); setNotice(translateCopy("Otomatik eşitleme kaldırıldı. İlanların olduğu gibi kalır.", language)); }
-      else setNotice(translateCopy("Kaldırılamadı. Tekrar dene.", language));
-    } finally {
-      if (alive.current) setFeedBusy(false);
-    }
-  }
-
   function clearFeed() {
     setFeed(null);
     setFeedStart(0);
@@ -866,6 +801,11 @@ function BulkUploadInner() {
           <Text style={{ color: colors.muted, fontSize: 14, fontWeight: "600" }}>{translateCopy("Yüzlerce ürünü tek tek girmek yerine CSV dosyasıyla ya da e-ticaret sitenin ürün XML'iyle yükle. Kategori ve il otomatik eşlenir, komisyonu toplu belirlersin. İlanlar admin onayından sonra yayına alınır.", language)}</Text>
         </View>
 
+        {/* KAYITLI XML BAĞLANTILARI — otomatik eşitleme (fiyat/stok, içerik, yeni ürünler). */}
+        <FeedManager ownerId={currentUser.id} categoryTree={categoryTree} onChanged={() => void loadSkus()} />
+
+        <Text style={{ color: colors.ink, fontSize: 17, fontWeight: "900", marginTop: 4 }}>{translateCopy("Elle toplu yükleme", language)}</Text>
+
         {/* Adım 1: şablon */}
         <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 14, borderWidth: 1, gap: 10, padding: 16 }}>
           <Text style={{ color: colors.ink, fontSize: 15, fontWeight: "900" }}>1) {translateCopy("Şablonu kullan", language)}</Text>
@@ -943,7 +883,7 @@ function BulkUploadInner() {
           </View>
           {/* XML BAĞLANTISI — dosya indirmeden, e-ticaret sitesinin ürün XML adresinden getir (indirme sunucuda yapılır). */}
           <View style={{ gap: 6 }}>
-            <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>{translateCopy("XML bağlantısı — e-ticaret sitenin ürün XML adresi (opsiyonel)", language)}</Text>
+            <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>{translateCopy("XML bağlantısından bir kez getir (önizleyip kendin yüklersin)", language)}</Text>
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
               <TextInput value={feedUrl} onChangeText={setFeedUrl} accessibilityLabel={translateCopy("XML bağlantısı", language)} autoCapitalize="none" autoCorrect={false} keyboardType="url" placeholder="https://siten.com/urunler.xml" placeholderTextColor={colors.subtle} style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 10, borderWidth: 1, color: colors.ink, flexGrow: 1, fontSize: 13.5, minHeight: 44, minWidth: 220, paddingHorizontal: 12 }} />
               <Pressable disabled={fetchingUrl || !feedUrl.trim()} onPress={() => void loadFromUrl()} accessibilityRole="button" style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 10, flexDirection: "row", gap: 6, minHeight: 44, opacity: fetchingUrl || !feedUrl.trim() ? 0.6 : 1, paddingHorizontal: 14 }}>
@@ -952,52 +892,6 @@ function BulkUploadInner() {
               </Pressable>
             </View>
           </View>
-          {/* OTOMATİK EŞİTLEME — bağlantı kaydedilirse fiyat/stok sunucuda belirli aralıklarla güncellenir. */}
-          {feedUrl.trim() || savedFeed ? (
-            <View testID="auto-sync-card" style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 12, borderWidth: 1, gap: 9, padding: 14 }}>
-              <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
-                <MaterialCommunityIcons name="sync" size={18} color={colors.primaryDark} />
-                <Text style={{ color: colors.ink, flex: 1, fontSize: 13.5, fontWeight: "900" }}>{translateCopy("Otomatik fiyat ve stok eşitleme", language)}</Text>
-                {savedFeed ? <Text style={{ color: savedFeed.enabled ? colors.primaryDark : colors.muted, fontSize: 11.5, fontWeight: "800" }}>{translateCopy(savedFeed.enabled ? "Açık" : "Kapalı", language)}</Text> : null}
-              </View>
-              <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600", lineHeight: 17 }}>{translateCopy("Bağlantını kaydedersen, ürün kodu eşleşen ilanlarının fiyatı ve stoğu seçtiğin aralıkla kendiliğinden güncellenir. Stokta kalmayan ürünün yayındaki ilanı pasife alınır, yeniden stoğa girince geri açılır. Yeni ürünler için ilan açılmaz; onları bu ekrandan içe aktarırsın.", language)}</Text>
-              <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
-                <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>{translateCopy("Aralık:", language)}</Text>
-                {FEED_INTERVALS.map((h) => (
-                  <Pressable key={h} onPress={() => setSyncInterval(h)} accessibilityRole="radio" accessibilityState={{ checked: syncInterval === h }} accessibilityLabel={`${h} ${translateCopy("saatte bir", language)}`} style={{ backgroundColor: syncInterval === h ? colors.primary : colors.surface, borderColor: syncInterval === h ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, justifyContent: "center", minHeight: 34, paddingHorizontal: 12 }}>
-                    <Text style={{ color: syncInterval === h ? "#FFFFFF" : colors.ink, fontSize: 12, fontWeight: "800" }}>{h} {translateCopy("saat", language)}</Text>
-                  </Pressable>
-                ))}
-              </View>
-              <Pressable onPress={() => setSyncPauseMissing((v) => !v)} accessibilityRole="switch" accessibilityState={{ checked: syncPauseMissing }} accessibilityLabel={translateCopy("Akıştan çıkarılan ürünleri pasife al", language)} style={{ alignItems: "flex-start", flexDirection: "row", gap: 9 }}>
-                <MaterialCommunityIcons name={syncPauseMissing ? "checkbox-marked" : "checkbox-blank-outline"} size={20} color={syncPauseMissing ? colors.primaryDark : colors.muted} />
-                <Text style={{ color: colors.ink, flex: 1, fontSize: 12.5, fontWeight: "700", lineHeight: 18 }}>{translateCopy("Akıştan tamamen çıkarılan ürünlerin ilanlarını da pasife al", language)}</Text>
-              </Pressable>
-              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-                <Pressable disabled={feedBusy || !feedUrl.trim()} onPress={() => void saveFeedSettings(true)} accessibilityRole="button" style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 10, justifyContent: "center", minHeight: 42, opacity: feedBusy || !feedUrl.trim() ? 0.6 : 1, paddingHorizontal: 14 }}>
-                  <Text style={{ color: "#FFFFFF", fontSize: 12.5, fontWeight: "900" }}>{translateCopy(savedFeed ? "Ayarları kaydet" : "Bağlantıyı kaydet ve otomatik eşitle", language)}</Text>
-                </Pressable>
-                {savedFeed ? (
-                  <Pressable disabled={feedBusy} onPress={() => void syncNow()} accessibilityRole="button" style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 6, minHeight: 42, opacity: feedBusy ? 0.6 : 1, paddingHorizontal: 14 }}>
-                    <MaterialCommunityIcons name={feedBusy ? "loading" : "refresh"} size={15} color={colors.primaryDark} />
-                    <Text style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Şimdi eşitle", language)}</Text>
-                  </Pressable>
-                ) : null}
-                {savedFeed ? (
-                  <Pressable disabled={feedBusy} onPress={() => void removeFeed()} accessibilityRole="button" style={{ alignItems: "center", justifyContent: "center", minHeight: 42, opacity: feedBusy ? 0.6 : 1, paddingHorizontal: 10 }}>
-                    <Text style={{ color: colors.accent, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Otomatik eşitlemeyi kaldır", language)}</Text>
-                  </Pressable>
-                ) : null}
-              </View>
-              {savedFeed ? (
-                <Text testID="auto-sync-status" style={{ color: savedFeed.lastStatus === "error" ? colors.accent : colors.muted, fontSize: 11.5, fontWeight: "700", lineHeight: 16 }}>
-                  {savedFeed.lastRunAt
-                    ? `${translateCopy("Son eşitleme", language)}: ${shortDate(savedFeed.lastRunAt)} — ${savedFeed.lastStatus === "error" ? translateCopy(savedFeed.lastError ?? "Eşitleme tamamlanamadı.", language) : translateCopy(describeFeedSummary(savedFeed.lastSummary), language)}`
-                    : translateCopy("Henüz eşitlenmedi; ilk eşitleme yarım saat içinde yapılır ya da 'Şimdi eşitle'ye basabilirsin.", language)}
-                </Text>
-              ) : null}
-            </View>
-          ) : null}
           {feed ? (
             <View testID="feed-card" style={{ backgroundColor: colors.infoSoft, borderRadius: 12, gap: 8, padding: 14 }}>
               <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>

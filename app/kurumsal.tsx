@@ -15,11 +15,11 @@ import { openUrlSafe } from "@/lib/link";
 type IconName = keyof typeof MaterialCommunityIcons.glyphMap;
 
 // Bu sayfadaki her madde ÇALIŞAN ve uçtan uca denenmiş bir özelliği anlatır (toplu ilan ekranı, XML bağlantısı,
-// otomatik fiyat/stok eşitleme, ortaklık türleri, satıcı paneli). Olmayan bir şeyi (API, yeni ürünlerin
-// kendiliğinden ilana dönüşmesi, ödeme altyapısı) vaat etme; SSS'de açıkça "yok" denir.
+// otomatik eşitleme, yeni ürünlerin ilana dönüşmesi, kategori eşleme, ortaklık türleri, satıcı paneli).
+// Olmayan bir şeyi (ödeme altyapısı, incelemesiz otomatik yayın) vaat etme.
 const FEATURES: Array<{ icon: IconName; t: string; b: string }> = [
   { icon: "xml", t: "XML ve CSV ile toplu yükleme", b: "E-ticaret sitenin ürün XML bağlantısını yapıştır ya da XML / CSV dosyanı yükle; ürün adı, kodu, fiyatı, stoğu, kategorisi, markası ve görselleri otomatik tanınır." },
-  { icon: "sync", t: "Otomatik fiyat ve stok eşitleme", b: "XML bağlantını kaydedersen fiyat ve stoklar seçtiğin aralıkla (1–24 saat) kendiliğinden güncellenir. Stokta kalmayan ürünün ilanı pasife alınır, yeniden stoğa girince geri açılır." },
+  { icon: "sync", t: "Otomatik eşitleme", b: "XML bağlantını kaydet; fiyat ve stoklar seçtiğin aralıkla (1–24 saat) kendiliğinden güncellensin. İstersen yeni ürünler ilan olarak açılır, başlık, açıklama ve görseller de akıştakiyle eşitlenir." },
   { icon: "account-group", t: "Komisyonla çalışan satış ağı", b: "Ortaklar ürünlerini kendi çevresine ve takipçilerine tanıtır. Komisyonu sen belirlersin; ödemeyi yalnız satış gerçekleşince, doğrudan ortağa yaparsın." },
   { icon: "tune", t: "Ürün bazında kontrol", b: "Komisyonu ve ortaklık türünü (onayına bağlı, herkese açık ya da ortaksız) yüklerken topluca seçer, CSV'de satır satır belirler, sonra her ilanda ayrı ayrı değiştirebilirsin." },
   { icon: "chart-line", t: "Satıcı paneli", b: "Hangi ilana kaç ortak katıldı, kaç talep ve satış geldi; panelinden takip eder, kayıtları dışa aktarırsın." },
@@ -35,7 +35,9 @@ const STEPS: Array<{ icon: IconName; t: string; b: string }> = [
 
 const FAQ: Array<{ q: string; a: string }> = [
   { q: "Hangi XML biçimleri destekleniyor?", a: "Her üründe bir ad ve bir fiyat etiketi bulunan ürün XML'leri okunur. Türkçe ve İngilizce yaygın etiket adları (UrunAdi, StokKodu, Fiyat, Kategori, Resim; title, price, image_link vb.) ile Google Merchant ürün akışı tanınır. Tanınmayan bir alan olursa önizlemede görürsün; destek ekibine örnek dosya gönderebilirsin." },
-  { q: "XML bağlantısı verip otomatik güncelleme yapılabiliyor mu?", a: "Evet. Toplu ilan ekranında XML bağlantını kaydedersin; ürün kodu eşleşen ilanlarının fiyatı ve stoğu 1, 3, 6, 12 ya da 24 saatte bir kendiliğinden güncellenir. Stokta kalmayan ürünün ilanı pasife alınır, yeniden stoğa girince geri açılır. Yeni ürünler için ilan kendiliğinden açılmaz: onları aynı ekranda önizleyip içe aktarırsın. API bağlantısı henüz yoktur." },
+  { q: "XML bağlantısı verip otomatik güncelleme yapılabiliyor mu?", a: "Evet. Toplu ilan ekranında XML bağlantını kaydedersin (en çok 5 bağlantı, her birinin ayarı ayrı). Fiyat ve stoklar 1, 3, 6, 12 ya da 24 saatte bir kendiliğinden güncellenir; stokta kalmayan ürünün ilanı pasife alınır, yeniden stoğa girince geri açılır. İstersen akışa eklenen yeni ürünler ilan olarak açılır, başlık, açıklama ve görseller de eşitlenir." },
+  { q: "Mağazamdaki kategoriler OrtakSat kategorileriyle nasıl eşleşiyor?", a: "Bağlantını eklerken mağazandaki kategoriler listelenir ve her biri için bir OrtakSat kategorisi önerilir. Önerileri bir kez kontrol edip düzeltirsin; eşitleme hep bu tabloyu kullanır. Eşlemediğin ya da sonradan eklenen kategorilerdeki ürünler seçtiğin varsayılan kategoriye gider." },
+  { q: "Otomatik açılan ilanlar hemen yayına giriyor mu?", a: "Hayır. Otomatik ya da toplu açılan her yeni ilan önce incelemeden geçer, onaylandıktan sonra yayına girer. Mevcut ilanlarındaki fiyat ve stok güncellemeleri anında uygulanır." },
   { q: "Ödeme ve kargoyu OrtakSat mı yapıyor?", a: "Hayır. OrtakSat bir ilan ve eşleşme platformudur; para tutmaz, kargo yapmaz. Ödeme ve teslimat seninle alıcı arasında, komisyon ödemesi seninle ortak arasında gerçekleşir." },
   { q: "Komisyonu kim, ne zaman öder?", a: "Komisyonu sen belirlersin ve yalnız satış gerçekleştiğinde, anlaştığınız kanaldan doğrudan ortağa ödersin. Platform komisyondan pay almaz." },
   { q: "Bir seferde kaç ürün yükleyebilirim?", a: "Bir XML dosyasında 20.000 ürüne kadar okunur; ürünler 200'lük partiler halinde önizlenip yüklenir. Bir saatte en çok 2.000 yeni ilan eklenebilir; sınıra ulaşılırsa kalan ürünler bekler ve bir saat sonra kaldığı yerden devam edilir. Yeni toplu ilanlar yayına girmeden önce incelemeden geçer." },
