@@ -13,7 +13,7 @@
 //    ELLE pasife aldığı ilana dokunulmaz. İncelemedeki, reddedilen, satılan, arşivlenen ilanın durumu değişmez.
 //  • KORUMA: akış bir öncekine göre yarıdan fazla küçüldüyse (bozuk/yarım dosya) "akışta yok" diye pasife alma yapılmaz.
 
-export type FeedProduct = { sku: string; title: string; description: string; price: number | null; category: string; stock: number | null; images: string[]; brand: string };
+export type FeedProduct = { sku: string; title: string; description: string; price: number | null; category: string; stock: number | null; images: string[]; brand: string; attrs?: Record<string, string> };
 export type ListingRow = {
   id: string; external_id: string; title: string; description: string; price: number; stock_count: number; status: string;
   attributes: Record<string, unknown> | null; cover_image_url: string | null; ad_assets: string[] | null;
@@ -167,8 +167,23 @@ export function feedPriceToNumber(value: string): number | null {
 export function rowToProduct(row: string[]): FeedProduct {
   return {
     sku: row[0] ?? "", title: row[1] ?? "", description: row[2] ?? "", price: feedPriceToNumber(row[3] ?? ""), category: row[4] ?? "",
-    stock: row[8] ? Number(row[8]) : null, images: (row[9] ?? "").split("|").map((u) => u.trim()).filter((u) => /^https?:\/\//i.test(u)), brand: row[10] ?? ""
+    stock: row[8] ? Number(row[8]) : null, images: (row[9] ?? "").split("|").map((u) => u.trim()).filter((u) => /^https?:\/\//i.test(u)), brand: row[10] ?? "",
+    attrs: parseAttrs(row[11] ?? "")
   };
+}
+
+function parseAttrs(json: string): Record<string, string> {
+  if (!json) return {};
+  try {
+    const value = JSON.parse(json);
+    if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+    return Object.fromEntries(Object.entries(value).filter(([, v]) => typeof v === "string").slice(0, 20)) as Record<string, string>;
+  } catch { return {}; }
+}
+
+/** Özellik adı karşılaştırma anahtarı — istemcideki normKey ile AYNI (tr küçük harf, boşluk/alt çizgi yok). */
+export function attrKey(name: string): string {
+  return name.toLocaleLowerCase("tr-TR").replace(/[\s_]+/g, "").trim();
 }
 
 /** Adres dostu kısa ad (Türkçe harfler sadeleşir). */

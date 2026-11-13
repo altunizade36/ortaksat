@@ -2635,6 +2635,14 @@ export function describeAttributes(attributes?: Record<string, string | number |
         : `${val}${suffix}`;
     rows.push({ label: def?.label ?? humanizeKey(key), value });
   }
+  // XML/CSV'den gelen ve kategorinin alanlarıyla eşleşmeyen özellikler ("_extra") da tabloda görünür.
+  const extra = (attributes as Record<string, unknown>)._extra;
+  if (extra && typeof extra === "object" && !Array.isArray(extra)) {
+    for (const [label, val] of Object.entries(extra as Record<string, unknown>)) {
+      if (typeof val !== "string" || !val.trim() || rows.some((r) => r.label === label)) continue;
+      rows.push({ label, value: val });
+    }
+  }
   return rows;
 }
 

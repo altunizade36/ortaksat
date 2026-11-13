@@ -15,7 +15,11 @@ import { supabase } from "@/lib/supabase";
 import type { PartnershipMode } from "@/lib/types";
 import type { FeedTable } from "@/lib/xml-feed";
 
-export type CategoryTarget = { label: string; text: string; root: string; attrs: Record<string, unknown>; brandKey: string | null; image: string | null };
+export type CategoryTarget = {
+  label: string; text: string; root: string; attrs: Record<string, unknown>; brandKey: string | null; image: string | null;
+  /** Kategorinin özellik alanları: normalleştirilmiş etiket/anahtar → alan. Sunucu akıştaki "Renk"i bu tabloyla doğru alana yazar. */
+  fields: Record<string, { key: string; type: string }>;
+};
 export type FeedSettings = {
   createNew: boolean; syncContent: boolean; shortenTitles: boolean;
   commission: number; partnershipMode: PartnershipMode;
@@ -25,7 +29,7 @@ export type FeedSettings = {
 };
 export type FeedSummary = {
   products?: number; matched?: number; priceChanged?: number; stockChanged?: number; contentChanged?: number; contentHeld?: number;
-  paused?: number; resumed?: number; created?: number; newProducts?: number; remainingNew?: number; invalidNew?: number; blocked?: number;
+  paused?: number; resumed?: number; created?: number; published?: number; review?: number; newProducts?: number; remainingNew?: number; invalidNew?: number; blocked?: number;
   unmappedCategories?: number; otherFeed?: number; outOfStock?: number; foreignCurrency?: number; failed?: number; deferred?: number;
   skippedPauseMissing?: boolean; createBlocked?: string | null;
 };
@@ -131,7 +135,9 @@ export function describeFeedSummary(s: FeedSummary | null): string {
   if (s.stockChanged) changed.push(`${s.stockChanged} stok`);
   if (s.contentChanged) changed.push(`${s.contentChanged} içerik`);
   parts.push(changed.length ? `${changed.join(", ")} güncellendi` : "değişiklik yok");
-  if (s.created) parts.push(`${s.created} yeni ilan incelemeye gönderildi`);
+  const published = s.published ?? Math.max(0, (s.created ?? 0) - (s.review ?? 0));
+  if (published) parts.push(`${published} yeni ilan yayınlandı`);
+  if (s.review) parts.push(`${s.review} ilan riskli görüldüğü için incelemeye alındı`);
   if (s.remainingNew) parts.push(`${s.remainingNew} yeni ürün sırada (yarım saat içinde açılır)`);
   if (s.createBlocked) parts.push(s.createBlocked);
   else if (s.newProducts && !s.created && !s.remainingNew) parts.push(`${s.newProducts} yeni ürün var (otomatik açma kapalı ya da ürün bilgisi eksik)`);
@@ -158,13 +164,21 @@ function targetOf(hit: { node: CategoryNode; path: CategoryNode[] } | undefined)
   const leaf = hit.path[hit.path.length - 1];
   const fields = getFormSchema(resolveFormKey(hit.path)).fields;
   const brand = fields.find((f) => f.key === "brand") ?? fields.find((f) => f.label.toLocaleLowerCase("tr-TR").trim() === "marka");
+  const norm = (value: string) => value.toLocaleLowerCase("tr-TR").replace(/[\s_]+/g, "").trim();
+  const fieldMap: CategoryTarget["fields"] = {};
+  for (const f of fields) {
+    if (f.type === "textarea") continue;
+    fieldMap[norm(f.label)] ??= { key: f.key, type: f.type };
+    fieldMap[norm(f.key)] ??= { key: f.key, type: f.type };
+  }
   return {
     label: leaf.label,
     text: hit.path.map((n) => n.label).join(" > "),
     root: hit.path[0].label,
     attrs: categoryPathAttributes(hit.path),
     brandKey: brand?.key ?? null,
-    image: leaf.image || hit.path.find((p) => p.image)?.image || null
+    image: leaf.image || hit.path.find((p) => p.image)?.image || null,
+    fields: fieldMap
   };
 }
 

@@ -22,7 +22,7 @@ import { autoFillListing } from "@/lib/listing-autofill";
 import { formatLocation, getProvince, resolveProvinceByName, districtsOfProvince } from "@/lib/locations";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { downloadCsv } from "@/lib/csv-export";
-import { uploadListingImage, fetchMyListingSkus, updateListingFieldsLive, fetchMyListingsForExport } from "@/lib/live-service";
+import { uploadListingImage, fetchMyListingSkus, updateListingFieldsLive, fetchMyListingsForExport, fetchListingStatuses } from "@/lib/live-service";
 import { isListingVideoUrl } from "@/lib/listing-video";
 import { useStore } from "@/lib/use-store";
 import { parseTrPrice, validateListing } from "@/lib/validation";
@@ -58,7 +58,7 @@ type ParsedRow = {
   stock: number;
   image: string; // kapak (galerinin ilki)
   images: string[]; // tüm görseller: kapak + ek galeri (gorsel_url'de | ile ayrılmış)
-  attrs: Record<string, string | number | boolean | string[]>; // kategori-özel alanlar (attributes)
+  attrs: Record<string, string | number | boolean | string[] | Record<string, string>>; // kategori-özel alanlar (attributes); "_extra" = eşleşmeyen özellikler
   recognizedAttrs: string[]; // tanınan özellik etiketleri (önizleme göstergesi)
   originalTitle?: string; // satıcı "uzun başlıkları kısalt" seçtiyse kısaltılmadan önceki başlık
   // GÜNCELLEMEDE yalnız dosyada YAZAN komisyon/stok gönderilir. Eskiden boş hücre varsayılana (%10 / 1 adet)
@@ -338,7 +338,8 @@ function BulkUploadInner() {
     // Base olmayan (harici_kod/baslik/... dışındaki) başlık sütunları = kategori-özel
     // ADAY alanlar. Satırın kategorisine göre şema alanıyla eşleşirse attributes'a yazılır.
     const consumed = new Set<number>(Object.values(col));
-    const attrCols = headers.map((h, i) => ({ i, h })).filter((x) => !consumed.has(x.i) && x.h.trim() !== "");
+    const extraIdx = headers.findIndex((h) => normKey(h) === "ozellikler");
+    const attrCols = headers.map((h, i) => ({ i, h })).filter((x) => !consumed.has(x.i) && x.h.trim() !== "" && x.i !== extraIdx);
     if (col.title === undefined || col.price === undefined) {
       Alert.alert(translateCopy("Sütun bulunamadı", language), translateCopy("En az 'baslik' ve 'fiyat' sütunları gerekli. Şablonu kullan.", language));
       return;
@@ -429,8 +430,24 @@ function BulkUploadInner() {
       const images = imageList.length ? imageList : (bulkImages[idx] ? [bulkImages[idx]] : []);
       const image = images[0] || "";
       // KATEGORİ-ÖZEL ALANLAR: satırın kategorisinin şemasına göre aday sütunları eşle.
-      const attrs: Record<string, string | number | boolean | string[]> = {};
+      const attrs: ParsedRow["attrs"] = {};
       const recognizedAttrs: string[] = [];
+      // XML'in "ozellikler" sütunu (JSON): kategorinin alanıyla eşleşen özellik o alana, eşleşmeyen "_extra"ya.
+      if (extraIdx >= 0 && category && (cells[extraIdx] ?? "").trim()) {
+        try {
+          const given = JSON.parse(cells[extraIdx]) as Record<string, unknown>;
+          const schema = getFormSchema(resolveFormKey(category.path));
+          const extra: Record<string, string> = {};
+          for (const [name, value] of Object.entries(given)) {
+            if (typeof value !== "string" || !value.trim()) continue;
+            const field = schema.fields.find((f) => normKey(f.label) === normKey(name) || normKey(f.key) === normKey(name));
+            const coerced = field ? coerceAttr(field, value) : undefined;
+            if (field && coerced !== undefined && !(Array.isArray(coerced) && coerced.length === 0)) { attrs[field.key] = coerced; if (!recognizedAttrs.includes(field.label)) recognizedAttrs.push(field.label); }
+            else { extra[name] = value; if (!recognizedAttrs.includes(name)) recognizedAttrs.push(name); }
+          }
+          if (Object.keys(extra).length) attrs._extra = extra;
+        } catch { /* bozuk özellik verisi yok sayılır */ }
+      }
       if (attrCols.length && category) {
         const schema = getFormSchema(resolveFormKey(category.path));
         for (const ac of attrCols) {
@@ -631,6 +648,7 @@ function BulkUploadInner() {
     const failures: Array<{ row: number; title: string; reason: string }> = [];
     const touchedIds = new Set<string>(); // dosyada geçen mevcut ilan id'leri (pasife-al senkronu için)
     const doneRows = new Set<ParsedRow>(); // başarıyla yazılan satırlar (yeniden denemede tekrar gönderilmesin)
+    const createdIds: string[] = []; // yeni açılan ilanlar (kaçı yayında, kaçı incelemede — sunucudan okunur)
     let rateLimited = false;
     let attempted = 0;
     for (let i = 0; i < validRows.length; i++) {
@@ -673,7 +691,7 @@ function BulkUploadInner() {
           const extraAssets = uploaded.slice(1);
           const auto = autoFillListing({ title: r.title, category: leaf.label, price: r.price, commission: r.commission, currency: "TRY" });
           const location = formatLocation({ provinceId: r.provinceId, districtId: r.districtId }, "neighborhood") || getProvince(r.provinceId)?.name || "Türkiye";
-          await createListing({
+          const made = await createListing({
             externalId: r.sku || undefined,
             title: r.title,
             description: r.description || auto.description,
@@ -707,7 +725,8 @@ function BulkUploadInner() {
             // Meta alanları ÖZELLİKLERDEN SONRA yazılır (özellik sütunu ezemesin) + benzersiz _path:
             // eş-etiketli dallarda _root/_leaf/_formKey ilanın dalını tek başına belirleyemiyor.
             attributes: { ...r.attrs, ...categoryPathAttributes(r.category!.path) }
-          }, "pending_review"); // TOPLU: yayından önce admin onayı
+          }); // TOPLU ilanlar da doğrudan yayınlanır; sunucu taraması riskli olanı incelemeye düşürür
+          createdIds.push(made.id);
           created++;
         }
         doneRows.add(r);
@@ -750,7 +769,14 @@ function BulkUploadInner() {
     }
     if (failures.length === 0) {
       const parts: string[] = [];
-      if (created) parts.push(`${created} ${translateCopy("yeni ilan onaya gönderildi", language)}`);
+      if (created) {
+        // Sunucu riskli gördüğü ilanı incelemeye düşürür → gerçek durumu oku, kullanıcıya doğruyu söyle.
+        const statuses = await fetchListingStatuses(createdIds).catch(() => ({} as Record<string, string>));
+        const inReview = createdIds.filter((id) => statuses[id] === "pending_review").length;
+        if (!alive.current) return;
+        if (created - inReview > 0) parts.push(`${created - inReview} ${translateCopy("yeni ilan yayınlandı", language)}`);
+        if (inReview > 0) parts.push(`${inReview} ${translateCopy("ilan otomatik taramaya takıldığı için incelemeye alındı", language)}`);
+      }
       if (updated) parts.push(`${updated} ${translateCopy("mevcut ilan güncellendi", language)}`);
       if (recategorized) parts.push(`${recategorized} ${translateCopy("ilanın kategorisi değişti", language)}`);
       if (pausedCount) parts.push(`${pausedCount} ${translateCopy("ilan pasife alındı", language)}`);
@@ -788,7 +814,7 @@ function BulkUploadInner() {
     <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ backgroundColor: colors.background, flexGrow: 1, paddingBottom: 0 }} style={{ backgroundColor: colors.background }}>
       <Head>
         <title>{translateCopy("Toplu İlan Yükle — OrtakSat", language)}</title>
-        <meta name="description" content={translateCopy("CSV veya XML ürün akışıyla toplu ürün yükle, kategori/il eşle, komisyonu toplu belirle. İlanlar admin onayından sonra yayına alınır.", language)} />
+        <meta name="description" content={translateCopy("CSV veya XML ürün akışıyla toplu ürün yükle, kategori/il eşle, komisyonu toplu belirle. İlanlar hemen yayınlanır.", language)} />
       </Head>
       <WebContainer max={1100} padding={16} style={{ gap: 16, paddingTop: 16 }}>
         <Pressable onPress={() => (router.canGoBack() ? router.back() : router.replace("/(tabs)/seller"))} accessibilityRole="button" style={({ pressed }) => ({ alignItems: "center", alignSelf: "flex-start", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 6, opacity: pressed ? 0.7 : 1, paddingHorizontal: 14, paddingVertical: 8 })}>
@@ -798,7 +824,7 @@ function BulkUploadInner() {
 
         <View style={{ gap: 4 }}>
           <Text style={{ color: colors.ink, fontSize: 26, fontWeight: "900" }}>{translateCopy("Toplu ilan yükleme", language)}</Text>
-          <Text style={{ color: colors.muted, fontSize: 14, fontWeight: "600" }}>{translateCopy("Yüzlerce ürünü tek tek girmek yerine CSV dosyasıyla ya da e-ticaret sitenin ürün XML'iyle yükle. Kategori ve il otomatik eşlenir, komisyonu toplu belirlersin. İlanlar admin onayından sonra yayına alınır.", language)}</Text>
+          <Text style={{ color: colors.muted, fontSize: 14, fontWeight: "600" }}>{translateCopy("Yüzlerce ürünü tek tek girmek yerine CSV dosyasıyla ya da e-ticaret sitenin ürün XML'iyle yükle. Kategori ve il otomatik eşlenir, komisyonu toplu belirlersin. İlanlar hemen yayınlanır; yalnız otomatik taramaya takılanlar incelemeye alınır.", language)}</Text>
         </View>
 
         {/* KAYITLI XML BAĞLANTILARI — otomatik eşitleme (fiyat/stok, içerik, yeni ürünler). */}
@@ -1149,12 +1175,12 @@ function BulkUploadInner() {
 
             <View style={{ alignItems: "flex-start", backgroundColor: colors.infoSoft, borderRadius: 10, flexDirection: "row", gap: 8, padding: 11 }}>
               <MaterialCommunityIcons name="shield-check-outline" size={16} color={colors.info} style={{ marginTop: 1 }} />
-              <Text style={{ color: colors.muted, flex: 1, fontSize: 11.5, fontWeight: "600", lineHeight: 16 }}>{translateCopy("Yeni toplu ilanlar YAYINA ALINMADAN önce admin onayına düşer; güncellenen mevcut ilanlar anında değişir.", language)}</Text>
+              <Text style={{ color: colors.muted, flex: 1, fontSize: 11.5, fontWeight: "600", lineHeight: 16 }}>{translateCopy("Yeni ilanlar hemen yayınlanır; yalnız otomatik taramaya takılanlar incelemeye alınır. Güncellenen mevcut ilanlar anında değişir.", language)}</Text>
             </View>
 
             <Pressable disabled={!validRows.length || publishing} onPress={() => void publish()} style={({ pressed }) => ({ alignItems: "center", backgroundColor: !validRows.length || publishing ? colors.line : colors.primary, borderRadius: 12, flexDirection: "row", gap: 8, justifyContent: "center", opacity: pressed ? 0.85 : 1, paddingVertical: 14 })}>
               <MaterialCommunityIcons name={publishing ? "loading" : "cloud-upload-outline"} size={18} color="#FFFFFF" />
-              <Text style={{ color: "#FFFFFF", fontSize: 14, fontWeight: "900" }}>{publishing ? translateCopy("Yükleniyor…", language) : updateCount > 0 ? `${newCount} ${translateCopy("yeni", language)} · ${updateCount} ${translateCopy("güncelle", language)}` : `${validRows.length} ${translateCopy("ilanı onaya gönder", language)}`}</Text>
+              <Text style={{ color: "#FFFFFF", fontSize: 14, fontWeight: "900" }}>{publishing ? translateCopy("Yükleniyor…", language) : updateCount > 0 ? `${newCount} ${translateCopy("yeni", language)} · ${updateCount} ${translateCopy("güncelle", language)}` : `${validRows.length} ${translateCopy("ilanı yayınla", language)}`}</Text>
             </Pressable>
           </View>
         ) : null}

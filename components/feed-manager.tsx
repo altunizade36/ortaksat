@@ -214,7 +214,7 @@ export function FeedManager({ ownerId, categoryTree, onChanged }: { ownerId: str
           </View>
           <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600" }}>{feed.url}</Text>
           <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "700", lineHeight: 16 }}>
-            {[feed.settings.createNew ? tr("yeni ürünler ilan olarak açılır") : tr("yeni ürün açılmaz"), feed.settings.syncContent ? tr("içerik eşitlenir") : tr("yalnız fiyat ve stok"), feed.pauseMissing ? tr("akıştan çıkanlar pasife alınır") : ""].filter(Boolean).join(" · ")}
+            {[feed.settings.createNew ? tr("yeni ürünler kendiliğinden yayınlanır") : tr("yeni ürün açılmaz"), feed.settings.syncContent ? tr("içerik eşitlenir") : tr("yalnız fiyat ve stok"), feed.pauseMissing ? tr("akıştan çıkanlar pasife alınır") : ""].filter(Boolean).join(" · ")}
           </Text>
           <Text testID="feed-status" style={{ color: feed.lastStatus === "error" ? colors.accent : colors.ink, fontSize: 11.5, fontWeight: "700", lineHeight: 16 }}>
             {feed.lastRunAt
@@ -256,7 +256,7 @@ export function FeedManager({ ownerId, categoryTree, onChanged }: { ownerId: str
             <Text style={label}>{tr("Eşitleme aralığı:")}</Text>
             {FEED_INTERVALS.map((h) => chip(draft.interval === h, `${h} ${tr("saat")}`, () => patch({ interval: h }), `${h} ${tr("saatte bir")}`))}
           </View>
-          {check(draft.createNew, () => patch({ createNew: !draft.createNew }), "Yeni ürünleri ilan olarak aç", "Akışa eklenen her yeni ürün için ilan açılır ve yayına girmeden önce incelemeye düşer.")}
+          {check(draft.createNew, () => patch({ createNew: !draft.createNew }), "Yeni ürünleri ilan olarak aç", "Akışa eklenen her yeni ürün için ilan açılır ve yayınlanır; yalnız otomatik taramaya takılanlar incelemeye alınır.")}
           {check(draft.syncContent, () => patch({ syncContent: !draft.syncContent }), "Başlık, açıklama ve görselleri de eşitle", "Açıkken ilanlarındaki elle yaptığın başlık/açıklama/görsel değişiklikleri akıştakiyle değiştirilir.")}
           {check(draft.shortenTitles, () => patch({ shortenTitles: !draft.shortenTitles }), "70 karakterden uzun başlıkları kelime sınırında kısalt", "Kapalıyken uzun başlıklı yeni ürünler açılmaz.")}
           {check(draft.pauseMissing, () => patch({ pauseMissing: !draft.pauseMissing }), "Akıştan tamamen çıkarılan ürünlerin ilanlarını pasife al", "Stokta kalmayan ürünün ilanı bu seçenekten bağımsız olarak pasife alınır.")}

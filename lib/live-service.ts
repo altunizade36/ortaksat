@@ -452,6 +452,17 @@ export async function insertListing(listing: Listing): Promise<boolean> {
   return (await insertListingResult(listing)).ok;
 }
 
+/** Verilen ilanların sunucudaki durumu (toplu yüklemeden sonra kaçı yayında, kaçı incelemede). */
+export async function fetchListingStatuses(ids: string[]): Promise<Record<string, string>> {
+  const out: Record<string, string> = {};
+  if (!supabase || !ids.length) return out;
+  for (let i = 0; i < ids.length; i += 100) {
+    const { data } = await supabase.from("listings").select("id, status").in("id", ids.slice(i, i + 100));
+    for (const row of (data ?? []) as Array<{ id: string; status: string }>) out[row.id] = row.status;
+  }
+  return out;
+}
+
 /** insertListing + sunucunun ret nedeni (hız sınırı, yasaklı içerik, mükerrer harici kod...). */
 export async function insertListingResult(listing: Listing): Promise<{ ok: boolean; code?: string; message?: string }> {
   const titleCheck = validateListingTitle(listing.title);

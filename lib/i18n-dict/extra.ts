@@ -674,5 +674,14 @@ export const extraDict: Record<string, string> = {
   "Değerlendirmeler yüklenemedi.": "Reviews could not be loaded.",
 
   // --- app/notifications.tsx — "Tümünü okundu işaretle" artık tek istek (ya hep ya hiç) ---
-  "Bildirimler okundu işaretlenemedi. Tekrar deneyebilirsin.": "The notifications couldn't be marked as read. You can try again."
+  "Bildirimler okundu işaretlenemedi. Tekrar deneyebilirsin.": "The notifications couldn't be marked as read. You can try again.",
+
+  // --- Toplu ilan: otomatik yayın (yönetici onayı beklenmez; yalnız taramaya takılanlar incelemeye düşer) ---
+  "Toplu ilan yükle (XML / CSV)": "Bulk upload listings (XML / CSV)",
+  "Yüzlerce ürünü tek seferde — otomatik eşleme, anında yayın": "Hundreds of products at once — automatic matching, published instantly",
+  "CSV veya XML ürün akışıyla toplu ürün yükle, kategori/il eşle, komisyonu toplu belirle. İlanlar hemen yayınlanır.": "Upload products in bulk with a CSV or XML product feed, match category/province, set commission in bulk. Listings are published right away.",
+  "Yeni ilanlar hemen yayınlanır; yalnız otomatik taramaya takılanlar incelemeye alınır. Güncellenen mevcut ilanlar anında değişir.": "New listings are published right away; only those flagged by the automatic scan are held for review. Updated existing listings change instantly.",
+  "Yüzlerce ürünü tek tek girmek yerine CSV dosyasıyla ya da e-ticaret sitenin ürün XML'iyle yükle. Kategori ve il otomatik eşlenir, komisyonu toplu belirlersin. İlanlar hemen yayınlanır; yalnız otomatik taramaya takılanlar incelemeye alınır.": "Instead of entering hundreds of products one by one, upload them with a CSV file or your store's product XML. Category and province are matched automatically and you set the commission in bulk. Listings are published right away; only those flagged by the automatic scan are held for review.",
+  "ilan otomatik taramaya takıldığı için incelemeye alındı": "listings were held for review because the automatic scan flagged them",
+  "yeni ilan yayınlandı": "new listings published"
 };

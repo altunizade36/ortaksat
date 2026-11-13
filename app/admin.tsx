@@ -763,7 +763,7 @@ function AdminScreenInner() {
         {section === "listings" ? (
           <View style={{ gap: 16 }}>
           {pendingReview.length > 0 ? (
-            <Panel title="Moderasyon Kuyruğu" sub={`${pendingReview.length} ilan onay bekliyor`}>
+            <Panel title="Riskli İlanlar — İnceleme Kuyruğu" sub={`${pendingReview.length} ilan otomatik taramaya takıldı ve yayına alınmadı; diğer ilanlar kendiliğinden yayınlanır`}>
               <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 10 }}>
                 <ActionButton tone="primary" icon="check-all" label={`Tümünü onayla (${pendingReview.length})`} busy={busy["bulk"]} onPress={() => confirmAction(`Onay bekleyen ${pendingReview.length} ilanın TÜMÜ yayınlansın mı?`, () => void run("bulk", async () => (await Promise.all(pendingReview.map((l) => updateListingStatus(l.id, "active")))).every(Boolean), "Bekleyen ilanlar yayınlandı", "Bazı ilanlar yayınlanamadı. Listeyi kontrol et."), "Tümünü onayla")} />
                 <ActionButton tone="danger" icon="close-box-multiple-outline" label="Tümünü reddet" busy={busy["bulk"]} onPress={() => confirmAction(`Onay bekleyen ${pendingReview.length} ilanın TÜMÜ reddedilsin mi? Bu işlem geri alınamaz.`, () => void run("bulk", async () => (await Promise.all(pendingReview.map((l) => updateListingStatus(l.id, "rejected")))).every(Boolean), "Bekleyen ilanlar reddedildi", "Bazı ilanlar reddedilemedi. Listeyi kontrol et."), "Tümünü reddet")} />
@@ -771,7 +771,10 @@ function AdminScreenInner() {
               <Table head={["İLAN", "KATEGORİ", "SAHİP", "İŞLEM"]} cols={[2.4, 1.3, 1.4, 1.6]}>
                 {pendingReview.slice(0, 50).map((l) => (
                   <Row key={l.id} cols={[2.4, 1.3, 1.4, 1.6]} cells={[
-                    <Text numberOfLines={2} style={{ color: colors.ink, fontSize: 12.5, fontWeight: "800" }}>{l.title}</Text>,
+                    <View style={{ gap: 3 }}>
+                      <Text numberOfLines={2} style={{ color: colors.ink, fontSize: 12.5, fontWeight: "800" }}>{l.title}</Text>
+                      {typeof (l.attributes as Record<string, unknown> | undefined)?._reviewReason === "string" ? <Text numberOfLines={2} style={{ color: colors.accent, fontSize: 11, fontWeight: "700" }}>{String((l.attributes as Record<string, unknown>)._reviewReason)}</Text> : null}
+                    </View>,
                     <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 12, fontWeight: "600" }}>{l.category}</Text>,
                     <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 12, fontWeight: "600" }}>{findUser(l.ownerId)?.name ?? "—"}</Text>,
                     <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>

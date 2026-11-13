@@ -12,7 +12,8 @@
  * tek yoldan geçer (app/toplu-ilan.tsx).
  */
 
-export const FEED_HEADERS = ["harici_kod", "baslik", "aciklama", "fiyat", "kategori", "il", "ilce", "komisyon", "stok", "gorsel_url", "Marka"] as const;
+// Son sütun ("ozellikler") ürünün diğer özelliklerini JSON olarak taşır: {"Renk":"Mavi","Beden":"M"}.
+export const FEED_HEADERS = ["harici_kod", "baslik", "aciklama", "fiyat", "kategori", "il", "ilce", "komisyon", "stok", "gorsel_url", "Marka", "ozellikler"] as const;
 
 export type FeedTable = {
   headers: string[];
@@ -214,6 +215,7 @@ const CATEGORY_SUB = ["altkategori", "subcategory", "altkategoriadi", "altkatego
 const IMAGE_KEY = /^(resim|image|img|picture|gorsel|foto|photo|additionalimagelink|imagelink|medya|media|thumbnail|kapak)/;
 
 const URL_RE = /^https?:\/\/\S+$/i;
+const KNOWN_KEYS = new Set<string>([...SKU_KEYS, ...TITLE_KEYS, ...DESC_KEYS, ...PRICE_KEYS, ...CURRENCY_KEYS, ...STOCK_KEYS, ...BRAND_KEYS, ...CATEGORY_KEYS, ...CATEGORY_MAIN, ...CATEGORY_SUB]);
 
 export function parseFeedNumber(raw: string): number {
   const cleaned = raw.replace(/[^\d.,]/g, "");
@@ -323,6 +325,50 @@ function imagesOf(entries: Entry[]): string[] {
   return out.slice(0, MAX_FEED_IMAGES);
 }
 
+const ATTR_NAME_KEYS = ["tanim", "ad", "adi", "name", "baslik", "key", "ozellik", "ozellikadi", "label"];
+const ATTR_VALUE_KEYS = ["deger", "degeri", "value", "icerik", "val"];
+// Özellik SAYILMAYAN alanlar: kimlik, fiyat, stok, görsel, bağlantı, tarih, kargo vb. (ad eşleşmesi önekle).
+const NOT_ATTR = /^(link|url|kdv|tax|vat|desi|kargo|shipping|tarih|date|created|updated|aktif|active|durum|status|indirim|discount|puan|rating|sira|sort|seo|meta|keyword|etiket|tag|birim|unit|varyant|variant|secenek|option|resim|image|img|picture|gorsel|foto|photo|media|medya|thumbnail|kapak|fiyat|price|stok|stock|quantity|miktar|adet|qty|para|currency|doviz|kur|barkod|barcode|gtin|mpn|sku|kod|code|id|aciklama|description|detay|detail|ozet|summary|kategori|category|marka|brand|manufacturer|uretici|availability|googleproduct|identifier|itemgroup|title|name|baslik|isim|label)/;
+// Google Merchant alan adlarının Türkçe karşılıkları (bizim özellik etiketleriyle eşleşsin).
+const ATTR_TRANSLATE: Record<string, string> = { color: "Renk", colour: "Renk", size: "Beden", material: "Malzeme", gender: "Cinsiyet", agegroup: "Yaş grubu", pattern: "Desen", condition: "Durum", warranty: "Garanti" };
+
+/**
+ * Ürünün ad/fiyat/stok gibi bilinen alanları DIŞINDAKİ özelliklerini toplar (renk, beden, garanti, malzeme…).
+ * Üç yazım biçimi tanınır: <Renk>Mavi</Renk>, <Ozellik Tanim="Renk" Deger="Mavi"/> ve
+ * <ozellik><ad>Renk</ad><deger>Mavi</deger></ozellik>. En çok 20 özellik; uzun metin ve bağlantılar alınmaz.
+ */
+function extraAttributes(item: XNode, taken: Set<string>): Record<string, string> {
+  const out: Record<string, string> = {};
+  const add = (rawName: string, rawValue: string) => {
+    const local = rawName.indexOf(":") >= 0 ? rawName.slice(rawName.lastIndexOf(":") + 1) : rawName;
+    const translated = ATTR_TRANSLATE[feedKey(local)];
+    const name = (translated ?? decodeEntities(local).replace(/[_\-]+/g, " ").replace(/\s+/g, " ").trim());
+    const value = htmlToText(rawValue).replace(/\s+/g, " ");
+    if (!name || !value || name.length > 40 || value.length > 80 || URL_RE.test(value) || Object.keys(out).length >= 20) return;
+    const label = name[0].toLocaleUpperCase("tr-TR") + name.slice(1);
+    if (!(label in out)) out[label] = value;
+  };
+  const first = (map: Map<string, string>, keys: string[]) => { for (const k of keys) { const v = map.get(k); if (v) return v; } return ""; };
+  const walk = (node: XNode, depth: number) => {
+    const attrs = new Map(Object.entries(node.attrs).map(([k, v]) => [feedKey(k), v.trim()]));
+    const attrName = first(attrs, ATTR_NAME_KEYS);
+    if (attrName) { const v = first(attrs, ATTR_VALUE_KEYS) || node.text.trim(); if (v) add(attrName, v); return; }
+    if (node.children.length) {
+      const kids = new Map(node.children.filter((c) => !c.children.length).map((c) => [feedKey(c.name), c.text.trim()]));
+      const childName = first(kids, ATTR_NAME_KEYS), childValue = first(kids, ATTR_VALUE_KEYS);
+      if (childName && childValue && node.children.length <= 4) { add(childName, childValue); return; }
+      if (depth < 3 && !VARIANT_KEY.test(feedKey(node.name))) for (const child of node.children) walk(child, depth + 1);
+      return;
+    }
+    if (depth === 1) {
+      const key = feedKey(node.name);
+      if (!taken.has(key) && !NOT_ATTR.test(key)) add(node.name, node.text);
+    }
+  };
+  for (const child of item.children) walk(child, 1);
+  return out;
+}
+
 function stockOf(entries: Entry[]): number | null {
   const direct = pick(entries, STOCK_KEYS, (v) => Number.isFinite(parseFeedNumber(v)));
   if (direct) return Math.max(0, Math.floor(parseFeedNumber(direct)));
@@ -420,7 +466,8 @@ export function parseXmlFeed(text: string): FeedTable {
       "",
       stock === null ? "" : String(stock),
       imagesOf(entries).join("|"),
-      decodeEntities(pick(entries, BRAND_KEYS)).trim()
+      decodeEntities(pick(entries, BRAND_KEYS)).trim(),
+      (() => { const extra = extraAttributes(item, KNOWN_KEYS); return Object.keys(extra).length ? JSON.stringify(extra) : ""; })()
     ]);
   }
   return { headers: [...FEED_HEADERS], rows, total: found.items.length, itemTag: found.tag, outOfStock, foreignCurrency, skus, outOfStockSkus };

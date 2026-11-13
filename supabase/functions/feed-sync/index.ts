@@ -9,14 +9,16 @@
 //  • Bu işlev servis yetkisiyle yazar; ilan tablosundaki içerik taraması ve hız sınırı tetikleyicileri servis
 //    yetkisini MUAF tutar. Bu yüzden içerik taraması (scan_prohibited) burada AYRICA çağrılır: yasaklı içerikli
 //    yeni ürün açılmaz, taramaya takılan içerik değişikliği uygulanmaz.
-//  • Otomatik açılan ilanlar HER ZAMAN incelemeye (pending_review) düşer; yayına yönetici alır.
+//  • Otomatik açılan ilanlar doğrudan YAYINLANIR (platform sahibinin kararı). Taramada "inceleme" çıkan
+//    (riskli) ürün yayına alınmaz, incelemeye düşer; nedeni attributes._reviewReason'a yazılır ve
+//    veritabanı tetikleyicisi yöneticilere bildirim gönderir. Yasaklı içerikli ürün hiç açılmaz.
 //  • Karar mantığı ../_shared/feed-plan.ts içindedir.
 import { createClient, type SupabaseClient } from "npm:@supabase/supabase-js@2.107.0";
 import { corsHeaders, FeedError, fetchFeedText } from "../_shared/feed-http.ts";
-import { planFeedSync, rowToProduct, slugify, type ListingPatch, type ListingRow, type NewListing } from "../_shared/feed-plan.ts";
+import { attrKey, planFeedSync, rowToProduct, slugify, type ListingPatch, type ListingRow, type NewListing } from "../_shared/feed-plan.ts";
 import { parseXmlFeed } from "../_shared/xml-feed.ts";
 
-type CategoryTarget = { label: string; text?: string; root?: string; attrs?: Record<string, unknown>; brandKey?: string | null; image?: string | null };
+type CategoryTarget = { label: string; text?: string; root?: string; attrs?: Record<string, unknown>; brandKey?: string | null; image?: string | null; fields?: Record<string, { key: string; type?: string }> };
 type Settings = {
   createNew?: boolean; syncContent?: boolean; shortenTitles?: boolean; commission?: number; partnershipMode?: string;
   provinceId?: number | null; districtId?: number | null; location?: string;
@@ -44,12 +46,27 @@ function canCreate(settings: Settings): string | null {
   return null;
 }
 
-function buildRow(feed: Feed, settings: Settings, item: NewListing) {
+function targetOf(settings: Settings, item: NewListing): CategoryTarget {
+  return (item.product.category && settings.categoryMap?.[item.product.category]) || settings.defaultCategory!;
+}
+
+function buildRow(feed: Feed, settings: Settings, item: NewListing, risky: boolean) {
   const id = crypto.randomUUID();
   const product = item.product;
-  const target = (product.category && settings.categoryMap?.[product.category]) || settings.defaultCategory!;
+  const target = targetOf(settings, item);
   const mode = settings.partnershipMode === "open" || settings.partnershipMode === "none" ? settings.partnershipMode : "approval";
-  const attributes: Record<string, unknown> = { ...(target.attrs ?? {}), _feedId: feed.id };
+  // ÖZELLİKLER: akıştaki ad, kategorinin özellik alanıyla eşleşirse o alana yazılır (filtrelerde çalışır);
+  // eşleşmeyen özellik kaybolmaz, "_extra" altında saklanır ve ilan sayfasındaki özellik tablosunda görünür.
+  const attributes: Record<string, unknown> = {};
+  const extra: Record<string, string> = {};
+  for (const [name, value] of Object.entries(product.attrs ?? {})) {
+    const field = target.fields?.[attrKey(name)];
+    if (!field) { extra[name] = value; continue; }
+    attributes[field.key] = field.type === "number" && /^\d+([.,]\d+)?$/.test(value) ? Number(value.replace(",", ".")) : value;
+  }
+  if (Object.keys(extra).length) attributes._extra = extra;
+  Object.assign(attributes, target.attrs ?? {}, { _feedId: feed.id });
+  if (risky) attributes._reviewReason = "Otomatik tarama: başlık, açıklama ya da kategori inceleme gerektiren bir ifade içeriyor.";
   if (product.brand && target.brandKey) attributes[target.brandKey] = product.brand;
   return {
     id,
@@ -66,7 +83,7 @@ function buildRow(feed: Feed, settings: Settings, item: NewListing) {
     province_id: settings.provinceId ?? null,
     district_id: settings.districtId ?? null,
     address_visibility: "neighborhood",
-    status: "pending_review",
+    status: risky ? "pending_review" : "active",
     partnership_mode: mode,
     external_id: product.sku,
     stock_count: product.stock != null && product.stock >= 1 ? product.stock : 1,
@@ -123,21 +140,25 @@ async function syncFeed(admin: SupabaseClient, feed: Feed) {
     }
 
     // ---- Yeni ürünler → incelemeye düşen ilanlar
-    let created = 0, blocked = 0, createFailed = 0;
+    let created = 0, review = 0, blocked = 0, createFailed = 0;
     const unmapped = new Set<string>();
     for (const item of plan.creates) {
-      if ((await verdictOf(admin, `${item.title} ${item.description}`)) === "block") { blocked++; continue; }
+      const target = targetOf(settings, item);
+      // Kategori adı da taranır: hassas kategoriye (ilaç, takviye…) düşen ürün incelemeye gider.
+      const verdict = await verdictOf(admin, `${item.title} ${item.description} ${target.label} ${target.root ?? ""}`);
+      if (verdict === "block") { blocked++; continue; }
       if (item.product.category && !settings.categoryMap?.[item.product.category]) unmapped.add(item.product.category);
-      const { error } = await admin.from("listings").insert(buildRow(feed, settings, item));
+      const risky = verdict !== "none";
+      const { error } = await admin.from("listings").insert(buildRow(feed, settings, item, risky));
       // 23505: aynı ürün kodu araya girmiş (eşzamanlı çalışma) → mükerrer açma, hata sayma.
       if (error && error.code !== "23505") createFailed++;
-      else if (!error) created++;
+      else if (!error) { created++; if (risky) review++; }
     }
 
     const summary = {
       products: table.total, withCode: products.length, matched: plan.matched, priceChanged: plan.priceChanged, stockChanged: plan.stockChanged,
       contentChanged: Math.max(0, plan.contentChanged - contentHeld), contentHeld, paused: plan.paused, resumed: plan.resumed,
-      created, newProducts: Math.max(0, plan.newProducts - created), remainingNew: plan.remainingNew, invalidNew: plan.invalidNew, blocked,
+      created, published: created - review, review, newProducts: Math.max(0, plan.newProducts - created), remainingNew: plan.remainingNew, invalidNew: plan.invalidNew, blocked,
       unmappedCategories: unmapped.size, otherFeed: plan.otherFeed, outOfStock: table.outOfStock, foreignCurrency: table.foreignCurrency,
       failed: failed + createFailed, deferred: Math.max(0, plan.patches.length - patches.length),
       skippedPauseMissing: plan.skippedPauseMissing, createBlocked: createBlock
