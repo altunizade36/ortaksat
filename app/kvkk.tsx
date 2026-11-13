@@ -7,6 +7,7 @@ import { colors } from "@/components/colors";
 import { Seo } from "@/components/seo";
 import { WebFooter } from "@/components/web-landing";
 import { SUPPORT_EMAIL } from "@/lib/contact";
+import { companyIdentityRows, hasCompanyIdentity } from "@/lib/company";
 import { useIsWideWeb } from "@/lib/layout";
 
 /**
@@ -22,7 +23,8 @@ const SECTIONS: Section[] = [
   {
     n: "1",
     title: "Veri Sorumlusu",
-    body: `OrtakSat (ortaksat.com), alıcı, satıcı ve ortakları buluşturan platformun marka adıdır. OrtakSat aracı bir platformdur; alıcı, satıcı ve ortakları buluşturur, ödeme/kargo/komisyon tahsilatı yapmaz. Her türlü başvuru ve iletişim ${SUPPORT_EMAIL} adresi üzerinden yürütülür.`
+    body: `OrtakSat (ortaksat.com), alıcı, satıcı ve ortakları buluşturan platformun marka adıdır. OrtakSat aracı bir platformdur; alıcı, satıcı ve ortakları buluşturur, ödeme/kargo/komisyon tahsilatı yapmaz. Her türlü başvuru ve iletişim ${SUPPORT_EMAIL} adresi üzerinden yürütülür.`,
+    bullets: hasCompanyIdentity() ? companyIdentityRows().map((row) => `${row.label}: ${row.value}`) : undefined
   },
   {
     n: "2",

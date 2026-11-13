@@ -29,7 +29,7 @@ import { PartnerTier } from "@/components/partner-tier";
 import { QuickStart } from "@/components/quick-start";
 import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { Card, EmptyState, Metric, PrimaryButton, SectionTitle, StatusPill } from "@/components/ui";
-import { commissionAmount, commissionText, effectiveCommissionAmount, listingShareTemplates, money, moneyIn, productUrl } from "@/lib/format";
+import { adDisclosureLine, commissionAmount, commissionText, effectiveCommissionAmount, listingShareTemplates, money, moneyIn, productUrl } from "@/lib/format";
 import { haptic } from "@/lib/haptics";
 import { loadClickCounts } from "@/lib/live-service";
 import { translateCopy, useLanguage } from "@/lib/i18n";
@@ -305,7 +305,9 @@ function PartnerScreenInner() {
   async function shareProduct(listing: Listing) {
     const url = productUrl(listing);
     const pitch = listing.salesPitch?.[0] ? `\n${listing.salesPitch[0]}` : "";
-    const r = await shareOrCopy({ title: displayListingTitle(listing.title), message: `${displayListingTitle(listing.title)} — ${money(listing.price)}${pitch}\n${url}`, url });
+    // Ortak komisyon karşılığı paylaşıyor → reklam bildirimi metnin başında (zorunlu).
+    const disclosure = adDisclosureLine(findUser(listing.ownerId)?.name);
+    const r = await shareOrCopy({ title: displayListingTitle(listing.title), message: `${disclosure}\n${displayListingTitle(listing.title)} — ${money(listing.price)}${pitch}\n${url}`, url });
     if (r === "copied") showToast(translateCopy("Bağlantı kopyalandı", language));
   }
   // Eski imza korunur (çağrı yerleri); refCode YOK SAYILIR (link/takip modeli kaldırıldı).
@@ -318,7 +320,7 @@ function PartnerScreenInner() {
     const listing = listings.find((item) => item.id === listingId);
     if (!listing) return;
     const url = productUrl(listing);
-    const text = encodeURIComponent(`${displayListingTitle(listing.title)} — ${money(listing.price)}\n${url}`);
+    const text = encodeURIComponent(`${adDisclosureLine(findUser(listing.ownerId)?.name)}\n${displayListingTitle(listing.title)} — ${money(listing.price)}\n${url}`);
     await openUrlSafe(`https://wa.me/?text=${text}`);
   }
 
@@ -1004,7 +1006,9 @@ function PartnershipCard({ listing, partnership, listingLeads, listingSales, cli
 }) {
   const { language, t } = useLanguage();
   const url = productUrl(listing);
-  const templates = listingShareTemplates(listing, url); // düz ürün linki (referans/takip yok)
+  const sellerName = useStore().findUser(listing.ownerId)?.name;
+  // Ortak paylaşımı: hazır metinlerin başında zorunlu reklam bildirimi ("#Reklam · Satıcı: …").
+  const templates = listingShareTemplates(listing, url, undefined, adDisclosureLine(sellerName)); // düz ürün linki (referans/takip yok)
   const earned = listingSales.reduce((sum, sale) => sum + sale.commissionAmount, 0);
   const sellerPaidCount = listingSales.filter((sale) => sale.status === "seller_paid").length;
   // Bu ortağın KİŞİSEL efektif komisyonu (override / kademeli / varsayılan) — bir satış, liste fiyatı.
@@ -1056,6 +1060,13 @@ function PartnershipCard({ listing, partnership, listingLeads, listingSales, cli
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
             <View style={{ flexBasis: "48%", flexGrow: 1 }}><PrimaryButton tone="secondary" onPress={() => actions.copy("Instagram açıklaması", templates.instagram)}>Instagram Metni</PrimaryButton></View>
             <View style={{ flexBasis: "48%", flexGrow: 1 }}><PrimaryButton tone="secondary" onPress={() => actions.copy("TikTok açıklaması", templates.tiktok)}>TikTok Metni</PrimaryButton></View>
+          </View>
+          {/* Reklam bildirimi hatırlatması: komisyon karşılığı paylaşımda yasal zorunluluk (Ortak Sözleşmesi md. 13). */}
+          <View style={{ alignItems: "flex-start", backgroundColor: colors.surfaceAlt, borderRadius: 8, flexDirection: "row", gap: 6, paddingHorizontal: 9, paddingVertical: 7 }}>
+            <MaterialCommunityIcons name="bullhorn-outline" size={14} color={colors.primaryDark} />
+            <Text style={{ color: colors.muted, flex: 1, fontSize: 11.5, fontWeight: "600", lineHeight: 16 }}>
+              {translateCopy("Komisyon karşılığı paylaşımlarda “Reklam” ibaresi ve satıcının adı yasal olarak zorunludur. Hazır metinlerin başına eklendi; kendi metnini yazarsan sen de en başa ekle.", language)}
+            </Text>
           </View>
           <PrimaryButton tone="secondary" icon="message-text-outline" onPress={() => actions.messageSeller(listing.id, listing.ownerId, listing.title)}>Satıcıya mesaj yaz</PrimaryButton>
           <PrimaryButton tone="soft" icon="cash-check" onPress={() => actions.claimSale(listing.id, listing.ownerId, listing.title)}>Sattım — satıcıya bildir</PrimaryButton>

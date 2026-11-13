@@ -27,6 +27,9 @@ export const consentDict: Record<string, string> = {
     "Meta (Facebook / Instagram) Pixel, used to measure the effect of our ads. It sets cookies on your device and sends data to Meta servers abroad; it runs only with your explicit consent.",
   "İzin verildi": "Allowed",
   "İzin verilmedi": "Not allowed",
+  "ile": "and",
+  "’nı kabul ediyorum;": " — I accept these;",
+  "’nı okudum. 18 yaşından büyüğüm.": " — I have read these. I am over 18.",
   "Tercihleri Yönet": "Manage preferences",
   "Seçimimi Kaydet": "Save my choice"
 };

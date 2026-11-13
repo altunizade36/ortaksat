@@ -26,7 +26,7 @@ import { fetchMobileCatalogue } from "@/lib/mobile-catalogue-service";
 import { fetchListingsByIds } from "@/lib/supabase-data";
 import { emptyMobileFilters } from "@/lib/mobile-filters";
 import { categoryByPrefix, categoryTrail } from "@/lib/mobile-catalog";
-import { moneyIn } from "@/lib/format";
+import { adDisclosureLine, moneyIn } from "@/lib/format";
 import { partnershipStatusLabels } from "@/lib/status-labels";
 import { showToast } from "@/lib/toast";
 import { shareOrCopy } from "@/lib/share";
@@ -344,6 +344,8 @@ export function MobilePartnershipHub() {
               onPress={() => {
                 void shareOrCopy({
                   title: displayListingTitle(l.title),
+                  // Ortak paylaşıyorsa (komisyon ilişkisi) reklam bildirimi zorunlu; satıcı kendi ilanını paylaşırken yok.
+                  message: l.ownerId === store.currentUser.id ? undefined : `${adDisclosureLine(store.findUser(l.ownerId)?.name)}\n${displayListingTitle(l.title)}`,
                   url: `https://www.ortaksat.com/listing/${l.id}`,
                 }).then((result) => {
                   if (result === "copied") showToast("Bağlantı kopyalandı.");

@@ -359,9 +359,11 @@ export default function AuthScreen() {
         <MaterialCommunityIcons name={acceptedAll ? "checkbox-marked" : "checkbox-blank-outline"} size={22} color={acceptedAll ? colors.primary : colors.muted} />
       </Pressable>
       <Text style={{ color: colors.muted, flex: 1, fontSize: 12.5, lineHeight: 19 }}>
-        <Text onPress={() => setOpenDocKey("kullanim")} style={linkStyle}>{translateCopy("Kullanım Şartları", language)}</Text>,{" "}
-        <Text onPress={() => setOpenDocKey("kvkk")} style={linkStyle}>{translateCopy("KVKK Aydınlatma Metni", language)}</Text> {translateCopy("ve", language)}{" "}
-        <Text onPress={() => setOpenDocKey("gizlilik")} style={linkStyle}>{translateCopy("Gizlilik Politikası", language)}</Text>, <Text onPress={() => setOpenDocKey("ilan")} style={linkStyle}>{translateCopy("İlan Kuralları", language)}</Text>{translateCopy(" metinlerini okudum, kabul ediyorum ve 18 yaşından büyüğüm.", language)}
+        {/* KVKK: aydınlatma metni "kabul" edilmez, OKUNUR; kabul edilenler sözleşme ve kurallardır. Bu yüzden iki ayrı ifade. */}
+        <Text onPress={() => setOpenDocKey("kullanim")} style={linkStyle}>{translateCopy("Kullanım Şartları", language)}</Text>{" "}{translateCopy("ile", language)}{" "}
+        <Text onPress={() => setOpenDocKey("ilan")} style={linkStyle}>{translateCopy("İlan Kuralları", language)}</Text>{translateCopy("’nı kabul ediyorum;", language)}{" "}
+        <Text onPress={() => setOpenDocKey("kvkk")} style={linkStyle}>{translateCopy("KVKK Aydınlatma Metni", language)}</Text>{" "}{translateCopy("ile", language)}{" "}
+        <Text onPress={() => setOpenDocKey("gizlilik")} style={linkStyle}>{translateCopy("Gizlilik Politikası", language)}</Text>{translateCopy("’nı okudum. 18 yaşından büyüğüm.", language)}
       </Text>
       </View>
       {consentHint && <Text accessibilityLiveRegion="polite" style={{ color: colors.primaryDark, fontSize: 12, lineHeight: 18, fontWeight: "700" }}>{translateCopy("Devam etmek için önce bu kutuyu işaretle.", language)}</Text>}

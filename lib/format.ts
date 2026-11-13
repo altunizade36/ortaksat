@@ -169,18 +169,33 @@ export function trPhoneIntl(phone: string | undefined | null): string {
 }
 
 /**
+ * Komisyon karşılığı yapılan paylaşımın REKLAM olduğunu belirten zorunlu satır.
+ * Dayanak: 6502 sayılı Kanun md. 61 (örtülü reklam yasağı), Ticari Reklam ve Haksız Ticari Uygulamalar
+ * Yönetmeliği ve Reklam Kurulu kılavuzu — "Reklam"/"Tanıtım" ibaresi ile reklam verenin (satıcının) adı
+ * birlikte ve ilk bakışta görünür olmalı. Bu yüzden metnin EN BAŞINA konur (bkz. Ortak Sözleşmesi md. 13).
+ * Yalnız ORTAK paylaşırken kullanılır; satıcının kendi ilanını paylaşması bu kapsamda değildir.
+ */
+export function adDisclosureLine(sellerName?: string | null): string {
+  const name = (sellerName ?? "").trim();
+  return name ? `#Reklam · Satıcı: ${name}` : "#Reklam";
+}
+
+/**
  * Ortağın ürünü tanıtırken kullanabileceği HAZIR metinler. MODEL: zorunlu referans linki/kodu
  * veya takip YOKTUR → düz ürün sayfası linki. Metin ALICI-YÜZÜDÜR (komisyon bilgisi içermez).
  * (`refCode` param'ı geriye-uyumluluk için korunur ama artık kullanılmaz.)
+ * `disclosure` verilirse (ortak paylaşımı → adDisclosureLine) her metnin başına reklam bildirimi eklenir;
+ * satıcının yazdığı özel şablonlara da eklenir.
  */
-export function listingShareTemplates(listing: Listing, url?: string, _refCode?: string) {
+export function listingShareTemplates(listing: Listing, url?: string, _refCode?: string, disclosure?: string) {
   const link = url ?? `https://www.ortaksat.com/listing/${listing.id}`;
   const firstPitch = listing.salesPitch[0] ?? listing.description;
+  const lead = disclosure ? `${disclosure}\n` : "";
 
   return {
-    instagram: listing.shareTemplates?.instagram || `${displayListingTitle(listing.title)}\n${firstPitch}\nFiyat: ${money(listing.price)}\n${link}`,
-    whatsapp: listing.shareTemplates?.whatsapp || `Merhaba, ${displayListingTitle(listing.title)} ürünü ilgini çekebilir.\nFiyat: ${money(listing.price)}\n${firstPitch}\n${link}`,
-    tiktok: listing.shareTemplates?.tiktok || `${displayListingTitle(listing.title)} — ${firstPitch}\nFiyat: ${money(listing.price)}\n${link}`
+    instagram: lead + (listing.shareTemplates?.instagram || `${displayListingTitle(listing.title)}\n${firstPitch}\nFiyat: ${money(listing.price)}\n${link}`),
+    whatsapp: lead + (listing.shareTemplates?.whatsapp || `Merhaba, ${displayListingTitle(listing.title)} ürünü ilgini çekebilir.\nFiyat: ${money(listing.price)}\n${firstPitch}\n${link}`),
+    tiktok: lead + (listing.shareTemplates?.tiktok || `${displayListingTitle(listing.title)} — ${firstPitch}\nFiyat: ${money(listing.price)}\n${link}`)
   };
 }
 

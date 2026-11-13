@@ -1,6 +1,7 @@
 import { parseListingMoney, parseListingRate, listingCommissionError, LISTING_MONEY_ERROR } from "@/lib/listing-numbers";
 import { LISTING_DRAFT_PREFIX, LISTING_DRAFT_TTL_MS, LISTING_VIDEO_ENABLED, deleteListingVideo, isListingVideoUrl, listingDraftKey, listingVideoExists, withListingVideo, type ListingVideoValue } from "@/lib/listing-video";
 import { ListingVideoField, type ListingVideoStatus } from "@/components/listing-video-field";
+import { categoryLegalNotice } from "@/lib/category-legal-notice";
 import { categoryPathAttributes, isLeafCategoryPath, resolveCategoryPath, searchCategoryTree } from "@/lib/category-path";
 import { ListingLocationFields } from "@/components/listing-location-fields";
 import { displayListingTitle, validateListingTitle } from "@/lib/listing-title";
@@ -171,6 +172,8 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
   // "Donanım & Özellikler" (opsiyonel, en şişkin bölüm) mobilde varsayılan KAPALI.
   const [openFeatures, setOpenFeatures] = useState(false);
   const [path, setPath] = useState<CategoryNode[]>([]);
+  // Emlak / vasıta / iş ilanı köklerinde yayın adımında gösterilen yasal uyarı.
+  const categoryNotice = categoryLegalNotice(path[0]?.slug);
   // "Diğer" seçildiğinde kullanıcı ARADIĞI kategoriyi yazar → admin ÖNERİ HAVUZUNA düşer.
   const [customCategory, setCustomCategory] = useState("");
   const [values, setValues] = useState<Values>({});
@@ -1570,6 +1573,17 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
                 <Text style={{ color: colors.muted, flex: 1, fontSize: 12.5, fontWeight: "600", lineHeight: 17 }}>{translateCopy("Normal ilan: ürünün doğrudan alıcılara açık. Ortak satış ve komisyon yoktur; alıcılar seninle iletişime geçip satın alır. İstediğin zaman ilanı düzenleyip ortak satışa açabilirsin.", language)}</Text>
               </View>
             )}
+          </View>
+        ) : null}
+
+        {/* Kategoriye özel yasal uyarı (emlak / vasıta yetki koşulu, iş ilanı kuralları) — İlan Kuralları md. 13–15. */}
+        {categoryNotice ? (
+          <View testID="category-legal-notice" style={{ alignItems: "flex-start", backgroundColor: colors.warningSoft, borderRadius: 12, flexDirection: "row", gap: 9, padding: 13 }}>
+            <MaterialCommunityIcons name="scale-balance" size={18} color={colors.warning} />
+            <View style={{ flex: 1, gap: 3, minWidth: 0 }}>
+              <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "800" }}>{translateCopy(categoryNotice.title, language)}</Text>
+              <Text style={{ color: colors.ink, fontSize: 12.5, fontWeight: "500", lineHeight: 18 }}>{translateCopy(categoryNotice.body, language)}</Text>
+            </View>
           </View>
         ) : null}
 
