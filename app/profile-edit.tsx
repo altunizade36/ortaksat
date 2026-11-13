@@ -110,7 +110,7 @@ function ProfileEditScreenInner() {
     setPwMsg(null);
     if (!pwCurrent) { const t = translateCopy("Mevcut şifreni gir.", language); setPwMsg({ tone: "err", text: t }); Alert.alert(translateCopy("Mevcut şifre gerekli", language), t); return; }
     const s = passwordStrength(pwNew);
-    if (!s.ok) { const miss = s.checks.filter((c) => !c.ok).map((c) => c.label.toLocaleLowerCase("tr-TR")).join(", "); const t = `Yeni şifre yeterince güçlü değil. Ekle: ${miss}.`; setPwMsg({ tone: "err", text: t }); Alert.alert(translateCopy("Şifre yeterince güçlü değil", language), t); return; }
+    if (!s.ok) { const miss = s.checks.filter((c) => !c.ok).map((c) => c.label.charAt(0).toLocaleLowerCase("tr-TR") + c.label.slice(1)).join(", "); const t = `Yeni şifre yeterince güçlü değil. Ekle: ${miss}.`; setPwMsg({ tone: "err", text: t }); Alert.alert(translateCopy("Şifre yeterince güçlü değil", language), t); return; }
     if (pwNew !== pwNew2) { const t = translateCopy("Yeni şifre ile tekrarı aynı olmalı.", language); setPwMsg({ tone: "err", text: t }); Alert.alert(translateCopy("Şifreler uyuşmuyor", language), t); return; }
     if (pwNew === pwCurrent) { const t = translateCopy("Yeni şifre mevcut şifreden farklı olmalı.", language); setPwMsg({ tone: "err", text: t }); Alert.alert(translateCopy("Aynı şifre", language), t); return; }
     if (!isLiveAccount) { const t = translateCopy("Şifre değişikliği yalnızca canlı hesaplarda geçerlidir.", language); setPwMsg({ tone: "err", text: t }); Alert.alert(translateCopy("Ön izleme hesabı", language), t); return; }

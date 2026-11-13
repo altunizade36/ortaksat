@@ -67,6 +67,8 @@ export default function AuthScreen() {
     return () => clearInterval(timer);
   }, [resendAvailableAt]);
   useEffect(() => { setVerifyError(null); setResendAvailableAt(0); }, [pendingVerifyEmail]);
+  // Form hataları YALNIZ satır içinde (düğmenin hemen üstünde) gösterilir. Eskiden aynı ileti bir de açılır
+  // pencereyle çıkıyor, her hatada kullanıcı önce pencereyi kapatmak zorunda kalıyordu (çift uyarı).
   // Web'de Alert.alert çoğu tarayıcıda no-op olduğundan, boş-alan/doğrulama
   // uyarılarını satır-içi (inline) de gösteririz. Böylece "boş bırakıp Giriş'e
   // basınca tepki yok" sorunu ortadan kalkar.
@@ -93,7 +95,6 @@ export default function AuthScreen() {
     if (!cleanEmail) {
       const msg = language === "en" ? "Enter your email address." : "Lütfen e-posta adresini gir.";
       setFormError(msg);
-      Alert.alert(language === "en" ? "Email required" : "E-posta gerekli", msg);
       return;
     }
     authOperation.current = true;
@@ -101,10 +102,10 @@ export default function AuthScreen() {
     try {
       const { ok, error } = await authAttempt(() => resetPasswordWithEmail(cleanEmail));
       if (ok) { setResetSent(true); showToast(translateCopy("Kod e-postana gönderildi", language)); }
-      else { const m = error ?? translateCopy("Geçerli bir e-posta gir ve tekrar dene.", language); setFormError(m); Alert.alert(translateCopy("Gönderilemedi", language), translateCopy(m, language)); }
+      else { const m = error ?? translateCopy("Geçerli bir e-posta gir ve tekrar dene.", language); setFormError(m); }
     } catch {
       const m = translateCopy("Bağlantı hatası. Lütfen tekrar dene.", language);
-      setFormError(m); Alert.alert(translateCopy("Gönderilemedi", language), m);
+      setFormError(m);
     } finally {
       authOperation.current = false;
       setLoading(false);
@@ -117,10 +118,9 @@ export default function AuthScreen() {
     // → çelişkili ölü-uç: istemci "6 yeterli" derken sunucu reddediyordu).
     const strength = passwordStrength(newPassword);
     if (!strength.ok) {
-      const missing = strength.checks.filter((c) => !c.ok).map((c) => c.label.toLocaleLowerCase("tr-TR")).join(", ");
+      const missing = strength.checks.filter((c) => !c.ok).map((c) => c.label.charAt(0).toLocaleLowerCase("tr-TR") + c.label.slice(1)).join(", ");
       const msg = `Yeni şifre yeterince güçlü değil. Şu kuralları da karşıla: ${missing}.`;
       setFormError(msg);
-      Alert.alert(translateCopy("Şifre yeterince güçlü değil", language), `Şu kuralları da karşıla: ${missing}.`);
       return;
     }
     authOperation.current = true;
@@ -128,10 +128,10 @@ export default function AuthScreen() {
     try {
       const { ok, error } = await authAttempt(() => resetPasswordWithCode(cleanEmail, resetCode, newPassword));
       if (ok) { setResetSent(false); setResetCode(""); setNewPassword(""); setMode("login"); showToast(translateCopy("Şifren güncellendi", language)); }
-      else { const m = error ?? translateCopy("Kod hatalı/süresi dolmuş olabilir ya da şifre çok kısa.", language); setFormError(m); Alert.alert(translateCopy("Güncellenemedi", language), translateCopy(m, language)); }
+      else { const m = error ?? translateCopy("Kod hatalı/süresi dolmuş olabilir ya da şifre çok kısa.", language); setFormError(m); }
     } catch {
       const m = translateCopy("Bağlantı hatası. Lütfen tekrar dene.", language);
-      setFormError(m); Alert.alert(translateCopy("Güncellenemedi", language), m);
+      setFormError(m);
     } finally {
       authOperation.current = false;
       setLoading(false);
@@ -244,7 +244,7 @@ export default function AuthScreen() {
       }
     } catch {
       const m = translateCopy("Google ile bağlantı kurulamadı. Lütfen tekrar dene.", language);
-      setFormError(m); Alert.alert(translateCopy("Google ile giriş yapılamadı", language), m);
+      setFormError(m);
     } finally {
       authOperation.current = false;
       setLoading(false);
@@ -270,7 +270,7 @@ export default function AuthScreen() {
       }
     } catch {
       const m = translateCopy("Apple ile bağlantı kurulamadı. Lütfen tekrar dene.", language);
-      setFormError(m); Alert.alert(translateCopy("Apple ile giriş yapılamadı", language), m);
+      setFormError(m);
     } finally {
       authOperation.current = false;
       setLoading(false);
@@ -285,7 +285,6 @@ export default function AuthScreen() {
         ? (language === "en" ? "Enter your email address." : "Lütfen e-posta adresini gir.")
         : (language === "en" ? "Enter your password." : "Lütfen şifreni gir.");
       setFormError(msg);
-      Alert.alert(language === "en" ? "Missing information" : "Eksik bilgi", msg);
       return;
     }
 
@@ -298,11 +297,11 @@ export default function AuthScreen() {
       // Başarılıysa yukarıdaki effect ana sayfaya yönlendirir. Hata varsa göster.
       if (!ok) {
         const m = error ?? (language === "en" ? "Could not sign in. Please try again." : "Giriş yapılamadı. Lütfen tekrar dene.");
-        setFormError(m); Alert.alert(language === "en" ? "Could not sign in" : "Giriş yapılamadı", translateCopy(m, language));
+        setFormError(m);
       }
     } catch {
       const m = language === "en" ? "Connection error. Please try again." : "Bağlantı hatası. Lütfen tekrar dene.";
-      setFormError(m); Alert.alert(language === "en" ? "Could not sign in" : "Giriş yapılamadı", m);
+      setFormError(m);
     } finally {
       authOperation.current = false;
       setLoading(false);
@@ -323,27 +322,23 @@ export default function AuthScreen() {
       const cap = joined.charAt(0).toUpperCase() + joined.slice(1);
       const msg = language === "en" ? `${cap} required.` : `${cap} gerekli.`;
       setFormError(msg);
-      Alert.alert(language === "en" ? "Missing information" : "Eksik bilgi", msg);
       return;
     }
     const strength = passwordStrength(password);
     if (!strength.ok) {
-      const missing = strength.checks.filter((c) => !c.ok).map((c) => c.label.toLocaleLowerCase("tr-TR")).join(", ");
+      const missing = strength.checks.filter((c) => !c.ok).map((c) => c.label.charAt(0).toLocaleLowerCase("tr-TR") + c.label.slice(1)).join(", ");
       const msg = `Şifre yeterince güçlü değil. Şu kuralları da karşıla: ${missing}.`;
       setFormError(msg);
-      Alert.alert(translateCopy("Şifre yeterince güçlü değil", language), `Şu kuralları da karşıla: ${missing}.`);
       return;
     }
     if (password !== confirmPassword) {
       const msg = translateCopy("Şifre ve şifre tekrar alanları aynı olmalı.", language);
       setFormError(msg);
-      Alert.alert(translateCopy("Şifreler uyuşmuyor", language), msg);
       return;
     }
     if (!allAccepted) {
       const msg = language === "en" ? "You must accept KVKK, privacy, terms of use, and seller/partner rules." : "KVKK, gizlilik, kullanım şartları ve satıcı/ortak kurallarını kabul etmelisin.";
       setFormError(msg);
-      Alert.alert(language === "en" ? "Legal approval required" : "Yasal onay gerekli", msg);
       return;
     }
 
@@ -358,7 +353,7 @@ export default function AuthScreen() {
       // Başarısızsa authError formda gösterilir; hiçbir mesaj yoksa da net bir uyarı ver.
       if (!ok) {
         const m = error ?? (language === "en" ? "Registration failed. Please try again." : "Kayıt yapılamadı. Lütfen tekrar dene.");
-        setFormError(m); Alert.alert(language === "en" ? "Registration failed" : "Kayıt yapılamadı", translateCopy(m, language));
+        setFormError(m);
       } else {
         setPassword(""); setConfirmPassword("");
         // Meta Pixel: kayıt tamamlandı (reklam dönüşümü). fbq yoksa sessiz no-op.
@@ -366,7 +361,7 @@ export default function AuthScreen() {
       }
     } catch {
       const m = language === "en" ? "Connection error. Please try again." : "Bağlantı hatası. Lütfen tekrar dene.";
-      setFormError(m); Alert.alert(language === "en" ? "Registration failed" : "Kayıt yapılamadı", m);
+      setFormError(m);
     } finally {
       authOperation.current = false;
       setLoading(false);
