@@ -416,14 +416,14 @@ export async function ensureProfile(user: User) {
   const { error } = await supabase.rpc("ensure_my_profile", {
     p_full_name: user.name,
     p_phone: user.phone || null,
-    p_avatar_url: user.avatar.length > 3 ? user.avatar : null,
+    p_avatar_url: /^https?:\/\//i.test(user.avatar) ? user.avatar : null,
     p_bio: user.bio
   });
 
   if (error) console.warn("Supabase profile upsert failed", error);
 }
 
-export async function updateProfileLive(user: Pick<User, "id" | "name" | "phone" | "avatar" | "bio" | "verifiedPhone" | "expertiseCategories" | "city" | "username" | "districtId" | "website" | "instagram">) {
+export async function updateProfileLive(user: Pick<User, "id" | "name" | "phone" | "avatar" | "bio" | "verifiedPhone" | "expertiseCategories" | "city" | "username" | "districtId" | "website" | "instagram" | "cover">) {
   if (!supabase || !uuidPattern.test(user.id)) return false;
 
   const { error } = await supabase
@@ -431,7 +431,9 @@ export async function updateProfileLive(user: Pick<User, "id" | "name" | "phone"
     .update({
       full_name: user.name,
       phone: user.phone || null,
-      avatar_url: user.avatar.length > 3 ? user.avatar : null,
+      // Yalnız gerçek adres fotoğraf olarak yazılır (baş harf yer tutucusu ya da yerel dosya yolu yazılmaz).
+      avatar_url: /^https?:\/\//i.test(user.avatar) ? user.avatar : null,
+      cover_url: user.cover && user.cover.startsWith("https://") ? user.cover : null,
       bio: user.bio,
       verified_phone: user.verifiedPhone,
       expertise_categories: user.expertiseCategories ?? [],
@@ -717,6 +719,44 @@ export async function uploadListingImage(uri: string, userId: string) {
   }
 
   return supabase.storage.from("listing-images").getPublicUrl(path).data.publicUrl;
+}
+
+/**
+ * Profil kapağı: kırpma ekranından gelen 3:1 görseli yükler ve herkese açık adresini döner.
+ * Görsel her zaman aynı oranda (1500×500) kaydedildiği için hiçbir ekranda düzeni bozmaz.
+ */
+export async function uploadProfileCover(uri: string, userId: string) {
+  if (!supabase) return uri;
+  if (!uuidPattern.test(userId) || !uri) throw new Error("Görsel için geçerli hesap ve dosya gerekli.");
+  if (/^https?:\/\//i.test(uri)) return uri;
+  const path = `${userId}/cover-${makeUuid()}.jpg`;
+  let upload: { body: Blob | ArrayBuffer; contentType: string };
+  if (Platform.OS !== "web") {
+    let bytes: ArrayBuffer | null = null;
+    try {
+      const manip = await manipulateAsync(uri, [{ resize: { width: 1500 } }], { compress: 0.84, format: SaveFormat.JPEG, base64: true });
+      if (manip.base64) bytes = base64ToArrayBuffer(manip.base64);
+    } catch (e) {
+      console.warn("Kapak işlenemedi:", (e as Error)?.message);
+    }
+    if (!bytes || !looksLikeImage(bytes)) throw new Error("Görsel okunamadı. Başka bir fotoğraf seçip tekrar dene.");
+    if (bytes.byteLength > MAX_IMAGE_BYTES) throw new Error("Görsel en fazla 5 MB olabilir.");
+    upload = { body: bytes, contentType: "image/jpeg" };
+  } else {
+    let response: Response;
+    try { response = await fetch(uri); }
+    catch { throw new Error("Görsel yüklenemedi. Dosyanı ve bağlantını kontrol et."); }
+    if (response.status && !response.ok) throw new Error("Görsel okunamadı. Başka bir fotoğraf seçip tekrar dene.");
+    const compressed = await compressImageBlob(await response.blob(), 1500, 0.84, MAX_IMAGE_BYTES);
+    if (!compressed.blob.size || compressed.blob.size > MAX_IMAGE_BYTES) throw new Error("Görsel en fazla 5 MB olabilir.");
+    upload = { body: await storageBody(compressed.blob), contentType: compressed.contentType };
+  }
+  const { error } = await supabase.storage.from("profile-avatars").upload(path, upload.body, { contentType: upload.contentType, upsert: false });
+  if (error) {
+    console.warn("Supabase profile cover upload failed", error);
+    throw new Error("Görsel yüklenemedi. Dosyanı ve bağlantını kontrol et.");
+  }
+  return supabase.storage.from("profile-avatars").getPublicUrl(path).data.publicUrl;
 }
 
 export async function uploadProfileAvatar(uri: string, userId: string) {

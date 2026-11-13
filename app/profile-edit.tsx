@@ -19,7 +19,9 @@ import { WebFooter } from "@/components/web-landing";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { useIsWideWeb, useMounted } from "@/lib/layout";
 import { ScreenSkeleton } from "@/components/screen-skeleton";
-import { changePasswordLive, uploadProfileAvatar } from "@/lib/live-service";
+import { changePasswordLive, uploadProfileAvatar, uploadProfileCover } from "@/lib/live-service";
+import { AvatarPresetPicker } from "@/components/avatar-preset-picker";
+import { CoverField } from "@/components/cover-field";
 import { actionLabel, fetchLoginHistory, type LoginEvent } from "@/lib/security-history";
 import { useStore } from "@/lib/use-store";
 import { passwordStrength } from "@/lib/validation";
@@ -60,6 +62,7 @@ function ProfileEditScreenInner() {
   const [name, setName] = useState(currentUser.name);
   const [phone, setPhone] = useState(currentUser.phone);
   const [avatar, setAvatar] = useState(currentUser.avatar);
+  const [cover, setCover] = useState<string | null>(currentUser.cover ?? null);
   const [bio, setBio] = useState(currentUser.bio);
   const [expertise, setExpertise] = useState<string[]>(currentUser.expertiseCategories ?? []);
   const [city, setCity] = useState(currentUser.city ?? "");
@@ -221,8 +224,14 @@ function ProfileEditScreenInner() {
       Alert.alert(translateCopy("Fotoğraf yüklenemedi", language), translateCopy("Profil fotoğrafın yüklenemedi. Bağlantını kontrol edip tekrar dene.", language));
       return;
     }
+    // Yeni seçilmiş (yerel) kapak önce yüklenir; yüklenemezse profil eski kapağıyla kalır.
+    let uploadedCover: string | null = cover;
+    if (isLiveAccount && cover && !/^https?:\/\//i.test(cover)) {
+      try { uploadedCover = await uploadProfileCover(cover, currentUser.id); }
+      catch { setSaving(false); Alert.alert(translateCopy("Kapak yüklenemedi", language), translateCopy("Kapak görselin yüklenemedi. Bağlantını kontrol edip tekrar dene.", language)); return; }
+    }
     let ok = false;
-    try { ok = await updateProfile({ name, phone, avatar: uploadedAvatar, bio, expertiseCategories: expertise, city }); }
+    try { ok = await updateProfile({ name, phone, avatar: uploadedAvatar, bio, expertiseCategories: expertise, city, cover: uploadedCover }); }
     catch { ok = false; }
     finally { setSaving(false); }
 
@@ -346,6 +355,11 @@ function ProfileEditScreenInner() {
                     </Pressable>
                     <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600" }}>{translateCopy("JPG veya PNG, en fazla 5MB.", language)}</Text>
                   </View>
+                </View>
+                <AvatarPresetPicker value={avatar.trim()} onSelect={setAvatar} disabled={saving} />
+                <View style={{ gap: 8 }}>
+                  <Text style={{ color: colors.ink, fontSize: 14, fontWeight: "900" }}>{translateCopy("Kapak görseli", language)}</Text>
+                  <View style={{ maxWidth: 620 }}><CoverField value={cover} onChange={setCover} disabled={saving} /></View>
                 </View>
                 <View style={{ flexDirection: "row", gap: 14 }}>
                   <View style={{ flex: 1 }}><DeskField label={translateCopy("Ad soyad / mağaza adı", language)} value={name} onChangeText={setName} icon="account-outline" /></View>
@@ -522,6 +536,11 @@ function ProfileEditScreenInner() {
             </View>
           </View>
           <PrimaryButton icon="image-plus" tone="secondary" onPress={() => void pickAvatar()}>{translateCopy("Galeriden fotoğraf seç", language)}</PrimaryButton>
+          <AvatarPresetPicker value={avatar.trim()} onSelect={setAvatar} disabled={saving} size={46} />
+          <View style={{ gap: 8 }}>
+            <Text style={{ color: colors.ink, fontSize: 14, fontWeight: "900" }}>{translateCopy("Kapak görseli", language)}</Text>
+            <CoverField value={cover} onChange={setCover} disabled={saving} />
+          </View>
           <View style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 12, borderWidth: 1, gap: 10, padding: 12 }}>
             <View style={{ alignItems: "center", flexDirection: "row", gap: 10 }}>
               <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 999, height: 48, justifyContent: "center", width: 48 }}>

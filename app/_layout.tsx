@@ -57,10 +57,13 @@ export default function RootLayout() {
   );
 }
 
-/** Açılış animasyonu: ilan verisi VE oturum kontrolü bitene kadar ekranda kalır, sonra eriyerek açılır. */
+/**
+ * Açılış animasyonu: oturum kontrolü bitince eriyerek açılır. İlan verisini BEKLEMEZ — ağ yavaşken açılış
+ * saniyelerce uzuyordu; ilanlar yüklenirken ekranlar zaten kendi iskeletini gösterir.
+ */
 function IntroSplashHost() {
-  const { authReady, marketplaceInitialLoading } = useStore();
-  return <IntroSplash ready={authReady && !marketplaceInitialLoading} />;
+  const { authReady } = useStore();
+  return <IntroSplash ready={authReady} />;
 }
 
 function RootStack() {

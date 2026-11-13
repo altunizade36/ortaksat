@@ -6,6 +6,8 @@ import { Pressable, Text, View, useWindowDimensions } from "react-native";
 import { colors } from "@/components/colors";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { useStore } from "@/lib/use-store";
+import { UserAvatar } from "@/components/user-avatar";
+import { hasProfilePhoto } from "@/lib/profile-photo";
 
 export function HeaderActions() {
   const { language } = useLanguage();
@@ -44,18 +46,20 @@ export function HeaderActions() {
           ) : null}
         </Pressable>
       </Link>
-      {!isAuthenticated ? <Link href="/auth" asChild><Pressable style={{ minHeight: 44, justifyContent: "center", paddingHorizontal: 6 }}><Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "700" }}>{translateCopy("Giriş", language)}</Text></Pressable></Link> : <HeaderAction href="/(tabs)/profile" icon="account-circle-outline" label={badgeTotal > 0 ? `${translateCopy("Profil", language)} — ${badgeTotal} ${translateCopy("okunmamış", language)}` : translateCopy("Profil", language)} badge={badgeTotal} primary />}
+      {!isAuthenticated ? <Link href="/auth" asChild><Pressable style={{ minHeight: 44, justifyContent: "center", paddingHorizontal: 6 }}><Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "700" }}>{translateCopy("Giriş", language)}</Text></Pressable></Link> : <HeaderAction href="/(tabs)/profile" icon="account-circle-outline" label={badgeTotal > 0 ? `${translateCopy("Profil", language)} — ${badgeTotal} ${translateCopy("okunmamış", language)}` : translateCopy("Profil", language)} badge={badgeTotal} primary avatar={hasProfilePhoto(currentUser.avatar) ? currentUser.avatar : undefined} />}
     </View>
   );
 }
 
 function HeaderAction({
+  avatar,
   badge,
   href,
   icon,
   label,
   primary
 }: {
+  avatar?: string;
   badge?: number;
   href: string;
   icon: keyof typeof MaterialCommunityIcons.glyphMap;
@@ -96,7 +100,7 @@ function HeaderAction({
             width: 34
           }}
         >
-          <MaterialCommunityIcons name={icon} size={primary ? 20 : 18} color={colors.primaryDark} />
+          {avatar ? <UserAvatar uri={avatar} size={30} /> : <MaterialCommunityIcons name={icon} size={primary ? 20 : 18} color={colors.primaryDark} />}
           {badge ? (
             <View
               style={{

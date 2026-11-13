@@ -2,7 +2,7 @@ import { CompactFooter } from "@/components/compact-footer";
 import { isMobileApp } from "@/lib/mobile-app";
 import { MobileProfile } from "@/components/mobile/profile";
 import { UserAvatar } from "@/components/user-avatar";
-import { CityCoverImage } from "@/components/city-cover-image";
+import { ProfileCoverImage } from "@/components/profile-cover-image";
 import { MaterialCommunityIcons } from "@/components/icons";
 import { Link, type Href } from "expo-router";
 import { Platform, Pressable, RefreshControl, ScrollView, Text, View } from "react-native";
@@ -88,7 +88,7 @@ function ProfileScreenInner() {
         <View style={{ alignSelf: "center", gap: 16, maxWidth: 1280, paddingHorizontal: 20, paddingTop: 16, width: "100%" }}>
         {/* Welcome banner */}
         <View style={{ backgroundColor: colors.primaryDark, borderRadius: 18, flexDirection: "row", gap: 16, overflow: "hidden", padding: 22 }}>
-          <BannerCityCover city={currentUser.city} />
+          <BannerCover cover={currentUser.cover} />
           <View style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.14)", borderRadius: 999, height: 66, justifyContent: "center", overflow: "hidden", width: 66 }}>
             <UserAvatar uri={currentUser.avatar} size={66} />
           </View>
@@ -246,7 +246,7 @@ function ProfileScreenInner() {
       {/* Marka hero (mobil) — masaüstü welcome-banner paritesi: yuvarlak avatar + isim
           + puan/güven/satış çipleri. Eskiden düz kare-avatar kartıydı. */}
       <View style={{ backgroundColor: colors.primaryDark, borderRadius: 18, gap: 13, overflow: "hidden", padding: 16 }}>
-        <BannerCityCover city={currentUser.city} />
+        <BannerCover cover={currentUser.cover} />
         <View style={{ alignItems: "center", flexDirection: "row", gap: 12 }}>
           <View style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.16)", borderRadius: 999, height: 60, justifyContent: "center", overflow: "hidden", width: 60 }}>
             <UserAvatar uri={currentUser.avatar} size={60} />
@@ -461,12 +461,12 @@ function Shortcut({ href, icon, label }: { href: Href; icon: keyof typeof Materi
 
 
 
-// Profil başlığının arka planı: kullanıcının iline ait kapak görseli (il yoksa varsayılan görsel).
+// Profil başlığının arka planı: kullanıcının kendi kapağı, yoksa standart kapak.
 // Üstündeki koyu örtü, beyaz yazıların her görselde okunmasını sağlar.
-function BannerCityCover({ city }: { city?: string | null }) {
+function BannerCover({ cover }: { cover?: string | null }) {
   return (
     <View pointerEvents="none" style={{ bottom: 0, left: 0, position: "absolute", right: 0, top: 0 }}>
-      <CityCoverImage city={city} priority="high" style={{ height: "100%", width: "100%" }} />
+      <ProfileCoverImage uri={cover} priority="high" style={{ height: "100%", width: "100%" }} />
       <View style={{ backgroundColor: "rgba(4,24,78,0.6)", bottom: 0, left: 0, position: "absolute", right: 0, top: 0 }} />
     </View>
   );

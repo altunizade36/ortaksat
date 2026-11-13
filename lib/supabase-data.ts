@@ -69,6 +69,7 @@ type ProfileRow = {
   invite_code?: string | null;
   expertise_categories?: string[] | null;
   city?: string | null;
+  cover_url?: string | null;
 };
 
 // Herkese açık (anon dahil) profil okumalarında yalnızca gösterime uygun kolonlar
@@ -79,7 +80,7 @@ type ProfileRow = {
 // anon'a kolon-bazlı SELECT grant'ı ZATEN var (doğrulandı) → 401 riski yok; mapProfile
 // zaten row.created_at'i okur (bkz [[anon-column-grant-gotcha]]).
 const PUBLIC_PROFILE_COLUMNS =
-  "id, full_name, avatar_url, bio, verified_phone, verified_identity, verified_instagram, rating, response_rate, role, status, successful_sales, follower_count, invite_code, expertise_categories, city, created_at, username, district_id, website_url, instagram_handle" as const;
+  "id, full_name, avatar_url, bio, verified_phone, verified_identity, verified_instagram, rating, response_rate, role, status, successful_sales, follower_count, invite_code, expertise_categories, city, created_at, username, district_id, website_url, instagram_handle, cover_url" as const;
 
 export async function fetchPublicProfiles(ids:string[]):Promise<User[]>{
  if(!supabase)throw Error("Service unavailable");const keys=[...new Set(ids.filter(Boolean))].slice(0,300);if(!keys.length)return [];
@@ -164,6 +165,7 @@ function mapProfile(row: ProfileRow): User {
     expertiseCategories: row.expertise_categories ?? [],
     username:row.username||undefined,districtId:row.district_id||undefined,website:row.website_url||undefined,instagram:row.instagram_handle||undefined,
     city: typeof row.city === "string" && row.city.trim() ? row.city : undefined,
+    cover: typeof row.cover_url === "string" && row.cover_url.startsWith("https://") ? row.cover_url : undefined,
     responseRate: row.response_rate ?? 0,
     role: row.role ?? "user",
     status: (row.status as User["status"]) ?? "active"

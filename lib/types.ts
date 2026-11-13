@@ -36,6 +36,8 @@ export type User = {
   expertiseCategories?: string[];
   // Bölgesel ortaklık: kullanıcının ili (TR_PROVINCES adı). Şehir-bazlı ortak eşleştirme/sıralama.
   city?: string;
+  // Kullanıcının kendi yüklediği kapak görseli (3:1). Yoksa herkes standart kapağı görür.
+  cover?: string;
   responseRate: number;
   role?: UserRole;
   status?: "active" | "suspended" | "deleted";

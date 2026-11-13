@@ -11,7 +11,7 @@ import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { useRouter } from "expo-router";
 import { MaterialCommunityIcons as Icon } from "@/components/icons";
 import { UserAvatar } from "@/components/user-avatar";
-import { CityCoverImage } from "@/components/city-cover-image";
+import { ProfileCoverImage } from "@/components/profile-cover-image";
 import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { ReviewCard } from "@/components/review-card";
 import { RatingSummary } from "@/components/reviews/rating-summary";
@@ -396,8 +396,8 @@ export function MobileSellerStore({ id }: { id: string }) {
       }
       bottom={<MobileBottomNav />}
     >
-      <CityCoverImage
-        city={seller.city}
+      <ProfileCoverImage
+        uri={seller.cover}
         priority="high"
         style={{
           width: "100%",

@@ -210,6 +210,17 @@ function authRedirectUrl(): string {
   return "ortaksat://auth";
 }
 
+// Google gibi tarayıcıdan dönen girişlerin dönüş adresi.
+// KRİTİK (2026-11-14, canlıda ölçüldü): giriş servisi SAYISAL yerel ağ adresli dönüşü (exp://192.168.x.x…)
+// izin listesinde olsa bile REDDEDER ve kullanıcıyı siteye yollar; yalnız 127.0.0.1 (emülatör) ile ad
+// biçimli adresleri kabul eder. iPhone'da giriş penceresi dönüşü yalnız şemaya ("exp") bakarak yakaladığı
+// için adresin bilgisayarı göstermesi gerekmez → deneme uygulamasında sabit, ad biçimli adres kullanılır.
+function oauthRedirectUrl(): string {
+  const host = expoGoHost();
+  if (host && Platform.OS === "ios" && !/^(127\.0\.0\.1|localhost)(:|$)/i.test(host)) return "exp://ortaksat-deneme/--/auth";
+  return authRedirectUrl();
+}
+
 /**
  * Expo Go deneme uygulamasında çalışıyorsak geliştirme sunucusunun adresi ("192.168.1.3:8081"), değilse null.
  * DİKKAT: SDK 58 Expo Go'da `Constants.executionEnvironment` "bare" döner ("storeClient" DEĞİL) ve
@@ -315,7 +326,7 @@ type AppStore = {
   authAttempt: (action: () => Promise<boolean>) => Promise<{ ok: boolean; error?: string }>;
   signOut: () => Promise<void>;
   signOutAllDevices: () => Promise<boolean>;
-  updateProfile: (input: Pick<User, "name" | "phone" | "avatar" | "bio"> & { expertiseCategories?: string[]; city?: string;username?:string;districtId?:number|null;website?:string;instagram?:string }) => Promise<boolean>;
+  updateProfile: (input: Pick<User, "name" | "phone" | "avatar" | "bio"> & { expertiseCategories?: string[]; city?: string;username?:string;districtId?:number|null;website?:string;instagram?:string; cover?: string | null }) => Promise<boolean>;
   /** Yalnız DEĞİŞEN anahtarlar sunucuda birleştirilir (diğer tercihlere dokunulmaz); `null` değer anahtarı siler. */
   savePreferences: (preferences: Record<string, boolean | string | number | null>) => Promise<boolean>;
   setEmailNotifications: (enabled: boolean) => Promise<boolean>;
@@ -829,6 +840,7 @@ export function StoreProvider({ children }: PropsWithChildren) {
               createdAt: data.created_at || undefined,
               phone: data.phone ?? fallback.phone,
               avatar: data.avatar_url || fallback.avatar,
+              cover: typeof data.cover_url === "string" && data.cover_url ? data.cover_url : undefined,
               bio: data.bio ?? fallback.bio,
               verifiedPhone: data.verified_phone,
               verifiedIdentity: data.verified_identity,
@@ -1655,10 +1667,11 @@ export function StoreProvider({ children }: PropsWithChildren) {
         const isWebEnv = Platform.OS === "web";
         // Web'de tarayıcı Google'a yönlenir, dönüşte onAuthStateChange oturumu yakalar.
         // Native'de otomatik yönlenme YOK → URL'yi expo-web-browser ile aç, dönüşü işle.
-        const redirectTo = authRedirectUrl();
+        const redirectTo = oauthRedirectUrl();
         const { data, error } = await supabase.auth.signInWithOAuth({
           provider: "google",
-          options: { redirectTo, skipBrowserRedirect: !isWebEnv }
+          // Her seferinde hesap seçtir: yanlış Google hesabıyla sessizce girilmesin.
+          options: { redirectTo, skipBrowserRedirect: !isWebEnv, queryParams: { prompt: "select_account" } }
         });
         if (error) {
           await clearOAuthConsent();
@@ -1886,7 +1899,8 @@ export function StoreProvider({ children }: PropsWithChildren) {
           districtId:input.districtId!==undefined?(input.districtId||undefined):input.city!==undefined&&input.city!==currentUser.city?undefined:currentUser.districtId,
           website:input.website!==undefined?(input.website.trim()||undefined):currentUser.website,
           instagram:input.instagram!==undefined?(input.instagram.trim()||undefined):currentUser.instagram,
-          city: input.city !== undefined ? (input.city.trim() || undefined) : currentUser.city
+          city: input.city !== undefined ? (input.city.trim() || undefined) : currentUser.city,
+          cover: input.cover !== undefined ? (input.cover || undefined) : currentUser.cover
         };
         const ok = liveUser ? await updateProfileLive(updatedUser) : true;
         if (!ok) {

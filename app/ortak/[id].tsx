@@ -3,7 +3,6 @@ import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import { Pressable, ScrollView, Text, View, useWindowDimensions } from "react-native";
 
-import { CityCoverImage } from "@/components/city-cover-image";
 import { colors } from "@/components/colors";
 import { ListingCard } from "@/components/listing-card";
 import { ReviewCard } from "@/components/review-card";
@@ -114,13 +113,7 @@ function Inner() {
       />
       <View style={{ alignSelf: "center", maxWidth: PAGE_MAX_WIDTH, paddingHorizontal: pad, paddingTop: 14, width: "100%" }}>
         {/* Ortak profil başlığı */}
-        <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 18, borderWidth: 1, gap: 14, overflow: "hidden", padding: 18 }}>
-          {/* İli bilinen ortağın vitrininde o ilin kapak görseli (il yoksa şerit hiç gösterilmez). */}
-          {profile?.city ? (
-            <View style={{ height: 112, marginHorizontal: -18, marginTop: -18 }}>
-              <CityCoverImage city={profile.city} priority="high" style={{ height: "100%", width: "100%" }} />
-            </View>
-          ) : null}
+        <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 18, borderWidth: 1, gap: 14, padding: 18 }}>
           <View style={{ alignItems: "center", flexDirection: "row", gap: 14 }}>
             <View style={{ alignItems: "center", backgroundColor: tier.tint, borderRadius: 999, height: 60, justifyContent: "center", width: 60 }}>
               <Text style={{ color: tier.color, fontSize: 24, fontWeight: "900" }}>{name.slice(0, 1).toLocaleUpperCase("tr-TR")}</Text>

@@ -15,7 +15,7 @@ import {
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { MaterialCommunityIcons as Icon } from "@/components/icons";
 import { UserAvatar } from "@/components/user-avatar";
-import { CityCoverImage } from "@/components/city-cover-image";
+import { ProfileCoverImage } from "@/components/profile-cover-image";
 import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { OptionSheet } from "@/components/option-sheet";
 import { useStore } from "@/lib/use-store";
@@ -376,8 +376,8 @@ export function MobileProfile({
             backgroundColor: mobile.darkTeal,
           }}
         >
-          <CityCoverImage
-            city={me.city}
+          <ProfileCoverImage
+            uri={me.cover}
             priority="high"
             style={StyleSheet.absoluteFill}
           />

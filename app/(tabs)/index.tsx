@@ -20,6 +20,7 @@ import { SkeletonGrid } from "@/components/skeleton";
 import { getRecent, subscribeRecent } from "@/lib/recent";
 import { loadPartnerDirectory, type PartnerDirectoryEntry } from "@/lib/supabase-data";
 import { SafeRemoteImage } from "@/components/safe-remote-image";
+import { UserAvatar } from "@/components/user-avatar";
 import { EmptyState, PressLink } from "@/components/ui";
 import { categoryTree, type CategoryNode } from "@/lib/category-tree";
 import { WebFooter } from "@/components/web-landing";
@@ -465,7 +466,7 @@ function DesktopHomeScreen() {
                 {featuredPartners.map((p) => (
                   <Pressable key={p.partnerId} accessibilityRole="button" accessibilityLabel={p.fullName} onPress={() => router.push(`/ortak/${p.partnerId}`)} style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 14, borderWidth: 1, gap: 5, padding: 12, width: 132 }}>
                     <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 999, height: 50, justifyContent: "center", overflow: "hidden", width: 50 }}>
-                      {p.avatarUrl && p.avatarUrl.startsWith("http") ? <SafeRemoteImage uri={p.avatarUrl} style={{ height: 50, width: 50 }} contentFit="cover" /> : <MaterialCommunityIcons name="account" size={26} color={colors.primaryDark} />}
+                      <UserAvatar uri={p.avatarUrl} size={50} />
                     </View>
                     <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 12.5, fontWeight: "900", maxWidth: 112 }}>{p.fullName}</Text>
                     <View style={{ backgroundColor: colors.primarySoft, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2 }}>

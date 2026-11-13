@@ -1,6 +1,7 @@
 import { TrustEntry } from "@/components/trust/entry";
 import { displayListingTitle } from "@/lib/listing-title";
 import { UserAvatar } from "@/components/user-avatar";
+import { ProfileCoverImage } from "@/components/profile-cover-image";
 import { MaterialCommunityIcons } from "@/components/icons";
 import { Image } from "expo-image";
 import { Link, useLocalSearchParams, useRouter } from "expo-router";
@@ -343,7 +344,7 @@ function StoreScreenLegacy() {
           })} />
         ) : null}
         {/* Cover — mağazaya özgü katmanlı banner (harici görsel yok; CSP-güvenli) */}
-        <StoreCover seed={seller.id} height={150} />
+        <StoreCover cover={seller.cover} height={150} />
         <View style={{ alignSelf: "center", marginTop: -64, maxWidth: 1280, paddingHorizontal: 20, width: "100%" }}>
           <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 18, borderWidth: 1, padding: 20 }}>
             <View style={{ alignItems: "flex-start", flexDirection: "row", gap: 18 }}>
@@ -657,7 +658,7 @@ function StoreScreenLegacy() {
           ...(reviewStats.count > 0 ? { aggregateRating: { "@type": "AggregateRating", ratingValue: reviewStats.average, reviewCount: reviewStats.count, bestRating: 5, worstRating: 1 } } : {})
         })} />
       ) : null}
-      <StoreCover seed={seller.id} height={92} radius={10} />
+      <StoreCover cover={seller.cover} height={92} radius={10} />
       <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 8, borderWidth: 1, gap: 12, marginTop: -44, padding: 14 }}>
         <View style={{ alignItems: "center", flexDirection: "row", gap: 12 }}>
           <UserAvatar uri={seller.avatar} size={66} />
@@ -856,20 +857,12 @@ function StoreScreenLegacy() {
   );
 }
 
-// Mağazaya özgü katmanlı banner. Harici görsel yok (CSP), gradient kütüphanesi
-// yok — üst üste bindirilmiş yarı saydam Views ile derinlik. Tohum (seller.id)
-// aksan tonunu belirler; her mağaza farklı görünür ama marka tutarlı kalır.
-function StoreCover({ seed, height = 150, radius = 0 }: { seed: string; height?: number; radius?: number }) {
-  const accents = [colors.primary, colors.info, colors.gold, colors.accent];
-  let h = 0;
-  for (let i = 0; i < seed.length; i += 1) h = (h * 31 + seed.charCodeAt(i)) >>> 0;
-  const accent = accents[h % accents.length];
+// Mağaza kapağı: satıcı kendi kapağını yüklediyse o, yoksa herkes için aynı olan standart kapak.
+function StoreCover({ cover, height = 150, radius = 0 }: { cover?: string; height?: number; radius?: number }) {
   return (
     <View style={{ backgroundColor: colors.primaryDark, borderRadius: radius, height, overflow: "hidden" }}>
-      <View style={{ position: "absolute", backgroundColor: colors.primary, opacity: 0.5, width: "170%", height: 130, top: -24, left: -60, transform: [{ rotate: "-7deg" }] }} />
-      <View style={{ position: "absolute", backgroundColor: accent, opacity: 0.3, width: 240, height: 240, borderRadius: 240, right: -60, top: -80 }} />
-      <View style={{ position: "absolute", backgroundColor: "#FFFFFF", opacity: 0.07, width: 170, height: 170, borderRadius: 170, right: 150, bottom: -90 }} />
-      <View style={{ position: "absolute", backgroundColor: accent, opacity: 0.16, width: 130, height: 130, borderRadius: 130, left: -40, bottom: -60 }} />
+      <ProfileCoverImage uri={cover} priority="high" style={{ height: "100%", width: "100%" }} />
+      <View style={{ position: "absolute", top: 0, right: 0, bottom: 0, left: 0, backgroundColor: colors.primaryDark, opacity: 0.38 }} />
     </View>
   );
 }

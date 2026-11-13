@@ -15,7 +15,7 @@ export const INTRO_SOUND_OFF_KEY = "ortaksat.introSoundOff";
 const BACKGROUND = "#E5F0FF"; // app.json → expo-splash-screen backgroundColor ile AYNI (geçiş görünmesin)
 const LOGO = 220; // app.json → imageWidth ile AYNI
 const HOLD_AFTER_MS = 650; // animasyon bittikten sonra en az bu kadar görünür kalır
-const MAX_WAIT_MS = 4800; // uygulama verisi gecikse de açılış en geç bu sürede kapanır
+const MAX_WAIT_MS = 3600; // uygulama verisi gecikse de açılış en geç bu sürede kapanır
 
 /**
  * UYGULAMA AÇILIŞ ANİMASYONU (yalnız iOS/Android, soğuk açılışta bir kez).
@@ -29,57 +29,83 @@ const MAX_WAIT_MS = 4800; // uygulama verisi gecikse de açılış en geç bu s�
  * beğenmedi. Yeniden açılacaksa önce kullanıcının onayladığı gerçek bir ses dosyası gerekir — bilgisayarla
  * üretilmiş melodi koyup açma. Açılırsa ses telefonun sessiz anahtarına uyar ve Ayarlar'dan kapatılabilir.
  */
+const TIMELINE_MS = 2140; // hareketin tamamı (eller 980 ms'de birleşir, ardından sıkışma + marka adı)
+
+/** Zaman çizelgesindeki [başlangıç, bitiş] (ms) aralığını, yumuşatma eğrisi örneklenmiş 0→1 ilerlemeye çevirir. */
+function track(master: Animated.Value, startMs: number, endMs: number, ease: (t: number) => number = (t) => t) {
+  const steps = 10;
+  const inputRange: number[] = [];
+  const outputRange: number[] = [];
+  for (let i = 0; i <= steps; i += 1) {
+    inputRange.push((startMs + ((endMs - startMs) * i) / steps) / TIMELINE_MS);
+    outputRange.push(ease(i / steps));
+  }
+  return master.interpolate({ inputRange, outputRange, extrapolate: "clamp" });
+}
+
+function buildTracks(master: Animated.Value) {
+  const outCubic = (t: number) => 1 - Math.pow(1 - t, 3);
+  const inOutQuad = (t: number) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);
+  const at = (ms: number) => ms / TIMELINE_MS;
+  return {
+    hands: track(master, 120, 1100, outCubic), // 0: eller dışarıda → 1: birleşti
+    // birleşme anındaki küçük sıkma: hızlı çık, hafif geri esneyerek otur
+    squeeze: master.interpolate({ inputRange: [at(1100), at(1250), at(1390), at(1500), at(1600)], outputRange: [0, 1, -0.12, 0.05, 0], extrapolate: "clamp" }),
+    pulse: track(master, 1100, 1840, outCubic), // dışa yayılan halka
+    shake: track(master, 1180, 1840, inOutQuad), // birleşen ellerin iki kez hafifçe sallanması
+    exact: track(master, 1860, 2040), // özgün logoya çapraz geçiş
+    word: track(master, 1500, 1980, outCubic) // marka adı
+  };
+}
+
 export function IntroSplash({ ready }: { ready: boolean }) {
   const [visible, setVisible] = useState(isMobileApp);
   const [animationDone, setAnimationDone] = useState(false);
   const started = useRef(false);
-  const hands = useRef(new Animated.Value(0)).current; // 0: eller dışarıda → 1: birleşti
-  const squeeze = useRef(new Animated.Value(0)).current; // birleşme anındaki küçük sıkma
-  const shake = useRef(new Animated.Value(0)).current; // birleşen ellerin iki kez hafifçe sallanması (el sıkışma)
-  const pulse = useRef(new Animated.Value(0)).current; // dışa yayılan halka
-  const exact = useRef(new Animated.Value(0)).current; // özgün logoya çapraz geçiş (piksel-tam son kare)
-  const word = useRef(new Animated.Value(0)).current; // marka adı
+  // TEK ZAMAN ÇİZELGESİ: bütün hareket tek bir değerin (0→1) doğrusal ilerleyişinden türetilir ve yerel
+  // (native) sürücüde çalışır. Eskiden adımlar art arda JS geri çağrılarıyla ve JS zamanlayıcılı
+  // gecikmelerle başlatılıyordu; açılışta JS meşgulken (uygulama kuruluyor) eller birleştikten sonra
+  // animasyon takılıp bekliyordu. Artık başladıktan sonra JS ne kadar meşgul olursa olsun akıcı ilerler.
+  const master = useRef(new Animated.Value(0)).current;
   const out = useRef(new Animated.Value(0)).current; // katmanın erimesi
+  const tracks = useRef<ReturnType<typeof buildTracks> | null>(null);
+  if (!tracks.current) tracks.current = buildTracks(master);
+  const { hands, squeeze, shake, pulse, exact, word } = tracks.current;
+  const laidOut = useRef(false);
+  const loaded = useRef(0);
 
-  // Bu ilk kare çizilince yerel açılış ekranını kaldır: altında aynı renk + aynı halka var → sıçrama olmaz.
-  const onFirstLayout = () => {
+  const begin = () => {
     if (started.current) return;
     started.current = true;
     SplashScreen.hideAsync().catch(() => {});
     void run();
+  };
+  // Hareket, katman yerleşip üç parça görsel (halka + iki el) çözüldükten sonra başlar; görsel geç
+  // gelirse eller yolun ortasında belirmesin. Görsel hiç gelmezse 450 ms sonra yine başlar.
+  const onFirstLayout = () => {
+    if (laidOut.current) return;
+    laidOut.current = true;
+    if (loaded.current >= 3) begin();
+    else setTimeout(begin, 450);
+  };
+  const onPartLoad = () => {
+    loaded.current += 1;
+    if (loaded.current >= 3 && laidOut.current) begin();
   };
 
   async function run() {
     let reduceMotion = false;
     try { reduceMotion = await AccessibilityInfo.isReduceMotionEnabled(); } catch { /* varsayılan: hareket açık */ }
     if (reduceMotion) {
-      hands.setValue(1); exact.setValue(1); shake.setValue(1);
-      Animated.timing(word, { toValue: 1, duration: 260, useNativeDriver: true }).start(() => setAnimationDone(true));
+      master.setValue(1);
+      setAnimationDone(true);
       return;
     }
     if (INTRO_SOUND_ENABLED) void playChime();
-    // TEMPO (kullanıcı isteği, 2026-11-13): eller GÖRÜLEREK yaklaşsın — eski telefon açılışlarındaki gibi
-    // sakin bir buluşma. Yaklaşma ~1 sn, sıkışma + sallanma ~0,9 sn; toplam açılış yaklaşık 3 sn'yi geçmez.
-    Animated.sequence([
-      Animated.delay(160),
-      // Eller iki yandan gelir ve tam ortada buluşur (sıçramasız, yavaşlayarak).
-      Animated.timing(hands, { toValue: 1, duration: 980, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
-      Animated.parallel([
-        // Buluşma: küçük bir sıkma + dışa yayılan nabız + özgün logoya geçiş.
-        Animated.sequence([
-          Animated.timing(squeeze, { toValue: 1, duration: 160, easing: Easing.out(Easing.quad), useNativeDriver: true }),
-          Animated.spring(squeeze, { toValue: 0, friction: 5, tension: 110, useNativeDriver: true })
-        ]),
-        Animated.timing(pulse, { toValue: 1, duration: 760, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
-        // El sıkışma: birleşen eller iki kez hafifçe aşağı-yukarı sallanır.
-        Animated.timing(shake, { toValue: 1, duration: 680, delay: 80, easing: Easing.inOut(Easing.quad), useNativeDriver: true }),
-        Animated.timing(exact, { toValue: 1, duration: 200, delay: 780, useNativeDriver: true }),
-        Animated.timing(word, { toValue: 1, duration: 480, delay: 430, easing: Easing.out(Easing.cubic), useNativeDriver: true })
-      ])
-    ]).start(() => setAnimationDone(true));
+    Animated.timing(master, { toValue: 1, duration: TIMELINE_MS, easing: Easing.linear, useNativeDriver: true }).start(() => setAnimationDone(true));
   }
 
-  // Animasyon bitti + (uygulama hazır ya da üst süre doldu) → kısa bir bekleyişten sonra eriyerek kapan.
+
   const [timedOut, setTimedOut] = useState(false);
   useEffect(() => {
     if (!visible) return;
@@ -141,14 +167,14 @@ export function IntroSplash({ ready }: { ready: boolean }) {
           transform: [{ scale: pulse.interpolate({ inputRange: [0, 1], outputRange: [0.86, 1.5] }) }]
         }]} />
         <Animated.View style={[StyleSheet.absoluteFill, { transform: [{ scale: squeeze.interpolate({ inputRange: [0, 1], outputRange: [1, 1.025] }) }] }]}>
-          <Image source={require("../assets/splash/ring.png")} style={styles.fill} contentFit="contain" transition={0} />
+          <Image source={require("../assets/splash/ring.png")} style={styles.fill} contentFit="contain" transition={0} priority="high" onLoad={onPartLoad} onError={onPartLoad} />
         </Animated.View>
         <Animated.View style={[StyleSheet.absoluteFill, shakeStyle]}>
           <Animated.View style={[StyleSheet.absoluteFill, leftStyle]}>
-            <Image source={require("../assets/splash/hand-left.png")} style={styles.fill} contentFit="contain" transition={0} />
+            <Image source={require("../assets/splash/hand-left.png")} style={styles.fill} contentFit="contain" transition={0} priority="high" onLoad={onPartLoad} onError={onPartLoad} />
           </Animated.View>
           <Animated.View style={[StyleSheet.absoluteFill, rightStyle]}>
-            <Image source={require("../assets/splash/hand-right.png")} style={styles.fill} contentFit="contain" transition={0} />
+            <Image source={require("../assets/splash/hand-right.png")} style={styles.fill} contentFit="contain" transition={0} priority="high" onLoad={onPartLoad} onError={onPartLoad} />
           </Animated.View>
         </Animated.View>
         {/* Son kare: özgün logo (katmanların birleşimindeki küçük kenar farklarını örter) */}

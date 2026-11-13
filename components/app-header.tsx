@@ -14,6 +14,7 @@ import { MobileBrand } from "@/components/mobile-brand";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { useIsWideWeb } from "@/lib/layout";
 import { useStore } from "@/lib/use-store";
+import { hasProfilePhoto } from "@/lib/profile-photo";
 import { useBackNavigation } from "@/lib/use-back-navigation";
 
 type NavItem = { href: Href; label: string; match: (path: string) => boolean; caret?: boolean };
@@ -325,7 +326,7 @@ function AccountMenu() {
     <View style={{ position: "relative", zIndex: open ? 1000 : 1 }}>
       <Pressable accessibilityRole="button" accessibilityLabel={translateCopy("Hesabım", language)} accessibilityState={{ expanded: open }} onPress={() => setOpen((o) => !o)} style={{ alignItems: "center", backgroundColor: open ? colors.primarySoft : colors.surface, borderColor: open ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 7, paddingHorizontal: 12, paddingVertical: 7 }}>
         <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 999, height: 26, justifyContent: "center", width: 26 }}>
-          <MaterialCommunityIcons name="account" size={17} color={colors.primaryDark} />
+          {isAuthenticated && hasProfilePhoto(currentUser.avatar) ? <UserAvatar uri={currentUser.avatar} size={26} /> : <MaterialCommunityIcons name="account" size={17} color={colors.primaryDark} />}
           {hasUnread && !open ? <View style={{ backgroundColor: colors.accent, borderColor: "#FFFFFF", borderRadius: 999, borderWidth: 1, height: 10, position: "absolute", right: -2, top: -2, width: 10 }} /> : null}
         </View>
         <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "800" }}>{translateCopy("Hesabım", language)}</Text>
