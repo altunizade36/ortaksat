@@ -449,9 +449,14 @@ export async function updateProfileLive(user: Pick<User, "id" | "name" | "phone"
 }
 
 export async function insertListing(listing: Listing): Promise<boolean> {
+  return (await insertListingResult(listing)).ok;
+}
+
+/** insertListing + sunucunun ret nedeni (hız sınırı, yasaklı içerik, mükerrer harici kod...). */
+export async function insertListingResult(listing: Listing): Promise<{ ok: boolean; code?: string; message?: string }> {
   const titleCheck = validateListingTitle(listing.title);
-  if (!titleCheck.ok) return false;
-  if (!supabase) return true;
+  if (!titleCheck.ok) return { ok: false, message: titleCheck.error ?? undefined };
+  if (!supabase) return { ok: true };
 
   const { error } = await supabase.from("listings").insert({
     id: listing.id,
@@ -494,10 +499,10 @@ export async function insertListing(listing: Listing): Promise<boolean> {
 
   if (error) {
     console.warn("Supabase listing insert failed", error);
-    return false;
+    return { ok: false, code: error.code, message: error.message };
   }
 
-  return true;
+  return { ok: true };
 }
 
 // Yüklemede izin verilen tipler ve boyut sınırları (DB bucket limitiyle uyumlu).

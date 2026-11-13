@@ -26,6 +26,8 @@ import { uploadListingImage, fetchMyListingSkus, updateListingFieldsLive, fetchM
 import { isListingVideoUrl } from "@/lib/listing-video";
 import { useStore } from "@/lib/use-store";
 import { parseTrPrice, validateListing } from "@/lib/validation";
+import { parseListingRate } from "@/lib/listing-numbers";
+import { LISTING_TITLE_LIMITS, listingTitleLength } from "@/lib/listing-title";
 import { looksLikeXml, parseXmlFeed, type FeedTable } from "@/lib/xml-feed";
 
 const TEMPLATE = `harici_kod,baslik,aciklama,fiyat,kategori,il,ilce,komisyon,stok,gorsel_url
@@ -56,12 +58,35 @@ type ParsedRow = {
   images: string[]; // tüm görseller: kapak + ek galeri (gorsel_url'de | ile ayrılmış)
   attrs: Record<string, string | number | boolean | string[]>; // kategori-özel alanlar (attributes)
   recognizedAttrs: string[]; // tanınan özellik etiketleri (önizleme göstergesi)
+  originalTitle?: string; // satıcı "uzun başlıkları kısalt" seçtiyse kısaltılmadan önceki başlık
+  // GÜNCELLEMEDE yalnız dosyada YAZAN komisyon/stok gönderilir. Eskiden boş hücre varsayılana (%10 / 1 adet)
+  // dönüp mevcut ilanın komisyonunu ve stoğunu eziyordu ("boş alan mevcut değeri korur" kuralına aykırı).
+  commissionGiven: boolean;
+  stockGiven: boolean;
   errors: string[];
 };
 
 const MAX_IMAGES = 5; // ilan başına kapak dahil en fazla 5 görsel (create/edit akışıyla aynı sınır)
 // Spam/hız koruması: tek partide üst sınır. XML akışı daha büyükse partilere bölünür.
 const MAX_BULK = 200;
+
+/**
+ * Uzun başlığı kelime sınırında, sınırı aşmayacak biçimde kısaltır. YALNIZ satıcı açıkça seçerse çalışır
+ * (başlık politikası girdiyi kendiliğinden kısaltmaz); önizlemede özgün başlık da gösterilir.
+ */
+function shortenTitle(title: string, max: number): string {
+  const chars = Array.from(title.trim());
+  if (chars.length <= max) return title.trim();
+  const cut = chars.slice(0, max).join("");
+  const space = cut.lastIndexOf(" ");
+  const base = space >= Math.floor(max * 0.6) ? cut.slice(0, space) : cut;
+  return base.replace(/[\s.,'’"()/:+&%\-]+$/u, "").trim();
+}
+
+/** Sunucunun saatlik ilan sınırı hatası (throttle_listing_inserts). */
+function isRateLimitError(message: string): boolean {
+  return /çok fazla işlem|sınırına \(?\d*\)? ?ulaş|saatlik toplu ilan/i.test(message);
+}
 
 /** Dosya baytlarını, XML bildirimindeki kodlamaya göre metne çevirir (eski akışlar windows-1254 / iso-8859-9 olabilir). */
 function decodeFileBytes(buffer: ArrayBuffer): string {
@@ -235,6 +260,7 @@ function BulkUploadInner() {
   const [defCategory, setDefCategory] = useState("");
   const [defProvince, setDefProvince] = useState("");
   const [defDistrict, setDefDistrict] = useState("");
+  const [shortenTitles, setShortenTitles] = useState(false); // 70 karakteri aşan başlıkları kelime sınırında kısalt
   const defCatMatch = useMemo(() => {
     const raw = defCategory.trim();
     if (!raw) return undefined;
@@ -312,7 +338,15 @@ function BulkUploadInner() {
       return;
     }
     // Mükerrer başlık/SKU uyarısı (aynı partide) — kullanıcı fark etsin.
-    const overrideComm = Number(commissionAll) > 0 ? Number(commissionAll) : undefined;
+    // Komisyon Türkçe ondalıkla da yazılabilir ("12,5"). Eskiden Number("12,5") = NaN olduğu için değer
+    // SESSİZCE %10'a dönüyordu; artık geçersiz yazım hata verir.
+    const overrideRaw = commissionAll.trim().replace(/^%\s*|\s*%$/g, "");
+    const overrideParsed = overrideRaw ? parseListingRate(overrideRaw) : NaN;
+    if (overrideRaw && !(overrideParsed > 0 && overrideParsed <= 90)) {
+      Alert.alert(translateCopy("Komisyon geçersiz", language), translateCopy("Toplu komisyon 1 ile 90 arasında bir sayı olmalı (örn. 15 ya da 12,5).", language));
+      return;
+    }
+    const overrideComm = overrideRaw ? overrideParsed : undefined;
     const seenTitles = new Set<string>();
     const seenSkus = new Set<string>();
     const bos = translateCopy("(boş)", language);
@@ -322,7 +356,10 @@ function BulkUploadInner() {
       // SKU EŞLEŞMESİ: bu satırın SKU'su satıcının mevcut bir ilanına denk geliyorsa GÜNCELLEME modu.
       const existing = sku ? existingSkus.get(sku) : undefined;
       const mode: "new" | "update" = existing ? "update" : "new";
-      const title = get("title");
+      const rawTitle = get("title");
+      const tooLong = listingTitleLength(rawTitle) > LISTING_TITLE_LIMITS.max;
+      const title = shortenTitles && tooLong ? shortenTitle(rawTitle, LISTING_TITLE_LIMITS.max) : rawTitle;
+      const originalTitle = title !== rawTitle ? rawTitle : undefined;
       const description = get("description");
       const price = parseTrPrice(get("price"));
       const categoryRaw = get("category");
@@ -370,7 +407,11 @@ function BulkUploadInner() {
         const d = districtsOfProvince(prov.id).find((x) => x.name.toLocaleLowerCase("tr-TR").trim() === dName);
         districtId = d?.id;
       }
-      const commission = overrideComm ?? (Number(get("commission")) || 10);
+      const commissionRaw = get("commission").trim().replace(/^%\s*|\s*%$/g, "");
+      // Boş komisyon → %10 (önizlemede görünür). Dolu ama sayı değilse NaN kalır ve satır hata verir.
+      const commission = overrideComm ?? (commissionRaw ? parseListingRate(commissionRaw) : 10);
+      const commissionGiven = overrideComm !== undefined || commissionRaw !== "";
+      const stockGiven = get("stock").trim() !== "";
       const partnershipMode = resolvePartnershipMode(get("partnership"));
       const stock = Math.max(1, Math.floor(parseTrPrice(get("stock")) || 1)); // TR-binlik ("1.500"→1500, Number 1.5 yapardı)
       // ÇOKLU GÖRSEL: gorsel_url'de | (veya boşlukla ayrılmış birden çok http) → galeri.
@@ -414,7 +455,9 @@ function BulkUploadInner() {
         if (get("province") && !prov) errors.push(`${translateCopy("İl eşleşmedi", language)}: "${get("province")}"`);
       }
       // Komisyon yalnız ortak satış AÇIK/ONAYLI iken anlamlı; normal ilanda (none) atlanır.
-      if (partnershipMode !== "none" && (commission <= 0 || commission > 90)) errors.push(translateCopy("Komisyon 1–90 arası olmalı", language));
+      if (partnershipMode !== "none" && !(commission > 0 && commission <= 90)) errors.push(translateCopy("Komisyon 1–90 arası bir sayı olmalı (örn. 15 ya da 12,5)", language));
+      // Görsel sütunu tam bağlantı ister; "resim.jpg" gibi dosya adı yayın sırasında değil ÖNİZLEMEDE hata versin.
+      if (rawImageItems.some((item) => !/^https?:\/\//i.test(item))) errors.push(translateCopy("gorsel_url tam bağlantı olmalı (https:// ile başlamalı).", language));
       if (rawImageItems.length > MAX_IMAGES) errors.push(translateCopy(`İlan başına en fazla ${MAX_IMAGES} görsel eklenebilir. Fazla görselleri kaldır.`, language));
       // Görsel sütunu YALNIZ fotoğraf kabul eder. Video bağlantısı ilk sıradaysa KAPAK oluyor (kartlarda kırık
       // görsel), sonraki sıralarda ise 30 sn / 25 MB sınırı ve video kovası dışından "ilan videosu" sayılıyordu.
@@ -426,7 +469,7 @@ function BulkUploadInner() {
       const titleKey = title.toLocaleLowerCase("tr-TR").trim();
       if (!sku && titleKey && seenTitles.has(titleKey)) errors.push(translateCopy("Bu başlık partide zaten var (mükerrer)", language));
       else if (!sku && titleKey) seenTitles.add(titleKey);
-      return { raw: {}, sku, existingId: existing?.id, mode, title, description, price, category, categoryRaw, categoryChange, categoryPathIgnored, provinceId: prov?.id, districtId, provinceName: prov?.name, commission, partnershipMode, stock, image, images, attrs, recognizedAttrs, errors };
+      return { raw: {}, commissionGiven, stockGiven, sku, existingId: existing?.id, mode, title, originalTitle, description, price, category, categoryRaw, categoryChange, categoryPathIgnored, provinceId: prov?.id, districtId, provinceName: prov?.name, commission, partnershipMode, stock, image, images, attrs, recognizedAttrs, errors };
     });
     setRows(parsed);
   };
@@ -556,6 +599,9 @@ function BulkUploadInner() {
     let pausedCount = 0;
     const failures: Array<{ row: number; title: string; reason: string }> = [];
     const touchedIds = new Set<string>(); // dosyada geçen mevcut ilan id'leri (pasife-al senkronu için)
+    const doneRows = new Set<ParsedRow>(); // başarıyla yazılan satırlar (yeniden denemede tekrar gönderilmesin)
+    let rateLimited = false;
+    let attempted = 0;
     for (let i = 0; i < validRows.length; i++) {
       const r = validRows[i];
       try {
@@ -573,8 +619,8 @@ function BulkUploadInner() {
             title: r.title || undefined,
             description: r.description || undefined,
             price: r.price,
-            commissionValue: r.commission,
-            stockCount: r.stock,
+            commissionValue: r.commissionGiven ? r.commission : undefined,
+            stockCount: r.stockGiven ? r.stock : undefined,
             location,
             provinceId: r.provinceId,
             districtId: r.districtId,
@@ -633,16 +679,20 @@ function BulkUploadInner() {
           }, "pending_review"); // TOPLU: yayından önce admin onayı
           created++;
         }
+        doneRows.add(r);
       } catch (e) {
         // TEK bir hatalı satır tüm partiyi durdurmasın: hatayı topla, devam et.
-        failures.push({ row: i + 1, title: r.title, reason: e instanceof Error ? e.message : translateCopy("bilinmeyen hata", language) });
+        const reason = e instanceof Error ? e.message : translateCopy("bilinmeyen hata", language);
+        // SAATLİK SINIR: kalan her satır da aynı nedenle reddedilir → istek yağdırma, burada dur.
+        if (isRateLimitError(reason)) { rateLimited = true; attempted = i; break; }
+        failures.push({ row: i + 1, title: r.title, reason });
       } finally {
         setProgress({ done: i + 1, total: validRows.length });
       }
     }
     // TAM-KATALOG SENKRONU (opsiyonel): dosyada OLMAYAN, SKU'lu AKTİF ilanları pasife al.
     // Yalnız hatasız partide çalışır (yarım dosyayla yanlışlıkla ilan gizlenmesin).
-    if (deactivateMissing && failures.length === 0) {
+    if (deactivateMissing && failures.length === 0 && !rateLimited) {
       const toPause: string[] = [];
       // XML akışı partilere bölündüğü için "dosyada yok" kararı PARTİYE değil AKIŞIN TAMAMINA göre verilir
       // (yoksa sonraki partilerdeki ilanlar pasife alınırdı). Stokta olmayan ürünler akış kodlarında yoktur → pasife alınır.
@@ -659,6 +709,14 @@ function BulkUploadInner() {
     // Eşleşme haritasını tazele: yazılan kategori/SKU'lar sonraki önizlemede "mevcut" olarak görünsün
     // (yoksa aynı dosya yeniden ayrıştırılınca tamamlanmış kategori değişiklikleri tekrar "değişecek" görünür).
     if (created || updated) void loadSkus();
+    // YENİDEN DENEME GÜVENLİĞİ: başarıyla yazılan satırlar önizlemeden çıkar. Eskiden kısmi başarıdan sonra
+    // düğmeye yeniden basmak harici kodu olmayan ilanları İKİNCİ KEZ açıyordu.
+    if (rateLimited || failures.length > 0) setRows((prev) => (prev ? prev.filter((row) => !doneRows.has(row)) : prev));
+    if (rateLimited) {
+      const remaining = validRows.length - attempted;
+      setNotice(`${created + updated} ${translateCopy("ilan yüklendi. Saatlik ilan sınırına ulaşıldı;", language)} ${remaining} ${translateCopy("satır yüklenmedi ve önizlemede bekliyor. Yaklaşık bir saat sonra aynı düğmeye yeniden bas; yüklenenler tekrar gönderilmez.", language)}`);
+      return;
+    }
     if (failures.length === 0) {
       const parts: string[] = [];
       if (created) parts.push(`${created} ${translateCopy("yeni ilan onaya gönderildi", language)}`);
@@ -850,6 +908,14 @@ function BulkUploadInner() {
               </Pressable>
             </View>
           </View>
+          <Pressable onPress={() => setShortenTitles((v) => !v)} accessibilityRole="switch" accessibilityState={{ checked: shortenTitles }} accessibilityLabel={translateCopy("Uzun başlıkları kısalt", language)} style={{ alignItems: "flex-start", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 10, padding: 12 }}>
+            <MaterialCommunityIcons name={shortenTitles ? "checkbox-marked" : "checkbox-blank-outline"} size={20} color={shortenTitles ? colors.primaryDark : colors.muted} style={{ marginTop: 1 }} />
+            <View style={{ flex: 1, gap: 2 }}>
+              <Text style={{ color: colors.ink, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("70 karakterden uzun başlıkları kelime sınırında kısalt", language)}</Text>
+              <Text style={{ color: colors.muted, fontSize: 11, fontWeight: "600", lineHeight: 15 }}>{translateCopy("İşaretlemezsen uzun başlıklı satırlar hata verir ve yüklenmez. İşaretlersen başlık son tam kelimede kesilir; önizlemede özgün başlığı da görürsün.", language)}</Text>
+            </View>
+          </Pressable>
+          <Text style={{ color: colors.subtle, fontSize: 11, fontWeight: "600", lineHeight: 15 }}>{translateCopy("Komisyon sütunu boş olan satırlara %10 uygulanır. Bir saatte en çok 2.000 yeni ilan yüklenebilir; sınıra ulaşılırsa kalan satırlar önizlemede bekler.", language)}</Text>
           <Pressable onPress={() => parse()} style={{ alignItems: "center", alignSelf: "flex-start", backgroundColor: colors.primary, borderRadius: 11, flexDirection: "row", gap: 7, paddingHorizontal: 20, paddingVertical: 12 }}>
             <MaterialCommunityIcons name="table-check" size={17} color="#FFFFFF" />
             <Text style={{ color: "#FFFFFF", fontSize: 13.5, fontWeight: "900" }}>{translateCopy("Ayrıştır ve önizle", language)}</Text>
@@ -949,9 +1015,10 @@ function BulkUploadInner() {
                         <Text style={{ color: colors.ink, fontSize: 12, fontWeight: "700", width: 84 }}>{r.price ? `₺${r.price.toLocaleString("tr-TR")}` : "—"}</Text>
                         <Text numberOfLines={1} style={{ color: r.category ? colors.ink : (isUpdate ? colors.muted : colors.accent), fontSize: 12, fontWeight: "700", width: 130 }}>{r.category?.node.label ?? (r.categoryRaw || "—")}</Text>
                         <Text numberOfLines={1} style={{ color: r.provinceName ? colors.ink : (isUpdate ? colors.muted : colors.accent), fontSize: 12, fontWeight: "700", width: 78 }}>{r.provinceName ?? "—"}</Text>
-                        <Text style={{ color: colors.ink, fontSize: 12, fontWeight: "700", width: 40 }}>%{r.commission}</Text>
+                        <Text style={{ color: Number.isFinite(r.commission) ? colors.ink : colors.accent, fontSize: 12, fontWeight: "700", width: 40 }}>{isUpdate && !r.commissionGiven ? translateCopy("aynı", language) : Number.isFinite(r.commission) ? `%${String(r.commission).replace(".", ",")}` : "—"}</Text>
                       </View>
                       {!okRow ? <Text style={{ color: colors.accent, fontSize: 11, fontWeight: "700", marginLeft: 34 }}>{r.errors.join(" · ")}</Text> : null}
+                      {r.originalTitle ? <Text style={{ color: colors.muted, fontSize: 11, fontWeight: "600", lineHeight: 15, marginLeft: 34 }}>{translateCopy("Başlık kısaltıldı. Özgün başlık", language)}: {r.originalTitle}</Text> : null}
                       {/* EŞLEŞEN TAM YOL: sütunda yalnız yaprak adı vardı ("Satılık", "Diğer") → satıcı ilanın
                           hangi dala gideceğini yayından önce göremiyordu. */}
                       {r.category && r.mode === "new" ? (

@@ -38,7 +38,7 @@ const FAQ: Array<{ q: string; a: string }> = [
   { q: "XML bağlantısı verip otomatik güncelleme yapılabiliyor mu?", a: "Şu an hayır. Dosyayı kendin yüklersin; aynı ürün koduyla tekrar yüklediğinde ilanlar güncellenir. Belirli aralıklarla otomatik çekme ve API bağlantısı henüz yoktur." },
   { q: "Ödeme ve kargoyu OrtakSat mı yapıyor?", a: "Hayır. OrtakSat bir ilan ve eşleşme platformudur; para tutmaz, kargo yapmaz. Ödeme ve teslimat seninle alıcı arasında, komisyon ödemesi seninle ortak arasında gerçekleşir." },
   { q: "Komisyonu kim, ne zaman öder?", a: "Komisyonu sen belirlersin ve yalnız satış gerçekleştiğinde, anlaştığınız kanaldan doğrudan ortağa ödersin. Platform komisyondan pay almaz." },
-  { q: "Bir seferde kaç ürün yükleyebilirim?", a: "Bir XML dosyasında 20.000 ürüne kadar okunur; ürünler 200'lük partiler halinde önizlenip yüklenir. Yeni toplu ilanlar yayına girmeden önce incelemeden geçer." },
+  { q: "Bir seferde kaç ürün yükleyebilirim?", a: "Bir XML dosyasında 20.000 ürüne kadar okunur; ürünler 200'lük partiler halinde önizlenip yüklenir. Bir saatte en çok 2.000 yeni ilan eklenebilir; sınıra ulaşılırsa kalan ürünler bekler ve bir saat sonra kaldığı yerden devam edilir. Yeni toplu ilanlar yayına girmeden önce incelemeden geçer." },
   { q: "Ürünlerim hangi şehirde görünür?", a: "XML akışlarında şehir bilgisi bulunmadığı için yüklerken bir varsayılan il (ve istersen ilçe) seçersin. CSV dosyasında her ürüne ayrı il yazabilirsin." }
 ];
 

@@ -55,6 +55,7 @@ import {
   updateFavoriteCollection,
   insertLead,
   insertListing,
+  insertListingResult,
   insertConversation,
   insertMessageResult,
   messageSendBlockedReason,
@@ -2048,8 +2049,20 @@ export function StoreProvider({ children }: PropsWithChildren) {
           createdAt: today()
         };
         if (liveUser) {
-          const ok = await insertListing(listing);
-          if (!ok) { setAuthError("İlan kaydedilemedi. Taslağın korundu; tekrar deneyebilirsin."); throw new Error("Listing persistence failed"); }
+          const saved = await insertListingResult(listing);
+          if (!saved.ok) {
+            // Sunucunun ret nedeni kullanıcıya AYNEN gösterilir (hız sınırı, yasaklı içerik); eskiden her durumda
+            // "İlan kaydedilemedi" deniyor, toplu yüklemede satır nedeni İngilizce "Listing persistence failed" çıkıyordu.
+            const message = saved.code === "P0001" && saved.message
+              ? saved.message
+              : saved.code === "23505"
+                ? "Bu harici kod (SKU) ile zaten bir ilanın var."
+                : "İlan kaydedilemedi. Taslağın korundu; tekrar deneyebilirsin.";
+            setAuthError(message);
+            const failure = new Error(message) as Error & { code?: string };
+            failure.code = saved.code;
+            throw failure;
+          }
           void logActivity("listing_create", { userId: currentUser.id, entityType: "listing", entityId: listing.id, metadata: { status: listing.status, category: listing.category } });
         }
         setAuthError(undefined);
