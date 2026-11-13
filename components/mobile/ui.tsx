@@ -56,7 +56,10 @@ export function fitPillText(candidates: string[], budget: number, fontSize = 10)
 
 export function MobileScreen({ children, title, right, bottom, scroll = true, back = true, contentStyle, onBack, footer, headerShown = false, keyboardBehavior, refreshControl, onEndReached }: { children: ReactNode; title?: string; right?: ReactNode; bottom?: ReactNode; scroll?: boolean; back?: boolean; contentStyle?: StyleProp<ViewStyle>; onBack?: () => void; footer?: ReactNode; headerShown?: boolean; keyboardBehavior?: "height" | "padding" | "position"; /** Aşağı çekerek yenileme (yalnız scroll=true). */ refreshControl?: ReactElement<RefreshControlProps>; /** İçeriğin sonuna ~600 dp kala çağrılır (sonsuz kaydırma); çağıran kendi kilidini tutar. */ onEndReached?: () => void }) {
   const { insets, maxWidth } = useMobileLayout();
-  return <KeyboardAvoidingView behavior={keyboardBehavior ?? (Platform.OS === "ios" ? "padding" : undefined)} style={ms.screen}>
+  // KLAVYE: Android'de de "padding". Kenardan kenara düzende (Android 15+, SDK 58) sistem pencereyi klavye için
+  // KÜÇÜLTMÜYOR; davranış verilmeyince alttaki giriş alanı klavyenin ALTINDA kalıyordu — sohbette yazılan metin
+  // ve Gönder düğmesi görünmüyordu (2026-11-13, emülatörde görüldü). Giriş ekranı aynı nedenle zaten "padding".
+  return <KeyboardAvoidingView behavior={keyboardBehavior ?? (Platform.OS === "web" ? undefined : "padding")} style={ms.screen}>
     <Stack.Screen options={{ headerShown }} />
     {title ? <View style={{ paddingTop: insets.top, backgroundColor: mobile.canvas }}><MobileHeader title={title} right={right} back={back} onBack={onBack} /></View> : null}
     {scroll ? <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} refreshControl={refreshControl} scrollEventThrottle={onEndReached ? 120 : undefined} onScroll={onEndReached ? (event) => { const n = event.nativeEvent; if (n.contentOffset.y + n.layoutMeasurement.height > n.contentSize.height - 600) onEndReached(); } : undefined} contentContainerStyle={[{ flexGrow: 1, width: "100%", maxWidth, alignSelf: "center", paddingHorizontal: 16, paddingBottom: 0, paddingTop: title ? 4 : insets.top }, contentStyle]}>{children}{footer ?? <CompactFooter />}</ScrollView> : <View style={[{ flex: 1, width: "100%", maxWidth, alignSelf: "center" }, contentStyle]}>{children}</View>}
