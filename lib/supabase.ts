@@ -250,6 +250,8 @@ function fetchWithTimeout(input: RequestInfo | URL, init?: RequestInit): Promise
   // veri/auth sorgularına uygulanır (sonsuz-spinner koruması yalnız orada gerekli).
   const u = reqUrl(input);
   if (u.includes("/storage/v1/")) return fetch(input, init);
+  // XML bağlantısı işlevleri karşı siteden dosya indirir (kendi 25 sn sınırı var) → 15 sn'lik kesme uygulanmaz.
+  if (u.includes("/functions/v1/feed-")) return fetch(input, init);
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), REQUEST_TIMEOUT_MS);
   const outer = init?.signal;

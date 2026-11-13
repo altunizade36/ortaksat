@@ -14,28 +14,28 @@ import { openUrlSafe } from "@/lib/link";
 
 type IconName = keyof typeof MaterialCommunityIcons.glyphMap;
 
-// Bu sayfadaki her madde ÇALIŞAN bir özelliği anlatır (toplu ilan ekranı, ürün kodu eşleştirme,
-// ortaklık modları, satıcı paneli). Olmayan bir şeyi (API, otomatik zamanlanmış çekme, ödeme
-// altyapısı) vaat etme; SSS'de açıkça "yok" denir.
+// Bu sayfadaki her madde ÇALIŞAN ve uçtan uca denenmiş bir özelliği anlatır (toplu ilan ekranı, XML bağlantısı,
+// otomatik fiyat/stok eşitleme, ortaklık türleri, satıcı paneli). Olmayan bir şeyi (API, yeni ürünlerin
+// kendiliğinden ilana dönüşmesi, ödeme altyapısı) vaat etme; SSS'de açıkça "yok" denir.
 const FEATURES: Array<{ icon: IconName; t: string; b: string }> = [
-  { icon: "xml", t: "XML ve CSV ile toplu yükleme", b: "E-ticaret sitenin ürün XML'ini ya da bir CSV dosyasını yükle; ürün adı, kodu, fiyatı, stoğu, kategorisi, markası ve görselleri otomatik tanınır." },
-  { icon: "sync", t: "Ürün koduyla fiyat ve stok güncelleme", b: "Aynı dosyayı tekrar yüklediğinde ürün kodu eşleşen ilanlar güncellenir, yenisi açılmaz. İstersen dosyada olmayan ilanlar pasife alınır." },
+  { icon: "xml", t: "XML ve CSV ile toplu yükleme", b: "E-ticaret sitenin ürün XML bağlantısını yapıştır ya da XML / CSV dosyanı yükle; ürün adı, kodu, fiyatı, stoğu, kategorisi, markası ve görselleri otomatik tanınır." },
+  { icon: "sync", t: "Otomatik fiyat ve stok eşitleme", b: "XML bağlantını kaydedersen fiyat ve stoklar seçtiğin aralıkla (1–24 saat) kendiliğinden güncellenir. Stokta kalmayan ürünün ilanı pasife alınır, yeniden stoğa girince geri açılır." },
   { icon: "account-group", t: "Komisyonla çalışan satış ağı", b: "Ortaklar ürünlerini kendi çevresine ve takipçilerine tanıtır. Komisyonu sen belirlersin; ödemeyi yalnız satış gerçekleşince, doğrudan ortağa yaparsın." },
-  { icon: "tune", t: "Ürün bazında kontrol", b: "Her üründe komisyon oranını ve ortaklık türünü seçersin: herkese açık, onayına bağlı ya da ortaksız normal ilan." },
+  { icon: "tune", t: "Ürün bazında kontrol", b: "Komisyonu ve ortaklık türünü (onayına bağlı, herkese açık ya da ortaksız) yüklerken topluca seçer, CSV'de satır satır belirler, sonra her ilanda ayrı ayrı değiştirebilirsin." },
   { icon: "chart-line", t: "Satıcı paneli", b: "Hangi ilana kaç ortak katıldı, kaç talep ve satış geldi; panelinden takip eder, kayıtları dışa aktarırsın." },
   { icon: "cash-remove", t: "Ücretsiz", b: "İlan vermek, toplu yüklemek ve ortak toplamak ücretsizdir. Üyelik ücreti ya da aidat yoktur." }
 ];
 
 const STEPS: Array<{ icon: IconName; t: string; b: string }> = [
   { icon: "account-plus-outline", t: "1. Hesabını aç", b: "E-posta adresinle ücretsiz hesap oluştur." },
-  { icon: "file-upload-outline", t: "2. Kataloğunu yükle", b: "Toplu ilan ekranında XML ya da CSV dosyanı seç; varsayılan ili ve komisyonu belirle." },
+  { icon: "file-upload-outline", t: "2. Kataloğunu yükle", b: "Toplu ilan ekranında XML bağlantını yapıştır ya da dosyanı seç; varsayılan ili ve komisyonu belirle." },
   { icon: "table-check", t: "3. Önizle ve gönder", b: "Her satırın kategorisini, fiyatını ve hatalarını yayından önce görürsün." },
   { icon: "share-variant-outline", t: "4. Ortaklar tanıtsın", b: "İlanların yayına girer; ortaklar başvurur ve ürünlerini paylaşmaya başlar." }
 ];
 
 const FAQ: Array<{ q: string; a: string }> = [
   { q: "Hangi XML biçimleri destekleniyor?", a: "Her üründe bir ad ve bir fiyat etiketi bulunan ürün XML'leri okunur. Türkçe ve İngilizce yaygın etiket adları (UrunAdi, StokKodu, Fiyat, Kategori, Resim; title, price, image_link vb.) ile Google Merchant ürün akışı tanınır. Tanınmayan bir alan olursa önizlemede görürsün; destek ekibine örnek dosya gönderebilirsin." },
-  { q: "XML bağlantısı verip otomatik güncelleme yapılabiliyor mu?", a: "Şu an hayır. Dosyayı kendin yüklersin; aynı ürün koduyla tekrar yüklediğinde ilanlar güncellenir. Belirli aralıklarla otomatik çekme ve API bağlantısı henüz yoktur." },
+  { q: "XML bağlantısı verip otomatik güncelleme yapılabiliyor mu?", a: "Evet. Toplu ilan ekranında XML bağlantını kaydedersin; ürün kodu eşleşen ilanlarının fiyatı ve stoğu 1, 3, 6, 12 ya da 24 saatte bir kendiliğinden güncellenir. Stokta kalmayan ürünün ilanı pasife alınır, yeniden stoğa girince geri açılır. Yeni ürünler için ilan kendiliğinden açılmaz: onları aynı ekranda önizleyip içe aktarırsın. API bağlantısı henüz yoktur." },
   { q: "Ödeme ve kargoyu OrtakSat mı yapıyor?", a: "Hayır. OrtakSat bir ilan ve eşleşme platformudur; para tutmaz, kargo yapmaz. Ödeme ve teslimat seninle alıcı arasında, komisyon ödemesi seninle ortak arasında gerçekleşir." },
   { q: "Komisyonu kim, ne zaman öder?", a: "Komisyonu sen belirlersin ve yalnız satış gerçekleştiğinde, anlaştığınız kanaldan doğrudan ortağa ödersin. Platform komisyondan pay almaz." },
   { q: "Bir seferde kaç ürün yükleyebilirim?", a: "Bir XML dosyasında 20.000 ürüne kadar okunur; ürünler 200'lük partiler halinde önizlenip yüklenir. Bir saatte en çok 2.000 yeni ilan eklenebilir; sınıra ulaşılırsa kalan ürünler bekler ve bir saat sonra kaldığı yerden devam edilir. Yeni toplu ilanlar yayına girmeden önce incelemeden geçer." },

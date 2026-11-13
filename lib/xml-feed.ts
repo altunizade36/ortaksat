@@ -26,6 +26,8 @@ export type FeedTable = {
   foreignCurrency: number;
   /** Akışın tamamındaki ürün kodları (stokta olmayanlar HARİÇ) — tam katalog eşitlemesi için. */
   skus: string[];
+  /** Stokta olmadığı için alınmayan ürünlerin kodları — otomatik eşitleme bu ilanları pasife alır. */
+  outOfStockSkus: string[];
 };
 
 const MAX_FEED_CHARS = 25_000_000;
@@ -391,13 +393,14 @@ export function parseXmlFeed(text: string): FeedTable {
 
   const rows: string[][] = [];
   const skus: string[] = [];
+  const outOfStockSkus: string[] = [];
   let outOfStock = 0;
   let foreignCurrency = 0;
   for (const item of found.items) {
     const entries = flattenItem(item);
     const stock = stockOf(entries);
-    if (stock === 0) { outOfStock++; continue; }
     const sku = pick(entries, SKU_KEYS).slice(0, 120);
+    if (stock === 0) { outOfStock++; if (sku) outOfStockSkus.push(sku); continue; }
     const priceRaw = pick(entries, PRICE_KEYS, (v) => parseFeedNumber(v) > 0);
     const currency = pick(entries, CURRENCY_KEYS).trim();
     const foreign = FOREIGN_RE.test(priceRaw) || (currency !== "" && !TRY_RE.test(currency) && FOREIGN_RE.test(currency));
@@ -419,5 +422,5 @@ export function parseXmlFeed(text: string): FeedTable {
       decodeEntities(pick(entries, BRAND_KEYS)).trim()
     ]);
   }
-  return { headers: [...FEED_HEADERS], rows, total: found.items.length, itemTag: found.tag, outOfStock, foreignCurrency, skus };
+  return { headers: [...FEED_HEADERS], rows, total: found.items.length, itemTag: found.tag, outOfStock, foreignCurrency, skus, outOfStockSkus };
 }
