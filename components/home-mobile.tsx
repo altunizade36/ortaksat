@@ -128,7 +128,8 @@ export function HomeMobile() {
           {featuredPartners.map((p) => <Pressable key={p.partnerId} accessibilityRole="button" accessibilityLabel={`${p.fullName} ortak vitrini`} onPress={() => router.push(`/ortak/${p.partnerId}` as never)} style={{ alignItems: "center", backgroundColor: "white", borderColor: mobile.line, borderRadius: 14, borderWidth: 1, gap: 5, padding: 12, width: 128 }}>
             <UserAvatar uri={p.avatarUrl} name={p.fullName} size={50} />
             <Text numberOfLines={1} style={{ color: mobile.ink, fontSize: 12.5, fontWeight: "800", maxWidth: 108 }}>{p.fullName}</Text>
-            <Text style={{ backgroundColor: mobile.tealSoft, borderRadius: 999, color: mobile.darkTeal, fontSize: 10, fontWeight: "800", overflow: "hidden", paddingHorizontal: 8, paddingVertical: 2 }}>{p.confirmedSales} {tr("satış")}</Text>
+            {/* Satışı olmayan ortakta "0 satış" yazılmaz (kötü izlenim); yerine nötr "Ortak" etiketi. */}
+            <Text style={{ backgroundColor: mobile.tealSoft, borderRadius: 999, color: mobile.darkTeal, fontSize: 10, fontWeight: "800", overflow: "hidden", paddingHorizontal: 8, paddingVertical: 2 }}>{p.confirmedSales > 0 ? `${p.confirmedSales} ${tr("satış")}` : tr("Ortak")}</Text>
           </Pressable>)}
         </ScrollView>
       </>}
