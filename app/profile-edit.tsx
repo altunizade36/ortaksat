@@ -20,7 +20,6 @@ import { translateCopy, useLanguage } from "@/lib/i18n";
 import { useIsWideWeb, useMounted } from "@/lib/layout";
 import { ScreenSkeleton } from "@/components/screen-skeleton";
 import { changePasswordLive, uploadProfileAvatar, uploadProfileCover } from "@/lib/live-service";
-import { AvatarPresetPicker } from "@/components/avatar-preset-picker";
 import { CoverField } from "@/components/cover-field";
 import { actionLabel, fetchLoginHistory, type LoginEvent } from "@/lib/security-history";
 import { useStore } from "@/lib/use-store";
@@ -356,7 +355,6 @@ function ProfileEditScreenInner() {
                     <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600" }}>{translateCopy("JPG veya PNG, en fazla 5MB.", language)}</Text>
                   </View>
                 </View>
-                <AvatarPresetPicker value={avatar.trim()} onSelect={setAvatar} disabled={saving} />
                 <View style={{ gap: 8 }}>
                   <Text style={{ color: colors.ink, fontSize: 14, fontWeight: "900" }}>{translateCopy("Kapak görseli", language)}</Text>
                   <View style={{ maxWidth: 620 }}><CoverField value={cover} onChange={setCover} disabled={saving} /></View>
@@ -536,7 +534,6 @@ function ProfileEditScreenInner() {
             </View>
           </View>
           <PrimaryButton icon="image-plus" tone="secondary" onPress={() => void pickAvatar()}>{translateCopy("Galeriden fotoğraf seç", language)}</PrimaryButton>
-          <AvatarPresetPicker value={avatar.trim()} onSelect={setAvatar} disabled={saving} size={46} />
           <View style={{ gap: 8 }}>
             <Text style={{ color: colors.ink, fontSize: 14, fontWeight: "900" }}>{translateCopy("Kapak görseli", language)}</Text>
             <CoverField value={cover} onChange={setCover} disabled={saving} />

@@ -19,6 +19,7 @@ import { fetchRatingStats, type RatingStats } from "@/lib/reviews";
 import { OptionSheet } from "@/components/option-sheet";
 import { useStore } from "@/lib/use-store";
 import { supabase } from "@/lib/supabase";
+import { STORE_RANK_COLUMN } from "@/lib/store-order";
 import {
   fetchPublicSeller,
   mapListing,
@@ -44,6 +45,10 @@ import {
   useMobileLayout,
 } from "./ui";
 
+// Varsayılan sıralama = SATICININ BELİRLEDİĞİ MAĞAZA SIRASI (İlanlarım › Mağaza Sırası; bkz. lib/store-order.ts).
+// Sırası olmayan (yeni eklenen) ilan en başta, sonra satıcının sırası; hiç sıralama yapılmamışsa en yeni önce.
+const STORE_ORDER_SORT = "Mağaza sırası";
+
 export function MobileSellerStore({ id }: { id: string }) {
   const store = useStore(),
     router = useRouter(),
@@ -52,12 +57,13 @@ export function MobileSellerStore({ id }: { id: string }) {
     [tab, setTab] = useState("İlanlar"),
     [query, setQuery] = useState(""),
     [search, setSearch] = useState(""),
-    [sort, setSort] = useState("En yeni"),
+    [sort, setSort] = useState(STORE_ORDER_SORT),
     [openOnly, setOpenOnly] = useState(false),
     [menu, setMenu] = useState(false),
     [reviewType, setReviewType] = useState("Tümü");
   const [listings, setListings] = useState<Listing[]>([]),
     [total, setTotal] = useState(0),
+    [allTotal, setAllTotal] = useState<number | null>(null),
     [reviews, setReviews] = useState<Review[]>([]),
     [reviewTotal, setReviewTotal] = useState(0),
     [reviewLoaded, setReviewLoaded] = useState(false),
@@ -139,10 +145,15 @@ export function MobileSellerStore({ id }: { id: string }) {
       );
     if (openOnly)
       request = request.in("partnership_mode", ["open", "approval"]);
-    request = request
-      .order(sort === "En yeni" ? "created_at" : "price", {
-        ascending: sort === "Fiyat: düşükten yükseğe",
-      })
+    request = (
+      sort === STORE_ORDER_SORT
+        ? request
+            .order(STORE_RANK_COLUMN, { ascending: true, nullsFirst: true })
+            .order("created_at", { ascending: false })
+        : request.order(sort === "En yeni" ? "created_at" : "price", {
+            ascending: sort === "Fiyat: düşükten yükseğe",
+          })
+    )
       .order("id")
       .range(0, 23);
     void Promise.resolve(request)
@@ -154,6 +165,7 @@ export function MobileSellerStore({ id }: { id: string }) {
         }
         setListings((result.data as PublicListingCardRow[]).map(mapListing));
         setTotal(result.count || 0);
+        if (!category && !search && !openOnly) setAllTotal(result.count || 0);
       })
       .finally(() => {
         if (n === revision.current) setLoading(false);
@@ -181,10 +193,15 @@ export function MobileSellerStore({ id }: { id: string }) {
         );
       if (openOnly)
         request = request.in("partnership_mode", ["open", "approval"]);
-      const { data, error } = await request
-        .order(sort === "En yeni" ? "created_at" : "price", {
-          ascending: sort === "Fiyat: düşükten yükseğe",
-        })
+      const { data, error } = await (
+        sort === STORE_ORDER_SORT
+          ? request
+              .order(STORE_RANK_COLUMN, { ascending: true, nullsFirst: true })
+              .order("created_at", { ascending: false })
+          : request.order(sort === "En yeni" ? "created_at" : "price", {
+              ascending: sort === "Fiyat: düşükten yükseğe",
+            })
+      )
         .order("id")
         .range(listings.length, listings.length + 23);
       if (error) throw error;
@@ -369,7 +386,7 @@ export function MobileSellerStore({ id }: { id: string }) {
     );
   return (
     <MobileScreen
-      title="Satıcı Mağazası"
+      title={own ? "Mağazam" : "Satıcı Mağazası"}
       contentStyle={[{ paddingHorizontal: 0 }, wide && { maxWidth: pageWidth }]}
       right={
         <View style={ms.row}>
@@ -410,7 +427,7 @@ export function MobileSellerStore({ id }: { id: string }) {
           <View
             style={{ borderWidth: 3, borderColor: "white", borderRadius: 50 }}
           >
-            <UserAvatar uri={seller.avatar} size={83} />
+            <UserAvatar uri={seller.avatar} name={seller.name} size={83} />
           </View>
           <View style={{ flex: 1, paddingTop: 38, gap: 5 }}>
             <Text
@@ -431,24 +448,74 @@ export function MobileSellerStore({ id }: { id: string }) {
             )}
           </View>
         </View>
-        <View style={[ms.row, { marginVertical: 13, flexWrap: "wrap" }]}>
-          <MobileChip
-            label={
-              seller.rating > 0
-                ? `★ ${seller.rating.toFixed(1)}`
-                : "Henüz puan yok"
-            }
-            onPress={() => setTab("Değerlendirmeler")}
-          />
-          <Text style={ms.muted}>
-            {store.findUser(id)?.followerCount ?? seller.followerCount} takipçi
-          </Text>
-          {seller.verifiedIdentity && (
-            <Text style={{ color: mobile.teal, fontSize: 12 }}>
-              Kimliği doğrulanmış
-            </Text>
-          )}
+        {/* Mağaza özeti: puan · takipçi · ilan · satış. Tek satır, eşit sütun; puana dokununca değerlendirmeler açılır. */}
+        <View
+          style={[
+            {
+              flexDirection: "row",
+              backgroundColor: "white",
+              borderWidth: 1,
+              borderColor: mobile.line,
+              borderRadius: 13,
+              paddingVertical: 10,
+              marginVertical: 13,
+            },
+            narrowBlock,
+          ]}
+        >
+          {(
+            [
+              [seller.rating > 0 ? `★ ${seller.rating.toFixed(1)}` : "Yeni", "Puan", () => setTab("Değerlendirmeler")],
+              [String(store.findUser(id)?.followerCount ?? seller.followerCount ?? 0), "Takipçi", undefined],
+              [allTotal === null ? "…" : String(allTotal), "İlan", () => setTab("İlanlar")],
+              [String(seller.successfulSales || 0), "Satış", undefined],
+            ] as [string, string, (() => void) | undefined][]
+          ).map(([value, label, onPress], index) => (
+            <Pressable
+              key={label}
+              accessibilityRole={onPress ? "button" : undefined}
+              accessibilityLabel={`${label}: ${value}`}
+              disabled={!onPress}
+              onPress={onPress}
+              style={{
+                flex: 1,
+                alignItems: "center",
+                gap: 2,
+                borderLeftWidth: index ? 1 : 0,
+                borderColor: mobile.line,
+              }}
+            >
+              <Text style={{ color: mobile.ink, fontSize: 16, fontWeight: "800" }}>
+                {value}
+              </Text>
+              <Text style={{ color: mobile.muted, fontSize: 11 }}>{label}</Text>
+            </Pressable>
+          ))}
         </View>
+        {seller.verifiedIdentity && (
+          <Text style={{ color: mobile.teal, fontSize: 12, marginBottom: 10 }}>
+            Kimliği doğrulanmış satıcı
+          </Text>
+        )}
+        {own && (
+          <View style={[ms.row, { marginBottom: 14 }, narrowBlock]}>
+            <MobileButton
+              icon="format-list-bulleted"
+              style={{ flex: 1 }}
+              onPress={() => router.push("/seller" as never)}
+            >
+              İlanları Yönet
+            </MobileButton>
+            <MobileButton
+              secondary
+              icon="pencil"
+              style={{ flex: 1 }}
+              onPress={() => router.push("/profile-edit" as never)}
+            >
+              Mağazayı Düzenle
+            </MobileButton>
+          </View>
+        )}
         {!own && (
           <View style={[ms.row, { marginBottom: 14 }, narrowBlock]}>
             <MobileButton
@@ -564,6 +631,7 @@ export function MobileSellerStore({ id }: { id: string }) {
               <MobileSelect
                 value={sort}
                 options={[
+                  STORE_ORDER_SORT,
                   "En yeni",
                   "Fiyat: düşükten yükseğe",
                   "Fiyat: yüksekten düşüğe",

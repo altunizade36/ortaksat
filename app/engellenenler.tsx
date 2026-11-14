@@ -133,7 +133,7 @@ function BlockedUsersInner() {
               >
                 <View style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderRadius: 999, height: 44, justifyContent: "center", overflow: "hidden", width: 44 }}>
                   {row.avatar && /^https?:\/\//.test(row.avatar) ? (
-                    <UserAvatar uri={row.avatar} size={44} accessibilityLabel={row.name} />
+                    <UserAvatar uri={row.avatar} name={row.name} size={44} accessibilityLabel={row.name} />
                   ) : (
                     <MaterialCommunityIcons name="account" size={24} color={colors.muted} />
                   )}

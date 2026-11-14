@@ -466,7 +466,7 @@ function DesktopHomeScreen() {
                 {featuredPartners.map((p) => (
                   <Pressable key={p.partnerId} accessibilityRole="button" accessibilityLabel={p.fullName} onPress={() => router.push(`/ortak/${p.partnerId}`)} style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 14, borderWidth: 1, gap: 5, padding: 12, width: 132 }}>
                     <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 999, height: 50, justifyContent: "center", overflow: "hidden", width: 50 }}>
-                      <UserAvatar uri={p.avatarUrl} size={50} />
+                      <UserAvatar uri={p.avatarUrl} name={p.fullName} size={50} />
                     </View>
                     <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 12.5, fontWeight: "900", maxWidth: 112 }}>{p.fullName}</Text>
                     <View style={{ backgroundColor: colors.primarySoft, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2 }}>

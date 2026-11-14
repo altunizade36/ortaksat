@@ -514,7 +514,7 @@ export function HomeDesktop() {
               {featuredPartners.map((p) => (
                 <Pressable key={p.partnerId} onPress={() => router.push(`/ortak/${p.partnerId}`)} style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 6, padding: 14, width: 150 }}>
                   <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 999, height: 56, justifyContent: "center", overflow: "hidden", width: 56 }}>
-                    <UserAvatar uri={p.avatarUrl} style={{ height: 56, width: 56 }} />
+                    <UserAvatar uri={p.avatarUrl} name={p.fullName} size={56} />
                   </View>
                   <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 13, fontWeight: "900", maxWidth: 128 }}>{p.fullName}</Text>
                   <View style={{ alignItems: "center", flexDirection: "row", gap: 4 }}>

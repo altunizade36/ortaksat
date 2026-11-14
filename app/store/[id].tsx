@@ -1,4 +1,5 @@
 import { TrustEntry } from "@/components/trust/entry";
+import { sortByStoreOrder } from "@/lib/store-order";
 import { displayListingTitle } from "@/lib/listing-title";
 import { UserAvatar } from "@/components/user-avatar";
 import { ProfileCoverImage } from "@/components/profile-cover-image";
@@ -89,8 +90,11 @@ function StoreScreenLegacy() {
   }
   const [filter, setFilter] = useState<StoreFilter>("active");
   const [catFilter, setCatFilter] = useState<string>("all"); // mağaza-içi kategori filtresi (Trendyol)
-  const [storeSort, setStoreSort] = useState<"new" | "priceAsc" | "priceDesc">("new");
-  const [tab, setTab] = useState<ProfileTab>("about");
+  // Varsayılan: satıcının belirlediği mağaza sırası (yeni eklenen ilan en başta) — bkz. lib/store-order.ts.
+  const [storeSort, setStoreSort] = useState<"store" | "new" | "priceAsc" | "priceDesc">("store");
+  // Sekme: kullanıcı seçene kadar otomatik — ilanı olan satıcının mağazası İLANLARLA açılır (mağazaya gelen önce
+  // ürünleri görür), ilanı olmayan profil "Hakkında" ile. Bkz. aşağıda `tab`.
+  const [pickedTab, setTab] = useState<ProfileTab | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [revealedPhone, setRevealedPhone] = useState<string | null>(null);
   const [revealingPhone, setRevealingPhone] = useState(false);
@@ -157,10 +161,12 @@ function StoreScreenLegacy() {
     const arr = filteredByStatus.filter((listing) => catFilter === "all" || displayText(listing.category) === catFilter);
     if (storeSort === "priceAsc") arr.sort((a, b) => a.price - b.price);
     else if (storeSort === "priceDesc") arr.sort((a, b) => b.price - a.price);
-    else arr.sort((a, b) => b.createdAt.localeCompare(a.createdAt)); // "new"
+    else if (storeSort === "new") arr.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+    else return sortByStoreOrder(arr);
     return arr;
   }, [filteredByStatus, catFilter, storeSort]);
   const activeListings = scopedListings.filter((listing) => listing.status === "active");
+  const tab: ProfileTab = pickedTab ?? (activeListings.length > 0 ? "listings" : "about");
   const totalCommission = activeListings.reduce((sum, listing) => {
     return sum + (listing.commissionType === "rate" ? Math.round((listing.price * listing.commissionValue) / 100) : listing.commissionValue);
   }, 0);
@@ -501,6 +507,7 @@ function StoreScreenLegacy() {
                   </View>
                   {/* Mağaza-içi sıralama (Trendyol mağaza sayfasındaki gibi). */}
                   <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+                    <StoreFilterChip active={storeSort === "store"} icon="storefront-outline" label="Mağaza sırası" onPress={() => setStoreSort("store")} />
                     <StoreFilterChip active={storeSort === "new"} icon="clock-outline" label="En yeni" onPress={() => setStoreSort("new")} />
                     <StoreFilterChip active={storeSort === "priceAsc"} icon="sort-ascending" label="En düşük fiyat" onPress={() => setStoreSort("priceAsc")} />
                     <StoreFilterChip active={storeSort === "priceDesc"} icon="sort-descending" label="En yüksek fiyat" onPress={() => setStoreSort("priceDesc")} />
@@ -799,7 +806,8 @@ function StoreScreenLegacy() {
         <StoreFilterChip active={filter === "all"} icon="view-grid-outline" label="Tümü" onPress={() => setFilter("all")} />
       </View>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
-        <StoreFilterChip active={storeSort === "new"} icon="clock-outline" label="En yeni" onPress={() => setStoreSort("new")} />
+        <StoreFilterChip active={storeSort === "store"} icon="storefront-outline" label="Mağaza sırası" onPress={() => setStoreSort("store")} />
+                    <StoreFilterChip active={storeSort === "new"} icon="clock-outline" label="En yeni" onPress={() => setStoreSort("new")} />
         <StoreFilterChip active={storeSort === "priceAsc"} icon="sort-ascending" label="En düşük fiyat" onPress={() => setStoreSort("priceAsc")} />
         <StoreFilterChip active={storeSort === "priceDesc"} icon="sort-descending" label="En yüksek fiyat" onPress={() => setStoreSort("priceDesc")} />
       </ScrollView>

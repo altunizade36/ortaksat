@@ -385,6 +385,15 @@ function SellerScreenInner() {
             </PrimaryButton>
           </View>
         </View>
+        {/* Mağaza sırası: ilanların mağazada görüneceği sıra (uygulamadaki İlanlarım › Mağaza Sırası ile aynı sayfa). */}
+        <Pressable onPress={() => router.push("/magaza-sirasi")} accessibilityRole="button" style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 8, opacity: pressed ? 0.8 : 1, paddingHorizontal: 14, paddingVertical: 11 })}>
+          <MaterialCommunityIcons name="swap-vertical" size={17} color={colors.primaryDark} />
+          <View style={{ flex: 1, minWidth: 0 }}>
+            <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "900" }}>{translateCopy("Mağaza sırasını düzenle", language)}</Text>
+            <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600" }}>{translateCopy("İlanlarının mağazanda görüneceği sırayı sen belirle", language)}</Text>
+          </View>
+          <MaterialCommunityIcons name="chevron-right" size={18} color={colors.muted} />
+        </Pressable>
         {/* Toplu yükleme: çok ürünü olan satıcılar için CSV ile toplu ilan. */}
         <Pressable onPress={() => router.push("/toplu-ilan")} accessibilityRole="button" style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 8, opacity: pressed ? 0.8 : 1, paddingHorizontal: 14, paddingVertical: 11 })}>
           <MaterialCommunityIcons name="file-upload-outline" size={17} color={colors.primaryDark} />

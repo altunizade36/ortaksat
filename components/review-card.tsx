@@ -243,7 +243,7 @@ export function ReviewCard({ review, reviewerName, isSeller, authed, onPatch, on
   return (
     <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 8, padding: 14 }}>
       <View style={{ alignItems: "center", flexDirection: "row", gap: 10 }}>
-        <UserAvatar uri={review.reviewerAvatar} size={38} />
+        <UserAvatar uri={review.reviewerAvatar} name={review.reviewerName} size={38} />
         <View style={{ flex: 1, minWidth: 0 }}>
           <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 13.5, fontWeight: "800" }}>{reviewerName ?? t("Kullanıcı")}</Text>
           <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600" }}>{reviewRelativeDate(review.createdAt, language)} · {kind}</Text>

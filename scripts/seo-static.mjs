@@ -264,7 +264,7 @@ const ROUTES = {
 const NOINDEX = [
   "auth.html", "admin.html", "profile.html", "profile-edit.html", "favorites.html",
   "notifications.html", "notifications-tab.html", "earnings.html", "messages.html",
-  "menu.html", "hosgeldin.html", "seller.html", "create-action.html", "trust-action.html"
+  "menu.html", "hosgeldin.html", "seller.html", "create-action.html", "trust-action.html", "magaza-sirasi.html"
 ];
 
 function faqJsonLd() {
