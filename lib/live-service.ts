@@ -1,4 +1,5 @@
 import { validateListingTitle } from "./listing-title";
+import { showToast } from "@/lib/toast";
 import { storageBody } from "@/lib/storage-body";
 ﻿import { Platform } from "react-native";
 import { manipulateAsync, SaveFormat } from "expo-image-manipulator";
@@ -823,7 +824,12 @@ export async function partnerJoinLive(partnership: Partnership, inviteCode?: str
     p_platform_handle: partnership.platformHandle ?? "",
     p_reach: partnership.reachEstimate ?? 0
   });
-  if (error) { console.warn("Supabase partner_join RPC failed", error); return false; }
+  if (error) {
+    console.warn("Supabase partner_join RPC failed", error);
+    // Günlük başvuru sınırı (yeni üye, 10/gün): sunucunun açıklaması kullanıcıya aynen gösterilir; genel hata metni nedeni söylemiyordu.
+    if (/başvuru sınırı/i.test(error.message || "")) showToast(error.message);
+    return false;
+  }
   const row=Array.isArray(data)?data[0]:data;
   if(!row||!uuidPattern.test(row.r_id)||!["active","pending","blocked","cancelled","rejected","completed"].includes(row.r_status))return false;
   partnership.id=row.r_id;partnership.status=row.r_status;

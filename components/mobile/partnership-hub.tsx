@@ -62,6 +62,12 @@ const statusColor: Record<string, string> = {
 };
 // Ortaklık AŞAMASI rozetinin rengi (bkz. lib/partnership-stage.ts). Marka kuralı: yeşil yok → olumlu ton mavi.
 const stageColor: Record<StageTone, string> = { info: mobile.teal, progress: mobile.teal, success: mobile.darkTeal, warning: colors.goldInk, muted: mobile.muted, danger: colors.accent };
+/** "Bugün" = bugünün başlangıcı, "Bu hafta" = son 7 gün, "Bu ay" = son 30 gün (ISO). */
+function periodStart(period: string): string {
+  const now = new Date();
+  if (period === "Bugün") return new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
+  return new Date(now.getTime() - (period === "Bu hafta" ? 7 : 30) * 86400000).toISOString();
+}
 // Kısa durum etiketi — tek kaynak lib/status-labels.ts (profil ve detay ekranlarıyla aynı).
 const status: Record<string, string> = partnershipStatusLabels;
 export function MobilePartnershipHub() {
@@ -105,6 +111,8 @@ export function MobilePartnershipHub() {
     [filter, setFilter] = useState("Tümü"),
     [category, setCategory] = useState("Tümü"),
     [sort, setSort] = useState("Önerilen"),
+    // "Yüksek Komisyon" sıralamasında dönem: Tümü / Bugün / Bu hafta / Bu ay (yalnız o dönemde yayınlanan ilanlar).
+    [period, setPeriod] = useState("Tümü"),
     [query, setQuery] = useState(""),
     [search, setSearch] = useState(""),
     [rows, setRows] = useState<Listing[]>([]),
@@ -190,7 +198,7 @@ export function MobilePartnershipHub() {
       trail:
         selectedTrail ??
         (node ? categoryTrail(store.categoryTree, node.slug) : []),
-      filters: { ...filters, open: true },
+      filters: { ...filters, open: true, ...(sort === "Yüksek Komisyon" && period !== "Tümü" ? { createdAfter: periodStart(period) } : {}) },
       query: search,
       sort:
         sort === "En Yeni"
@@ -205,6 +213,7 @@ export function MobilePartnershipHub() {
   const criteriaKey = JSON.stringify({
     category,
     sort,
+    period,
     search,
     filters,
     selectedTrail,
@@ -868,6 +877,15 @@ export function MobilePartnershipHub() {
               ),
             )}
           </HorizontalScroll>
+          {/* EN ÇOK KAZANDIRANLAR: komisyona göre sıralıyken dönem seçilir — bugünün / haftanın / ayın fırsatları. */}
+          {sort === "Yüksek Komisyon" && (
+            <View style={[ms.row, { flexWrap: "wrap", marginBottom: 12 }]}>
+              <Text style={ms.muted}>En çok kazandıran:</Text>
+              {["Tümü", "Bugün", "Bu hafta", "Bu ay"].map((label) => (
+                <MobileChip key={label} label={label} selected={period === label} onPress={() => setPeriod(label)} />
+              ))}
+            </View>
+          )}
           {/* Tanıtım kartı yalnız HENÜZ ortaklığı olmayana: ortak olan kullanıcıda her açılışta ilanları aşağı itiyordu. */}
           {isMobileApp && my.length === 0 && (
             <MobileCard

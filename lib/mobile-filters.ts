@@ -13,6 +13,8 @@ export type MobileFilters = {
   open: boolean; photos: boolean; urgent: boolean; warranty: boolean; owner: boolean; exchange: boolean;
   /** Ortak komisyonu alt sınırı: tutar (ilan para biriminde) ve/veya oran (%). Boş = sınır yok. Sunucu aynı adları okur. */
   minCommission?: number; minRate?: number;
+  /** Yalnız bu andan SONRA yayınlanan ilanlar (ISO tarih) — "bugün / bu hafta / bu ay en çok kazandıran" süzgeci. */
+  createdAfter?: string;
 };
 export const emptyMobileFilters = (): MobileFilters => ({ min: "", max: "", loc: {}, attrs: {}, ranges: {}, texts: {}, open: false, photos: false, urgent: false, warranty: false, owner: false, exchange: false });
 /** Reset user criteria while preserving constraints supplied by the containing flow. */
@@ -47,6 +49,7 @@ export function filterMobileListings(items: Listing[], f: MobileFilters, query =
     if (!matchesLocationFilter(l, f.loc.provinceId, f.loc.districtId)) return false;
     // Komisyon alt sınırı — sunucudaki (mobile_catalogue_page) hesapla aynı: oranlı ilanda fiyat × oran, sabitte tutarın kendisi.
     if (f.minCommission && (l.commissionType === "rate" ? Math.round(l.price * l.commissionValue / 100) : l.commissionValue) < f.minCommission) return false;
+    if (f.createdAfter && (l.createdAt || "") < f.createdAfter) return false;
     if (f.minRate && (l.commissionType === "rate" ? l.commissionValue : l.price > 0 ? l.commissionValue / l.price * 100 : 0) < f.minRate) return false;
     if ((f.open && (l.partnershipMode === "none" || l.partnershipMode === "invite")) || (f.photos && !(l.imageUrl || l.image || l.adAssets?.some(Boolean))) || (f.urgent && !(String(l.attributes?._urgentUntil ?? "") > now))) return false;
     if ((f.warranty && !yes(listingAttribute(l, "warranty"))) || (f.owner && !yes(listingAttribute(l, "from"))) || (f.exchange && !yes(listingAttribute(l, "swap")))) return false;
