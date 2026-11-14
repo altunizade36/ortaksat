@@ -265,7 +265,11 @@ const ROUTES = {
 const NOINDEX = [
   "auth.html", "admin.html", "profile.html", "profile-edit.html", "favorites.html",
   "notifications.html", "notifications-tab.html", "earnings.html", "messages.html",
-  "menu.html", "hosgeldin.html", "seller.html", "create-action.html", "trust-action.html", "magaza-sirasi.html"
+  "menu.html", "hosgeldin.html", "seller.html", "create-action.html", "trust-action.html", "magaza-sirasi.html",
+  // 2026-11-14: giriş gerektiren / kişisel sayfalar dizine açık kalmıştı (hepsi aynı genel başlıkla listelenebiliyordu).
+  "account-security.html", "account-settings.html", "notification-settings.html", "engellenenler.html", "following.html",
+  "offers.html", "buyer-requests.html", "report.html", "reports.html", "review.html", "support.html", "toplu-ilan.html",
+  "market-tools.html", "mobile-tools.html", "_sitemap.html", "+not-found.html", "404.html"
 ];
 
 function faqJsonLd() {
