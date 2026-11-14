@@ -90,10 +90,3 @@ export const LEGAL_GROUPS: LegalGroup[] = [
   { title: "Çerez Yönetimi", icon: "cookie-outline", keys: ["cerez"] }
 ];
 
-// Kayıt ekranında onaylanacak temel belgeler.
-export const CONSENT_DOCS: Array<{ key: keyof typeof LEGAL_DOCS; label: string }> = [
-  { key: "kullanim", label: "Kullanım Şartları" },
-  { key: "kvkk", label: "KVKK Aydınlatma Metni" },
-  { key: "gizlilik", label: "Gizlilik Politikası" },
-  { key: "aracilik", label: "Aracılık ve Mesafeli İşlem Bilgilendirmesi" }
-];

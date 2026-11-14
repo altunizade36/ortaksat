@@ -46,11 +46,6 @@ export function moneyCompact(value: number): string {
 }
 
 export type CurrencyCode = "TRY" | "USD" | "EUR";
-export const CURRENCIES: Array<{ code: CurrencyCode; symbol: string; label: string }> = [
-  { code: "TRY", symbol: "₺", label: "Türk Lirası (₺)" },
-  { code: "USD", symbol: "$", label: "Dolar ($)" },
-  { code: "EUR", symbol: "€", label: "Euro (€)" }
-];
 const CURRENCY_SYMBOL: Record<string, string> = { TRY: "₺", USD: "$", EUR: "€" };
 
 /** İlanın para birimine göre fiyat gösterimi (₺/$/€ + deterministik binlik ayırıcı). */

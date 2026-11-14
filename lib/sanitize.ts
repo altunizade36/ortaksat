@@ -52,11 +52,6 @@ export function sanitizeMultiline(input: string, maxLen = 4000): string {
     .slice(0, maxLen);
 }
 
-/** Telefon: yalnızca rakam ve baştaki +; TR formatına normalize eder. */
-export function sanitizePhone(input: string): string {
-  const cleaned = (input ?? "").replace(/[^\d+]/g, "");
-  return cleaned.startsWith("+") ? "+" + cleaned.slice(1).replace(/\+/g, "") : cleaned.replace(/\+/g, "");
-}
 
 /** E-posta: küçük harf + boşluk temizliği.
  * ÖNEMLİ: E-postalar ASCII'dir; Türkçe locale ile küçültme (toLocaleLowerCase("tr-TR"))

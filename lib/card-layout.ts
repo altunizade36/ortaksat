@@ -6,8 +6,6 @@ export function cardPriceFontSize(label: string, availableWidth: number, preferr
 /** Fixed content slots keep adjacent cards aligned without stretching to page height. */
 export const LISTING_GRID_PHOTO_RATIO = 2;
 export const LISTING_GRID_BODY_HEIGHT = 96;
-export const LISTING_GRID_FOOTER_HEIGHT = 0;
-
 /** Marketplace grids add columns before cards grow past the visual standard. */
 export function marketplaceCardGrid(options: {
   available: number;

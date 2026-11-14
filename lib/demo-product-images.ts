@@ -67,11 +67,6 @@ const IMAGE_BY_TITLE: Record<string, { category: DemoCategory; file: string; alt
 export function getDemoCategory(category?: string | null): DemoCategory {
   return (category && CATEGORY_BY_LISTING_CATEGORY[category]) || "electronics";
 }
-
-export function getDemoFallbackCategoryImage(category?: string | null) {
-  return CATEGORY_FALLBACKS[getDemoCategory(category)];
-}
-
 export function getDemoProductImageMeta(input: Pick<Listing, "title" | "category" | "image">) {
   const exact = IMAGE_BY_TITLE[input.title];
   const fallbackCategoryImage = CATEGORY_FALLBACKS[exact?.category ?? getDemoCategory(input.category)];

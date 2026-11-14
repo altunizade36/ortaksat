@@ -96,11 +96,6 @@ const AKS_KISA = ["İç Aksesuar", "Dış Aksesuar", "Bakım & Onarım Ürünler
 
 // ---- marka/değer listeleri ----------------------------------------------
 export const CAR_BRANDS = ["Alfa Romeo", "Aston Martin", "Audi", "Bentley", "BMW", "BYD", "Cadillac", "Chery", "Chevrolet", "Chrysler", "Citroën", "Cupra", "Dacia", "Daihatsu", "DFSK", "Dodge", "DS Automobiles", "Ferrari", "Fiat", "Fisker", "Ford", "Geely", "Genesis", "GMC", "Honda", "Hongqi", "Hyundai", "Infiniti", "Isuzu", "Jaguar", "Jeep", "Kia", "Lada", "Lamborghini", "Lancia", "Land Rover", "Leapmotor", "Lexus", "Lotus", "Lucid", "Mahindra", "Maserati", "Maybach", "Mazda", "McLaren", "Mercedes-Benz", "MG", "Mini", "Mitsubishi", "NIO", "Nissan", "Opel", "Ora", "Peugeot", "Porsche", "Proton", "Renault", "Rolls-Royce", "Seat", "Seres", "Škoda", "Skywell", "Smart", "SsangYong", "Subaru", "Suzuki", "Tesla", "Tofaş", "Togg", "Toyota", "Volkswagen", "Volvo", "Jaecoo", "Jetour", "Lynk & Co", "XPeng", "Zeekr", "Omoda", "Diğer"];
-// Kasa tipi = yalnız GÖVDE biçimi. Yakıt (Elektrikli/Hibrit) ve durum (Klasik/Modifiye) ÇIKARILDI —
-// bunlar fuel/condition alanı, kasa değil (attribute-yaprak temizliği).
-export const CAR_BODY_TYPES = ["Sedan", "Hatchback (5 Kapı)", "Hatchback (3 Kapı)", "Station Wagon", "SUV & Arazi", "Crossover", "Coupe", "Cabrio & Roadster", "MPV & Minivan", "Pickup", "Panelvan", "Roadster"];
-// ATV/UTV ÇIKARILDI — kendi "ATV & UTV" dalı var (aksi halde motosiklet+vasitaGenel çift şema).
-export const MOTO_TYPES = ["Scooter", "Maxi Scooter", "Naked", "Sport / Racing", "Touring", "Cruiser", "Chopper", "Enduro", "Motocross", "Trail / Adventure", "Café Racer", "Custom", "Trike", "Elektrikli Motosiklet", "Moped", "Cub / Kanatlı"];
 export const MOTO_BRANDS = ["Honda", "Yamaha", "Kawasaki", "Suzuki", "KTM", "BMW", "Ducati", "Triumph", "Harley-Davidson", "Aprilia", "Vespa", "Piaggio", "Benelli", "Royal Enfield", "Moto Guzzi", "Bajaj", "TVS", "CFMoto", "SYM", "Kymco", "Mondial", "Kuba", "RKS", "Arora", "Yuki", "Motolux", "Falcon", "Zontes", "Voge", "QJ Motor", "Keeway", "Hero", "Lifan", "Husqvarna", "Indian", "MV Agusta", "Bimota", "Can-Am", "Segway Powersports", "Diğer"];
 // Traktör marka → model haritası (Türkiye pazarı; Sahibinden derinliği). En çok aranan
 // kategori (GSC: "bursa satılık traktör" vb.). Marka seçilince model bu listeden gelir,
@@ -2479,9 +2474,7 @@ let _hiddenCats = new Set<string>();
 export function setHiddenCategories(keys: string[]): void {
   _hiddenCats = new Set(keys);
 }
-export function isCategoryHidden(key: string): boolean {
-  return _hiddenCats.has(key);
-}
+
 // Gizli ÜST-SEVİYE kategorileri çıkararak görünür ağacı döndürür.
 // Yalnız top-level filtrelenir: yaprak key'leri (sl(label)) tekrar ettiği için
 // (ör. "Diğer"/"Diğer Model"/"Diğer Kuş") derine inen filtre, üst "Diğer"i gizleyince
@@ -2544,21 +2537,6 @@ export function matchCategoryByName(name: string): { node: CategoryNode; path: C
     .sort((a, b) => b.common - a.common || (a.leaf === b.leaf ? a.len - b.len : a.leaf ? -1 : 1));
   return scored[0]?.f;
 }
-
-export function findCategorySlug(label: string): string | undefined {
-  const walk = (nodes: CategoryNode[]): string | undefined => {
-    for (const n of nodes) {
-      if (n.label === label) return n.slug;
-      if (n.children) {
-        const found = walk(n.children);
-        if (found) return found;
-      }
-    }
-    return undefined;
-  };
-  return walk(categoryTree);
-}
-
 /** Resolve the form schema for a category path (array of node keys, deepest last). */
 export function resolveFormKey(path: CategoryNode[]): string {
   for (let i = path.length - 1; i >= 0; i--) {

@@ -13,9 +13,9 @@
 
 | Katman | Teknoloji |
 |---|---|
-| İstemci | Expo SDK 54 · React 19 · React Native 0.81 · **React Native Web** |
-| Yönlendirme | expo-router 6 (dosya-tabanlı) · web'de **statik export / SSG** |
-| Backend | **Supabase** — Postgres · Auth · Storage · RLS · RPC (SECURITY DEFINER) |
+| İstemci | Expo SDK 58 · React 19.3 · React Native 0.88 · **React Native Web** |
+| Yönlendirme | expo-router (dosya-tabanlı) · web'de **statik export / SSG** · görünen adresler Türkçe (`data/url-aliases.json`) |
+| Backend | **Supabase** — Postgres · Auth · Storage · RLS · RPC (SECURITY DEFINER) · Edge Functions (`supabase/functions/`) |
 | Web hosting | **Vercel** (master'a push → otomatik build & deploy) |
 | E2E test | **Playwright** (canlı ortama karşı) |
 | Dil | TypeScript · TR/EN çok dilli (i18n) |
@@ -26,13 +26,15 @@
 app/                 expo-router rotaları (ekranlar). (tabs)/ = ana sekmeler
 components/          paylaşılan UI bileşenleri (ListingCard, ui.tsx, header…)
 lib/                 servisler & yardımcılar (live-service, supabase, search, i18n…)
-data/                app-store.tsx — istemci durum yönetimi (store)
+data/                app-store.tsx — istemci durum yönetimi (store); url-aliases.json — Türkçe adres eşlemesi
 supabase/migrations/ SQL migration'ları (şema + RLS + RPC; sürüm-versiyonlu)
 scripts/             otomasyon (migration uygula, sitemap, OG, advisor, backfill…)
 e2e/                 Playwright uçtan-uca testleri (canlıya karşı)
 public/ assets/      statik varlıklar, ikonlar, maskot/logo
 docs/ store/ types/  dökümantasyon, mağaza varlıkları, tip yardımcıları
 ```
+
+Yerelde üretilen ve **git'e girmeyen** klasörler: `dist-web/` (web derlemesi), `audit/` (yerel çalışma zamanı: `audit/runtime/` içinde Node ve Playwright tarayıcıları; denetim çıktıları), `e2e-artifacts/` (test ekran görüntüleri), `android/` (yerel derleme için üretilen proje), `node_modules/`. Bunlar silinirse yeniden üretilir; `audit/runtime/` silinirse Node ve tarayıcıların yeniden kurulması gerekir.
 
 ---
 
@@ -74,7 +76,8 @@ Gerçek değerler **`.env`** içindedir ve **git'e girmez** (`.gitignore`). Şab
 
 ```bash
 npm run typecheck          # tsc --noEmit (sıfır hata koşulu)
-npm run quality            # encoding + eslint(hooks) + typecheck + expo-doctor
+npm run check:urls         # Türkçe adres eşlemesi + vercel.json uyumu
+npm run quality            # encoding + adresler + eslint(hooks) + typecheck + expo-doctor
 npx playwright test        # E2E (canlıya karşı; .env.e2e gerekir)
 ```
 
@@ -114,7 +117,9 @@ Yayın öncesi kalanlar: `app.json` içindeki `extra.eas.projectId`, mağaza hes
 
 ## Katkı & konvansiyonlar
 
-- **Marka rengi turkuaz `#0EA5B7`** — `components/colors.ts` üzerinden token'lı; sabit-hex yasak.
+- **Marka rengi mavi `#0645C9`** — `components/colors.ts` üzerinden token'lı; yeşil / turkuaz / mint tonları kullanılmaz.
+- **Adresler:** rota dosyaları İngilizce kalır, görünen adres Türkçedir. Yeni rota eklerken `data/url-aliases.json`'u güncelle ve `node scripts/sync-url-aliases.mjs` çalıştır.
+- **Yeni görsel eklerken dış siteden bağlama**; depoya ya da Supabase Storage'a koy.
 - **Sahte veri yok.** Sayılar/istatistikler gerçek DB verisinden gelir.
 - Tüm geliştirmeler **web + mobil-web + native + tablet** hepsinde tutarlı çalışmalı.
 - Değişiklik öncesi `npm run typecheck` temiz olmalı; ilgili E2E ile doğrula.

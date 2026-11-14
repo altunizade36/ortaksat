@@ -239,32 +239,3 @@ export function NoData({ text = "Veri yok" }: { text?: string }) {
   );
 }
 
-/**
- * Tarih listesinden zaman serisi (istemcide YÜKLÜ kayıtlardan). days≤31 → günlük,
- * daha uzunu → haftalık kovalar. Geçersiz/eksik tarihler sayılmaz (uydurulmaz).
- */
-export function bucketDates(dates: Array<string | undefined>, days: number): { labels: string[]; values: number[]; counted: number } {
-  const DAY = 86_400_000;
-  const step = days <= 31 ? 1 : 7;
-  const n = Math.ceil(days / step);
-  const end = new Date();
-  end.setHours(23, 59, 59, 999);
-  const endMs = end.getTime();
-  const values = new Array(n).fill(0) as number[];
-  const labels: string[] = [];
-  for (let i = 0; i < n; i++) {
-    const d = new Date(endMs - (n - 1 - i) * step * DAY);
-    labels.push(`${String(d.getDate()).padStart(2, "0")}.${String(d.getMonth() + 1).padStart(2, "0")}`);
-  }
-  let counted = 0;
-  for (const s of dates) {
-    if (!s) continue;
-    const t = new Date(s).getTime();
-    if (Number.isNaN(t) || t > endMs) continue;
-    const back = Math.floor((endMs - t) / (step * DAY));
-    if (back < 0 || back >= n) continue;
-    values[n - 1 - back] += 1;
-    counted += 1;
-  }
-  return { labels, values, counted };
-}

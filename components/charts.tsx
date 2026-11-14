@@ -14,37 +14,6 @@ export const CAT = ["#0F9D66", "#7C5CFC", "#E0A81E", "#2C82F6", "#E4572E", "#17B
 export const money = (n: number) => (n >= 1_000_000 ? `₺${(n / 1_000_000).toFixed(1)}M` : n >= 1000 ? `₺${(n / 1000).toFixed(n >= 100_000 ? 0 : 1)}B` : `₺${Math.round(n)}`);
 const fmt = (n: number) => (n >= 1_000_000 ? `${(n / 1_000_000).toFixed(1)}M` : n >= 10_000 ? `${(n / 1000).toFixed(0)}B` : new Intl.NumberFormat("tr-TR").format(Math.round(n)));
 
-// ---- Renkli KPI kutusu: değer + delta (+/-) + ikon (referans dashboard tarzı) ----
-export function KpiDeltaTile({ label, value, delta, icon, tint, accent, money: isMoney, sub, live }: { label: string; value: number | string; delta?: number; icon: keyof typeof MaterialCommunityIcons.glyphMap; tint: string; accent: string; money?: boolean; sub?: string; live?: boolean }) {
-  const v = typeof value === "number" ? (isMoney ? money(value) : fmt(value)) : value;
-  const up = (delta ?? 0) >= 0;
-  return (
-    <View style={{ backgroundColor: tint, borderRadius: 16, flexBasis: 158, flexGrow: 1, gap: 9, minWidth: 146, overflow: "hidden", padding: 15, shadowColor: "#001449", shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.14, shadowRadius: 10 }}>
-      <View style={{ alignItems: "center", flexDirection: "row", justifyContent: "space-between" }}>
-        <View style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.22)", borderRadius: 10, height: 34, justifyContent: "center", width: 34 }}>
-          <MaterialCommunityIcons name={icon} size={18} color="#FFFFFF" />
-        </View>
-        {live ? (
-          <View style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.25)", borderRadius: 999, flexDirection: "row", gap: 4, paddingHorizontal: 8, paddingVertical: 3 }}>
-            <View style={{ backgroundColor: "#FFFFFF", borderRadius: 999, height: 6, width: 6 }} />
-            <Text style={{ color: "#FFFFFF", fontSize: 10, fontWeight: "900" }}>CANLI</Text>
-          </View>
-        ) : delta !== undefined ? (
-          <View style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.22)", borderRadius: 999, flexDirection: "row", gap: 2, paddingHorizontal: 7, paddingVertical: 2 }}>
-            <MaterialCommunityIcons name={up ? "arrow-up" : "arrow-down"} size={12} color="#FFFFFF" />
-            <Text style={{ color: "#FFFFFF", fontSize: 11, fontVariant: ["tabular-nums"], fontWeight: "900" }}>{up ? "+" : ""}{delta}</Text>
-          </View>
-        ) : null}
-      </View>
-      <Text style={{ color: "#FFFFFF", fontSize: 25, fontVariant: ["tabular-nums"], fontWeight: "900", letterSpacing: -0.6 }}>{v}</Text>
-      <View style={{ gap: 1 }}>
-        <Text numberOfLines={1} style={{ color: "#FFFFFF", fontSize: 12.5, fontWeight: "900" }}>{label}</Text>
-        {sub ? <Text numberOfLines={1} style={{ color: "rgba(255,255,255,0.82)", fontSize: 11, fontWeight: "700" }}>{sub}</Text> : null}
-      </View>
-      <View style={{ backgroundColor: accent, borderRadius: 999, bottom: 0, height: 4, left: 0, position: "absolute", right: 0 }} />
-    </View>
-  );
-}
 
 // ---- Çok-segmentli DONUT (referans: satış tipi / ödeme modu) ----
 function polar(cx: number, cy: number, r: number, a: number) { const rad = ((a - 90) * Math.PI) / 180; return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) }; }
@@ -84,54 +53,6 @@ export function DonutChart({ data, size = 168, centerTop, centerBottom }: { data
   );
 }
 
-// ---- Y-eksenli, gridli, çok-serili GRUPLU BAR (referans: CPA/CPC per campaign) ----
-export function GroupedBarChart({ groups, series, height = 200, valueFmt }: { groups: Array<{ label: string; values: number[] }>; series: Array<{ label: string; color: string }>; height?: number; valueFmt?: (n: number) => string }) {
-  const max = Math.max(1, ...groups.flatMap((g) => g.values));
-  const nice = niceMax(max);
-  const plotH = height - 34, plotTop = 6;
-  const ticks = 4;
-  return (
-    <View style={{ gap: 10 }}>
-      {series.length > 1 ? (
-        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 14 }}>
-          {series.map((s) => <Legend key={s.label} color={s.color} label={s.label} />)}
-        </View>
-      ) : null}
-      <View style={{ flexDirection: "row", gap: 6, height }}>
-        {/* Y eksen etiketleri */}
-        <View style={{ height: plotH + plotTop, justifyContent: "space-between", width: 34 }}>
-          {Array.from({ length: ticks + 1 }).map((_, i) => (
-            <Text key={i} style={{ color: colors.subtle, fontSize: 8.5, fontVariant: ["tabular-nums"], fontWeight: "700", textAlign: "right" }}>{(valueFmt ?? fmt)((nice * (ticks - i)) / ticks)}</Text>
-          ))}
-        </View>
-        <View style={{ flex: 1 }}>
-          {/* Grid çizgileri */}
-          <View style={{ height: plotH, marginTop: plotTop, position: "relative" }}>
-            {Array.from({ length: ticks + 1 }).map((_, i) => (
-              <View key={i} style={{ backgroundColor: colors.line, height: 1, left: 0, opacity: i === ticks ? 1 : 0.5, position: "absolute", right: 0, top: (plotH * i) / ticks }} />
-            ))}
-            {/* Barlar */}
-            <View style={{ alignItems: "flex-end", bottom: 0, flexDirection: "row", justifyContent: "space-around", left: 0, position: "absolute", right: 0, top: 0 }}>
-              {groups.map((g, gi) => (
-                <View key={gi} style={{ alignItems: "flex-end", flex: 1, flexDirection: "row", gap: 2, height: "100%", justifyContent: "center" }}>
-                  {g.values.map((v, si) => (
-                    <View key={si} style={{ alignItems: "center", justifyContent: "flex-end" }}>
-                      <View style={{ backgroundColor: series[si]?.color ?? CAT[si % CAT.length], borderTopLeftRadius: 4, borderTopRightRadius: 4, height: Math.max(v > 0 ? 3 : 0, (v / nice) * plotH), width: series.length > 2 ? 9 : 14 }} />
-                    </View>
-                  ))}
-                </View>
-              ))}
-            </View>
-          </View>
-          {/* X etiketleri */}
-          <View style={{ flexDirection: "row", justifyContent: "space-around", marginTop: 6 }}>
-            {groups.map((g, gi) => <Text key={gi} numberOfLines={1} style={{ color: colors.muted, flex: 1, fontSize: 9.5, fontWeight: "800", textAlign: "center" }}>{g.label}</Text>)}
-          </View>
-        </View>
-      </View>
-    </View>
-  );
-}
 
 // ---- ÇİZGİ + ALAN grafiği (referans: lead generation / visits per month) ----
 export function LineAreaChart({ points, color = CAT[0], height = 190, width = 560, valueFmt }: { points: Array<{ label: string; value: number }>; color?: string; height?: number; width?: number; valueFmt?: (n: number) => string }) {
@@ -252,30 +173,6 @@ export function MultiLineChart({ labels, series, height = 200, width = 560, valu
   );
 }
 
-// ---- TREEMAP (referans: kategori dağılımı — flex-tabanlı, renkli dikdörtgenler) ----
-export function Treemap({ data, height = 180 }: { data: Array<{ label: string; value: number; color?: string }>; height?: number }) {
-  // Basit satır-tabanlı squarify: değerlere göre ağırlıklı 2 satır.
-  const sorted = [...data].sort((a, b) => b.value - a.value).slice(0, 6);
-  const half = Math.ceil(sorted.length / 2);
-  const rows = [sorted.slice(0, half), sorted.slice(half)];
-  return (
-    <View style={{ gap: 4, height }}>
-      {rows.map((row, ri) => {
-        const rowTotal = row.reduce((s, d) => s + Math.max(1, d.value), 0) || 1;
-        return (
-          <View key={ri} style={{ flex: 1, flexDirection: "row", gap: 4 }}>
-            {row.map((d, i) => (
-              <View key={d.label} style={{ backgroundColor: d.color ?? CAT[(ri * half + i) % CAT.length], borderRadius: 10, flex: Math.max(0.4, Math.max(1, d.value) / rowTotal), justifyContent: "space-between", overflow: "hidden", padding: 10 }}>
-                <Text numberOfLines={2} style={{ color: "#FFFFFF", fontSize: 12, fontWeight: "900" }}>{d.label}</Text>
-                <Text style={{ color: "rgba(255,255,255,0.92)", fontSize: 13, fontVariant: ["tabular-nums"], fontWeight: "900" }}>{fmt(d.value)}</Text>
-              </View>
-            ))}
-          </View>
-        );
-      })}
-    </View>
-  );
-}
 
 // ---- Yatay bar (ranked). rank: sıra numarası göster; valueFmt: değer biçimi (ör. para) ----
 export function HBarChart({ data, valueFmt, rank }: { data: Array<{ label: string; value: number; color?: string }>; valueFmt?: (n: number) => string; rank?: boolean }) {

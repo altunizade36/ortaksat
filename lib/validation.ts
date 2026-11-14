@@ -39,12 +39,6 @@ export function isValidEmail(email: string): boolean {
   return EMAIL_RE.test(sanitizeEmail(email));
 }
 
-/** TR cep telefonu doğrulama (boş bırakılırsa geçerli kabul edilir — opsiyonel alan). */
-export function isValidTrPhone(phone: string): boolean {
-  const digits = (phone ?? "").replace(/[^\d+]/g, "");
-  if (!digits) return true;
-  return PHONE_RE.test(digits);
-}
 
 function lenError(field: string, value: string, min: number, max: number, label: string): FieldError | null {
   const v = value.trim();

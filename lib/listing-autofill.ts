@@ -34,25 +34,6 @@ function keywordsFromTitle(title: string): string[] {
   ).slice(0, 6);
 }
 
-/**
- * Serbest metin kategoriyi bilinen üst kategorilerden en yakınına eşler.
- * Eşleşme yoksa girdiyi olduğu gibi döndürür (kullanıcının yazdığı korunur).
- */
-export function matchCategory(text: string): string {
-  const q = (text ?? "").trim();
-  if (!q) return "";
-  const low = q.toLocaleLowerCase("tr-TR");
-  // 1) Üst kategori adı/kısa adı birebir/içerir
-  for (const c of listingCategories) {
-    if (c.key.toLocaleLowerCase("tr-TR") === low || c.label.toLocaleLowerCase("tr-TR") === low) return c.key;
-  }
-  for (const c of listingCategories) {
-    const hay = [c.key, c.label, c.shortLabel, ...c.subcategories].join(" ").toLocaleLowerCase("tr-TR");
-    if (c.subcategories.some((s) => s.toLocaleLowerCase("tr-TR") === low)) return c.key;
-    if (hay.includes(low) || low.includes(c.key.toLocaleLowerCase("tr-TR"))) return c.key;
-  }
-  return q;
-}
 
 export type AutoFillInput = {
   title: string;

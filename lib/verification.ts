@@ -20,10 +20,6 @@ export function verificationBadges(user: VUser | undefined | null): Verification
   return out;
 }
 
-// "Doğrulanmış satıcı" sayılması için en az bir güçlü doğrulama (kimlik veya telefon).
-export function isVerifiedSeller(user: VUser | undefined | null): boolean {
-  return Boolean(user && (user.verifiedIdentity || user.verifiedPhone));
-}
 
 // Açıklayıcı: OrtakSat'ta HANGİ doğrulama seviyeleri VAR (ve olmayanı dürüstçe belirt).
 // /guvenli-alisveris ve /trust'ta gösterilir; "Doğrulanmış satıcılar" iddiasını temellendirir.
