@@ -1,4 +1,5 @@
 import { MaterialCommunityIcons } from "@/components/icons";
+import { ListingFunnelPanel } from "@/components/listing-funnel-panel";
 import { Link, useRouter } from "expo-router";
 import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, Text, TextInput, useWindowDimensions, View, type ScrollViewInstance } from "react-native";
@@ -1629,6 +1630,9 @@ function Dashboard({ listings, users, notifications, pendingN, reportsN, pending
       ) : null}
 
       <ServerTrendCard ts={ts} />
+
+      {/* İlan sayfası hunisi: görüntüleme → düğmeye basma → giriş duvarı (kimliksiz toplamlar). */}
+      <ListingFunnelPanel />
 
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 16 }}>
         <RootCategoryCard ts={ts} />

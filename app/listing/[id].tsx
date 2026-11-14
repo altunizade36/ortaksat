@@ -49,6 +49,7 @@ import { useContentWidth, useIsWideWeb } from "@/lib/layout";
 import { WebContainer } from "@/components/web-container";
 import { fetchListingById, fetchSellerPhone } from "@/lib/supabase-data";
 import { insertReferralLead, logReferralClick, recordListingView, resolveReferralLink } from "@/lib/live-service";
+import { trackListingEvent } from "@/lib/funnel";
 import { getRefAttribution, saveRefAttribution } from "@/lib/referral";
 import { metaTrack } from "@/lib/meta-pixel";
 import { isSupabaseConfigured } from "@/lib/supabase";
@@ -214,6 +215,8 @@ export default function ListingDetailScreen() {
       pushRecent(listing.id);
       // Y6: görüntülenme kaydı — owner-hariç, sunucuda günlük-dedup (şişirme-dirençli).
       void recordListingView(listing.id);
+      // Huni sayacı (kimliksiz toplam): görüntüleme → düğmeye basma → giriş duvarı. Bkz. lib/funnel.ts.
+      trackListingEvent(listing.id, "view");
       // Meta Pixel: ürün görüntüleme (reklam retargeting + ilgi sinyali). fbq yoksa no-op.
       metaTrack("ViewContent", {
         content_ids: [listing.id],
@@ -439,8 +442,9 @@ export default function ListingDetailScreen() {
   async function handleJoin() {
     if (isDemo) return demoBlocked();
     if (listingUnavailable) { Alert.alert(unavailableLabel, translateCopy("Bu ilan artık ortaklığa/satışa açık değil. Benzer ürünlere göz atabilirsin.", language)); return; }
+    trackListingEvent(currentListing.id, "partner_click");
     // Anonim kullanıcı: alert'te tıkanmak yerine girişe yönlendir (dönüşte bu ilana gelir).
-    if (!isAuthenticated) { router.push({ pathname: "/auth", params: { redirect: listingReturnPath } }); return; }
+    if (!isAuthenticated) { trackListingEvent(currentListing.id, "auth_wall"); router.push({ pathname: "/auth", params: { redirect: listingReturnPath } }); return; }
     // FORM YOK: ortak ol'a basınca doğrudan başvuru gider (davetli/açık → anında aktif,
     // onaylı → pending). Satıcı, satıcı panelinden kabul/ret eder. Ekstra bilgi istenmez.
     const result = await joinListing(currentListing.id, {
@@ -456,6 +460,7 @@ export default function ListingDetailScreen() {
   }
 
   async function handleShare() {
+    trackListingEvent(currentListing.id, "share");
     // MODEL: referans/takip YOK → her zaman DÜZ ürün sayfası linki paylaşılır.
     const url = productUrl(currentListing);
     const r = await shareOrCopy({ title: currentTitle, message: `${currentTitle}\n${moneyIn(currentListing.price, currentListing.currency)}\n${url}`, url });
@@ -491,7 +496,8 @@ export default function ListingDetailScreen() {
     if (isDemo) { demoBlocked(); return false; }
     if (isOwner || isUserBlocked(currentListing.ownerId)) { showToast("Bu satıcıyla iletişim başlatılamıyor."); return false; }
     if (listingUnavailable) { Alert.alert(unavailableLabel, translateCopy("Bu ilan artık satışa açık değil. Benzer ürünlere göz atabilirsin.", language)); return false; }
-    if (!isAuthenticated) { router.push({ pathname: "/auth", params: { redirect: listingReturnPath } }); return false; }
+    trackListingEvent(currentListing.id, "contact_click");
+    if (!isAuthenticated) { trackListingEvent(currentListing.id, "auth_wall"); router.push({ pathname: "/auth", params: { redirect: listingReturnPath } }); return false; }
     return true;
   }
 
@@ -634,7 +640,8 @@ export default function ListingDetailScreen() {
   if (isMobileApp) return <MobileListingDetail listing={currentListing} owner={owner} favorite={favorited} onFavorite={() => toggleFavorite(currentListing.id)} onShare={() => void handleShare()} isOwner={isOwner} unavailable={listingUnavailable ? unavailableLabel : undefined} partnershipStatus={partnership?.status} joinAction={joinAction} contactBusy={revealingPhone} sellerBlocked={isUserBlocked(currentListing.ownerId)}
     onMessage={() => {
       if (isDemo) { demoBlocked(); return; }
-      if (!isAuthenticated) { router.push({ pathname: "/auth", params: { redirect: listingReturnPath } }); return; }
+      trackListingEvent(currentListing.id, "contact_click");
+      if (!isAuthenticated) { trackListingEvent(currentListing.id, "auth_wall"); router.push({ pathname: "/auth", params: { redirect: listingReturnPath } }); return; }
       if (listingUnavailable || isUserBlocked(currentListing.ownerId)) return;
       attributeReferralLead("web");
       const conversation = startConversation(currentListing.id, currentListing.ownerId, "", currentListing);
@@ -644,7 +651,8 @@ export default function ListingDetailScreen() {
     onCall={() => { void (async () => {
       if (mobileContactLock.current) return;
       if (isDemo) { demoBlocked(); return; }
-      if (!isAuthenticated) { router.push({ pathname: "/auth", params: { redirect: listingReturnPath } }); return; }
+      trackListingEvent(currentListing.id, "contact_click");
+      if (!isAuthenticated) { trackListingEvent(currentListing.id, "auth_wall"); router.push({ pathname: "/auth", params: { redirect: listingReturnPath } }); return; }
       if (listingUnavailable || isUserBlocked(currentListing.ownerId) || currentListing.contactMethod === "message") return;
       mobileContactLock.current = true; setRevealingPhone(true);
       try {
@@ -1364,7 +1372,7 @@ export default function ListingDetailScreen() {
         her zaman erişilebilir kalır (Trendyol/Sahibinden deseni). Masaüstünde sağ karar kutusu
         zaten hep görünür; native/dar-web'de yoktu → dönüşüm sızıntısı. Aynı handler'ları kullanır. */}
     {showMobileActionBar ? (
-      <View testID="listing-detail-actions" onLayout={(e) => { const h = Math.round(e.nativeEvent.layout.height); setBarHeight((prev) => (prev === h ? prev : h)); }} style={{ alignItems: "center", backgroundColor: colors.surface, borderTopColor: colors.line, borderTopWidth: 1, bottom: 0, elevation: 12, flexDirection: "row", gap: 10, left: 0, paddingBottom: 12 + insets.bottom, paddingHorizontal: 14, paddingTop: 10, position: "absolute", right: 0, shadowColor: "#000", shadowOffset: { width: 0, height: -2 }, shadowOpacity: 0.1, shadowRadius: 8 }}>
+      <View testID="listing-detail-actions" onLayout={(e) => { const h = Math.round(e.nativeEvent.layout.height); setBarHeight((prev) => (prev === h ? prev : h)); }} style={{ alignItems: "center", backgroundColor: colors.surface, borderTopColor: colors.line, borderTopWidth: 1, /* web: çerez bandı görünürken çubuk onun ÜSTÜNE kalkar (bkz. components/cookie-consent.tsx → --os-cookie-h) */ bottom: Platform.OS === "web" ? ("var(--os-cookie-h, 0px)" as never) : 0, elevation: 12, flexDirection: "row", gap: 10, left: 0, paddingBottom: 12 + insets.bottom, paddingHorizontal: 14, paddingTop: 10, position: "absolute", right: 0, shadowColor: "#000", shadowOffset: { width: 0, height: -2 }, shadowOpacity: 0.1, shadowRadius: 8 }}>
         {!isOwner && !canJoinNow && width >= 390 ? (
           <View style={{ minWidth: 0, flexShrink: 1, maxWidth: "35%" }}>
             <Text style={{ color: colors.muted, fontSize: 10.5, fontWeight: "700" }}>{translateCopy("Fiyat", language)}</Text>

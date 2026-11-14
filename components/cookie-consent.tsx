@@ -41,6 +41,19 @@ export function CookieConsent() {
     });
   }, []);
 
+  // BANT YÜKSEKLİĞİ → CSS DEĞİŞKENİ (--os-cookie-h). Sayfaların altına sabitlenen çubuklar (ilan sayfasındaki
+  // "Mesaj gönder / Ortak Ol") bu kadar yukarı kalkar. Eskiden bant o çubuğun TAM ÜSTÜNE biniyordu: siteye ilk kez
+  // gelen mobil ziyaretçi, çerez seçimi yapmadan satıcıya ulaşma düğmelerini HİÇ göremiyordu (2026-11-14 denetimi).
+  const [bandHeight, setBandHeight] = useState(0);
+  const lift = mode === "banner" ? bandHeight : 0;
+  useEffect(() => {
+    if (Platform.OS !== "web" || typeof document === "undefined") return;
+    const root = document.documentElement;
+    if (lift > 0) root.style.setProperty("--os-cookie-h", `${lift}px`);
+    else root.style.removeProperty("--os-cookie-h");
+    return () => { root.style.removeProperty("--os-cookie-h"); };
+  }, [lift]);
+
   if (Platform.OS !== "web" || isMobileApp || mode === "hidden") return null;
 
   const decide = (choice: { analytics: boolean; marketing: boolean }) => {
@@ -63,7 +76,10 @@ export function CookieConsent() {
           alignItems: "center", pointerEvents: "box-none"
         }}
       >
-        <View style={{
+        <View
+          // Yalnız dar ekranda (alt düğme çubuğu olan düzen) yükseklik bildirilir: bant + alt boşluk + küçük ara.
+          onLayout={(event) => { const next = narrow ? Math.ceil(event.nativeEvent.layout.height) + 8 + 6 : 0; setBandHeight((prev) => (prev === next ? prev : next)); }}
+          style={{
           alignItems: stacked ? "stretch" : "center", backgroundColor: "#FFFFFF", borderColor: "#DCE5F8", borderRadius: 14, borderWidth: 1,
           boxShadow: "0 6px 22px rgba(9,39,94,0.13)" as never, flexDirection: stacked ? "column" : "row", gap: stacked ? 8 : 14,
           maxWidth: 1040, paddingHorizontal: stacked ? 12 : 16, paddingVertical: stacked ? 10 : 8, width: "100%"
