@@ -408,7 +408,19 @@ body {
   [data-blog-feat]     { flex-direction: row !important; }
   [data-blog-feattext] { flex: 1.1 1 0% !important; justify-content: center !important; }
   [data-blog-side]     { width: 320px !important; flex: 0 0 320px !important; }
-  [data-blog-featimg]  { width: auto !important; min-width: 0 !important; }
+  [data-blog-featimg]  { flex: 1 1 0% !important; width: auto !important; min-width: 0 !important; height: 220px !important; min-height: 220px !important; border-radius: 14px !important; }
+  [data-blog-feat]     { gap: 18px !important; padding: 18px !important; }
+  [data-blog-feat-title] { font-size: 24px !important; line-height: 30px !important; }
+  [data-blog-h1]       { font-size: 28px !important; line-height: 34px !important; }
+  [data-blog-post-h1]  { font-size: 30px !important; line-height: 38px !important; }
+  [data-blog-lead]     { font-size: 16px !important; line-height: 25px !important; }
+  [data-blog-hero]     { height: 220px !important; }
+  /* Yazı kartı: telefonda yatay satır (taban stil), geniş ekranda üstü kapaklı ızgara kartı. */
+  [data-blog-card]       { flex-direction: column !important; flex-basis: 250px !important; max-width: 420px !important; }
+  [data-blog-card-cover] { width: 100% !important; height: 150px !important; margin: 0 !important; border-radius: 0 !important; }
+  [data-blog-card-body]  { padding: 14px !important; gap: 8px !important; justify-content: flex-start !important; }
+  [data-blog-only-wide]   { display: flex !important; }
+  [data-blog-only-narrow] { display: none !important; }
 }
 
 /* CLS FIX — İlan kart grid'i CSS-grid ile (JS responsiveGrid yerine). Kart genişliği

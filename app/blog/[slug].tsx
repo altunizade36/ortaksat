@@ -4,14 +4,14 @@ import Head from "expo-router/head";
 import { useState } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 
-import { BlogCover } from "@/components/blog-cover";
+import { BlogCover, blogCoverHasImage } from "@/components/blog-cover";
+import { BlogPostCard, NarrowOnly, WideOnly, useBlogWide } from "@/components/blog-post-card";
 import { colors } from "@/components/colors";
 import { PressLink } from "@/components/ui";
 import { openUrlSafe } from "@/lib/link";
 import { shareOrCopy } from "@/lib/share";
 import { WebFooter } from "@/components/web-landing";
 import { BLOG_POSTS, fromManagedPost, getPost, type BlogPost } from "@/lib/blog";
-import { WebContainer } from "@/components/web-container";
 import { useStore } from "@/lib/use-store";
 
 // Paylaşım / yapısal veri görseli: sitenin kendi kapağı (yazı kapakları kodla çizilir, dosyası yoktur).
@@ -29,13 +29,14 @@ export default function BlogPostPage() {
   const { blogPosts } = useStore();
   // Kanca erken dönüşten ÖNCE (yazı bulunamadı dalı aşağıda) — sıra her çizimde aynı kalmalı.
   const [shareNote, setShareNote] = useState("");
+  const wide = useBlogWide();
   const db = blogPosts.find((p) => p.slug === slug && p.status === "published");
   const post: BlogPost | undefined = db ? fromManagedPost(db) : getPost(slug);
 
   if (!post) {
     return (
       <ScrollView contentContainerStyle={{ backgroundColor: colors.background, padding: 24 }} style={{ backgroundColor: colors.background }}>
-        <WebContainer max={760} padding={0} style={{ gap: 12 }}>
+        <View style={{ alignSelf: "center", gap: 12, maxWidth: 760, width: "100%" }}>
           <Text style={{ color: colors.ink, fontSize: 22, fontWeight: "900" }}>Yazı bulunamadı</Text>
           <Text style={{ color: colors.muted, fontSize: 14, fontWeight: "600" }}>Aradığın yazı kaldırılmış ya da bağlantı geçersiz olabilir.</Text>
           <Link href="/blog" asChild>
@@ -43,7 +44,7 @@ export default function BlogPostPage() {
               <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>Blog'a dön</Text>
             </Pressable>
           </Link>
-        </WebContainer>
+        </View>
       </ScrollView>
     );
   }
@@ -97,20 +98,24 @@ export default function BlogPostPage() {
         <meta name="twitter:image" content={ownImage} />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: articleLd }} />
       </Head>
-      <WebContainer max={820} padding={20} style={{ gap: 16 }}>
+      {/* Düz View: WebContainer uygulamada stilini (kenar boşluğu + aralık) UYGULAMAZ → metin ekran kenarına yapışıyordu. */}
+      <View style={{ alignSelf: "center", gap: 14, maxWidth: 820, paddingHorizontal: 16, width: "100%" }}>
         <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
           <Link href="/" asChild><Pressable><Text style={{ color: colors.muted, fontSize: 13, fontWeight: "700" }}>Ana Sayfa</Text></Pressable></Link>
           <MaterialCommunityIcons name="chevron-right" size={15} color={colors.subtle} />
           <Link href="/blog" asChild><Pressable><Text style={{ color: colors.muted, fontSize: 13, fontWeight: "700" }}>Blog</Text></Pressable></Link>
-          <MaterialCommunityIcons name="chevron-right" size={15} color={colors.subtle} />
-          <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 13, fontWeight: "800", maxWidth: 360 }}>{post.title}</Text>
+          {/* Yazının adı hemen altta başlık olarak duruyor; telefonda kırıntıda tekrar etmek satırı taşırıyordu. */}
+          <WideOnly wide={wide} style={{ alignItems: "center", flexDirection: "row", gap: 6 }}>
+            <MaterialCommunityIcons name="chevron-right" size={15} color={colors.subtle} />
+            <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 13, fontWeight: "800", maxWidth: 360 }}>{post.title}</Text>
+          </WideOnly>
         </View>
 
         <View style={{ alignSelf: "flex-start", backgroundColor: colors.primarySoft, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 }}>
           <Text style={{ color: colors.primaryDark, fontSize: 11, fontWeight: "900" }}>{post.category}</Text>
         </View>
-        <Text accessibilityRole="header" {...heading(1)} style={{ color: colors.ink, fontSize: 30, fontWeight: "900", lineHeight: 38 }}>{post.title}</Text>
-        <Text style={{ color: colors.muted, fontSize: 16, fontWeight: "600", lineHeight: 25 }}>{post.excerpt}</Text>
+        <Text accessibilityRole="header" {...heading(1)} dataSet={{ blogPostH1: "1" }} style={{ color: colors.ink, fontSize: wide ? 30 : 22, fontWeight: "900", lineHeight: wide ? 38 : 29 }}>{post.title}</Text>
+        <Text dataSet={{ blogLead: "1" }} style={{ color: colors.muted, fontSize: wide ? 16 : 14.5, fontWeight: "600", lineHeight: wide ? 25 : 22 }}>{post.excerpt}</Text>
 
         <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
           <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 999, height: 40, justifyContent: "center", width: 40 }}>
@@ -127,8 +132,13 @@ export default function BlogPostPage() {
         </View>
         {shareNote ? <Text accessibilityLiveRegion="polite" style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "800" }}>{shareNote}</Text> : null}
 
-        <View style={{ borderRadius: 16, height: 200, overflow: "hidden", width: "100%" }}>
-          <BlogCover post={post} variant="hero" />
+        <View dataSet={{ blogHero: "1" }} style={{ borderRadius: 14, height: wide ? 220 : 128, overflow: "hidden", width: "100%" }}>
+          {blogCoverHasImage(post) ? <BlogCover post={post} /> : (
+            <>
+              <NarrowOnly wide={wide} style={{ height: "100%", width: "100%" }}><BlogCover post={post} variant="card" /></NarrowOnly>
+              <WideOnly wide={wide} style={{ height: "100%", width: "100%" }}><BlogCover post={post} variant="hero" /></WideOnly>
+            </>
+          )}
         </View>
 
         <View style={{ gap: 16 }}>
@@ -187,8 +197,8 @@ export default function BlogPostPage() {
         </View>
 
         {/* Okuyan ne yapabilir: yazıdan doğrudan ürüne geçiş */}
-        <View style={{ backgroundColor: colors.primaryDark, borderRadius: 16, gap: 12, padding: 18 }}>
-          <Text {...heading(2)} style={{ color: "#FFFFFF", fontSize: 18, fontWeight: "900" }}>Okuduğunu uygulamaya hazır mısın?</Text>
+        <View style={{ backgroundColor: colors.primaryDark, borderRadius: 16, gap: 10, padding: 16 }}>
+          <Text {...heading(2)} style={{ color: "#FFFFFF", fontSize: 17, fontWeight: "900", lineHeight: 23 }}>Okuduğunu uygulamaya hazır mısın?</Text>
           <Text style={{ color: "#D7E2F6", fontSize: 13.5, fontWeight: "600", lineHeight: 20 }}>İlan vermek ve üyelik ücretsiz. Satıcıysan ürününü ortaklara aç; ortaksan komisyonu sana uyan bir ilan seç.</Text>
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
             <PressLink href="/create" accessibilityLabel="Ücretsiz ilan ver" style={{ alignItems: "center", backgroundColor: "#FFFFFF", borderRadius: 10, flexDirection: "row", gap: 6, minHeight: 44, paddingHorizontal: 16 }}>
@@ -207,20 +217,8 @@ export default function BlogPostPage() {
 
         <View style={{ borderTopColor: colors.line, borderTopWidth: 1, gap: 14, marginTop: 8, paddingTop: 20 }}>
           <Text {...heading(2)} style={{ color: colors.ink, fontSize: 20, fontWeight: "900" }}>İlgili yazılar</Text>
-          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 14 }}>
-            {fallbackRelated.map((rp) => (
-              <Link key={rp.slug} href={{ pathname: "/blog/[slug]", params: { slug: rp.slug } }} asChild>
-                <Pressable accessibilityRole="link" accessibilityLabel={rp.title} dataSet={{ card: "blog" }} style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 14, borderWidth: 1, flexBasis: 220, flexGrow: 1, maxWidth: 360, minWidth: 0, overflow: "hidden" }}>
-                  <View style={{ height: 110, width: "100%" }}>
-                    <BlogCover post={rp} />
-                  </View>
-                  <View style={{ gap: 4, padding: 12 }}>
-                    <Text numberOfLines={2} style={{ color: colors.ink, fontSize: 13.5, fontWeight: "800", lineHeight: 18 }}>{rp.title}</Text>
-                    <Text style={{ color: colors.muted, fontSize: 11, fontWeight: "600" }}>{rp.readMin} dk okuma</Text>
-                  </View>
-                </Pressable>
-              </Link>
-            ))}
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
+            {fallbackRelated.map((rp) => <BlogPostCard key={rp.slug} post={rp} wide={wide} />)}
           </View>
           <Link href="/blog" asChild>
             <Pressable style={{ alignItems: "center", alignSelf: "flex-start", flexDirection: "row", gap: 6 }}>
@@ -229,7 +227,7 @@ export default function BlogPostPage() {
             </Pressable>
           </Link>
         </View>
-      </WebContainer>
+      </View>
 
       <WebFooter />
     </ScrollView>

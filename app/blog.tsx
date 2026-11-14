@@ -4,13 +4,14 @@ import Head from "expo-router/head";
 import { useMemo, useRef, useState, type ReactNode } from "react";
 import { Pressable, ScrollView, Text, TextInput, View, type ScrollViewInstance } from "react-native";
 
-import { BlogCover } from "@/components/blog-cover";
+import { BlogCover, blogCoverHasImage } from "@/components/blog-cover";
+import { BlogMeta, BlogPostCard, NarrowOnly, WideOnly, useBlogWide } from "@/components/blog-post-card";
 import { Mascot } from "@/components/brand/Mascot";
 import { colors } from "@/components/colors";
 import { PressLink } from "@/components/ui";
 import { subscribeNewsletterLive } from "@/lib/live-service";
 import { WebFooter } from "@/components/web-landing";
-import { BLOG_CATEGORIES, BLOG_POSTS, BLOG_TOPICS, blogPostMatches, fromManagedPost, mergeBlogPosts, type BlogCategory, type BlogPost } from "@/lib/blog";
+import { BLOG_CATEGORIES, BLOG_POSTS, BLOG_TOPICS, blogPostMatches, fromManagedPost, mergeBlogPosts, type BlogCategory } from "@/lib/blog";
 import { useStore } from "@/lib/use-store";
 
 /**
@@ -20,6 +21,8 @@ import { useStore } from "@/lib/use-store";
  * - "Popüler yazılar" başlığı kaldırıldı: okunma sayısı tutulmuyor, olmayan bir ölçümü ima ediyordu →
  *   "Editörün seçtikleri" (hazır yazıların editoryal sırası).
  * - Düzen CSS ile duyarlıdır (app/+html.tsx → data-blog-*): JS ile genişlik okumak sayfayı yüklenince kaydırıyordu.
+ * - Taban stil TELEFON içindir (küçük başlık, 140 px kapak, satır kartları); 760 px üstünü CSS büyütür. Uygulamada
+ *   tablet genişliği `useBlogWide` ile okunur (bkz. components/blog-post-card.tsx).
  * - Renkler: yalnız marka mavisi + lacivert + nötr tonlar.
  */
 const heading = (level: 1 | 2 | 3) => ({ role: "heading", "aria-level": level }) as Record<string, unknown>;
@@ -31,6 +34,7 @@ export default function BlogPage() {
   const [subState, setSubState] = useState<"idle" | "saving" | "done" | "error">("idle");
   const [subMsg, setSubMsg] = useState("");
   const scrollRef = useRef<ScrollViewInstance>(null);
+  const wide = useBlogWide();
 
   async function subscribe() {
     const value = email.trim();
@@ -80,7 +84,7 @@ export default function BlogPage() {
         <meta property="og:description" content="Ortak satış, komisyon ve referans pazarlama üzerine pratik rehberler." />
         <meta property="og:url" content="https://www.ortaksat.com/blog" />
       </Head>
-      <View style={{ alignSelf: "center", gap: 16, maxWidth: 1280, paddingHorizontal: 16, paddingTop: 16, width: "100%" }}>
+      <View style={{ alignSelf: "center", gap: 14, maxWidth: 1280, paddingHorizontal: 16, paddingTop: 14, width: "100%" }}>
         <View style={{ alignItems: "center", flexDirection: "row", gap: 6 }}>
           <Link href="/" asChild><Pressable accessibilityRole="link"><Text style={{ color: colors.muted, fontSize: 13, fontWeight: "700" }}>Ana Sayfa</Text></Pressable></Link>
           <MaterialCommunityIcons name="chevron-right" size={15} color={colors.subtle} />
@@ -88,17 +92,17 @@ export default function BlogPage() {
         </View>
 
         {/* ---- Üst şerit: başlık + blog içi arama ---- */}
-        <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 20, flexDirection: "row", flexWrap: "wrap", gap: 16, paddingHorizontal: 20, paddingVertical: 18 }}>
-          <View style={{ alignItems: "center", flexBasis: 320, flexDirection: "row", flexGrow: 1, gap: 14, minWidth: 0 }}>
-            <Mascot name="idea" size={76} priority panel panelColor="#FFFFFF" />
-            <View style={{ flex: 1, gap: 4, minWidth: 0 }}>
-              <Text accessibilityRole="header" {...heading(1)} style={{ color: colors.ink, fontSize: 28, fontWeight: "900", lineHeight: 34 }}>OrtakSat Blog</Text>
-              <Text style={{ color: colors.muted, fontSize: 14.5, fontWeight: "600", lineHeight: 21 }}>Ortak satış, komisyon, e-ticaret ve güvenli alışveriş üzerine sade rehberler.</Text>
+        <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 18, flexDirection: "row", flexWrap: "wrap", gap: 12, paddingHorizontal: 14, paddingVertical: 14 }}>
+          <View style={{ alignItems: "center", flexBasis: 280, flexDirection: "row", flexGrow: 1, gap: 12, minWidth: 0 }}>
+            <Mascot name="idea" size={60} priority panel panelColor="#FFFFFF" />
+            <View style={{ flex: 1, gap: 3, minWidth: 0 }}>
+              <Text accessibilityRole="header" {...heading(1)} dataSet={{ blogH1: "1" }} style={{ color: colors.ink, fontSize: wide ? 28 : 22, fontWeight: "900", lineHeight: wide ? 34 : 28 }}>OrtakSat Blog</Text>
+              <Text style={{ color: colors.muted, fontSize: 13.5, fontWeight: "600", lineHeight: 19 }}>Ortak satış, komisyon, e-ticaret ve güvenli alışveriş üzerine sade rehberler.</Text>
             </View>
           </View>
-          <View style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 12, borderWidth: 1, flexBasis: 300, flexDirection: "row", flexGrow: 1, gap: 8, maxWidth: 440, minHeight: 48, minWidth: 0, paddingHorizontal: 12 }}>
+          <View style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 12, borderWidth: 1, flexBasis: 280, flexDirection: "row", flexGrow: 1, gap: 8, maxWidth: 440, minHeight: 46, minWidth: 0, paddingHorizontal: 12 }}>
             <MaterialCommunityIcons name="magnify" size={20} color={colors.primaryDark} />
-            <TextInput testID="blog-search" accessibilityLabel="Blogda ara" value={query} onChangeText={setQuery} placeholder="Blogda ara: komisyon, kargo, Instagram…" placeholderTextColor={colors.muted} autoCapitalize="none" autoCorrect={false} returnKeyType="search" style={{ color: colors.ink, flex: 1, fontSize: 15, fontWeight: "600", height: 46, minWidth: 0 }} />
+            <TextInput testID="blog-search" accessibilityLabel="Blogda ara" value={query} onChangeText={setQuery} placeholder="Blogda ara: komisyon, kargo, Instagram…" placeholderTextColor={colors.muted} autoCapitalize="none" autoCorrect={false} returnKeyType="search" style={{ color: colors.ink, flex: 1, fontSize: 15, fontWeight: "600", height: 44, minWidth: 0 }} />
             {searching ? (
               <Pressable accessibilityRole="button" accessibilityLabel="Aramayı temizle" hitSlop={8} onPress={() => setQuery("")}>
                 <MaterialCommunityIcons name="close-circle" size={19} color={colors.subtle} />
@@ -107,47 +111,52 @@ export default function BlogPage() {
           </View>
         </View>
 
-        <View dataSet={{ blogWrap: "1" }} style={{ alignItems: "flex-start", gap: 20 }}>
+        <View dataSet={{ blogWrap: "1" }} style={{ alignItems: "flex-start", flexDirection: wide ? "row" : "column", gap: wide ? 20 : 16 }}>
           {/* ---- Ana sütun ---- */}
           <View style={{ alignSelf: "stretch", flex: 1, gap: 16, minWidth: 0 }}>
             {!filtering ? (
-              <View dataSet={{ blogFeat: "1" }} style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 18, borderWidth: 1, flexDirection: "column-reverse", gap: 18, overflow: "hidden", padding: 18 }}>
-                <View dataSet={{ blogFeattext: "1" }} style={{ gap: 12, minWidth: 0 }}>
+              <View dataSet={{ blogFeat: "1" }} style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 18, borderWidth: 1, flexDirection: wide ? "row" : "column-reverse", gap: wide ? 18 : 12, overflow: "hidden", padding: wide ? 18 : 12 }}>
+                <View dataSet={{ blogFeattext: "1" }} style={[{ gap: 9, minWidth: 0 }, wide ? { flex: 1.1, justifyContent: "center" } : null]}>
                   <View style={{ alignItems: "center", alignSelf: "flex-start", backgroundColor: colors.primarySoft, borderRadius: 999, flexDirection: "row", gap: 5, paddingHorizontal: 10, paddingVertical: 4 }}>
                     <MaterialCommunityIcons name="star-four-points-outline" size={12} color={colors.primaryDark} />
                     <Text style={{ color: colors.primaryDark, fontSize: 11, fontWeight: "900" }}>Öne çıkan yazı · {featured.category}</Text>
                   </View>
-                  <Text accessibilityRole="header" {...heading(2)} style={{ color: colors.ink, fontSize: 24, fontWeight: "900", lineHeight: 30 }}>{featured.title}</Text>
-                  <Text style={{ color: colors.muted, fontSize: 14, fontWeight: "600", lineHeight: 21 }}>{featured.excerpt}</Text>
+                  <Text accessibilityRole="header" {...heading(2)} dataSet={{ blogFeatTitle: "1" }} style={{ color: colors.ink, fontSize: wide ? 24 : 18, fontWeight: "900", lineHeight: wide ? 30 : 24 }}>{featured.title}</Text>
+                  <Text numberOfLines={3} style={{ color: colors.muted, fontSize: 13.5, fontWeight: "600", lineHeight: 20 }}>{featured.excerpt}</Text>
                   <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 14 }}>
-                    <Meta icon="account-edit-outline" text={featured.author} />
-                    <Meta icon="clock-outline" text={`${featured.readMin} dk okuma`} />
-                    <Meta icon="calendar-blank-outline" text={featured.date} />
+                    <BlogMeta icon="clock-outline" text={`${featured.readMin} dk okuma`} />
+                    <BlogMeta icon="calendar-blank-outline" text={featured.date} />
                   </View>
-                  <PressLink href={{ pathname: "/blog/[slug]", params: { slug: featured.slug } }} accessibilityLabel={`${featured.title} — yazıyı oku`} style={{ alignItems: "center", alignSelf: "flex-start", backgroundColor: colors.primary, borderRadius: 12, flexDirection: "row", gap: 6, minHeight: 44, paddingHorizontal: 20 }}>
-                    <Text style={{ color: "#FFFFFF", fontSize: 14, fontWeight: "900" }}>Yazıyı Oku</Text>
+                  <PressLink href={{ pathname: "/blog/[slug]", params: { slug: featured.slug } }} accessibilityLabel={`${featured.title} — yazıyı oku`} style={{ alignItems: "center", alignSelf: "flex-start", backgroundColor: colors.primary, borderRadius: 12, flexDirection: "row", gap: 6, minHeight: 42, paddingHorizontal: 18 }}>
+                    <Text style={{ color: "#FFFFFF", fontSize: 13.5, fontWeight: "900" }}>Yazıyı Oku</Text>
                     <MaterialCommunityIcons name="arrow-right" size={17} color="#FFFFFF" />
                   </PressLink>
                 </View>
-                <View dataSet={{ blogFeatimg: "1" }} style={{ borderRadius: 14, flex: 1, height: 220, minHeight: 220, overflow: "hidden" }}>
-                  <BlogCover post={featured} variant="hero" />
+                <View dataSet={{ blogFeatimg: "1" }} style={wide ? { borderRadius: 14, flex: 1, height: 220, minHeight: 220, overflow: "hidden" } : { borderRadius: 12, height: 132, minHeight: 132, overflow: "hidden" }}>
+                  {blogCoverHasImage(featured) ? <BlogCover post={featured} /> : (
+                    <>
+                      <NarrowOnly wide={wide} style={{ height: "100%", width: "100%" }}><BlogCover post={featured} variant="card" /></NarrowOnly>
+                      <WideOnly wide={wide} style={{ height: "100%", width: "100%" }}><BlogCover post={featured} variant="hero" /></WideOnly>
+                    </>
+                  )}
                 </View>
               </View>
             ) : null}
 
             {/* Kategori süzgeci */}
-            <View accessibilityRole="tablist" style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+            {/* Tek satır + yatay kaydırma: telefonda üç satır çip yerine bir satır; geniş ekranda zaten sığar. */}
+            <ScrollView horizontal accessibilityRole="tablist" showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled" style={{ flexGrow: 0 }} contentContainerStyle={{ gap: 8, paddingRight: 4 }}>
               {(["Tümü", ...BLOG_CATEGORIES] as Array<BlogCategory | "Tümü">).map((cat) => {
                 const on = active === cat;
                 const count = cat === "Tümü" ? allPosts.length : counts.get(cat) ?? 0;
                 return (
-                  <Pressable key={cat} accessibilityRole="tab" accessibilityState={{ selected: on }} onPress={() => setActive(cat)} style={{ alignItems: "center", backgroundColor: on ? colors.primary : colors.surface, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 6, minHeight: 38, paddingHorizontal: 14 }}>
+                  <Pressable key={cat} accessibilityRole="tab" accessibilityState={{ selected: on }} onPress={() => setActive(cat)} style={{ alignItems: "center", backgroundColor: on ? colors.primary : colors.surface, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 6, minHeight: 36, paddingHorizontal: 13 }}>
                     <Text style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 13, fontWeight: "800" }}>{cat}</Text>
                     <Text style={{ color: on ? "#D7E2F6" : colors.subtle, fontSize: 12, fontWeight: "800" }}>{count}</Text>
                   </Pressable>
                 );
               })}
-            </View>
+            </ScrollView>
 
             {filtering ? (
               <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
@@ -171,18 +180,18 @@ export default function BlogPage() {
                 </Pressable>
               </View>
             ) : (
-              <View testID="blog-grid" style={{ flexDirection: "row", flexWrap: "wrap", gap: 16 }}>
-                {grid.map((post) => <PostCard key={post.slug} post={post} />)}
-                {/* Görünmez dolgular: son satırdaki kartlar diğerleriyle aynı genişlikte kalır (yoksa satırı doldurmak için genişlerler). */}
-                <View pointerEvents="none" style={{ flexBasis: 250, flexGrow: 1, height: 0, maxWidth: 420, minWidth: 0 }} />
-                <View pointerEvents="none" style={{ flexBasis: 250, flexGrow: 1, height: 0, maxWidth: 420, minWidth: 0 }} />
-                <View pointerEvents="none" style={{ flexBasis: 250, flexGrow: 1, height: 0, maxWidth: 420, minWidth: 0 }} />
+              <View testID="blog-grid" style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
+                {grid.map((post) => <BlogPostCard key={post.slug} post={post} wide={wide} />)}
+                {/* Görünmez dolgular (yalnız geniş düzende): son satırdaki kartlar diğerleriyle aynı genişlikte kalır. */}
+                <WideOnly wide={wide} style={FILLER}>{null}</WideOnly>
+                <WideOnly wide={wide} style={FILLER}>{null}</WideOnly>
+                <WideOnly wide={wide} style={FILLER}>{null}</WideOnly>
               </View>
             )}
           </View>
 
           {/* ---- Yan sütun (mobilde altta, tam genişlik). Koşulsuz çizilir → sunucu çıktısıyla aynı. ---- */}
-          <View dataSet={{ blogSide: "1" }} style={{ gap: 16, width: "100%" }}>
+          <View dataSet={{ blogSide: "1" }} style={wide ? { flexBasis: 320, flexGrow: 0, flexShrink: 0, gap: 16, width: 320 } : { gap: 14, width: "100%" }}>
             <SideCard title="Editörün seçtikleri">
               {picks.map((post, i) => (
                 <PressLink key={post.slug} href={{ pathname: "/blog/[slug]", params: { slug: post.slug } }} accessibilityLabel={post.title} pressedOpacity={0.8} style={{ alignItems: "center", flexDirection: "row", gap: 10 }}>
@@ -250,39 +259,7 @@ export default function BlogPage() {
   );
 }
 
-function Meta({ icon, text }: { icon: keyof typeof MaterialCommunityIcons.glyphMap; text: string }) {
-  return (
-    <View style={{ alignItems: "center", flexDirection: "row", gap: 5 }}>
-      <MaterialCommunityIcons name={icon} size={14} color={colors.muted} />
-      <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "700" }}>{text}</Text>
-    </View>
-  );
-}
-
-function PostCard({ post }: { post: BlogPost }) {
-  return (
-    <Link href={{ pathname: "/blog/[slug]", params: { slug: post.slug } }} asChild>
-      <Pressable accessibilityRole="link" accessibilityLabel={post.title} dataSet={{ card: "blog" }} style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, flexBasis: 250, flexGrow: 1, maxWidth: 420, minWidth: 0, overflow: "hidden" }}>
-        <View style={{ height: 150, width: "100%" }}>
-          <BlogCover post={post} />
-          <View style={{ left: 10, position: "absolute", top: 10 }}>
-            <View style={{ backgroundColor: "#FFFFFF", borderRadius: 999, paddingHorizontal: 9, paddingVertical: 4 }}>
-              <Text style={{ color: colors.primaryDark, fontSize: 10.5, fontWeight: "900" }}>{post.category}</Text>
-            </View>
-          </View>
-        </View>
-        <View style={{ flex: 1, gap: 8, padding: 14 }}>
-          <Text numberOfLines={2} {...heading(3)} style={{ color: colors.ink, fontSize: 15.5, fontWeight: "800", lineHeight: 20, minHeight: 40 }}>{post.title}</Text>
-          <Text numberOfLines={3} style={{ color: colors.muted, fontSize: 13, fontWeight: "500", lineHeight: 19 }}>{post.excerpt}</Text>
-          <View style={{ alignItems: "center", borderTopColor: colors.line, borderTopWidth: 1, flexDirection: "row", flexWrap: "wrap", gap: 12, marginTop: "auto", paddingTop: 10 }}>
-            <Meta icon="clock-outline" text={`${post.readMin} dk okuma`} />
-            <Meta icon="calendar-blank-outline" text={post.date} />
-          </View>
-        </View>
-      </Pressable>
-    </Link>
-  );
-}
+const FILLER = { flexBasis: 250, flexGrow: 1, height: 0, maxWidth: 420, minWidth: 0 } as const;
 
 function SideCard({ title, children }: { title: string; children: ReactNode }) {
   return (

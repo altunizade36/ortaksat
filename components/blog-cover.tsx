@@ -82,7 +82,7 @@ export type BlogCoverPost = { slug: string; category: BlogCategory | string; tit
  * Bulunduğu kutuyu doldurur (yükseklik/genişlik ebeveynden gelir; ebeveyn overflow: "hidden" olmalı).
  * `thumb` küçük kare, `card` liste kartı, `hero` yazı sayfasının üst şeridi.
  */
-export function BlogCover({ post, variant = "card" }: { post: BlogCoverPost; variant?: "thumb" | "card" | "hero" }) {
+export function BlogCover({ post, variant = "card" }: { post: BlogCoverPost; variant?: "thumb" | "tile" | "card" | "hero" }) {
   const remote = ownImage(post.image);
   if (remote) {
     return <SafeRemoteImage uri={remote} alt={post.title} accessibilityLabel={post.title} style={{ height: "100%", width: "100%" }} contentFit="cover" transition={160} />;
@@ -102,21 +102,31 @@ export function BlogCover({ post, variant = "card" }: { post: BlogCoverPost; var
     );
   }
 
-  const hero = variant === "hero";
-  const tile = hero ? 96 : 68;
-  const ghost = hero ? 240 : 150;
+  // Ölçüler kutunun boyuna göre: hero ≈ 200+ px şerit, card ≈ 150 px kart kapağı, tile ≈ 90 px küçük kare (mobil satır kartı).
+  const size = SIZES[variant];
   return (
     <LinearGradient accessibilityRole="image" accessibilityLabel={post.title} colors={gradient} start={{ x: mirrored ? 1 : 0, y: 0 }} end={{ x: mirrored ? 0 : 1, y: 1 }} style={{ alignItems: "center", height: "100%", justifyContent: "center", overflow: "hidden", width: "100%" }}>
       {/* yumuşak daireler — düz zemini kırar, simgenin arkasında derinlik verir */}
-      <View pointerEvents="none" style={[{ backgroundColor: "rgba(255,255,255,0.08)", borderRadius: 999, height: hero ? 300 : 190, position: "absolute", top: hero ? -120 : -80, width: hero ? 300 : 190 }, mirrored ? { left: -60 } : { right: -60 }]} />
-      <View pointerEvents="none" style={[{ backgroundColor: "rgba(255,255,255,0.06)", borderRadius: 999, bottom: hero ? -110 : -70, height: hero ? 230 : 150, position: "absolute", width: hero ? 230 : 150 }, mirrored ? { right: -40 } : { left: -40 }]} />
+      <View pointerEvents="none" style={[{ backgroundColor: "rgba(255,255,255,0.08)", borderRadius: 999, height: size.circle, position: "absolute", top: -size.circle * 0.42, width: size.circle }, mirrored ? { left: -size.circle * 0.3 } : { right: -size.circle * 0.3 }]} />
+      {size.circle2 > 0 ? <View pointerEvents="none" style={[{ backgroundColor: "rgba(255,255,255,0.06)", borderRadius: 999, bottom: -size.circle2 * 0.47, height: size.circle2, position: "absolute", width: size.circle2 }, mirrored ? { right: -40 } : { left: -40 }]} /> : null}
       {/* konunun soluk büyük izi */}
-      <View pointerEvents="none" style={[{ bottom: hero ? -46 : -30, position: "absolute" }, mirrored ? { left: hero ? 28 : 6 } : { right: hero ? 28 : 6 }]}>
-        <MaterialCommunityIcons name={icon} size={ghost} color="rgba(255,255,255,0.10)" />
+      <View pointerEvents="none" style={[{ bottom: -size.ghost * 0.2, position: "absolute" }, mirrored ? { left: size.ghostInset } : { right: size.ghostInset }]}>
+        <MaterialCommunityIcons name={icon} size={size.ghost} color="rgba(255,255,255,0.10)" />
       </View>
-      <View style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.16)", borderColor: "rgba(255,255,255,0.34)", borderRadius: hero ? 26 : 20, borderWidth: 1.5, height: tile, justifyContent: "center", width: tile }}>
-        <MaterialCommunityIcons name={icon} size={hero ? 52 : 36} color="#FFFFFF" />
+      <View style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.16)", borderColor: "rgba(255,255,255,0.34)", borderRadius: size.radius, borderWidth: 1.5, height: size.tile, justifyContent: "center", width: size.tile }}>
+        <MaterialCommunityIcons name={icon} size={size.icon} color="#FFFFFF" />
       </View>
     </LinearGradient>
   );
+}
+
+const SIZES = {
+  hero: { tile: 96, icon: 52, radius: 26, ghost: 240, ghostInset: 28, circle: 300, circle2: 230 },
+  card: { tile: 68, icon: 36, radius: 20, ghost: 150, ghostInset: 6, circle: 190, circle2: 150 },
+  tile: { tile: 44, icon: 24, radius: 14, ghost: 86, ghostInset: -10, circle: 110, circle2: 0 }
+} as const;
+
+/** Yazının kendi fotoğrafı var mı (varsa kapak tek bir görseldir; boyuta göre iki ayrı çizim gerekmez). */
+export function blogCoverHasImage(post: BlogCoverPost) {
+  return ownImage(post.image) !== null;
 }

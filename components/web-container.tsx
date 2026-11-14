@@ -6,8 +6,8 @@ import { useIsWideWeb } from "@/lib/layout";
 /**
  * Centers and width-caps page content on desktop web so forms, lists and text
  * don't stretch edge-to-edge across a wide monitor (which reads as a blown-up
- * mobile app). On native and narrow web it is a transparent passthrough, so
- * mobile layouts are completely unaffected.
+ * mobile app). On narrow web it only adds the side padding; on native see the note
+ * inside the component (page-level containers get the same box, tab screens pass through).
  *
  * Use a wider `max` for grids/feeds and a narrower one for forms/reading.
  */
@@ -29,8 +29,17 @@ export function WebContainer({
   const [mounted, setMounted] = useState(false);
   useEffect(() => { setMounted(true); }, []);
 
-  // Native: mobil düzen etkilenmesin diye şeffaf geçiş.
-  if (Platform.OS !== "web") return <>{children}</>;
+  // Uygulama (native):
+  // - Sayfa kendi kenar boşluğunu ve aralığını bu kapsayıcıya bırakmışsa (`style` verilmiş + padding > 0: bilgi
+  //   sayfaları, kategori, toplu ilan) dar web'deki kutunun AYNISI kurulur. Eskiden burada da çıplak children
+  //   dönüyordu → `style` (gap, paddingTop) ve `padding` yok sayılıyor, uygulamada kartlar ekran kenarına yapışık,
+  //   bölümler arasında boşluksuz çiziliyordu (2026-11-15, emülatörde görüldü).
+  // - Diğer kullanımlar (sekme ekranları: padding 0 ya da stilsiz) eskisi gibi şeffaf geçer; onların düzeni
+  //   üstteki kaydırma alanından gelir, araya kutu girerse bozulur.
+  if (Platform.OS !== "web") {
+    if (style && padding > 0) return <View style={[{ paddingHorizontal: Math.min(padding, 14), width: "100%" }, style]}>{children}</View>;
+    return <>{children}</>;
+  }
 
   const wide = mounted ? isWideWeb : true;
   // Mobil web: eskiden ÇIPLAK children dönüyordu → `padding` prop'u yok sayılıyor, yalnız
