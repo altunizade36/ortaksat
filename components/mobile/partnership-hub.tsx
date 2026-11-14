@@ -116,7 +116,10 @@ export function MobilePartnershipHub() {
     [busy, setBusy] = useState<string | null>(null),
     // "Ortaklıklarım"da hangi taraf: ortak olduğum ilanlar / ilanlarımdaki ortaklar (null = otomatik).
     [side, setSide] = useState<"partner" | "owner" | null>(null),
-    [refreshing, setRefreshing] = useState(false);
+    [refreshing, setRefreshing] = useState(false),
+    // TOPLU DUYURU: satıcı, aktif ortaklarının hepsine aynı mesajı gönderir (her ortakla ilan sohbetine düşer).
+    [announceOpen, setAnnounceOpen] = useState(false),
+    [announceText, setAnnounceText] = useState("");
   useEffect(() => {
     setTab(
       ["requests", "pending"].includes(params.tab || "")
@@ -312,6 +315,21 @@ export function MobilePartnershipHub() {
         if (!ok) showToast("WhatsApp açılamadı. Paylaş düğmesini kullan.");
       },
     );
+  }
+  // Aktif ortakların her birine ilan sohbetinden mesaj gönderir. Aynı ortak birden çok ilanda ortaksa TEK mesaj alır.
+  function sendAnnouncement() {
+    const body = announceText.trim();
+    if (body.length < 5) { showToast("Duyuru metni çok kısa."); return; }
+    const targets = new Map<string, Partnership>();
+    for (const p of ownerSideAll) if (p.status === "active" && !targets.has(p.partnerId)) targets.set(p.partnerId, p);
+    let sent = 0;
+    for (const p of targets.values()) {
+      const l = listings.get(p.listingId);
+      if (l && store.startConversation(l.id, p.partnerId, body, l)) sent += 1;
+    }
+    setAnnounceOpen(false);
+    if (sent) setAnnounceText("");
+    showToast(sent ? `Duyuru ${sent} ortağa gönderildi.` : "Duyuru gönderilemedi. Tekrar dene.");
   }
   function pCard(p: Partnership) {
     const l = listings.get(p.listingId),
@@ -1252,6 +1270,39 @@ export function MobilePartnershipHub() {
             <Text style={[ms.muted, { marginBottom: 10 }]}>
               Ortaklık geçmişi: {history.total} başvuru · {history.accepted} kabul · {history.rejected} ret · {history.withSale} satışla sonuçlanan · {history.cancelled} sona eren · {history.ongoing} devam eden
             </Text>
+          )}
+          {asOwner && history.ongoing > 0 && (
+            <MobileCard>
+              <Text style={ms.section}>Ortaklarına Duyuru Gönder</Text>
+              <Text style={ms.muted}>
+                Aktif ortaklarının hepsine tek seferde mesaj gönder (örn. fiyat güncellemesi, stok bilgisi, komisyon artışı). Mesaj her ortağın sohbetine düşer.
+              </Text>
+              {announceOpen ? (
+                <>
+                  <MobileField value={announceText} onChange={setAnnounceText} multiline maxLength={600} placeholder="Duyuru metnini yaz…" />
+                  <View style={ms.row}>
+                    <MobileButton secondary style={{ flex: 1 }} onPress={() => setAnnounceOpen(false)}>
+                      Vazgeç
+                    </MobileButton>
+                    <MobileButton
+                      style={{ flex: 1 }}
+                      onPress={() =>
+                        Alert.alert("Duyuru Gönder", "Mesaj aktif ortaklarının hepsine gönderilsin mi?", [
+                          { text: "Vazgeç", style: "cancel" },
+                          { text: "Gönder", onPress: sendAnnouncement },
+                        ])
+                      }
+                    >
+                      Gönder
+                    </MobileButton>
+                  </View>
+                </>
+              ) : (
+                <MobileButton secondary icon="bullhorn-outline" onPress={() => setAnnounceOpen(true)}>
+                  Duyuru Yaz
+                </MobileButton>
+              )}
+            </MobileCard>
           )}
           {asOwner && topPartners.length > 0 && (
             <MobileCard>

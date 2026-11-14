@@ -17,6 +17,7 @@ import type {Listing,Partnership,User} from "@/lib/types";
 import {MobileListingReviews} from "./listing-reviews";
 import {MobileButton,MobileCard,MobileChip,MobileField,MobileScreen,IconButton,mobile,ms,useMobileLayout} from "./ui";
 import {showToast} from "@/lib/toast";
+import {fetchMyPartnershipNote,saveMyPartnershipNote} from "@/lib/partnership-notes";
 import type {LeadStatus} from "@/lib/types";
 // Anlamsal "kazanç/aktif" yeşili (teal değil): successSoft zemin üstünde AA okunur koyu ton.
 const GREEN_INK="#0645C9";
@@ -26,6 +27,11 @@ export function MobilePartnershipContent({listing,partnership}:{listing:Listing;
  const store=useStore(),{maxWidth,tablet,height}=useMobileLayout(),[photo,setPhoto]=useState(0),[gallery,setGallery]=useState(false),[tab,setTab]=useState("Genel Bilgiler"),[expanded,setExpanded]=useState(false);
  // MÜŞTERİLER: ortağın bu ortaklık için bildirdiği müşteri kayıtları (satıcı da görür). Ekleme yalnız ortakta.
  const [leadForm,setLeadForm]=useState(false),[buyerName,setBuyerName]=useState(""),[buyerPhone,setBuyerPhone]=useState(""),[buyerNote,setBuyerNote]=useState(""),[leadError,setLeadError]=useState("");
+ // ÖZEL NOT: yalnız bu kullanıcının gördüğü not (karşı taraf okuyamaz; bkz. lib/partnership-notes.ts).
+ const [privateNote,setPrivateNote]=useState(""),[savedNote,setSavedNote]=useState<string|null>(null),[noteBusy,setNoteBusy]=useState(false);
+ const meId=store.currentUser.id;
+ useEffect(()=>{let alive=true;setSavedNote(null);void fetchMyPartnershipNote(partnership.id,meId).then(value=>{if(!alive||value===null)return;setSavedNote(value);setPrivateNote(value);});return()=>{alive=false;};},[partnership.id,meId]);
+ async function saveNote(){if(noteBusy)return;setNoteBusy(true);try{const ok=await saveMyPartnershipNote(partnership.id,meId,privateNote);if(ok){setSavedNote(privateNote.trim());showToast(privateNote.trim()?"Notun kaydedildi.":"Notun silindi.");}else showToast("Not kaydedilemedi. Tekrar dene.");}finally{setNoteBusy(false);}}
  const myLeads=store.leads.filter(lead=>lead.partnershipId===partnership.id).sort((a,b)=>(b.createdAt||"").localeCompare(a.createdAt||""));
  const leadLabel:Record<LeadStatus,string>={new:"Müşteri bulundu",contacted:"İlk görüşme yapıldı",interested:"Satın almaya hazır",converted:"Satışa döndü",lost:"Vazgeçti"};
  function addLead(){
@@ -73,6 +79,12 @@ export function MobilePartnershipContent({listing,partnership}:{listing:Listing;
     {!locked&&active&&<View style={ms.wrap}>{(["contacted","interested","lost"] as LeadStatus[]).filter(next=>next!==lead.status).map(next=><MobileChip key={next} label={leadLabel[next]} onPress={()=>store.updateLeadStatus(lead.id,next)}/>)}</View>}
    </View>;})}
    {!myLeads.length&&!leadForm&&<Text style={ms.muted}>{owner?"Henüz müşteri bildirilmedi.":"Henüz müşteri eklemedin."}</Text>}
+  </MobileCard>}
+  {tab==="Genel Bilgiler"&&savedNote!==null&&<MobileCard>
+   <Text style={ms.section}>Özel Notum</Text>
+   <Text style={ms.muted}>{owner?"Bu ortakla ilgili kendine not al. Yalnız sen görürsün; ortak göremez.":"Bu ortaklıkla ilgili kendine not al. Yalnız sen görürsün; satıcı göremez."}</Text>
+   <MobileField value={privateNote} onChange={setPrivateNote} multiline maxLength={2000} placeholder={owner?"Örn. Güvenilir ortak, daha önce 3 satış yaptı.":"Örn. Müşteri cumartesi tekrar aranacak."}/>
+   {privateNote.trim()!==(savedNote||"")&&<MobileButton secondary disabled={noteBusy} onPress={()=>void saveNote()}>{noteBusy?"Kaydediliyor…":"Notu Kaydet"}</MobileButton>}
   </MobileCard>}
   {tab==="Genel Bilgiler"&&<><MobileCard style={{backgroundColor:active?colors.primarySoft:partnership.status==="rejected"||partnership.status==="blocked"?colors.accentSoft:colors.surfaceAlt}}><Text style={ms.section}>{active&&!owner?"Ortaklığın Onaylandı!":partnershipStatusLabels[partnership.status]}</Text><Text style={ms.muted}>{active?owner?"Bu ortaklık aktif. Ortağın koşulları aşağıda gösterilir.":"Satıcının onayıyla bu ilan için müşteri bulabilir, anlaşma koşullarına göre komisyon kazanabilirsin.":partnership.status==="pending"?"Satıcının yanıtı bekleniyor. Henüz aktif ortaklık kurulmadı.":partnership.rejectionReason||"Ortaklığın güncel durumu yukarıda gösterilir."}</Text><Text style={ms.muted}>Başvuru: {new Date(partnership.createdAt).toLocaleDateString("tr-TR")}</Text>{partnership.approvedAt&&<Text style={ms.muted}>Onay: {new Date(partnership.approvedAt).toLocaleDateString("tr-TR")}</Text>}</MobileCard><MobileCard><Text style={ms.section}>Ürün Açıklaması</Text><Text numberOfLines={expanded?undefined:4} style={{fontSize:13,lineHeight:22,color:mobile.muted}}>{listing.description||"Açıklama belirtilmemiş."}</Text>{listing.description.length>180&&<MobileChip label={expanded?"Daha Az":"Daha Fazla"} onPress={()=>setExpanded(v=>!v)}/>}</MobileCard><MobileCard><Text style={ms.section}>Ürün Bilgileri</Text>{describeAttributes(listing.attributes).map(a=><View key={a.label} style={[ms.row,{justifyContent:"space-between",alignItems:"flex-start"}]}><Text style={[ms.muted,{flex:1}]}>{a.label}</Text><Text style={[ms.label,{flex:1,textAlign:"right"}]}>{a.value}</Text></View>)}{!describeAttributes(listing.attributes).length&&<Text style={ms.muted}>Ek özellik girilmemiş.</Text>}</MobileCard></>}
   {tab==="Ortaklık Koşulları"&&<><MobileCard><Text style={ms.section}>Bu Ortaklığın Koşulları</Text>{terms.map(([label,value])=><View key={label} style={[ms.row,{justifyContent:"space-between",alignItems:"flex-start"}]}><Text style={[ms.muted,{flex:1}]}>{label}</Text><Text style={[ms.label,{flex:1,textAlign:"right"}]}>{value}</Text></View>)}<Text style={ms.muted}>{partnership.commissionOverrideType?"Satıcının bu ortağa özel komisyonu uygulanır.":partnership.agreedCommissionType?"Katılım sırasında kaydedilen anlaşma komisyonu uygulanır.":"Bu eski kayıtta anlaşma anlık görüntüsü yok; ilanın güncel koşulları gösterilir."}</Text></MobileCard>{partnership.note&&<MobileCard><Text style={ms.section}>Başvuru Notu</Text><Text style={ms.muted}>{partnership.note}</Text></MobileCard>}<MobileCard><Text style={ms.muted}>OrtakSat para tutmaz. Ödeme ve teslimat taraflar arasında gerçekleşir. İade, komisyon vadesi ve satış koşullarını satıcıyla netleştir.</Text></MobileCard></>}

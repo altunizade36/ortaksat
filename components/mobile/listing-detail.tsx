@@ -15,6 +15,8 @@ import { ClampedText, CommissionSummary, DefinitionGrid, DetailMetaLine, DetailN
 import { moneyIn, partnerInviteUrl } from "@/lib/format";
 import { shareOrCopy } from "@/lib/share";
 import { showToast } from "@/lib/toast";
+import { ListingQA } from "@/components/listing-qa";
+import { PartnershipListingCard } from "./partnership-listing-card";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import type { Listing, PartnershipStatus, User } from "@/lib/types";
 import { MobileButton, IconButton, mobile, mobileContent, ms, useMobileLayout } from "./ui";
@@ -31,8 +33,8 @@ import { MobileButton, IconButton, mobile, mobileContent, ms, useMobileLayout } 
 //   760+      tablet       — galeri | başlık yan yana (bilgi sütunu ≥300 dp); içerik ≤1040 dp → 1180 dp
 //                            yatayda kenardan kenara yayılmaz. İçerik 900 dp+ ise gövde de aynı iki sütuna
 //                            iner: solda galeri + ilan bilgisi, sağda başlık + satıcı / konum / güvenlik.
-type Props = { listing: Listing; owner?: User; favorite: boolean; onFavorite: () => void; onShare: () => void; onMessage: () => void; onCall: () => void; onJoin: () => void; onReport: (reason: string) => void; isOwner: boolean; unavailable?: string; partnershipStatus?: PartnershipStatus; joinAction?: ListingJoinAction; contactBusy?: boolean; sellerBlocked?: boolean };
-export function MobileListingDetail({ listing: l, owner, favorite, onFavorite, onShare, onMessage, onCall, onJoin, onReport, isOwner, unavailable, partnershipStatus, joinAction: suppliedJoinAction, contactBusy = false, sellerBlocked = false }: Props) {
+type Props = { /** Benzer ilanlar (ilan sayfası hesaplar; verilmezse bölüm çizilmez). */ similar?: Listing[]; listing: Listing; owner?: User; favorite: boolean; onFavorite: () => void; onShare: () => void; onMessage: () => void; onCall: () => void; onJoin: () => void; onReport: (reason: string) => void; isOwner: boolean; unavailable?: string; partnershipStatus?: PartnershipStatus; joinAction?: ListingJoinAction; contactBusy?: boolean; sellerBlocked?: boolean };
+export function MobileListingDetail({ similar = [], listing: l, owner, favorite, onFavorite, onShare, onMessage, onCall, onJoin, onReport, isOwner, unavailable, partnershipStatus, joinAction: suppliedJoinAction, contactBusy = false, sellerBlocked = false }: Props) {
   const { width, height, insets, tablet, wide, maxWidth } = useMobileLayout();
   const { language } = useLanguage();
   const router = useRouter();
@@ -166,6 +168,17 @@ export function MobileListingDetail({ listing: l, owner, favorite, onFavorite, o
         {bodyMain}
         {bodySide}
       </View>}
+      {/* SORU-CEVAP + BENZER İLANLAR — web ilan sayfasındaki bölümlerin uygulamadaki karşılığı (eskiden uygulamada yoktu).
+          Satılmış / yayından kalkmış ilanda benzerler "Buna benzer N ilan var" başlığıyla öne çıkar. */}
+      <View style={[{ paddingHorizontal: boxed ? 0 : detail.gutter, marginTop: detail.gap, gap: detail.gap }, boxed && { alignSelf: "center", maxWidth: contentWidth, width: "100%" }]}>
+        {!l.demo ? <ListingQA listingId={l.id} isOwner={!!isOwner} isDemo={false} /> : null}
+        {similar.length > 0 ? <View style={{ gap: 10 }}>
+          <Text accessibilityRole="header" style={ms.section}>{unavailable ? `Buna benzer ${similar.length} ilan var` : "Benzer ilanlar"}</Text>
+          <HorizontalScroll showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingRight: 8 }}>
+            {similar.slice(0, 8).map((item) => <PartnershipListingCard key={item.id} listing={item} width={156} />)}
+          </HorizontalScroll>
+        </View> : null}
+      </View>
     </ScrollView>
     {/* ALT AKSİYON ÇUBUĞU — tek birincil CTA; sahip görünümünde düzenle + istatistik kısayolu. */}
     <View testID="listing-detail-actions" style={[s.footer, { paddingBottom: Math.max(10, insets.bottom) }]}><View style={[s.footerRow, boxed && { alignSelf: "center", maxWidth: Math.min(contentWidth, mobileContent.column), width: "100%" }]}>{isOwner ? <><MobileButton secondary onPress={() => router.push(`/listing-stats/${l.id}` as never)} style={{ flex: 1 }} icon="chart-box-outline">İstatistikler</MobileButton><MobileButton onPress={() => router.push(`/listing-edit/${l.id}` as never)} style={{ flex: 1 }} icon="pencil">İlanı Düzenle</MobileButton></> : <>{externalContact && <Pressable accessibilityRole="button" accessibilityLabel={contactBusy ? "Açılıyor…" : l.contactMethod === "whatsapp" ? "WhatsApp" : "Satıcıyı Ara"} disabled={contactDisabled} accessibilityState={{ disabled: contactDisabled }} onPress={onCall} style={{ width: 46, height: 46, borderRadius: 10, borderWidth: 1, borderColor: mobile.line, alignItems: "center", justifyContent: "center", opacity: contactDisabled ? 0.45 : 1 }}><Icon name={contactBusy ? "loading" : l.contactMethod === "whatsapp" ? "whatsapp" : "phone"} size={21} color={mobile.teal} /></Pressable>}<MobileButton secondary onPress={onMessage} disabled={contactDisabled} style={{ flex: 1 }} icon="chat">Mesaj</MobileButton>{(partnerable || joinAction.kind === "view") && <MobileButton onPress={onJoin} disabled={joinDisabled} style={{ flex: 1 }} icon={joinAction.kind === "view" ? undefined : "account-group"}>{joinLabel}</MobileButton>}</>}</View></View>

@@ -637,7 +637,7 @@ export default function ListingDetailScreen() {
   });
 
   // Mobil sabit alt aksiyon çubuğu görünürse içerik onun arkasına gizlenmesin diye ekstra alt boşluk.
-  if (isMobileApp) return <MobileListingDetail listing={currentListing} owner={owner} favorite={favorited} onFavorite={() => toggleFavorite(currentListing.id)} onShare={() => void handleShare()} isOwner={isOwner} unavailable={listingUnavailable ? unavailableLabel : undefined} partnershipStatus={partnership?.status} joinAction={joinAction} contactBusy={revealingPhone} sellerBlocked={isUserBlocked(currentListing.ownerId)}
+  if (isMobileApp) return <MobileListingDetail similar={similarFinal} listing={currentListing} owner={owner} favorite={favorited} onFavorite={() => toggleFavorite(currentListing.id)} onShare={() => void handleShare()} isOwner={isOwner} unavailable={listingUnavailable ? unavailableLabel : undefined} partnershipStatus={partnership?.status} joinAction={joinAction} contactBusy={revealingPhone} sellerBlocked={isUserBlocked(currentListing.ownerId)}
     onMessage={() => {
       if (isDemo) { demoBlocked(); return; }
       trackListingEvent(currentListing.id, "contact_click");
