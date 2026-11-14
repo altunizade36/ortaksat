@@ -20,6 +20,8 @@ import { OptionSheet } from "@/components/option-sheet";
 import { useStore } from "@/lib/use-store";
 import { supabase } from "@/lib/supabase";
 import { STORE_RANK_COLUMN } from "@/lib/store-order";
+import { VerificationBadges } from "@/components/verification-badges";
+import { tierFromCount } from "@/components/partner-tier";
 import {
   fetchPublicSeller,
   mapListing,
@@ -492,11 +494,17 @@ export function MobileSellerStore({ id }: { id: string }) {
             </Pressable>
           ))}
         </View>
-        {seller.verifiedIdentity && (
-          <Text style={{ color: mobile.teal, fontSize: 12, marginBottom: 10 }}>
-            Kimliği doğrulanmış satıcı
-          </Text>
-        )}
+        {/* Güven rozetleri (telefon / kimlik / Instagram doğrulaması, çok satan) + satışa göre profil seviyesi —
+            web mağaza sayfasındakiyle aynı kaynak (lib/verification.ts, components/partner-tier.tsx). */}
+        <View style={[{ flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 6, marginBottom: 12 }, narrowBlock]}>
+          {(() => { const level = tierFromCount(seller.successfulSales || 0); return (
+            <View accessibilityLabel={`Profil seviyesi: ${level.label}`} style={{ alignItems: "center", backgroundColor: level.tint, borderRadius: 999, flexDirection: "row", gap: 4, paddingHorizontal: 9, paddingVertical: 4 }}>
+              <Icon name={level.icon} size={12} color={level.color} />
+              <Text style={{ color: level.color, fontSize: 10.5, fontWeight: "800" }}>{level.label}</Text>
+            </View>
+          ); })()}
+          <VerificationBadges user={seller} size="sm" />
+        </View>
         {own && (
           <View style={[ms.row, { marginBottom: 14 }, narrowBlock]}>
             <MobileButton

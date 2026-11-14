@@ -1,7 +1,7 @@
 import { LISTING_GRID_PHOTO_RATIO, LISTING_GRID_BODY_HEIGHT, cardPriceFontSize } from "@/lib/card-layout";
 import { ListingCommission } from "@/components/listing-commission";
 import { displayListingTitle } from "@/lib/listing-title";
-import { listingPhotos } from "@/lib/mobile-listing";
+import { listingPhotos, maximumPartners } from "@/lib/mobile-listing";
 import { Pressable, Text, View } from "react-native";
 import { Link } from "expo-router";
 import { MaterialCommunityIcons as Icon } from "@/components/icons";
@@ -16,10 +16,13 @@ export function PartnershipListingCard({ listing: l, width, desktop = false }: {
   const {isFav:favorite,toggle} = useFavoriteFlag(l.id);
   const { language } = useLanguage();
   const photos = listingPhotos(l).length;
+  // ORTAKLIK AÇIK MI: ilan yayında, ortaklığa açık ve kontenjan dolmamış. Dolu/kapalı ilanda "Ortaklık Kapandı".
+  const capacity = maximumPartners(l);
+  const open = l.status === "active" && l.partnershipMode !== "none" && (capacity === null || (l.partnerCount || 0) < capacity);
   return <View testID="partnership-listing-card" style={{ width, borderWidth: 1, borderColor: mobile.line, backgroundColor: "white", borderRadius: 12, overflow: "hidden", marginBottom: 4, boxShadow: "0px 2px 10px #0F172A08" }}>
     <Link href={`/listing/${l.id}` as never} asChild><Pressable accessibilityRole="link" accessibilityLabel={`Ortaklık ilanı: ${displayListingTitle(l.title)}`} style={{ width: "100%" }}>
       <View style={{ width: "100%", aspectRatio: LISTING_GRID_PHOTO_RATIO }}><SafeRemoteImage uri={l.imageUrl || l.image} accessibilityLabel={displayListingTitle(l.title)} contentFit="cover" style={{ width: "100%", height: "100%", backgroundColor: "#EAF0F4" }}/>
-        <View style={{ position: "absolute", top: 8, left: 8, right: 40, alignItems: "flex-start" }}><View style={{ backgroundColor: "#0645C9", borderRadius: 999, maxWidth: "100%", paddingVertical: 4, paddingHorizontal: width < 170 ? 7 : 9 }}><Text numberOfLines={1} style={{ color: "#FFFFFF", fontSize: width < 170 ? 10 : 11, lineHeight: 14, fontWeight: "800" }}>{translateCopy("Ortaklığa açık", language)}</Text></View></View>
+        <View style={{ position: "absolute", top: 8, left: 8, right: 40, alignItems: "flex-start" }}><View style={{ backgroundColor: open ? "#0645C9" : "#5B6578", borderRadius: 999, maxWidth: "100%", paddingVertical: 4, paddingHorizontal: width < 170 ? 7 : 9 }}><Text numberOfLines={1} style={{ color: "#FFFFFF", fontSize: width < 170 ? 10 : 11, lineHeight: 14, fontWeight: "800" }}>{translateCopy(open ? "Ortak Aranıyor" : "Ortaklık Kapandı", language)}</Text></View></View>
         {photos > 1 && <View style={{ position: "absolute", left: 8, bottom: 8, backgroundColor: "#172033B8", borderRadius: 6, paddingHorizontal: 6, paddingVertical: 3, flexDirection: "row", alignItems: "center", gap: 4 }}><Icon name="image-multiple-outline" size={12} color="white"/><Text style={{ color: "white", fontSize: 10.5, fontWeight: "600" }}>{photos}</Text></View>}
       </View>
       {/* Gövde 96 dp, iç boşlukla 88 dp kullanılabilir: 28 + 20 + 12 + 24 + 3×1 = 87 (ListingCard ile aynı).

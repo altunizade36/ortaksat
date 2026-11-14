@@ -19,6 +19,7 @@ import {
   View,
 } from "react-native";
 import { openUrlSafe } from "@/lib/link";
+import { partnershipStage, type StageTone } from "@/lib/partnership-stage";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { useStore } from "@/lib/use-store";
@@ -59,6 +60,8 @@ const statusColor: Record<string, string> = {
   cancelled: mobile.muted,
   completed: mobile.muted,
 };
+// Ortaklık AŞAMASI rozetinin rengi (bkz. lib/partnership-stage.ts). Marka kuralı: yeşil yok → olumlu ton mavi.
+const stageColor: Record<StageTone, string> = { info: mobile.teal, progress: mobile.teal, success: mobile.darkTeal, warning: colors.goldInk, muted: mobile.muted, danger: colors.accent };
 // Kısa durum etiketi — tek kaynak lib/status-labels.ts (profil ve detay ekranlarıyla aynı).
 const status: Record<string, string> = partnershipStatusLabels;
 export function MobilePartnershipHub() {
@@ -314,7 +317,9 @@ export function MobilePartnershipHub() {
     const l = listings.get(p.listingId),
       other = store.findUser(asOwner ? p.partnerId : l?.ownerId || ""),
       commission = l ? potentialCommission(l, p) : null,
-      active = p.status === "active";
+      active = p.status === "active",
+      // Tek birleşik aşama: ortaklık + müşteri kayıtları + satışlardan (Kabul Edildi, Müşteri Bulundu, Satıldı…).
+      stage = partnershipStage(p, store.leads, store.sales);
     return (
       <MobileCard key={p.id}>
         <Pressable
@@ -341,14 +346,15 @@ export function MobilePartnershipHub() {
             </Text>
           </View>
           <Text
+            accessibilityLabel={`Aşama: ${stage.label}`}
             style={{
-              color: statusColor[p.status] || mobile.muted,
+              color: stageColor[stage.tone],
               fontSize: 11,
               fontWeight: "700",
               alignSelf: "flex-start",
             }}
           >
-            {status[p.status]}
+            {stage.label}
           </Text>
         </Pressable>
         {l && active && (

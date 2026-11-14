@@ -3,7 +3,7 @@ import { listingCommissionDisplay } from "@/lib/mobile-listing";
 import { CompactFooter } from "@/components/compact-footer";
 import { displayListingTitle } from "@/lib/listing-title";
 import { categoryByPrefix } from "@/lib/mobile-catalog";
-import { memo, useMemo, useState } from "react";
+import { memo, useEffect, useMemo, useState } from "react";
 import { Keyboard, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View, useWindowDimensions } from "react-native";
 import { Image } from "expo-image";
 import { UserAvatar } from "@/components/user-avatar";
@@ -21,6 +21,7 @@ import { useFavoriteFlag } from "@/lib/favorites-cache";
 import { useLanguage, translateCopy } from "@/lib/i18n";
 import { fitPillText, mobile, useMobileLayout } from "@/components/mobile/ui";
 import type { Listing } from "@/lib/types";
+import { loadPartnerDirectory, type PartnerDirectoryEntry } from "@/lib/supabase-data";
 
 const teal = "#0645C9";
 const categories: { label: string; icon: keyof typeof Icon.glyphMap; color: string; match: string }[] = [
@@ -52,6 +53,9 @@ export function HomeMobile() {
   const [slide, setSlide] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
   const [visible, setVisible] = useState(18);
+  // Öne çıkan ortaklar (performansa göre, gerçek veri; kimse yoksa şerit hiç çizilmez) — web ana sayfasıyla aynı kaynak.
+  const [featuredPartners, setFeaturedPartners] = useState<PartnerDirectoryEntry[]>([]);
+  useEffect(() => { let alive = true; void loadPartnerDirectory({ sort: "performance", limit: 12 }).then((rows) => { if (alive) setFeaturedPartners(rows); }).catch(() => {}); return () => { alive = false; }; }, []);
   const listings = useMemo(() => store.listings.filter((l) => l.status === "active").slice().sort((a, b) => Number(Boolean(b.featured)) - Number(Boolean(a.featured))), [store.listings]);
   const { maxWidth, tablet, wide } = useMobileLayout();
   // Telefon 2, küçük tablet (600 dp+) 3, tablet 4-5 sütun.
@@ -118,6 +122,16 @@ export function HomeMobile() {
           <Text style={[s.categoryLabel, width < 360 && { fontSize: 10, lineHeight: 12 }]}>{tr(category.label)}</Text>
         </Pressable>)}
       </View>
+      {featuredPartners.length > 0 && <>
+        <View style={s.sectionHeading}><Text accessibilityRole="header" style={s.sectionTitle}>{tr("Öne çıkan ortaklar")}</Text><Pressable accessibilityRole="button" onPress={() => router.push("/ortaklar" as never)} style={s.seeAll}><Text style={s.seeAllText}>{tr("Tümünü Gör")}</Text><Icon name="chevron-right" size={17} color={teal} /></Pressable></View>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingRight: 16 }} style={{ marginBottom: 6 }}>
+          {featuredPartners.map((p) => <Pressable key={p.partnerId} accessibilityRole="button" accessibilityLabel={`${p.fullName} ortak vitrini`} onPress={() => router.push(`/ortak/${p.partnerId}` as never)} style={{ alignItems: "center", backgroundColor: "white", borderColor: mobile.line, borderRadius: 14, borderWidth: 1, gap: 5, padding: 12, width: 128 }}>
+            <UserAvatar uri={p.avatarUrl} name={p.fullName} size={50} />
+            <Text numberOfLines={1} style={{ color: mobile.ink, fontSize: 12.5, fontWeight: "800", maxWidth: 108 }}>{p.fullName}</Text>
+            <Text style={{ backgroundColor: mobile.tealSoft, borderRadius: 999, color: mobile.darkTeal, fontSize: 10, fontWeight: "800", overflow: "hidden", paddingHorizontal: 8, paddingVertical: 2 }}>{p.confirmedSales} {tr("satış")}</Text>
+          </Pressable>)}
+        </ScrollView>
+      </>}
       <View style={s.sectionHeading}><Text accessibilityRole="header" style={s.sectionTitle}>{tr("Öne çıkan ilanlar")}</Text><Pressable accessibilityRole="button" onPress={() => router.push("/explore")} style={s.seeAll}><Text style={s.seeAllText}>{tr("Tümünü Gör")}</Text><Icon name="chevron-right" size={17} color={teal} /></Pressable></View>
       {store.marketplaceInitialLoading && listings.length === 0 ? <SkeletonGrid count={6} cardWidth={cardWidth} gap={8} /> : store.marketplaceLoadFailed && listings.length === 0 ? <MarketplaceRetry onRetry={store.retryMarketplace} /> : listings.length === 0 ? <Text style={s.empty}>{tr("Henüz ilan bulunmuyor.")}</Text> : <View style={s.grid}>{listings.slice(0, visible).map((listing) => <MobileListingCard key={listing.id} listing={listing} width={cardWidth} />)}</View>}
       {(visible < listings.length || store.marketplaceHasMore) && <Pressable accessibilityRole="button" onPress={() => { setVisible((v) => v + 18); if (visible >= listings.length) store.loadMoreMarketplace(); }} style={s.loadMore}><Text style={s.seeAllText}>{tr("Daha fazla ilan göster")}</Text></Pressable>}

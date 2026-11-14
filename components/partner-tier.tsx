@@ -8,14 +8,14 @@ import type { Sale } from "@/lib/types";
 
 // Satış-temelli ortak seviyeleri (motivasyon — başarılı ortakları ÖNE ÇIKARIR). "Başarılı
 // satış" = en az onaylanan (approved/seller_paid/paid) komisyon. Eşikler ürün spec'ine göre:
-// 🥉10 · 🥈50 · 🥇100 · 💎500 · 👑1000. Her seviye bir sonrakine ilerleme çubuğu gösterir.
+// Yeni Üye 0 · Bronz 10 · Gümüş 50 · Altın 100 · Platin 250 · Elmas 500 (2026-11-14: ürün sahibinin adlandırması). Her seviye bir sonrakine ilerleme çubuğu gösterir.
 const TIERS: Array<{ key: string; label: string; min: number; emoji: string; icon: keyof typeof MaterialCommunityIcons.glyphMap; color: string; tint: string }> = [
-  { key: "start", label: "Başlangıç", min: 0, emoji: "🌱", icon: "sprout-outline", color: colors.muted, tint: colors.surfaceAlt },
-  { key: "bronze", label: "Bronz Ortak", min: 10, emoji: "🥉", icon: "medal-outline", color: "#B45309", tint: "#FFEDD5" },
-  { key: "silver", label: "Gümüş Ortak", min: 50, emoji: "🥈", icon: "medal", color: "#64748B", tint: "#F1F5F9" },
-  { key: "gold", label: "Altın Ortak", min: 100, emoji: "🥇", icon: "trophy-outline", color: "#CA8A04", tint: colors.goldSoft },
-  { key: "diamond", label: "Elmas Ortak", min: 500, emoji: "💎", icon: "diamond-stone", color: colors.primary, tint: colors.primarySoft },
-  { key: "royal", label: "Efsane Ortak", min: 1000, emoji: "👑", icon: "crown-outline", color: "#7C3AED", tint: "#EDE9FE" }
+  { key: "start", label: "Yeni Üye", min: 0, emoji: "🌱", icon: "sprout-outline", color: colors.muted, tint: colors.surfaceAlt },
+  { key: "bronze", label: "Bronz", min: 10, emoji: "🥉", icon: "medal-outline", color: "#B45309", tint: "#FFEDD5" },
+  { key: "silver", label: "Gümüş", min: 50, emoji: "🥈", icon: "medal", color: "#64748B", tint: "#F1F5F9" },
+  { key: "gold", label: "Altın", min: 100, emoji: "🥇", icon: "trophy-outline", color: "#CA8A04", tint: colors.goldSoft },
+  { key: "platinum", label: "Platin", min: 250, emoji: "🏅", icon: "shield-star-outline", color: "#475569", tint: "#E2E8F0" },
+  { key: "diamond", label: "Elmas", min: 500, emoji: "💎", icon: "diamond-stone", color: colors.primary, tint: colors.primarySoft }
 ];
 
 const CONFIRMED: Sale["status"][] = ["approved", "seller_paid", "paid"];

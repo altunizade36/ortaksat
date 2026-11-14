@@ -12,7 +12,9 @@ import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { OptionSheet } from "@/components/option-sheet";
 import { colors } from "@/components/colors";
 import { ClampedText, CommissionSummary, DefinitionGrid, DetailMetaLine, DetailNotice, DetailSection, FeatureChips, GalleryCounter, GalleryNavButtons, GalleryOverlayButton, ListingVideo, LocationRow, SafetyTips, SellerSummary, VideoBadge, VideoThumb, buildSummaryRows, detail, detailPriceFontSize, galleryHeightFor, splitListingMedia } from "@/components/listing-detail/shared";
-import { moneyIn } from "@/lib/format";
+import { moneyIn, partnerInviteUrl } from "@/lib/format";
+import { shareOrCopy } from "@/lib/share";
+import { showToast } from "@/lib/toast";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import type { Listing, PartnershipStatus, User } from "@/lib/types";
 import { MobileButton, IconButton, mobile, mobileContent, ms, useMobileLayout } from "./ui";
@@ -144,6 +146,15 @@ export function MobileListingDetail({ listing: l, owner, favorite, onFavorite, o
             {l.demo ? <DetailNotice icon="eye-outline" tone="neutral" title={translateCopy("Örnek ilan — ortaklık ve iletişim kapalıdır.", language)} /> : null}
             <CommissionSummary listing={l} demand={l.attributes?._formKey === "arayan"} />
             {!!joinAction.reason && partnerable && !isOwner ? <Text accessibilityRole="alert" style={{ color: colors.muted, fontSize: 12, lineHeight: 17 }}>{joinAction.reason}</Text> : null}
+            {/* İLAN SAHİBİ — ORTAK DAVET BAĞLANTISI. "Yalnız davetle" ilanda ortak olmanın TEK yolu bu bağlantıdır;
+                uygulamada hiçbir yerde gösterilmiyordu (yalnız web'de vardı) → davetli ilan uygulamada çıkmazdı. */}
+            {isOwner && partnerable && l.status === "active" ? (
+              <View style={{ backgroundColor: colors.primarySoft, borderRadius: 10, gap: 8, padding: 10 }}>
+                <Text style={{ color: colors.ink, fontSize: 12.5, fontWeight: "800" }}>{l.partnershipMode === "invite" ? "Bu ilana yalnız davet ettiklerin ortak olabilir" : "Ortak davet et"}</Text>
+                <Text style={{ color: colors.muted, fontSize: 11.5, lineHeight: 16 }}>Bağlantıyı tanıdığın ortaklara gönder; bağlantıyla gelen ortak ilana doğrudan katılabilir.</Text>
+                <MobileButton secondary icon="account-plus-outline" onPress={() => { void shareOrCopy({ title: displayListingTitle(l.title), message: `${displayListingTitle(l.title)} ilanıma ortak ol:`, url: partnerInviteUrl(l) }).then((result) => { if (result === "copied") showToast("Davet bağlantısı kopyalandı."); if (result === "failed") showToast("Paylaşılamadı. Lütfen tekrar dene."); }); }}>Davet Bağlantısını Paylaş</MobileButton>
+              </View>
+            ) : null}
           </View>
           {twoColumnBody ? bodySide : null}
         </View>
