@@ -28,7 +28,7 @@ import { fetchListingsByIds } from "@/lib/supabase-data";
 import { emptyMobileFilters } from "@/lib/mobile-filters";
 import { categoryByPrefix, categoryTrail } from "@/lib/mobile-catalog";
 import { adDisclosureLine, moneyIn } from "@/lib/format";
-import { partnershipStatusLabels } from "@/lib/status-labels";
+import { partnershipStatusLabels, saleStatusLabels } from "@/lib/status-labels";
 import { showToast } from "@/lib/toast";
 import { shareOrCopy } from "@/lib/share";
 import { Alert } from "@/lib/alert";
@@ -456,6 +456,33 @@ export function MobilePartnershipHub() {
     (ownerSideAll.length > 0 &&
       (side === "owner" || (side === null && partnerSideAll.length === 0)));
   const sideRows = asOwner ? ownerSideAll : partnerSideAll;
+  // PANEL ÖZETİ (seçili tarafa göre): aktif ortaklık, bekleyen başvuru, satış sayısı, komisyon tutarı + geçmiş sayaçları.
+  const sideEvery = asOwner ? incoming : my; // başvurular dahil bu taraftaki TÜM kayıtlar
+  const sideIds = new Set(sideEvery.map((p) => p.id));
+  const sideSales = store.sales.filter((sale) => sideIds.has(sale.partnershipId) && sale.status !== "cancelled");
+  const commissionSum = sideSales
+    .filter((sale) => (asOwner ? sale.status === "approved" || sale.status === "seller_paid" : sale.status === "paid"))
+    .reduce((sum, sale) => sum + (sale.commissionAmount || 0), 0);
+  const history = {
+    total: sideEvery.length,
+    accepted: sideEvery.filter((p) => !isRequest(p)).length,
+    rejected: sideEvery.filter((p) => p.status === "rejected").length,
+    withSale: new Set(sideSales.map((sale) => sale.partnershipId)).size,
+    cancelled: sideEvery.filter((p) => p.status === "cancelled" || p.status === "blocked").length,
+    ongoing: sideEvery.filter((p) => p.status === "active").length,
+  };
+  // Satıcı için: en çok satış getiren ortaklar ve son satışlar (yalnız gerçek satış kaydı varsa çizilir).
+  const partnerOf = new Map(sideEvery.map((p) => [p.id, p.partnerId] as const));
+  const topPartners = [...sideSales
+    .reduce((map, sale) => {
+      const id = partnerOf.get(sale.partnershipId);
+      if (!id) return map;
+      const row = map.get(id) ?? { id, sales: 0, commission: 0 };
+      row.sales += 1; row.commission += sale.commissionAmount || 0;
+      return map.set(id, row);
+    }, new Map<string, { id: string; sales: number; commission: number }>())
+    .values()].sort((a, b) => b.sales - a.sales || b.commission - a.commission).slice(0, 3);
+  const recentSales = [...sideSales].sort((a, b) => (b.createdAt || "").localeCompare(a.createdAt || "")).slice(0, 3);
   const presentStatuses = Object.keys(status).filter((key) =>
     sideRows.some((p) => p.status === key),
   );
@@ -1186,6 +1213,86 @@ export function MobilePartnershipHub() {
                 }}
               />
             </View>
+          )}
+          {/* ÖZET ŞERİDİ — dört eşit sütun; sayılar bu hesabın gerçek kayıtlarından. */}
+          <View
+            style={{
+              flexDirection: "row",
+              backgroundColor: "white",
+              borderWidth: 1,
+              borderColor: mobile.line,
+              borderRadius: 13,
+              paddingVertical: 10,
+              marginBottom: 10,
+            }}
+          >
+            {(
+              [
+                [String(history.ongoing), asOwner ? "Aktif ortak" : "Aktif ortaklık"],
+                [String(asOwner ? pendingIncoming : pendingSent), "Bekleyen başvuru"],
+                [String(sideSales.length), asOwner ? "Ortak satışı" : "Satışım"],
+                [moneyIn(commissionSum, "TRY"), asOwner ? "Bekleyen komisyon" : "Ödenen komisyon"],
+              ] as [string, string][]
+            ).map(([value, label], index) => (
+              <View
+                key={label}
+                accessibilityLabel={`${label}: ${value}`}
+                style={{ flex: 1, alignItems: "center", gap: 2, paddingHorizontal: 2, borderLeftWidth: index ? 1 : 0, borderColor: mobile.line }}
+              >
+                <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={{ color: mobile.ink, fontSize: 16, fontWeight: "800" }}>
+                  {value}
+                </Text>
+                <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={{ color: mobile.muted, fontSize: 10.5 }}>
+                  {label}
+                </Text>
+              </View>
+            ))}
+          </View>
+          {history.total > 0 && (
+            <Text style={[ms.muted, { marginBottom: 10 }]}>
+              Ortaklık geçmişi: {history.total} başvuru · {history.accepted} kabul · {history.rejected} ret · {history.withSale} satışla sonuçlanan · {history.cancelled} sona eren · {history.ongoing} devam eden
+            </Text>
+          )}
+          {asOwner && topPartners.length > 0 && (
+            <MobileCard>
+              <Text style={ms.section}>En Başarılı Ortakların</Text>
+              {topPartners.map((row, index) => (
+                <Pressable
+                  key={row.id}
+                  accessibilityRole="link"
+                  onPress={() => router.push(`/ortak/${row.id}` as never)}
+                  style={[ms.row, { justifyContent: "space-between" }]}
+                >
+                  <Text numberOfLines={1} style={{ flex: 1, color: mobile.ink, fontSize: 13, fontWeight: "700" }}>
+                    {index + 1}. {store.findUser(row.id)?.name || "Ortak"}
+                  </Text>
+                  <Text style={ms.muted}>
+                    {row.sales} satış · {moneyIn(row.commission, "TRY")}
+                  </Text>
+                </Pressable>
+              ))}
+            </MobileCard>
+          )}
+          {recentSales.length > 0 && (
+            <MobileCard>
+              <Text style={ms.section}>Son Satışlar</Text>
+              {recentSales.map((sale) => {
+                const saleListing = listings.get(sale.listingId);
+                return (
+                  <View key={sale.id} style={[ms.row, { justifyContent: "space-between", alignItems: "flex-start" }]}>
+                    <View style={{ flex: 1, minWidth: 0 }}>
+                      <Text numberOfLines={1} style={{ color: mobile.ink, fontSize: 13, fontWeight: "700" }}>
+                        {saleListing ? displayListingTitle(saleListing.title) : "İlan"}
+                      </Text>
+                      <Text style={ms.muted}>
+                        {sale.createdAt ? new Date(sale.createdAt).toLocaleDateString("tr-TR") : ""} · komisyon {moneyIn(sale.commissionAmount || 0, saleListing?.currency || "TRY")}
+                      </Text>
+                    </View>
+                    <Text style={{ color: mobile.teal, fontSize: 11, fontWeight: "700" }}>{saleStatusLabels[sale.status]}</Text>
+                  </View>
+                );
+              })}
+            </MobileCard>
           )}
           {/* Durum çipleri yalnız listede GERÇEKTEN bulunan durumlar için ve sayılarıyla; eskiden yedi çip iki
               satır kaplıyor, çoğu boş listeye götürüyordu. Tek durum varsa çip satırı hiç çizilmez. */}

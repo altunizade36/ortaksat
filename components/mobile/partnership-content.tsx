@@ -15,13 +15,28 @@ import {partnershipStatusTitles} from "@/lib/status-labels";
 import {partnershipStage,partnershipTimeline} from "@/lib/partnership-stage";
 import type {Listing,Partnership,User} from "@/lib/types";
 import {MobileListingReviews} from "./listing-reviews";
-import {MobileButton,MobileCard,MobileChip,MobileScreen,IconButton,mobile,ms,useMobileLayout} from "./ui";
+import {MobileButton,MobileCard,MobileChip,MobileField,MobileScreen,IconButton,mobile,ms,useMobileLayout} from "./ui";
+import {showToast} from "@/lib/toast";
+import type {LeadStatus} from "@/lib/types";
 // Anlamsal "kazanç/aktif" yeşili (teal değil): successSoft zemin üstünde AA okunur koyu ton.
 const GREEN_INK="#0645C9";
 // Kart başlığı biçimi — tek kaynak lib/status-labels.ts (eski ad geriye dönük uyum için korunur).
 export const partnershipStatusLabels:Record<string,string>=partnershipStatusTitles;
 export function MobilePartnershipContent({listing,partnership}:{listing:Listing;partnership:Partnership}){
  const store=useStore(),{maxWidth,tablet,height}=useMobileLayout(),[photo,setPhoto]=useState(0),[gallery,setGallery]=useState(false),[tab,setTab]=useState("Genel Bilgiler"),[expanded,setExpanded]=useState(false);
+ // MÜŞTERİLER: ortağın bu ortaklık için bildirdiği müşteri kayıtları (satıcı da görür). Ekleme yalnız ortakta.
+ const [leadForm,setLeadForm]=useState(false),[buyerName,setBuyerName]=useState(""),[buyerPhone,setBuyerPhone]=useState(""),[buyerNote,setBuyerNote]=useState(""),[leadError,setLeadError]=useState("");
+ const myLeads=store.leads.filter(lead=>lead.partnershipId===partnership.id).sort((a,b)=>(b.createdAt||"").localeCompare(a.createdAt||""));
+ const leadLabel:Record<LeadStatus,string>={new:"Müşteri bulundu",contacted:"İlk görüşme yapıldı",interested:"Satın almaya hazır",converted:"Satışa döndü",lost:"Vazgeçti"};
+ function addLead(){
+  const name=buyerName.trim(),phone=buyerPhone.trim();
+  if(name.length<2){setLeadError("Müşterinin adını yaz.");return;}
+  if(!/^\+?[\d\s()-]{10,24}$/.test(phone)){setLeadError("Geçerli bir telefon numarası gir.");return;}
+  const lead=store.createLead({listingId:listing.id,partnershipId:partnership.id,buyerName:name,buyerPhone:phone,note:buyerNote.trim(),source:"phone",intent:"warm"});
+  if(!lead){setLeadError(store.authError||"Müşteri eklenemedi. İlan ya da ortaklık aktif olmayabilir.");return;}
+  setBuyerName("");setBuyerPhone("");setBuyerNote("");setLeadError("");setLeadForm(false);showToast("Müşteri eklendi; satıcıya bildirildi.");
+ }
+
  const photos=listingPhotos(listing),potential=potentialCommission(listing,partnership),max=maximumPartners(listing),owner=listing.ownerId===store.currentUser.id,active=partnership.status==="active";
  const agreementType=partnership.commissionOverrideType??partnership.agreedCommissionType??listing.commissionType,agreementValue=partnership.commissionOverrideValue??partnership.agreedCommissionValue??listing.commissionValue;
  // Aşama + işlem geçmişi: ortaklık, müşteri kayıtları ve satışlardan türetilir (bkz. lib/partnership-stage.ts).
@@ -41,6 +56,23 @@ export function MobilePartnershipContent({listing,partnership}:{listing:Listing;
     <View style={{alignItems:"center",width:14}}><View style={{width:10,height:10,borderRadius:5,backgroundColor:index===timeline.length-1?mobile.teal:mobile.line,marginTop:4}}/>{index<timeline.length-1&&<View style={{width:2,flex:1,minHeight:18,backgroundColor:mobile.line}}/>}</View>
     <View style={{flex:1,minWidth:0,paddingBottom:8}}><Text style={{color:mobile.ink,fontSize:13,fontWeight:"700"}}>{event.label}</Text>{!!event.detail&&<Text numberOfLines={2} style={ms.muted}>{event.detail}</Text>}<Text style={{color:mobile.muted,fontSize:11}}>{new Date(event.at).toLocaleDateString("tr-TR")}</Text></View>
    </View>)}
+  </MobileCard>}
+  {tab==="Genel Bilgiler"&&(active||myLeads.length>0)&&<MobileCard>
+   <View style={[ms.row,{justifyContent:"space-between"}]}><Text style={ms.section}>Müşteriler ({myLeads.length})</Text>{active&&!owner&&!leadForm&&<MobileChip icon="account-plus-outline" label="Müşteri Ekle" selected onPress={()=>{setLeadError("");setLeadForm(true);}}/>}</View>
+   <Text style={ms.muted}>{owner?"Ortağının bu ilan için bildirdiği müşteriler ve görüşmenin geldiği aşama.":"Bulduğun müşteriyi ekle, görüşme ilerledikçe aşamasını işaretle. Satıcı bu listeyi görür."}</Text>
+   {leadForm&&<View style={{gap:10,backgroundColor:mobile.tealSoft,borderRadius:10,padding:10}}>
+    <MobileField label="Müşterinin adı" required value={buyerName} onChange={setBuyerName} maxLength={80}/>
+    <MobileField label="Telefonu" required value={buyerPhone} onChange={setBuyerPhone} maxLength={24}/>
+    <MobileField label="Not (isteğe bağlı)" value={buyerNote} onChange={setBuyerNote} multiline maxLength={400}/>
+    <Text style={ms.muted}>Müşterinin bilgilerini yalnız onun izniyle paylaş. Bilgiler yalnız satıcıya gösterilir.</Text>
+    {!!leadError&&<Text accessibilityRole="alert" style={ms.error}>{leadError}</Text>}
+    <View style={ms.row}><MobileButton secondary style={{flex:1}} onPress={()=>{setLeadForm(false);setLeadError("");}}>Vazgeç</MobileButton><MobileButton style={{flex:1}} onPress={addLead}>Müşteriyi Ekle</MobileButton></View>
+   </View>}
+   {myLeads.map(lead=>{const locked=lead.status==="converted";return <View key={lead.id} style={{borderTopWidth:1,borderColor:mobile.line,paddingTop:9,gap:6}}>
+    <View style={[ms.row,{justifyContent:"space-between",alignItems:"flex-start"}]}><View style={{flex:1,minWidth:0}}><Text numberOfLines={1} style={{color:mobile.ink,fontSize:14,fontWeight:"700"}}>{lead.buyerName||"Müşteri"}</Text><Text style={ms.muted}>{new Date(lead.createdAt).toLocaleDateString("tr-TR")}{lead.note?` · ${lead.note}`:""}</Text></View><Text style={{color:lead.status==="lost"?mobile.muted:mobile.teal,fontSize:12,fontWeight:"800"}}>{leadLabel[lead.status]}</Text></View>
+    {!locked&&active&&<View style={ms.wrap}>{(["contacted","interested","lost"] as LeadStatus[]).filter(next=>next!==lead.status).map(next=><MobileChip key={next} label={leadLabel[next]} onPress={()=>store.updateLeadStatus(lead.id,next)}/>)}</View>}
+   </View>;})}
+   {!myLeads.length&&!leadForm&&<Text style={ms.muted}>{owner?"Henüz müşteri bildirilmedi.":"Henüz müşteri eklemedin."}</Text>}
   </MobileCard>}
   {tab==="Genel Bilgiler"&&<><MobileCard style={{backgroundColor:active?colors.primarySoft:partnership.status==="rejected"||partnership.status==="blocked"?colors.accentSoft:colors.surfaceAlt}}><Text style={ms.section}>{active&&!owner?"Ortaklığın Onaylandı!":partnershipStatusLabels[partnership.status]}</Text><Text style={ms.muted}>{active?owner?"Bu ortaklık aktif. Ortağın koşulları aşağıda gösterilir.":"Satıcının onayıyla bu ilan için müşteri bulabilir, anlaşma koşullarına göre komisyon kazanabilirsin.":partnership.status==="pending"?"Satıcının yanıtı bekleniyor. Henüz aktif ortaklık kurulmadı.":partnership.rejectionReason||"Ortaklığın güncel durumu yukarıda gösterilir."}</Text><Text style={ms.muted}>Başvuru: {new Date(partnership.createdAt).toLocaleDateString("tr-TR")}</Text>{partnership.approvedAt&&<Text style={ms.muted}>Onay: {new Date(partnership.approvedAt).toLocaleDateString("tr-TR")}</Text>}</MobileCard><MobileCard><Text style={ms.section}>Ürün Açıklaması</Text><Text numberOfLines={expanded?undefined:4} style={{fontSize:13,lineHeight:22,color:mobile.muted}}>{listing.description||"Açıklama belirtilmemiş."}</Text>{listing.description.length>180&&<MobileChip label={expanded?"Daha Az":"Daha Fazla"} onPress={()=>setExpanded(v=>!v)}/>}</MobileCard><MobileCard><Text style={ms.section}>Ürün Bilgileri</Text>{describeAttributes(listing.attributes).map(a=><View key={a.label} style={[ms.row,{justifyContent:"space-between",alignItems:"flex-start"}]}><Text style={[ms.muted,{flex:1}]}>{a.label}</Text><Text style={[ms.label,{flex:1,textAlign:"right"}]}>{a.value}</Text></View>)}{!describeAttributes(listing.attributes).length&&<Text style={ms.muted}>Ek özellik girilmemiş.</Text>}</MobileCard></>}
   {tab==="Ortaklık Koşulları"&&<><MobileCard><Text style={ms.section}>Bu Ortaklığın Koşulları</Text>{terms.map(([label,value])=><View key={label} style={[ms.row,{justifyContent:"space-between",alignItems:"flex-start"}]}><Text style={[ms.muted,{flex:1}]}>{label}</Text><Text style={[ms.label,{flex:1,textAlign:"right"}]}>{value}</Text></View>)}<Text style={ms.muted}>{partnership.commissionOverrideType?"Satıcının bu ortağa özel komisyonu uygulanır.":partnership.agreedCommissionType?"Katılım sırasında kaydedilen anlaşma komisyonu uygulanır.":"Bu eski kayıtta anlaşma anlık görüntüsü yok; ilanın güncel koşulları gösterilir."}</Text></MobileCard>{partnership.note&&<MobileCard><Text style={ms.section}>Başvuru Notu</Text><Text style={ms.muted}>{partnership.note}</Text></MobileCard>}<MobileCard><Text style={ms.muted}>OrtakSat para tutmaz. Ödeme ve teslimat taraflar arasında gerçekleşir. İade, komisyon vadesi ve satış koşullarını satıcıyla netleştir.</Text></MobileCard></>}

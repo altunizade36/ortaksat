@@ -1,4 +1,5 @@
 import { TrustEntry } from "@/components/trust/entry";
+import { useProfileActivity } from "@/lib/activity";
 import { sortByStoreOrder } from "@/lib/store-order";
 import { displayListingTitle } from "@/lib/listing-title";
 import { UserAvatar } from "@/components/user-avatar";
@@ -167,6 +168,7 @@ function StoreScreenLegacy() {
   }, [filteredByStatus, catFilter, storeSort]);
   const activeListings = scopedListings.filter((listing) => listing.status === "active");
   const tab: ProfileTab = pickedTab ?? (activeListings.length > 0 ? "listings" : "about");
+  const activityLabel = useProfileActivity(id); // "Bugün aktif" / "Bu hafta aktif" (kaba aralık; bkz. lib/activity.ts)
   const totalCommission = activeListings.reduce((sum, listing) => {
     return sum + (listing.commissionType === "rate" ? Math.round((listing.price * listing.commissionValue) / 100) : listing.commissionValue);
   }, 0);
@@ -373,10 +375,18 @@ function StoreScreenLegacy() {
                     <MaterialCommunityIcons name="cart-check" size={15} color={colors.muted} />
                     <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "700" }}>{seller.successfulSales} {translateCopy("satış", language)}</Text>
                   </View>
-                  <View style={{ alignItems: "center", flexDirection: "row", gap: 4 }}>
-                    <MaterialCommunityIcons name="lightning-bolt" size={15} color={colors.muted} />
-                    <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "700" }}>%{seller.responseRate} {translateCopy("yanıt", language)}</Text>
-                  </View>
+                  {seller.responseRate > 0 ? (
+                    <View style={{ alignItems: "center", flexDirection: "row", gap: 4 }}>
+                      <MaterialCommunityIcons name="lightning-bolt" size={15} color={colors.muted} />
+                      <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "700" }}>%{seller.responseRate} {translateCopy("yanıt", language)}</Text>
+                    </View>
+                  ) : null}
+                  {activityLabel ? (
+                    <View style={{ alignItems: "center", flexDirection: "row", gap: 4 }}>
+                      <MaterialCommunityIcons name="clock-check-outline" size={15} color={colors.primaryDark} />
+                      <Text style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "700" }}>{translateCopy(activityLabel, language)}</Text>
+                    </View>
+                  ) : null}
                   <View style={{ alignItems: "center", flexDirection: "row", gap: 4 }}>
                     <MaterialCommunityIcons name="account-heart-outline" size={15} color={colors.muted} />
                     <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "700" }}>{seller.followerCount} {translateCopy("takipçi", language)}</Text>
@@ -445,7 +455,7 @@ function StoreScreenLegacy() {
                     <Text style={{ color: colors.muted, fontSize: 14, fontWeight: "500", lineHeight: 22 }}>{seller.bio || translateCopy("Bu satıcı henüz bir açıklama eklememiş. OrtakSat üzerinde doğrulanmış bir satıcıdır ve güvenli alışveriş sunar.", language)}</Text>
                     <View style={{ borderTopColor: colors.line, borderTopWidth: 1, gap: 10, marginTop: 4, paddingTop: 14 }}>
                       <DeskAboutRow icon="cart-check" label={translateCopy("Toplam satış", language)} value={`${seller.successfulSales}`} />
-                      <DeskAboutRow icon="lightning-bolt" label={translateCopy("Yanıt oranı", language)} value={`%${seller.responseRate}`} />
+                      {seller.responseRate > 0 ? <DeskAboutRow icon="lightning-bolt" label={translateCopy("Yanıt oranı", language)} value={`%${seller.responseRate}`} /> : null}
                       <DeskAboutRow icon="tag-multiple-outline" label={translateCopy("Toplam komisyon havuzu", language)} value={money(totalCommission)} />
                       <DeskAboutRow icon="shield-check" label={translateCopy("Satıcı güven puanı", language)} value={trust?.seller.score == null ? "Henüz yok" : `%${trust.seller.score}`} />
                       {memberLabel ? <DeskAboutRow icon="calendar-check-outline" label={translateCopy("Üyelik", language)} value={memberLabel} /> : null}
@@ -708,7 +718,7 @@ function StoreScreenLegacy() {
         </View>
         <View style={{ flexDirection: "row", gap: 8 }}>
           <Metric label={translateCopy("Puan", language)} value={ratingText} />
-          <Metric label={translateCopy("Yanıt oranı", language)} value={`%${seller.responseRate}`} />
+          {seller.responseRate > 0 ? <Metric label={translateCopy("Yanıt oranı", language)} value={`%${seller.responseRate}`} /> : activityLabel ? <Metric label={translateCopy("Aktiflik", language)} value={translateCopy(activityLabel, language)} /> : null}
           <Metric label={translateCopy("Satıcı güveni", language)} value={trust?.seller.score == null ? "Henüz yok" : `%${trust.seller.score}`} />
         </View>
         {!isOwnStore ? (

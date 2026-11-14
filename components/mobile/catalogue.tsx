@@ -307,6 +307,14 @@ export function MobileFilter({ initial, trail: initialTrail, source, query, onAp
       <MobileChip icon={advanced ? "chevron-up" : "tune-variant"} label={advanced ? "Diğer kategori özelliklerini gizle" : "Tüm kategori özelliklerini göster"} onPress={() => setAdvanced(v => !v)} />
       {filterError && <Text accessibilityRole="alert" style={ms.error}>{filterError}</Text>}
       {countError && !filterError && <Text accessibilityRole="alert" style={ms.muted}>Sonuç sayısı şu anda alınamıyor. Filtreleri uygulayarak yeniden deneyebilirsin.</Text>}
+      {/* ORTAK KOMİSYONU: en az tutar / en az oran. Ortak, emeğine değecek ilanları ayıklar ("en az 10.000 TL" ya da "%15 üzeri"). */}
+      <View style={[s.filterSection, { borderTopWidth: 1, borderColor: mobile.line, paddingTop: 13, gap: 8 }]}>
+        <SectionLabel icon="handshake-outline">Ortak Komisyonu</SectionLabel>
+        <Text style={ms.label}>En az komisyon tutarı</Text>
+        <View style={ms.wrap}>{([[0, "Fark etmez"], [1000, "₺1.000+"], [5000, "₺5.000+"], [10000, "₺10.000+"], [25000, "₺25.000+"]] as const).map(([value, label]) => <MobileChip key={label} label={label} selected={(f.minCommission || 0) === value} onPress={() => update({ minCommission: value || undefined })} />)}</View>
+        <Text style={ms.label}>En az komisyon oranı</Text>
+        <View style={ms.wrap}>{([[0, "Fark etmez"], [5, "%5+"], [10, "%10+"], [15, "%15+"], [20, "%20+"]] as const).map(([value, label]) => <MobileChip key={label} label={label} selected={(f.minRate || 0) === value} onPress={() => update({ minRate: value || undefined })} />)}</View>
+      </View>
       <View style={[s.filterSection, { borderTopWidth: 1, borderColor: mobile.line, paddingTop: 13 }]}><SectionLabel icon="tune-variant">Diğer Filtreler</SectionLabel><View style={{ flexDirection: "row", gap: 12 }}><View style={{ flex: 1 }}>{([['open', 'Sadece ortaklığa açık ilanlar'], ['photos', 'Sadece fotoğraflı ilanlar'], ['urgent', 'Sadece acil ilanlar']] as const).map(([key, label]) => <FilterSwitch key={key} label={label} value={f[key]} onChange={(v) => update({ [key]: key === "open" && lockOpen ? true : v })} />)}</View><View style={{ flex: 1 }}>{([['warranty', 'Sadece garantili ilanlar'], ['owner', 'Sadece sahibinden'], ['exchange', 'Takaslı ilanlar']] as const).map(([key, label]) => <FilterSwitch key={key} label={label} value={f[key]} onChange={(v) => update({ [key]: v })} />)}</View></View></View>
     </MobileScreen>
     <MobileCategorySelect visible={categoryOpen} initial={trail} onClose={() => setCategoryOpen(false)} onSelect={(path) => { setTrail(path); setF(v => ({ ...v, attrs: {}, ranges: {}, texts: {}, open: lockOpen || v.open })); }} />

@@ -20,6 +20,7 @@ import { OptionSheet } from "@/components/option-sheet";
 import { useStore } from "@/lib/use-store";
 import { supabase } from "@/lib/supabase";
 import { STORE_RANK_COLUMN } from "@/lib/store-order";
+import { useProfileActivity } from "@/lib/activity";
 import { VerificationBadges } from "@/components/verification-badges";
 import { tierFromCount } from "@/components/partner-tier";
 import {
@@ -107,6 +108,7 @@ export function MobileSellerStore({ id }: { id: string }) {
   const revision = useRef(0),
     moreLock = useRef(false),
     own = id === store.currentUser.id;
+  const activityLabel = useProfileActivity(id);
   useEffect(() => {
     const timer = setTimeout(() => setSearch(query.trim()), 300);
     return () => clearTimeout(timer);
@@ -447,6 +449,9 @@ export function MobileSellerStore({ id }: { id: string }) {
                   ? ` / ${getDistrict(seller.districtId)?.name || ""}`
                   : ""}
               </Text>
+            )}
+            {!!activityLabel && (
+              <Text style={{ color: mobile.teal, fontSize: 12, fontWeight: "700" }}>{activityLabel}</Text>
             )}
           </View>
         </View>
