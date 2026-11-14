@@ -1211,7 +1211,7 @@ export default function ListingDetailScreen() {
           ödeme/teslimat taraflar arasındadır; burada tutulan anlaşma kaydıdır. */}
       <Modal visible={offerOpen} transparent animationType="fade" onRequestClose={() => setOfferOpen(false)}>
         {/* P0: tutar alani autoFocus + numeric -> klavye ANINDA acilir; iOS sayisal
-            klavyede Done/return YOK. Kart yukari kalkmadigi icin "Teklifi Gonder"
+            klavyede Done/return YOK. Kart yukari kalkmadigi icin "Teklifi Gönder"
             klavyenin ALTINDA kaliyor, tek kacis arka plana basmak = TEKLIFI SILER.
             RN Modal ebeveynin KAV'ini miras almaz -> modalin kendi KAV'i sart. */}
         <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ flex: 1 }}>

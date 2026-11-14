@@ -407,41 +407,31 @@ export function MobilePartnershipHub() {
             </Text>
           </View>
         )}
-        {l && active && !asOwner && (
-          <View style={ms.row}>
-            <MobileButton
-              icon="share-variant"
-              style={{ flex: 1 }}
-              onPress={() => share(l)}
-            >
+        {/* Eylemler TEK satır (2026-11-15): eskiden iki satırda dört tam boy düğme vardı; kart ekranın yarısını kaplıyordu.
+            Ana eylem yazılı, WhatsApp ve mesaj simge düğmesi (erişilebilirlik etiketi var), ayrıntı sağda. */}
+        <View style={[ms.row, { gap: 7 }]}>
+          {l && active && !asOwner && (
+            <MobileButton compact icon="share-variant" style={{ flex: 1 }} onPress={() => share(l)}>
               Paylaş
             </MobileButton>
-            <MobileButton
-              secondary
-              icon="whatsapp"
-              style={{ flex: 1 }}
-              onPress={() => shareWhatsapp(l)}
-            >
-              WhatsApp
-            </MobileButton>
-          </View>
-        )}
-        <View style={ms.row}>
-          {l && active && (
-            <MobileButton
-              secondary
-              icon="chat-outline"
-              style={{ flex: 1 }}
-              onPress={() => message(l, asOwner ? p.partnerId : l.ownerId)}
-            >
-              {asOwner ? "Ortağa Yaz" : "Satıcıya Yaz"}
-            </MobileButton>
           )}
-          <MobileButton
-            secondary
-            style={{ flex: 1 }}
-            onPress={() => router.push(`/partnership/${p.id}` as never)}
-          >
+          {l && active && !asOwner && (
+            <Pressable accessibilityRole="button" accessibilityLabel="WhatsApp ile paylaş" hitSlop={4} onPress={() => shareWhatsapp(l)} style={cardIconButton}>
+              <Icon name="whatsapp" size={19} color={mobile.teal} />
+            </Pressable>
+          )}
+          {l && active && (
+            asOwner ? (
+              <MobileButton compact secondary icon="chat-outline" style={{ flex: 1 }} onPress={() => message(l, p.partnerId)}>
+                Ortağa Yaz
+              </MobileButton>
+            ) : (
+              <Pressable accessibilityRole="button" accessibilityLabel="Satıcıya yaz" hitSlop={4} onPress={() => message(l, l.ownerId)} style={cardIconButton}>
+                <Icon name="chat-outline" size={19} color={mobile.teal} />
+              </Pressable>
+            )
+          )}
+          <MobileButton compact secondary style={{ flex: 1 }} onPress={() => router.push(`/partnership/${p.id}` as never)}>
             {asOwner ? "Ortaklığı Yönet" : "Detay"}
           </MobileButton>
         </View>
@@ -1467,3 +1457,6 @@ export function MobilePartnershipHub() {
     </Screen>
   );
 }
+
+// Kart içi simge düğmesi (WhatsApp / mesaj): sıkı düğmeyle aynı yükseklik.
+const cardIconButton = { alignItems: "center", backgroundColor: "#F4F8FF", borderColor: "#BBD3FA", borderRadius: 10, borderWidth: 1, height: 38, justifyContent: "center", width: 42 } as const;

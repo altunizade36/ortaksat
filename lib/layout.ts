@@ -21,22 +21,44 @@ export const WIDE_WEB_BREAKPOINT = 1024;
  * hydration (no resize fires), so we read `window.innerWidth` once mounted and
  * subscribe to resize. Native keeps using `useWindowDimensions`.
  */
+// Pencere genişliği TEK yerden okunur ve paylaşılır (2026-11-15).
+// Eskiden bu kancayı kullanan HER bileşen kendi durumunu tutuyor, mount olurken `window.innerWidth` okuyor ve kendi
+// resize dinleyicisini ekliyordu. `innerWidth` okumak tarayıcıyı o an düzeni yeniden hesaplamaya zorlar; yüzlerce
+// bileşen çizim arasında art arda okuyunca (yavaş telefonda) sayfa açılışına ~600 ms ekliyordu. Artık değer bir kez
+// ölçülür, yalnız `resize` olayında yenilenir; bileşenler hazır değeri alır.
+let sharedWidth: number | null = null;
+const widthListeners = new Set<(width: number) => void>();
+let resizeBound = false;
+
+function readSharedWidth(): number {
+  if (sharedWidth === null) sharedWidth = window.innerWidth;
+  if (!resizeBound) {
+    resizeBound = true;
+    window.addEventListener("resize", () => {
+      const next = window.innerWidth;
+      if (next === sharedWidth) return;
+      sharedWidth = next;
+      widthListeners.forEach((listener) => listener(next));
+    });
+  }
+  return sharedWidth;
+}
+
 export function useContentWidth() {
   const { width } = useWindowDimensions();
   // ÖNEMLİ: web'de useWindowDimensions().width hidrasyondan sonra güvenilmez ve
   // ilk client render'da büyük bir varsayılan dönebilir; bu da mobilde masaüstü
   // düzeninin yanlışlıkla açılmasına (flaş) yol açardı. Bu yüzden webWidth'i ilk
-  // client render'ından itibaren gerçek window.innerWidth ile başlatıyoruz.
+  // client render'ından itibaren gerçek pencere genişliğiyle başlatıyoruz.
   const [webWidth, setWebWidth] = useState<number | null>(
-    Platform.OS === "web" && typeof window !== "undefined" ? window.innerWidth : null
+    Platform.OS === "web" && typeof window !== "undefined" ? readSharedWidth() : null
   );
 
   useEffect(() => {
     if (Platform.OS !== "web" || typeof window === "undefined") return;
-    const update = () => setWebWidth(window.innerWidth);
-    update();
-    window.addEventListener("resize", update);
-    return () => window.removeEventListener("resize", update);
+    setWebWidth(readSharedWidth());
+    widthListeners.add(setWebWidth);
+    return () => { widthListeners.delete(setWebWidth); };
   }, []);
 
   // Web'de daima gerçek pencere genişliğini kullan (useWindowDimensions'a düşme).

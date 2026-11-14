@@ -80,9 +80,10 @@ export function IconButton({ name, label, onPress, color = mobile.ink, style, ba
   return <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress} hitSlop={4} style={({ pressed }) => [ms.iconButton, { opacity: pressed ? 0.6 : 1 }, style]}><Icon name={name} size={26} color={color} />{badge && <View style={ms.badge} />}</Pressable>;
 }
 
-export function MobileButton({ children, onPress, icon, secondary, disabled, style }: { children: string; onPress: () => void; icon?: MobileIcon; secondary?: boolean; disabled?: boolean; style?: StyleProp<ViewStyle> }) {
+/** `compact`: kart içi ikincil eylemler için alçak düğme (38 px). Tam genişlikteki ana eylemlerde kullanma. */
+export function MobileButton({ children, onPress, icon, secondary, disabled, style, compact }: { children: string; onPress: () => void; icon?: MobileIcon; secondary?: boolean; disabled?: boolean; style?: StyleProp<ViewStyle>; compact?: boolean }) {
   return <Pressable accessibilityRole="button" accessibilityLabel={children} disabled={disabled} accessibilityState={{ disabled }} onPress={onPress} style={({ pressed }) => [{ opacity: disabled ? 0.45 : pressed ? 0.8 : 1 }, style]}>
-    <LinearGradient colors={secondary ? ["#FFFFFF", "#F4F8FF"] : ["#075BEB", "#0645C9"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[ms.button, secondary && { borderColor: "#BBD3FA" }]}>{icon && <Icon name={icon} size={22} color={secondary ? mobile.teal : "white"} />}<Text style={[ms.buttonText, secondary && { color: mobile.teal }]}>{children}</Text></LinearGradient>
+    <LinearGradient colors={secondary ? ["#FFFFFF", "#F4F8FF"] : ["#075BEB", "#0645C9"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[ms.button, compact && { borderRadius: 10, gap: 6, minHeight: 38, paddingHorizontal: 10, paddingVertical: 7 }, secondary && { borderColor: "#BBD3FA" }]}>{icon && <Icon name={icon} size={compact ? 17 : 22} color={secondary ? mobile.teal : "white"} />}<Text numberOfLines={1} style={[ms.buttonText, compact && { fontSize: 13 }, secondary && { color: mobile.teal }]}>{children}</Text></LinearGradient>
   </Pressable>;
 }
 
@@ -103,7 +104,7 @@ export function MobileSelect({ label, value, placeholder = "Seçin", options, on
     <OptionSheet visible={open} title={label || placeholder} options={options} value={value} onSelect={(v) => { onChange(v); setOpen(false); }} onClose={() => setOpen(false)} />
   </View>;
 }
-export function MobileChip({ label, selected, onPress, icon }: { label: string; selected?: boolean; onPress: () => void; icon?: MobileIcon }) { return <Pressable accessibilityRole="button" accessibilityLabel={label} accessibilityState={{ selected }} aria-pressed={!!selected} onPress={onPress} style={[ms.chip, selected && { backgroundColor: mobile.teal, borderColor: mobile.teal }]}>{icon && <Icon name={icon} size={16} color={selected ? "white" : mobile.teal} />}<Text style={{ fontSize: 12, color: selected ? "white" : "#596174" }}>{label}</Text></Pressable>; }
+export function MobileChip({ label, selected, onPress, icon, compact }: { label: string; selected?: boolean; onPress: () => void; icon?: MobileIcon; compact?: boolean }) { return <Pressable accessibilityRole="button" accessibilityLabel={label} accessibilityState={{ selected }} aria-pressed={!!selected} onPress={onPress} hitSlop={compact ? 4 : undefined} style={[ms.chip, compact && { minHeight: 36, paddingHorizontal: 10 }, selected && { backgroundColor: mobile.teal, borderColor: mobile.teal }]}>{icon && <Icon name={icon} size={16} color={selected ? "white" : mobile.teal} />}<Text style={{ fontSize: 12, color: selected ? "white" : "#596174" }}>{label}</Text></Pressable>; }
 
 export function MobileBottomNav({ active: requestedActive }: { active?: string }) {
   const pathname = usePathname();

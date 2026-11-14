@@ -124,16 +124,9 @@ function DesktopHomeScreen() {
   const { cardWidth } = marketplaceCardGrid({ available: measuredGridWidth, gap: columnGap, minCardWidth: isWideWeb ? 170 : 142, maxCardWidth: 210, minColumns: 2, maxColumns: isWideWeb ? 7 : 6 });
   const activeListings = useMemo(() => listings.filter((listing) => listing.status === "active"), [listings]);
   const categories = useMemo(() => Array.from(new Set(activeListings.map((listing) => listing.category))), [activeListings]);
-  // "etiket → kök kategori anahtarı" haritası: gelişmiş filtrede üst-kategoriye göre süzme.
-  const rootByLabel = useMemo(() => {
-    const norm = (s: string) => s.toLocaleLowerCase("tr-TR").replace(/\s+/g, " ").trim();
-    const map = new Map<string, string>();
-    const walk = (nodes: CategoryNode[], rootKey: string) => {
-      for (const n of nodes) { if (!map.has(norm(n.label))) map.set(norm(n.label), rootKey); if (n.children) walk(n.children, rootKey); }
-    };
-    for (const root of categoryTree) walk([root], root.key);
-    return { get: (label: string) => map.get(norm(label)) };
-  }, [categoryTree]);
+  // HIZ (2026-11-15): burada tüm kategori ağacını (7.467 düğüm) gezip "etiket → kök" haritası kuran bir useMemo vardı;
+  // harita HİÇBİR yerde okunmuyordu (kök eşleşmesi listingRootNode ile yapılıyor). Her düğümde iki kez yerel-ayarlı
+  // küçük harf çevirisi → yavaş telefonda ana sayfa açılışında ~1,3 sn boşa işlemci. Kaldırıldı; geri ekleme.
   // Üst kategori seçenekleri (ilanı olan kökler önce) — gelişmiş filtre açılır listesi.
   const rootCatOptions = useMemo(() => {
     const counts = new Map<string, number>();
@@ -141,7 +134,7 @@ function DesktopHomeScreen() {
     return categoryTree
       .map((n) => ({ key: n.key, label: n.label, n: counts.get(n.key) ?? 0 }))
       .sort((a, b) => b.n - a.n || 0);
-  }, [categoryTree, activeListings, rootByLabel]);
+  }, [categoryTree, activeListings]);
   const filters = useMemo(() => [...quickFilters, ...categories.map((item) => ({ key: `cat:${item}`, label: translateCopy(getCategoryShortLabel(item), language), icon: getCategoryIcon(item) }))], [categories, language, quickFilters]);
   const maxCommission = useMemo(() => activeListings.reduce((max, listing) => Math.max(max, commissionAmount(listing)), 0), [activeListings]);
   const maxMomentum = useMemo(() => activeListings.reduce((max, listing) => Math.max(max, momentumScore(listing)), 0), [activeListings]);
@@ -213,7 +206,7 @@ function DesktopHomeScreen() {
         return momentumScore(b.listing) - momentumScore(a.listing);
       })
       .map((item) => item.listing);
-  }, [activeListings, filter, findUser, maxCommission, maxMomentum, minComm, minRate, commTypeFilter, minRating, catFilter, rootByLabel, onlyInStock, onlyOpenPartner, onlyFeatured, onlyVerified, priceMax, priceMin, query, shuffleSeed, sortMode, loc.provinceId, loc.districtId]);
+  }, [activeListings, filter, findUser, maxCommission, maxMomentum, minComm, minRate, commTypeFilter, minRating, catFilter, onlyInStock, onlyOpenPartner, onlyFeatured, onlyVerified, priceMax, priceMin, query, shuffleSeed, sortMode, loc.provinceId, loc.districtId]);
   const visibleListings = filteredListings.slice(0, visibleCount);
 
   useEffect(() => {
@@ -697,26 +690,16 @@ function HomeQuickActions({ currentUserId }: { currentUserId: string }) {
 function CategoryShowcase({ categoryTree, listings, isWideWeb }: { categoryTree: CategoryNode[]; listings: Listing[]; isWideWeb: boolean }) {
   const { language } = useLanguage();
 
-  // Her ÜST kategori için canlı aktif-ilan sayısı: ağacı bir kez gezip
-  // "etiket → kök anahtarı" haritası kur, ilanları köke göre say (matchCategoryByName
-  // her ilan için ağacı yeniden gezmesin diye O(ağaç + ilan)).
-  const norm = (s: string) => s.toLocaleLowerCase("tr-TR").replace(/\s+/g, " ").trim();
+  // Her ÜST kategori için canlı aktif-ilan sayısı (ilanın kökü listingRootNode ile bulunur).
+  // HIZ (2026-11-15): burada da tüm ağacı gezip kullanılmayan bir harita kuran döngü vardı (~1,1 sn boşa); kaldırıldı.
   const counts = useMemo(() => {
-    const rootByLabel = new Map<string, string>();
-    const walk = (nodes: CategoryNode[], rootKey: string) => {
-      for (const n of nodes) {
-        if (!rootByLabel.has(norm(n.label))) rootByLabel.set(norm(n.label), rootKey);
-        if (n.children) walk(n.children, rootKey);
-      }
-    };
-    for (const root of categoryTree) walk([root], root.key);
     const c = new Map<string, number>();
     for (const l of listings) {
       const rk = listingRootNode(l)?.key;
       if (rk) c.set(rk, (c.get(rk) ?? 0) + 1);
     }
     return c;
-  }, [categoryTree, listings]);
+  }, [listings]);
 
   // En aktif kategoriler öne (canlı hisset); eşitse ağaç sırası korunur.
   const cats = useMemo(() => {

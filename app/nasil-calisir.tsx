@@ -197,9 +197,9 @@ function HowItWorksStatic() {
               const on = key === roleKey;
               return (
                 <Pressable key={key} accessibilityRole="tab" accessibilityState={{ selected: on }} onPress={() => setRoleKey(key)}
-                  style={{ alignItems: "center", backgroundColor: on ? colors.primary : colors.surface, borderColor: on ? colors.primary : colors.line, borderRadius: 12, borderWidth: 1, flexDirection: "row", flexGrow: isWideWeb ? 0 : 1, gap: 8, justifyContent: "center", minHeight: 46, paddingHorizontal: 18 }}>
-                  <MaterialCommunityIcons name={ROLES[key].icon} size={19} color={on ? "#FFFFFF" : colors.primaryDark} />
-                  <Text style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 14, fontWeight: "900" }}>{tr(ROLES[key].label)}</Text>
+                  style={{ alignItems: "center", backgroundColor: on ? colors.primary : colors.surface, borderColor: on ? colors.primary : colors.line, borderRadius: 11, borderWidth: 1, flexDirection: "row", flexGrow: isWideWeb ? 0 : 1, gap: 7, justifyContent: "center", minHeight: 40, paddingHorizontal: 14 }}>
+                  <MaterialCommunityIcons name={ROLES[key].icon} size={17} color={on ? "#FFFFFF" : colors.primaryDark} />
+                  <Text style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 13, fontWeight: "900" }}>{tr(ROLES[key].label)}</Text>
                 </Pressable>
               );
             })}
@@ -342,9 +342,9 @@ function CtaLink({ href, icon, label, primary, onDark }: { href: "/create" | "/p
   const border = primary ? filled : onDark ? "rgba(255,255,255,0.5)" : colors.primary;
   return (
     <Link href={href} asChild>
-      <Pressable accessibilityRole="link" style={{ alignItems: "center", backgroundColor: filled, borderColor: border, borderRadius: 12, borderWidth: 1.5, flexDirection: "row", gap: 8, minHeight: 46, paddingHorizontal: 20 }}>
-        <MaterialCommunityIcons name={icon} size={18} color={ink} />
-        <Text style={{ color: ink, fontSize: 14.5, fontWeight: "900" }}>{label}</Text>
+      <Pressable accessibilityRole="link" style={{ alignItems: "center", backgroundColor: filled, borderColor: border, borderRadius: 11, borderWidth: 1.5, flexDirection: "row", gap: 7, minHeight: 42, paddingHorizontal: 16 }}>
+        <MaterialCommunityIcons name={icon} size={17} color={ink} />
+        <Text style={{ color: ink, fontSize: 13.5, fontWeight: "900" }}>{label}</Text>
       </Pressable>
     </Link>
   );
