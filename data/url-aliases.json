@@ -1,0 +1,58 @@
+{
+  "paths": [
+    ["/partnership-request", "/ortaklik-basvurusu"],
+    ["/partnership", "/ortaklik"],
+    ["/partner", "/ortak-satis"],
+    ["/explore-feed", "/kesfet-akisi"],
+    ["/explore", "/kesfet"],
+    ["/create", "/ilan-ver"],
+    ["/seller", "/ilanlarim"],
+    ["/listing-edit", "/ilan-duzenle"],
+    ["/listing-stats", "/ilan-istatistik"],
+    ["/listing", "/ilan"],
+    ["/store", "/magaza"],
+    ["/chat", "/sohbet"],
+    ["/favorites", "/favoriler"],
+    ["/following", "/takip-ettiklerim"],
+    ["/messages", "/mesajlar"],
+    ["/notification-settings", "/bildirim-ayarlari"],
+    ["/notifications", "/bildirimler"],
+    ["/profile-edit", "/profil-duzenle"],
+    ["/profile", "/profil"],
+    ["/account-settings", "/hesap-ayarlari"],
+    ["/account-security", "/hesap-guvenligi"],
+    ["/auth", "/giris"],
+    ["/earnings", "/kazanclar"],
+    ["/offers", "/teklifler"],
+    ["/buyer-requests", "/alici-talepleri"],
+    ["/support", "/destek"],
+    ["/reports", "/sikayetlerim"],
+    ["/report", "/sikayet"],
+    ["/review", "/degerlendirme"],
+    ["/legal", "/sozlesmeler"],
+    ["/trust", "/guven"],
+    ["/market-tools", "/araclar"],
+    ["/mobile-tools", "/ilan-araclari"],
+    ["/admin", "/yonetim"]
+  ],
+  "params": {
+    "tab": "sekme",
+    "view": "gorunum",
+    "listingId": "ilan",
+    "q": "ara"
+  },
+  "values": {
+    "tab": {
+      "discover": "kesfet",
+      "requests": "talepler",
+      "pending": "basvurularim",
+      "active": "ortakliklarim",
+      "earnings": "kazanclar",
+      "links": "baglantilar"
+    },
+    "view": {
+      "advanced": "ayrintili",
+      "collections": "koleksiyonlar"
+    }
+  }
+}

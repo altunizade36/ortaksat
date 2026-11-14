@@ -400,7 +400,7 @@ export function MobileSellerStore({ id }: { id: string }) {
             onPress={() => {
               void shareOrCopy({
                 title: `${seller.name} — OrtakSat`,
-                url: `https://www.ortaksat.com/store/${id}`,
+                url: `https://www.ortaksat.com/magaza/${id}`,
               }).then((result) => {
                 if (result === "copied") showToast("Bağlantı kopyalandı.");
                 if (result === "failed")

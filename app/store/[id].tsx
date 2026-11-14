@@ -303,7 +303,7 @@ function StoreScreenLegacy() {
     const res = await shareOrCopy({
       title: `${seller.name} — OrtakSat`,
       message: `${seller.name} — OrtakSat mağazasına göz at:`,
-      url: `https://www.ortaksat.com/store/${seller.id}`
+      url: `https://www.ortaksat.com/magaza/${seller.id}`
     });
     if (res === "copied") showToast(translateCopy("Mağaza bağlantısı kopyalandı", language));
   }
@@ -346,7 +346,7 @@ function StoreScreenLegacy() {
             "@context": "https://schema.org",
             "@type": "Store",
             name: seller.name,
-            url: `https://www.ortaksat.com/store/${seller.id}`,
+            url: `https://www.ortaksat.com/magaza/${seller.id}`,
             ...(seller.avatar?.startsWith("http") ? { image: seller.avatar } : {}),
             ...(reviewStats.count > 0 ? { aggregateRating: { "@type": "AggregateRating", ratingValue: reviewStats.average, reviewCount: reviewStats.count, bestRating: 5, worstRating: 1 } } : {})
           })} />
@@ -670,7 +670,7 @@ function StoreScreenLegacy() {
           "@context": "https://schema.org",
           "@type": "Store",
           name: seller.name,
-          url: `https://www.ortaksat.com/store/${seller.id}`,
+          url: `https://www.ortaksat.com/magaza/${seller.id}`,
           ...(seller.avatar?.startsWith("http") ? { image: seller.avatar } : {}),
           ...(reviewStats.count > 0 ? { aggregateRating: { "@type": "AggregateRating", ratingValue: reviewStats.average, reviewCount: reviewStats.count, bestRating: 5, worstRating: 1 } } : {})
         })} />

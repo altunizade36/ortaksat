@@ -311,14 +311,14 @@ export function MobilePartnershipHub() {
     void shareOrCopy({
       title: displayListingTitle(l.title),
       message: shareText(l),
-      url: `https://www.ortaksat.com/listing/${l.id}`,
+      url: `https://www.ortaksat.com/ilan/${l.id}`,
     }).then((result) => {
       if (result === "copied") showToast("Bağlantı kopyalandı.");
       if (result === "failed") showToast("Paylaşılamadı. Lütfen tekrar dene.");
     });
   }
   function shareWhatsapp(l: Listing) {
-    const text = `${shareText(l)}\nhttps://www.ortaksat.com/listing/${l.id}`;
+    const text = `${shareText(l)}\nhttps://www.ortaksat.com/ilan/${l.id}`;
     void openUrlSafe(`https://wa.me/?text=${encodeURIComponent(text)}`).then(
       (ok) => {
         if (!ok) showToast("WhatsApp açılamadı. Paylaş düğmesini kullan.");

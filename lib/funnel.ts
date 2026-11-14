@@ -1,6 +1,7 @@
 import { Platform } from "react-native";
 
 import { supabase } from "@/lib/supabase";
+import { toInternalUrl } from "@/lib/url-aliases";
 
 /**
  * İLAN HUNİSİ — "ilan sayfasına gelen kişi neden satıcıya ulaşmıyor?" sorusunu ölçer.
@@ -33,7 +34,7 @@ const landing: { path: string; source: FunnelSource } | null = (() => {
     else if (SOCIAL.test(referrer)) source = "social";
     else source = "other";
   } catch { source = "direct"; }
-  return { path: window.location.pathname, source };
+  return { path: toInternalUrl(window.location.pathname), source };
 })();
 
 function isAutomated(): boolean {
@@ -45,7 +46,7 @@ function currentSource(): FunnelSource {
   if (Platform.OS !== "web") return "app";
   if (!landing || typeof window === "undefined") return "direct";
   // Ziyaretçi siteye doğrudan bu sayfadan girdiyse giriş kaynağı; başka sayfadan geldiyse "site içi".
-  return window.location.pathname === landing.path ? landing.source : "internal";
+  return toInternalUrl(window.location.pathname) === landing.path ? landing.source : "internal";
 }
 
 function currentPlatform(): "web" | "mweb" | "ios" | "android" {

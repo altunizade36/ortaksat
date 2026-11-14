@@ -11,6 +11,7 @@
 // güncelleriz. Dinamik /listing/:id zaten middleware.ts ile crawler'lara özel
 // meta veriyor; burası statik landing/bilgi/blog sayfalarını kapsar.
 import fs from "node:fs";
+import { rewriteHtmlUrls } from "./url-aliases.mjs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { createRequire } from "node:module";
@@ -735,6 +736,22 @@ export function patchSeo() {
   for (const fb of ["kategori/[slug].html", "kategori/[slug]/index.html", "kategori/[slug]/[sehir].html"]) {
     if (patch(fb, { noindex: true })) nx++;
   }
+
+  // TÜRKÇE ADRESLER (son adım): tüm sayfalarda site içi bağlantılar, kanonik adres, og:url ve yapısal veri
+  // içindeki tam adresler Türkçe karşılığına çevrilir (bkz. data/url-aliases.json). JS çalıştırmayan tarayıcı botları
+  // ve bağlantı önizleyiciler de yalnız Türkçe adres görür; eski İngilizce adresler sunucuda kalıcı yönlenir.
+  let aliased = 0;
+  (function walk(dir) {
+    for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+      const fp = path.join(dir, e.name);
+      if (e.isDirectory()) { walk(fp); continue; }
+      if (!e.name.endsWith(".html")) continue;
+      const html = fs.readFileSync(fp, "utf8");
+      const next = rewriteHtmlUrls(html);
+      if (next !== html) { fs.writeFileSync(fp, next, "utf8"); aliased++; }
+    }
+  })(DIST);
+  console.log(`post-export: Türkçe adresler yazıldı — ${aliased} html`);
 
   console.log(`post-export: SEO meta yazıldı — ${n} statik rota + ${blogN} blog yazısı + ${dyn.hubs} kategori + ${dyn.cities} şehir sayfası + ${nx} fallback noindex`);
 }

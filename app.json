@@ -70,6 +70,16 @@
               "scheme": "https",
               "host": "www.ortaksat.com",
               "pathPrefix": "/onay/"
+            },
+            {
+              "scheme": "https",
+              "host": "ortaksat.com",
+              "pathPrefix": "/ilan/"
+            },
+            {
+              "scheme": "https",
+              "host": "www.ortaksat.com",
+              "pathPrefix": "/ilan/"
             }
           ],
           "category": [

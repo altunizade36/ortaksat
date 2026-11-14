@@ -16,6 +16,10 @@
             "comment": "İlan detay linkleri — paylaşımlar bu formatta üretiliyor"
           },
           {
+            "/": "/ilan/*",
+            "comment": "İlan detay linkleri (Türkçe adres; paylaşımlar artık bu biçimde üretiliyor)"
+          },
+          {
             "/": "/onay/*",
             "comment": "Alıcı satış onayı (tokenlı, giriş gerekmez)"
           }

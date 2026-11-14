@@ -6,80 +6,500 @@
   "cleanUrls": true,
   "trailingSlash": false,
   "redirects": [
-    { "source": "/create-action", "destination": "/create", "permanent": true },
-    { "source": "/influencer-kazanc", "destination": "/sosyal-medya-kazanc", "permanent": true },
-    { "source": "/kategori/muzik-enstrumanlari", "destination": "/kategori/muzik", "permanent": true },
-    { "source": "/kategori/yapi-market-ve-bahce", "destination": "/kategori/bahce-ve-yapi-market", "permanent": true },
-    { "source": "/kategori/dijital-urunler-ve-hizmetler", "destination": "/kategori/dijital-hizmetler", "permanent": true },
-    { "source": "/kategori/yedek-parca-aksesuar-ve-tuning", "destination": "/kategori/yedek-parca-aksesuar-donanim-ve-tuning", "permanent": true },
-    { "source": "/kategori/bahce-ve-yasam", "destination": "/kategori/bahce-ve-yapi-market", "permanent": true },
-    { "source": "/kategori/otomobil-markaya-gore", "destination": "/kategori/otomobil", "permanent": true },
-    { "source": "/kategori/otomobil-kasa-tipine-gore", "destination": "/kategori/otomobil", "permanent": true },
-    { "source": "/kategori/motosiklet-markaya-gore", "destination": "/kategori/motosiklet", "permanent": true },
-    { "source": "/kategori/elektrikli-ve-hibrit-araclar", "destination": "/kategori/elektrikli-araclar", "permanent": true },
-    { "source": "/kategori/ev-yasam", "destination": "/kategori/ev-ve-yasam", "permanent": true },
-    { "source": "/kategori/anne-bebek", "destination": "/kategori/anne-ve-bebek", "permanent": true },
-    { "source": "/kategori/spor-outdoor", "destination": "/kategori/spor-ve-outdoor", "permanent": true },
-    { "source": "/kategori/hobi-oyun", "destination": "/kategori/kitap-ve-hobi", "permanent": true }
+    {
+      "source": "/partnership-request/:id",
+      "destination": "/ortaklik-basvurusu/:id",
+      "permanent": true
+    },
+    {
+      "source": "/partnership/:id",
+      "destination": "/ortaklik/:id",
+      "permanent": true
+    },
+    {
+      "source": "/partner",
+      "destination": "/ortak-satis",
+      "permanent": true
+    },
+    {
+      "source": "/explore-feed/:id",
+      "destination": "/kesfet-akisi/:id",
+      "permanent": true
+    },
+    {
+      "source": "/explore",
+      "destination": "/kesfet",
+      "permanent": true
+    },
+    {
+      "source": "/create",
+      "destination": "/ilan-ver",
+      "permanent": true
+    },
+    {
+      "source": "/seller",
+      "destination": "/ilanlarim",
+      "permanent": true
+    },
+    {
+      "source": "/listing-edit/:id",
+      "destination": "/ilan-duzenle/:id",
+      "permanent": true
+    },
+    {
+      "source": "/listing-stats/:id",
+      "destination": "/ilan-istatistik/:id",
+      "permanent": true
+    },
+    {
+      "source": "/listing/:id",
+      "destination": "/ilan/:id",
+      "permanent": true
+    },
+    {
+      "source": "/store/:id",
+      "destination": "/magaza/:id",
+      "permanent": true
+    },
+    {
+      "source": "/chat/:id",
+      "destination": "/sohbet/:id",
+      "permanent": true
+    },
+    {
+      "source": "/favorites",
+      "destination": "/favoriler",
+      "permanent": true
+    },
+    {
+      "source": "/following",
+      "destination": "/takip-ettiklerim",
+      "permanent": true
+    },
+    {
+      "source": "/messages",
+      "destination": "/mesajlar",
+      "permanent": true
+    },
+    {
+      "source": "/notification-settings",
+      "destination": "/bildirim-ayarlari",
+      "permanent": true
+    },
+    {
+      "source": "/notifications",
+      "destination": "/bildirimler",
+      "permanent": true
+    },
+    {
+      "source": "/profile-edit",
+      "destination": "/profil-duzenle",
+      "permanent": true
+    },
+    {
+      "source": "/profile",
+      "destination": "/profil",
+      "permanent": true
+    },
+    {
+      "source": "/account-settings",
+      "destination": "/hesap-ayarlari",
+      "permanent": true
+    },
+    {
+      "source": "/account-security",
+      "destination": "/hesap-guvenligi",
+      "permanent": true
+    },
+    {
+      "source": "/auth",
+      "destination": "/giris",
+      "permanent": true
+    },
+    {
+      "source": "/earnings",
+      "destination": "/kazanclar",
+      "permanent": true
+    },
+    {
+      "source": "/offers",
+      "destination": "/teklifler",
+      "permanent": true
+    },
+    {
+      "source": "/buyer-requests",
+      "destination": "/alici-talepleri",
+      "permanent": true
+    },
+    {
+      "source": "/support",
+      "destination": "/destek",
+      "permanent": true
+    },
+    {
+      "source": "/reports",
+      "destination": "/sikayetlerim",
+      "permanent": true
+    },
+    {
+      "source": "/report",
+      "destination": "/sikayet",
+      "permanent": true
+    },
+    {
+      "source": "/review",
+      "destination": "/degerlendirme",
+      "permanent": true
+    },
+    {
+      "source": "/legal",
+      "destination": "/sozlesmeler",
+      "permanent": true
+    },
+    {
+      "source": "/trust",
+      "destination": "/guven",
+      "permanent": true
+    },
+    {
+      "source": "/market-tools",
+      "destination": "/araclar",
+      "permanent": true
+    },
+    {
+      "source": "/mobile-tools",
+      "destination": "/ilan-araclari",
+      "permanent": true
+    },
+    {
+      "source": "/admin",
+      "destination": "/yonetim",
+      "permanent": true
+    },
+    {
+      "source": "/create-action",
+      "destination": "/ilan-ver",
+      "permanent": true
+    },
+    {
+      "source": "/influencer-kazanc",
+      "destination": "/sosyal-medya-kazanc",
+      "permanent": true
+    },
+    {
+      "source": "/kategori/muzik-enstrumanlari",
+      "destination": "/kategori/muzik",
+      "permanent": true
+    },
+    {
+      "source": "/kategori/yapi-market-ve-bahce",
+      "destination": "/kategori/bahce-ve-yapi-market",
+      "permanent": true
+    },
+    {
+      "source": "/kategori/dijital-urunler-ve-hizmetler",
+      "destination": "/kategori/dijital-hizmetler",
+      "permanent": true
+    },
+    {
+      "source": "/kategori/yedek-parca-aksesuar-ve-tuning",
+      "destination": "/kategori/yedek-parca-aksesuar-donanim-ve-tuning",
+      "permanent": true
+    },
+    {
+      "source": "/kategori/bahce-ve-yasam",
+      "destination": "/kategori/bahce-ve-yapi-market",
+      "permanent": true
+    },
+    {
+      "source": "/kategori/otomobil-markaya-gore",
+      "destination": "/kategori/otomobil",
+      "permanent": true
+    },
+    {
+      "source": "/kategori/otomobil-kasa-tipine-gore",
+      "destination": "/kategori/otomobil",
+      "permanent": true
+    },
+    {
+      "source": "/kategori/motosiklet-markaya-gore",
+      "destination": "/kategori/motosiklet",
+      "permanent": true
+    },
+    {
+      "source": "/kategori/elektrikli-ve-hibrit-araclar",
+      "destination": "/kategori/elektrikli-araclar",
+      "permanent": true
+    },
+    {
+      "source": "/kategori/ev-yasam",
+      "destination": "/kategori/ev-ve-yasam",
+      "permanent": true
+    },
+    {
+      "source": "/kategori/anne-bebek",
+      "destination": "/kategori/anne-ve-bebek",
+      "permanent": true
+    },
+    {
+      "source": "/kategori/spor-outdoor",
+      "destination": "/kategori/spor-ve-outdoor",
+      "permanent": true
+    },
+    {
+      "source": "/kategori/hobi-oyun",
+      "destination": "/kategori/kitap-ve-hobi",
+      "permanent": true
+    }
   ],
   "rewrites": [
-    { "source": "/i/:slug", "destination": "/i/[slug]" },
-    { "source": "/onay/:token", "destination": "/onay/[token]" },
-    { "source": "/blog/:slug", "destination": "/blog/[slug]" },
-    { "source": "/listing/:id", "destination": "/listing/[id]" },
-    { "source": "/kategori/:slug/:sehir", "destination": "/kategori/[slug]/[sehir]" },
-    { "source": "/kategori/:slug", "destination": "/kategori/[slug]" },
-    { "source": "/listing-edit/:id", "destination": "/listing-edit/[id]" },
-    { "source": "/partnership-request/:id", "destination": "/partnership-request/[id]" },
-    { "source": "/partnership/:id", "destination": "/partnership/[id]" },
-    { "source": "/listing-stats/:id", "destination": "/listing-stats/[id]" },
-    { "source": "/sayfa/:slug", "destination": "/sayfa/[slug]" },
-    { "source": "/chat/:id", "destination": "/chat/[id]" },
-    { "source": "/store/:id", "destination": "/store/[id]" },
-    { "source": "/ortak/:id", "destination": "/ortak/[id]" },
-    { "source": "/davet/:code", "destination": "/davet/[code]" },
-    { "source": "/explore-feed/:id", "destination": "/explore-feed/[id]" }
+    {
+      "source": "/ortaklik-basvurusu/:id",
+      "destination": "/partnership-request/[id]"
+    },
+    {
+      "source": "/ortaklik/:id",
+      "destination": "/partnership/[id]"
+    },
+    {
+      "source": "/ortak-satis",
+      "destination": "/partner"
+    },
+    {
+      "source": "/kesfet-akisi/:id",
+      "destination": "/explore-feed/[id]"
+    },
+    {
+      "source": "/kesfet",
+      "destination": "/explore"
+    },
+    {
+      "source": "/ilan-ver",
+      "destination": "/create"
+    },
+    {
+      "source": "/ilanlarim",
+      "destination": "/seller"
+    },
+    {
+      "source": "/ilan-duzenle/:id",
+      "destination": "/listing-edit/[id]"
+    },
+    {
+      "source": "/ilan-istatistik/:id",
+      "destination": "/listing-stats/[id]"
+    },
+    {
+      "source": "/ilan/:id",
+      "destination": "/listing/[id]"
+    },
+    {
+      "source": "/magaza/:id",
+      "destination": "/store/[id]"
+    },
+    {
+      "source": "/sohbet/:id",
+      "destination": "/chat/[id]"
+    },
+    {
+      "source": "/favoriler",
+      "destination": "/favorites"
+    },
+    {
+      "source": "/takip-ettiklerim",
+      "destination": "/following"
+    },
+    {
+      "source": "/mesajlar",
+      "destination": "/messages"
+    },
+    {
+      "source": "/bildirim-ayarlari",
+      "destination": "/notification-settings"
+    },
+    {
+      "source": "/bildirimler",
+      "destination": "/notifications"
+    },
+    {
+      "source": "/profil-duzenle",
+      "destination": "/profile-edit"
+    },
+    {
+      "source": "/profil",
+      "destination": "/profile"
+    },
+    {
+      "source": "/hesap-ayarlari",
+      "destination": "/account-settings"
+    },
+    {
+      "source": "/hesap-guvenligi",
+      "destination": "/account-security"
+    },
+    {
+      "source": "/giris",
+      "destination": "/auth"
+    },
+    {
+      "source": "/kazanclar",
+      "destination": "/earnings"
+    },
+    {
+      "source": "/teklifler",
+      "destination": "/offers"
+    },
+    {
+      "source": "/alici-talepleri",
+      "destination": "/buyer-requests"
+    },
+    {
+      "source": "/destek",
+      "destination": "/support"
+    },
+    {
+      "source": "/sikayetlerim",
+      "destination": "/reports"
+    },
+    {
+      "source": "/sikayet",
+      "destination": "/report"
+    },
+    {
+      "source": "/degerlendirme",
+      "destination": "/review"
+    },
+    {
+      "source": "/sozlesmeler",
+      "destination": "/legal"
+    },
+    {
+      "source": "/guven",
+      "destination": "/trust"
+    },
+    {
+      "source": "/araclar",
+      "destination": "/market-tools"
+    },
+    {
+      "source": "/ilan-araclari",
+      "destination": "/mobile-tools"
+    },
+    {
+      "source": "/yonetim",
+      "destination": "/admin"
+    },
+    {
+      "source": "/i/:slug",
+      "destination": "/i/[slug]"
+    },
+    {
+      "source": "/onay/:token",
+      "destination": "/onay/[token]"
+    },
+    {
+      "source": "/blog/:slug",
+      "destination": "/blog/[slug]"
+    },
+    {
+      "source": "/kategori/:slug/:sehir",
+      "destination": "/kategori/[slug]/[sehir]"
+    },
+    {
+      "source": "/kategori/:slug",
+      "destination": "/kategori/[slug]"
+    },
+    {
+      "source": "/sayfa/:slug",
+      "destination": "/sayfa/[slug]"
+    },
+    {
+      "source": "/ortak/:id",
+      "destination": "/ortak/[id]"
+    },
+    {
+      "source": "/davet/:code",
+      "destination": "/davet/[code]"
+    }
   ],
   "headers": [
     {
       "source": "/(.*)",
       "headers": [
-        { "key": "X-Content-Type-Options", "value": "nosniff" },
-        { "key": "X-Frame-Options", "value": "SAMEORIGIN" },
-        { "key": "Content-Security-Policy", "value": "frame-ancestors 'self'" },
-        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
-        { "key": "Permissions-Policy", "value": "camera=(), microphone=(), geolocation=(), browsing-topics=()" },
-        { "key": "X-DNS-Prefetch-Control", "value": "on" }
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "SAMEORIGIN"
+        },
+        {
+          "key": "Content-Security-Policy",
+          "value": "frame-ancestors 'self'"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        },
+        {
+          "key": "Permissions-Policy",
+          "value": "camera=(), microphone=(), geolocation=(), browsing-topics=()"
+        },
+        {
+          "key": "X-DNS-Prefetch-Control",
+          "value": "on"
+        }
       ]
     },
     {
       "source": "/_expo/static/(.*)",
       "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
       ]
     },
     {
       "source": "/fonts/(.*)",
       "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" },
-        { "key": "Access-Control-Allow-Origin", "value": "*" }
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        },
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        }
       ]
     },
     {
       "source": "/sw.js",
       "headers": [
-        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, no-store, must-revalidate"
+        }
       ]
     },
     {
       "source": "/offline.html",
       "headers": [
-        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, no-store, must-revalidate"
+        }
       ]
     },
     {
       "source": "/.well-known/(.*)",
-      "headers": [{ "key": "Content-Type", "value": "application/json" }]
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/json"
+        }
+      ]
     }
   ]
 }

@@ -375,7 +375,7 @@ function CategoryLandingScreenLegacy() {
     itemListElement: items.slice(0, 24).map((l, i) => ({
       "@type": "ListItem",
       position: i + 1,
-      url: `https://www.ortaksat.com/listing/${l.id}`,
+      url: `https://www.ortaksat.com/ilan/${l.id}`,
       name: l.title,
       image: l.image
     }))

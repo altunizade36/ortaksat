@@ -3,20 +3,35 @@ Allow: /
 
 # Hesap/aksiyon gerektiren özel alanlar — arama motorlarına kapalı
 Disallow: /admin
+Disallow: /yonetim
 Disallow: /auth
+Disallow: /giris
 Disallow: /profile-edit
+Disallow: /profil-duzenle
 Disallow: /earnings
+Disallow: /kazanclar
 Disallow: /favorites
+Disallow: /favoriler
 Disallow: /notifications
+Disallow: /bildirimler
 Disallow: /chat/
+Disallow: /sohbet/
 Disallow: /listing-edit/
+Disallow: /ilan-duzenle/
 Disallow: /account-settings
+Disallow: /hesap-ayarlari
 Disallow: /account-security
+Disallow: /hesap-guvenligi
 Disallow: /notification-settings
+Disallow: /bildirim-ayarlari
 Disallow: /messages
+Disallow: /mesajlar
 Disallow: /offers
+Disallow: /teklifler
 Disallow: /engellenenler
 Disallow: /listing-stats/
+Disallow: /ilan-istatistik/
 Disallow: /partnership-request/
+Disallow: /ortaklik-basvurusu/
 
 Sitemap: https://www.ortaksat.com/sitemap.xml

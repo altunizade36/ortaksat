@@ -1,4 +1,5 @@
 import { ScrollViewStyleReset, useServerDocumentContext } from "expo-router/html";
+import { urlAliasBootScript } from "@/lib/url-aliases";
 import type { PropsWithChildren } from "react";
 
 /**
@@ -81,6 +82,9 @@ export default function Root({ children }: PropsWithChildren) {
             kullanıcının kayıtlı tercihini (localStorage → ortaksat.cookieConsent.v1) okur ve yalnız izin verilen
             kategorileri yükler. Tercih yoksa ya da "Reddet" seçildiyse HİÇBİRİ yüklenmez. Bant: components/cookie-consent.tsx.
             <noscript> piksel görseli kaldırıldı: JS kapalıyken rıza alınamaz, izinsiz istek atılmamalı. */}
+        {/* TÜRKÇE ADRESLER: adres çubuğu /ortak-satis, /ilan/… gösterir; iç rotalar aynı kalır (bkz. lib/url-aliases.ts).
+            İzleme betiği DEĞİLDİR (yalnız adres çevirisi) → rızaya bağlı değil; yönlendiriciden ÖNCE çalışmalıdır. */}
+        <script dangerouslySetInnerHTML={{ __html: urlAliasBootScript }} />
         <script dangerouslySetInnerHTML={{ __html: consentScript }} />
 
         {/* İlk veri çağrısı gecikmesin: Supabase kaynağına erken bağlan. */}
@@ -230,7 +234,7 @@ const orgJsonLd = JSON.stringify({
       inLanguage: "tr-TR",
       potentialAction: {
         "@type": "SearchAction",
-        target: { "@type": "EntryPoint", urlTemplate: "https://www.ortaksat.com/explore?q={search_term_string}" },
+        target: { "@type": "EntryPoint", urlTemplate: "https://www.ortaksat.com/kesfet?ara={search_term_string}" },
         "query-input": "required name=search_term_string"
       }
     }

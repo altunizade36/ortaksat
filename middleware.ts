@@ -13,7 +13,9 @@ import categoryMap from "./data/category-og-map.json";
 // CollectionPage + FAQPage JSON-LD; bkz scripts/seo-static.mjs). Middleware Googlebot'a
 // bunları ZAYIF/minimal HTML ile eziyordu → statik zengin HTML'i görsün diye kaldırıldı.
 // İlan (/listing) ve mağaza (/store) DİNAMİKTİR (statik içerik yok) → middleware şart.
-export const config = { matcher: ["/listing/:id*", "/store/:id*", "/ortak/:id*"] };
+// Türkçe adresler de eşlenir: /listing → /ilan ve /store → /magaza yönlendirmesi ara katmandan ÖNCE çalışır,
+// yani tarayıcı botu bu işleve /ilan/… ve /magaza/… ile ulaşır (eski adresler geriye dönük uyum için kalır).
+export const config = { matcher: ["/listing/:id*", "/store/:id*", "/ortak/:id*", "/ilan/:id*", "/magaza/:id*"] };
 
 const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL || "https://akyzzdwbzgsnhdircuce.supabase.co";
 const SUPABASE_KEY =
@@ -70,7 +72,7 @@ async function listingResponse(id: string): Promise<Response | undefined> {
   const l = rows && rows[0];
   if (!l) return;
   const listingTitle = displayListingTitle(l.title);
-  const url = `https://www.ortaksat.com/listing/${id}`;
+  const url = `https://www.ortaksat.com/ilan/${id}`;
   const image = l.image_url || OG_COVER;
   const currency = l.currency || "TRY";
   const priceStr = Number(l.price || 0).toLocaleString("tr-TR");
@@ -216,7 +218,7 @@ function cardsItemList(cards: CrawlCard[], name: string) {
     itemListElement: cards.slice(0, 24).map((c, i) => ({
       "@type": "ListItem",
       position: i + 1,
-      url: `https://www.ortaksat.com/listing/${c.id}`,
+      url: `https://www.ortaksat.com/ilan/${c.id}`,
       name: displayListingTitle(c.title),
       image: c.image_url || OG_COVER
     }))
@@ -224,7 +226,7 @@ function cardsItemList(cards: CrawlCard[], name: string) {
 }
 function cardsBody(cards: CrawlCard[]): string {
   if (!cards.length) return "";
-  return `<ul>${cards.slice(0, 24).map((c) => `<li><a href="https://www.ortaksat.com/listing/${esc(c.id)}">${esc(displayListingTitle(c.title))} — ₺${esc(Number(c.price || 0).toLocaleString("tr-TR"))}</a></li>`).join("")}</ul>`;
+  return `<ul>${cards.slice(0, 24).map((c) => `<li><a href="https://www.ortaksat.com/ilan/${esc(c.id)}">${esc(displayListingTitle(c.title))} — ₺${esc(Number(c.price || 0).toLocaleString("tr-TR"))}</a></li>`).join("")}</ul>`;
 }
 
 async function storeResponse(id: string): Promise<Response | undefined> {
@@ -237,7 +239,7 @@ async function storeResponse(id: string): Promise<Response | undefined> {
   if (!name) return;
   // Satıcının aktif ilanları → gerçek indekslenebilir gövde + ItemList (eskiden yalnız ad vardı).
   const cards = await fetchCards(`${SUPABASE_URL}/rest/v1/listing_public_cards?owner_id=eq.${encodeURIComponent(id)}&status=eq.active&select=id,title,price,image_url,currency&order=created_at.desc&limit=24`);
-  const url = `https://www.ortaksat.com/store/${id}`;
+  const url = `https://www.ortaksat.com/magaza/${id}`;
   const title = `${name} — OrtakSat mağazası`;
   const desc = `${name} satıcısının OrtakSat mağazası — ${cards.length ? `${cards.length} aktif ilan. ` : ""}Komisyonlu ürünlerini keşfet, ortak ol ve birlikte kazan. OrtakSat aracıdır; ödeme ve teslimat taraflar arasındadır.`;
   const org = { "@context": "https://schema.org", "@type": "OnlineStore", name, url, image: OG_COVER };
@@ -275,10 +277,10 @@ export default async function middleware(request: Request): Promise<Response | u
     const url = new URL(request.url);
     const parts = url.pathname.split("/").filter(Boolean);
 
-    if (parts[0] === "listing") {
+    if (parts[0] === "listing" || parts[0] === "ilan") {
       return await listingResponse(parts[parts.length - 1] || "");
     }
-    if (parts[0] === "store" && parts[1]) {
+    if ((parts[0] === "store" || parts[0] === "magaza") && parts[1]) {
       return await storeResponse(parts[1]);
     }
     if (parts[0] === "ortak" && parts[1]) {

@@ -136,7 +136,7 @@ export function shareUrl(listing: Listing, refCode: string, channel?: string) {
 
 // Düz ürün paylaşımı: herkesin açabileceği ürün detay sayfası (referans formu değil).
 export function productUrl(listing: Listing) {
-  return `https://www.ortaksat.com/listing/${listing.id}`;
+  return `https://www.ortaksat.com/ilan/${listing.id}`; // Türkçe adres (iç rota /listing/[id]; bkz. lib/url-aliases.ts)
 }
 
 /**
@@ -157,7 +157,7 @@ export function listingInviteCode(listing: Pick<Listing, "id" | "ownerId">): str
 
 /** Satıcının paylaşacağı ortak davet linki (ilan detayında ?ortak-davet=<kod>). */
 export function partnerInviteUrl(listing: Listing) {
-  return `https://www.ortaksat.com/listing/${listing.id}?ortak-davet=${listingInviteCode(listing)}`;
+  return `https://www.ortaksat.com/ilan/${listing.id}?ortak-davet=${listingInviteCode(listing)}`;
 }
 
 /** TR cep telefonunu WhatsApp/wa.me için uluslararası haneye çevirir ("0555…" -> "90555…"). Geçersizse "". */
@@ -188,7 +188,7 @@ export function adDisclosureLine(sellerName?: string | null): string {
  * satıcının yazdığı özel şablonlara da eklenir.
  */
 export function listingShareTemplates(listing: Listing, url?: string, _refCode?: string, disclosure?: string) {
-  const link = url ?? `https://www.ortaksat.com/listing/${listing.id}`;
+  const link = url ?? `https://www.ortaksat.com/ilan/${listing.id}`;
   const firstPitch = listing.salesPitch[0] ?? listing.description;
   const lead = disclosure ? `${disclosure}\n` : "";
 

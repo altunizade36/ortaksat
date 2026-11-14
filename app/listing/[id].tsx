@@ -546,7 +546,7 @@ export default function ListingDetailScreen() {
   }
 
   const metaDesc = `${currentTitle} — ${moneyIn(currentListing.price, currentListing.currency)}. ${currentListing.description}`.replace(/\s+/g, " ").slice(0, 160);
-  const metaUrl = `https://www.ortaksat.com/listing/${currentListing.id}`;
+  const metaUrl = `https://www.ortaksat.com/ilan/${currentListing.id}`;
   // Sosyal paylaşımda kazanç kancası — ortak linki paylaşınca önizlemede görünür.
   const ogTitle = partnerable
     ? `${currentTitle} — ${moneyIn(currentListing.price, currentListing.currency)} · Ortak ol, ${commissionText(currentListing)} kazan | OrtakSat`

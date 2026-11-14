@@ -68,7 +68,7 @@ function ProfileScreenInner() {
     const res = await shareOrCopy({
       title: `${currentUser.name} — OrtakSat`,
       message: `${currentUser.name} — OrtakSat mağazama göz at:`,
-      url: `https://www.ortaksat.com/store/${currentUser.id}`
+      url: `https://www.ortaksat.com/magaza/${currentUser.id}`
     });
     if (res === "copied") showToast(translateCopy("Mağaza bağlantın kopyalandı", language));
   }

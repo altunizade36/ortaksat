@@ -4,6 +4,7 @@
 // Herkese-açık listing_public_cards view'i üzerinden okur; gizli DB şifresi GEREKMEZ.
 // Google/Bing her ilanı bu sitemap üzerinden keşfeder ve indeksler.
 import { writeFileSync, readFileSync, existsSync } from "node:fs";
+import { toPublicUrl } from "./url-aliases.mjs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import { createRequire } from "node:module";
@@ -97,7 +98,8 @@ function esc(s) {
 
 function urlTag(loc, changefreq, priority, lastmod) {
   const lm = lastmod ? `<lastmod>${new Date(lastmod).toISOString().slice(0, 10)}</lastmod>` : "";
-  return `  <url><loc>${esc(BASE + loc)}</loc>${lm}<changefreq>${changefreq}</changefreq><priority>${priority}</priority></url>`;
+  // Site haritasında TÜRKÇE adresler yer alır (/ilan/…, /kesfet, /ortak-satis); eski İngilizce adresler kalıcı yönlenir.
+  return `  <url><loc>${esc(BASE + toPublicUrl(loc))}</loc>${lm}<changefreq>${changefreq}</changefreq><priority>${priority}</priority></url>`;
 }
 
 // .env dosyasını (varsa) process.env'e yükle — yerel çalıştırma kolaylığı için.
