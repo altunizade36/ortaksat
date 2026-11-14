@@ -3,7 +3,8 @@ import { Asset } from "expo-asset";
 import { Image } from "expo-image";
 import * as SplashScreen from "expo-splash-screen";
 import { useEffect, useRef, useState } from "react";
-import { AccessibilityInfo, Animated, Dimensions, Easing, Platform, StyleSheet, Text, View, type ViewInstance } from "react-native";
+import { AccessibilityInfo, Animated, Easing, Platform, StyleSheet, Text, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { isMobileApp } from "@/lib/mobile-app";
 
@@ -21,9 +22,10 @@ const HARD_LIMIT_MS = 15000; // hiçbir koşul sağlanmasa bile açılış katma
 const MOUNT_APP_AT_MS = 1000; // uygulama, eller yolun ~%93'ünü aldığında arkada kurulmaya başlar
 const PARTS_WAIT_MS = 700; // görseller bu sürede gelmezse animasyon yine başlar
 
-// YEREL AÇILIŞ EKRANIYLA HİZA (gerçek derlemede ekran kaydıyla ölçüldü, 2026-11-14):
-//  • Android'de yerel açılış ekranı halkayı TÜM ekranın ortasına çizer; bizim katman alt gezinme çubuğunu
-//    kapsamadığı için ortası ~12 dp yukarıdaydı. Katman, ekrandaki yerini ölçüp içeriği ekran ortasına kaydırır.
+// YEREL AÇILIŞ EKRANIYLA HİZA (gerçek Android derlemesinde ekran kaydıyla ölçüldü, 2026-11-14):
+//  • Bizim katman TAM ekranın ortasındadır. Android yerel açılış ekranı ise görseli durum çubuğu ile alt gezinme
+//    çubuğu ARASINDAKİ alanın ortasına çizer → (üst boşluk − alt boşluk) / 2 kadar aşağıda (ölçüm: 5,5 dp).
+//    İçerik o kadar aşağı kaydırılır (bkz. shiftY). İlk denemede tersini varsayıp katmanı ölçmüştüm; yanlıştı.
 //  • Android yerel ekranı görseli bizim 220 dp'lik kutudan ~%4 küçük çizer. Halka o boyutta BAŞLAR, açılış
 //    "nefesi" sırasında asıl boyutuna büyür.
 // İkisi hizalı değilken geçiş anında eski halka yeni halkanın arkasında "hayalet" gibi görünüyordu.
@@ -183,8 +185,9 @@ export function IntroSplash({ ready, appShown = true, onMountApp }: {
   const { breath, settle, hands, squeeze, pump, ripple, word, slogan, exact } = tracks.current;
 
   const laidOut = useRef(false);
-  const rootRef = useRef<ViewInstance>(null);
-  const [shiftY, setShiftY] = useState(0); // içeriği TÜM ekranın ortasına getiren kaydırma (yerel ekranla hiza)
+  const insets = useSafeAreaInsets();
+  // Yerel açılış ekranındaki halkanın yeri (yukarıdaki nota bak). iOS'ta yerel ekran tam ortadadır → 0.
+  const shiftY = Platform.OS === "android" ? Math.round((insets.top - insets.bottom) / 2) : 0;
   const loaded = useRef(0);
   const mountAppRef = useRef(onMountApp);
   mountAppRef.current = onMountApp;
@@ -206,23 +209,9 @@ export function IntroSplash({ ready, appShown = true, onMountApp }: {
   };
   const onFirstLayout = () => {
     if (laidOut.current) return;
-    const proceed = () => {
-      if (laidOut.current) return;
-      laidOut.current = true;
-      if (loaded.current >= 3) begin();
-      else setTimeout(begin, PARTS_WAIT_MS);
-    };
-    // Önce hiza: katmanın ekrandaki yeri ölçülür (yerel açılış ekranı hâlâ üstte, kaydırma görünmez). Ölçüm
-    // gelmezse 120 ms sonra hizasız devam edilir.
-    const fallback = setTimeout(proceed, 120);
-    try {
-      rootRef.current?.measureInWindow((_x: number, y: number, _w: number, height: number) => {
-        clearTimeout(fallback);
-        const offset = Math.round(Dimensions.get("screen").height / 2 - (y + height / 2));
-        if (Number.isFinite(offset) && Math.abs(offset) <= 80) setShiftY(offset);
-        proceed();
-      });
-    } catch { clearTimeout(fallback); proceed(); }
+    laidOut.current = true;
+    if (loaded.current >= 3) begin();
+    else setTimeout(begin, PARTS_WAIT_MS);
   };
   const onPartLoad = () => {
     loaded.current += 1;
@@ -301,7 +290,6 @@ export function IntroSplash({ ready, appShown = true, onMountApp }: {
 
   return (
     <Animated.View
-      ref={rootRef}
       onLayout={onFirstLayout}
       accessibilityLabel="OrtakSat açılıyor"
       accessibilityRole="progressbar"
