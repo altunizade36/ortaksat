@@ -75,9 +75,9 @@ export function CookieConsent() {
             {" "}
             <Link href={"/cerez-politikasi" as Href} style={{ color: colors.primaryDark, fontWeight: "700", textDecorationLine: "underline" }}>{tr("Ayrıntılar")}</Link>
           </Text>
-          {/* Üç seçenek de bilinçli olarak AYNI görünümde (rehber: kabul / reddet / tercihler eşit görünürlükte olmalı). */}
+          {/* Üç seçenek de bilinçli olarak AYNI görünüm ve AYNI boyutta (rehber: kabul / reddet / tercihler eşit olmalı). */}
           <View style={{ alignItems: "center", flexDirection: "row", gap: 6 }}>
-            <SlimButton label={tr("Tercihleri Yönet")} onPress={() => setMode("preferences")} testID="cookie-manage" grow={stacked} />
+            <SlimButton label={tr("Tercihler")} onPress={() => setMode("preferences")} testID="cookie-manage" grow={stacked} />
             <SlimButton label={tr("Reddet")} onPress={() => decide({ analytics: false, marketing: false })} testID="cookie-reject" grow={stacked} />
             <SlimButton label={tr("Kabul Et")} onPress={() => decide({ analytics: true, marketing: true })} testID="cookie-accept" grow={stacked} />
           </View>
@@ -175,7 +175,10 @@ function SlimButton({ label, onPress, testID, grow }: { label: string; onPress: 
       onPress={onPress}
       style={({ pressed }) => ({
         alignItems: "center", backgroundColor: pressed ? "#EEF3FF" : "#FFFFFF", borderColor: "#B9C8EC", borderRadius: 10, borderWidth: 1,
-        flexGrow: grow ? 1 : 0, justifyContent: "center", minHeight: grow ? 40 : 34, minWidth: 0, paddingHorizontal: grow ? 8 : 14
+        // Üç düğme AYNI GENİŞLİKTE: dar ekranda satırı eşit paylaşır (flexBasis 0), geniş ekranda sabit genişlik.
+        // İçeriğe göre genişlerse "Reddet" ile "Kabul Et" farklı boyda kalıyordu (rehber: eşit büyüklük).
+        flexBasis: grow ? 0 : undefined, flexGrow: grow ? 1 : 0, justifyContent: "center", minHeight: grow ? 40 : 34, minWidth: 0,
+        paddingHorizontal: grow ? 6 : 10, width: grow ? undefined : 104
       })}
     >
       <Text numberOfLines={1} style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "700" }}>{label}</Text>

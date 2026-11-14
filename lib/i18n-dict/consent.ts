@@ -31,6 +31,7 @@ export const consentDict: Record<string, string> = {
   "’nı kabul ediyorum;": " — I accept these;",
   "’nı okudum. 18 yaşından büyüğüm.": " — I have read these. I am over 18.",
   "Tercihleri Yönet": "Manage preferences",
+  "Tercihler": "Preferences",
   "Seçimimi Kaydet": "Save my choice",
   "Zorunlu kayıtların dışında, yalnız izin verirsen analitik ve reklam ölçümü araçlarını çalıştırırız.": "Beyond the essential records, we only run analytics and ad measurement tools if you allow it.",
   "Zorunlu kayıtların dışında, yalnız izin verirsen analitik araçlarını çalıştırırız.": "Beyond the essential records, we only run analytics tools if you allow it.",

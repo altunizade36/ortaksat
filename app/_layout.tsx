@@ -7,7 +7,7 @@ import { Stack } from "expo-router/stack";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import * as WebBrowser from "expo-web-browser";
-import { useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Platform, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
@@ -45,12 +45,26 @@ if (Platform.OS !== "web") {
 WebBrowser.maybeCompleteAuthSession();
 
 export default function RootLayout() {
+  // UYGULAMADA SIRALAMA: ilk çizimde YALNIZ açılış katmanı vardır; uygulamanın geri kalanı (gezinme ağacı, ekranlar)
+  // açılış animasyonu başladıktan sonra, eller birleşirken kurulur. Hepsi aynı anda çizilince JS saniyelerce
+  // meşgul kalıyor, animasyon o süre boyunca BAŞLAYAMIYORDU (kullanıcı: "animasyon yok"). Web'de sıralama yoktur
+  // (appMounted baştan true) → statik sayfa çıktısı değişmez.
+  const [appMounted, setAppMounted] = useState(!isMobileApp);
+  const [appShown, setAppShown] = useState(!isMobileApp);
+  const mountApp = useCallback(() => setAppMounted(true), []);
+  const markShown = useCallback(() => setAppShown(true), []);
+  // Güvenlik ağı: açılış katmanı herhangi bir nedenle haber vermezse uygulama yine kurulur.
+  useEffect(() => {
+    if (appMounted) return;
+    const timer = setTimeout(mountApp, 2400);
+    return () => clearTimeout(timer);
+  }, [appMounted, mountApp]);
   return (
     <SafeAreaProvider>
       <LanguageProvider>
         <StoreProvider>
-          <MobileAccessProvider><MobileDrawerProvider><RootStack /></MobileDrawerProvider></MobileAccessProvider>
-          <IntroSplashHost />{/* uygulama: soğuk açılış animasyonu — oturum kontrol katmanı dahil HER ŞEYİN üstünde */}
+          {appMounted ? <MobileAccessProvider><MobileDrawerProvider><RootStack onShown={markShown} /></MobileDrawerProvider></MobileAccessProvider> : null}
+          <IntroSplashHost appShown={appShown} onMountApp={mountApp} />{/* uygulama: soğuk açılış animasyonu — oturum kontrol katmanı dahil HER ŞEYİN üstünde */}
         </StoreProvider>
       </LanguageProvider>
     </SafeAreaProvider>
@@ -58,17 +72,19 @@ export default function RootLayout() {
 }
 
 /**
- * Açılış animasyonu: oturum kontrolü bitince eriyerek açılır. İlan verisini BEKLEMEZ — ağ yavaşken açılış
- * saniyelerce uzuyordu; ilanlar yüklenirken ekranlar zaten kendi iskeletini gösterir.
+ * Açılış animasyonu: oturum kontrolü bitip uygulamanın ilk ekranı çizilince eriyerek açılır. İlan verisini
+ * BEKLEMEZ — ağ yavaşken açılış saniyelerce uzuyordu; ilanlar yüklenirken ekranlar zaten kendi iskeletini gösterir.
  */
-function IntroSplashHost() {
+function IntroSplashHost({ appShown, onMountApp }: { appShown: boolean; onMountApp: () => void }) {
   const { authReady } = useStore();
-  return <IntroSplash ready={authReady} />;
+  return <IntroSplash ready={authReady && appShown} appShown={appShown} onMountApp={onMountApp} />;
 }
 
-function RootStack() {
+function RootStack({ onShown }: { onShown?: () => void }) {
   const { t } = useLanguage();
   const { marketplaceInitialLoading } = useStore();
+  // Uygulamanın ilk ekranı çizildi → açılış katmanı kapanabilir (bkz. RootLayout sıralaması).
+  useEffect(() => { onShown?.(); }, [onShown]);
 
   // Açılış ekranını, sabit süre yerine STORE İLK YÜKLEMESİ bitince gizle → soğuk açılışta
   // hidrasyonsuz/boş ilk kare görünmez. Ağ takılırsa 2.5sn güvenlik zamanlayıcısı yine gizler.
