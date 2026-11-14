@@ -141,7 +141,7 @@ export default function TabsLayout() {
     >
       <Tabs.Screen name="index" options={{ headerShown: !isMobileApp, title: t("home"), tabBarLabel: t("home"), tabBarIcon: tabIcon("index") }} listeners={{ tabPress: () => haptic.selection() }} />
       <Tabs.Screen name="explore" options={{ headerShown: !isMobileApp, title: t("explore"), tabBarLabel: t("explore"), tabBarIcon: tabIcon("explore") }} listeners={{ tabPress: () => haptic.selection() }} />
-      <Tabs.Screen name="create-action" options={{ title: t("createListing"), tabBarLabel: t("createListing"), tabBarIcon: tabIcon("create-action") }} listeners={{ tabPress: () => haptic.selection() }} />
+      <Tabs.Screen name="create-action" options={{ title: t("createListing"), tabBarLabel: t("createListing"), tabBarIcon: tabIcon("create-action"), ...(Platform.OS === "web" ? { href: "/create" as const } : null) }} listeners={{ tabPress: () => haptic.selection() }} />
       <Tabs.Screen name="partner" options={{ title: t("partnerSales"), tabBarLabel: t("partnerSales"), tabBarIcon: tabIcon("partner") }} listeners={{ tabPress: () => haptic.selection() }} />
       <Tabs.Screen name="menu" options={{ headerShown: !isMobileApp, title: t("menu"), tabBarLabel: t("menu"), tabBarIcon: tabIcon("menu") }} listeners={{ tabPress: () => haptic.selection() }} />
       <Tabs.Screen name="notifications-tab" options={hiddenTab} />

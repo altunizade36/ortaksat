@@ -636,6 +636,63 @@ function injectHelmetHead() {
   return n;
 }
 
+// ANA SAYFA — JS ÇALIŞTIRMAYAN OKUYUCULAR İÇİN GERÇEK İLANLAR.
+// Ana sayfadaki ilan ızgarası istemcide çizilir; JS çalıştırmayan okuyucu (yapay zekâ asistanları, bağlantı
+// önizleyiciler, bazı arama tarayıcıları) yalnız başlık + kategori adlarını görüyor, "sitede ilan yok" sanıyordu
+// (dış inceleme, 2026-11-14). Derleme anındaki ilan görüntüsünden (lib/listing-seed.json — kategori sayfalarının
+// kullandığı AYNI gerçek veri) iki şey yazılır: <head>'e ItemList yapısal verisi, gövdeye <noscript> içinde
+// bağlantılı ilan listesi. <noscript> React kökünün DIŞINDADIR (hidrasyonu etkilemez) ve JS açıkken hiç
+// çizilmez; içerik JS'li kullanıcının gördüğüyle aynıdır (gizli/farklı içerik değil). Tanıtım (demo) kayıtları
+// alınmaz; ilan yoksa hiçbir şey yazılmaz (uydurma veri yok).
+function cleanListingTitle(value) {
+  return String(value ?? "").normalize("NFC")
+    .replace(/[︀-️⃐-⃿]/gu, "").replace(/<[^>]*>/g, " ")
+    .replace(/[^\p{L}\p{M}0-9²³ .,'’"()/:+&%\-]/gu, " ")
+    .replace(/[.,'’"()/:+&%\-]{3,}/gu, " ")
+    .replace(/\s+/g, " ").trim();
+}
+function patchHomeListings() {
+  const fp = path.join(DIST, "index.html");
+  const seedPath = path.join(__dirname, "..", "lib", "listing-seed.json");
+  if (!fs.existsSync(fp) || !fs.existsSync(seedPath)) return 0;
+  let rows = [];
+  try { rows = JSON.parse(fs.readFileSync(seedPath, "utf8")); } catch { return 0; }
+  const items = (Array.isArray(rows) ? rows : [])
+    .filter((r) => r && r.demo !== true && r.status === "active" && /^[0-9a-f-]{36}$/i.test(String(r.id)))
+    .map((r) => ({ ...r, cleanTitle: cleanListingTitle(r.title) }))
+    .filter((r) => r.cleanTitle)
+    .slice(0, 24);
+  let html = fs.readFileSync(fp, "utf8");
+  if (!items.length || html.includes('id="os-home-listings"')) return 0;
+  const money = (n, cur) => `${!cur || cur === "TRY" ? "₺" : `${cur} `}${Number(n || 0).toLocaleString("tr-TR")}`;
+  const itemList = {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    name: "OrtakSat'ta güncel ilanlar",
+    numberOfItems: items.length,
+    itemListElement: items.map((r, i) => ({ "@type": "ListItem", position: i + 1, url: `${BASE}/listing/${r.id}`, name: r.cleanTitle }))
+  };
+  const lis = items.map((r) => {
+    const price = Number(r.price || 0);
+    const comm = Number(r.commission_tl || 0);
+    // Komisyon yalnız fiyatın altında anlamlı bir tutarsa yazılır (birim fiyatlı hizmet ilanlarında toplam iş
+    // üzerinden hesaplanan komisyon birim fiyatı aşabiliyor → yan yana yanıltıcı durur).
+    const parts = [price > 0 ? money(price, r.currency) : "", comm > 0 && comm < price ? `ortak komisyonu ${money(comm, r.currency)}` : "", r.category ? escText(r.category) : ""].filter(Boolean);
+    return `<li><a href="/listing/${escAttr(r.id)}">${escText(r.cleanTitle)}</a>${parts.length ? ` — ${parts.join(" · ")}` : ""}</li>`;
+  }).join("");
+  const block =
+    `<noscript><section id="os-home-listings"><h2>Güncel ilanlar</h2><ul>${lis}</ul>` +
+    `<p><a href="/explore">Tüm ilanları gör</a> · <a href="/create">Ücretsiz ilan ver</a> · <a href="/partner">Ortak satıcı ol</a> · <a href="/auth">Kayıt ol / giriş yap</a> · <a href="/sss">Sık sorulan sorular</a></p>` +
+    `<p>OrtakSat aracı bir platformdur: satıcı ilanını ücretsiz açar ve komisyonunu belirler, ortak ilanı kendi bağlantısıyla paylaşır, satış gerçekleşince komisyonu satıcıdan alır. Ödeme ve teslimat taraflar arasında gerçekleşir.</p>` +
+    `</section></noscript>`;
+  const ldTag = `<script type="application/ld+json">${JSON.stringify(itemList).replace(/<\/(script)/gi, "<\\/$1")}</script>`;
+  if (!/<\/head>/i.test(html) || !/<\/body>/i.test(html)) return 0;
+  html = html.replace(/<\/head>/i, `${ldTag}</head>`).replace(/<\/body>/i, `${block}</body>`);
+  fs.writeFileSync(fp, html, "utf8");
+  return items.length;
+}
+
+
 export function patchSeo() {
   // İLK adım: SDK 54'ün statik çıktısındaki react-helmet etiketlerini geri koy; aşağıdaki
   // yamalar (rewriteSeoHead / patch) girdiyi SDK 54'teki haliyle görsün.
@@ -667,6 +724,9 @@ export function patchSeo() {
   }
 
   const dyn = patchDynamicSeo();
+  // Ana sayfa: derleme anındaki gerçek ilanlar (rewriteSeoHead'den SONRA — o adım <head>'i yeniden kurar).
+  const homeN = patchHomeListings();
+  console.log(`post-export: ana sayfaya ${homeN} gerçek ilan yazıldı (ItemList + noscript)`);
 
   // SOFT-404 → NOINDEX: bilinmeyen/yanlış kategori slug'ları (bilinen sluglar kendi
   // index.html'inden index alır) `[slug]` fallback şablonundan 200 ile servis ediliyordu →

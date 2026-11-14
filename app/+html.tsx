@@ -31,7 +31,7 @@ export default function Root({ children }: PropsWithChildren) {
 
         {/* Open Graph — referans linkleri sosyal medyada paylaşıldığında zengin önizleme */}
         <meta property="og:type" content="website" />
-        <meta property="og:site_name" content="ortaksat" />
+        <meta property="og:site_name" content="OrtakSat" />
         <meta property="og:title" content="ortaksat — Ortak satışla kazan" />
         <meta
           property="og:description"
@@ -115,7 +115,7 @@ export default function Root({ children }: PropsWithChildren) {
           <div className="bs-bar">
             {/* Logo iskelette de OLMALI: yoksa uygulama mount olunca ikon sonradan belirip
                 başlığı ittiriyordu (yenilemede kayma). Sabit 40×40 → düzen kaymaz. */}
-            <img className="bs-mark" src="/logo-mark.png" width={40} height={40} alt="" />
+            <img className="bs-mark" src="/logo-mark.png" width={40} height={40} alt="OrtakSat logosu" />
             <div className="bs-logo">Ortak<span>Sat</span></div>
             <div className="bs-search" />
           </div>

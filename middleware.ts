@@ -21,7 +21,9 @@ const SUPABASE_KEY =
   process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ||
   "";
 
-const CRAWLER = /facebookexternalhit|Facebot|Twitterbot|WhatsApp|Slackbot|TelegramBot|LinkedInBot|Discordbot|Pinterest|redditbot|Googlebot|bingbot|Applebot|vkShare|SkypeUriPreview/i;
+// Yapay zekâ asistanları ve arama tarayıcıları da JS çalıştırmaz (bir bağlantı ChatGPT/Claude/Perplexity'ye
+// yapıştırıldığında ya da bu araçlar siteyi tararken boş kabuk görüyordu) → onlar da gerçek ilan içeriğini alır.
+const CRAWLER = /facebookexternalhit|Facebot|Twitterbot|WhatsApp|Slackbot|TelegramBot|LinkedInBot|Discordbot|Pinterest|redditbot|Googlebot|bingbot|Applebot|vkShare|SkypeUriPreview|YandexBot|DuckDuckBot|GPTBot|OAI-SearchBot|ChatGPT-User|ClaudeBot|Claude-User|Claude-SearchBot|PerplexityBot|Perplexity-User|meta-externalagent|Amazonbot|CCBot/i;
 
 const CATEGORY_MAP = categoryMap as Record<string, string>;
 // Kategori adı → slug (breadcrumb linki için). categoryMap slug→ad; tersini kur.
