@@ -13,13 +13,13 @@ import { useEffect, useRef, useState } from "react";
 import {
   Modal,
   Pressable,
-  ScrollView,
+  RefreshControl,
   Text,
   TextInput,
   View,
 } from "react-native";
+import { openUrlSafe } from "@/lib/link";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { UserAvatar } from "@/components/user-avatar";
 import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { useStore } from "@/lib/use-store";
 import { fetchMobileCatalogue } from "@/lib/mobile-catalogue-service";
@@ -110,7 +110,10 @@ export function MobilePartnershipHub() {
     [loading, setLoading] = useState(false),
     [error, setError] = useState(""),
     [retry, setRetry] = useState(0),
-    [busy, setBusy] = useState<string | null>(null);
+    [busy, setBusy] = useState<string | null>(null),
+    // "Ortaklıklarım"da hangi taraf: ortak olduğum ilanlar / ilanlarımdaki ortaklar (null = otomatik).
+    [side, setSide] = useState<"partner" | "owner" | null>(null),
+    [refreshing, setRefreshing] = useState(false);
   useEffect(() => {
     setTab(
       ["requests", "pending"].includes(params.tab || "")
@@ -274,164 +277,277 @@ export function MobilePartnershipHub() {
       setBusy(null);
     }
   }
+  // Karşı tarafla sohbet (ortak → satıcı, satıcı → ortak). Ortaklık detayındaki düğmeyle aynı davranış.
+  function message(l: Listing | undefined, receiverId: string) {
+    if (!l || !receiverId) return;
+    const conversation = store.startConversation(l.id, receiverId, "", l);
+    if (conversation) router.push(`/chat/${conversation.id}` as never);
+    else showToast("Mesaj başlatılamadı. Lütfen tekrar dene.");
+  }
+  // Ortağın paylaşım metni: reklam bildirimi (zorunlu) + ilan adı + fiyat. Bağlantı düz ilan sayfasıdır.
+  function shareText(l: Listing) {
+    const lead =
+      l.ownerId === store.currentUser.id
+        ? ""
+        : `${adDisclosureLine(store.findUser(l.ownerId)?.name)}\n`;
+    return `${lead}${displayListingTitle(l.title)}${l.price > 0 ? ` — ${moneyIn(l.price, l.currency)}` : ""}`;
+  }
+  function share(l: Listing) {
+    void shareOrCopy({
+      title: displayListingTitle(l.title),
+      message: shareText(l),
+      url: `https://www.ortaksat.com/listing/${l.id}`,
+    }).then((result) => {
+      if (result === "copied") showToast("Bağlantı kopyalandı.");
+      if (result === "failed") showToast("Paylaşılamadı. Lütfen tekrar dene.");
+    });
+  }
+  function shareWhatsapp(l: Listing) {
+    const text = `${shareText(l)}\nhttps://www.ortaksat.com/listing/${l.id}`;
+    void openUrlSafe(`https://wa.me/?text=${encodeURIComponent(text)}`).then(
+      (ok) => {
+        if (!ok) showToast("WhatsApp açılamadı. Paylaş düğmesini kullan.");
+      },
+    );
+  }
   function pCard(p: Partnership) {
     const l = listings.get(p.listingId),
-      person = store.findUser(p.partnerId);
+      other = store.findUser(asOwner ? p.partnerId : l?.ownerId || ""),
+      commission = l ? potentialCommission(l, p) : null,
+      active = p.status === "active";
     return (
       <MobileCard key={p.id}>
-        <View style={ms.row}>
-          {ownerMode ? (
-            <UserAvatar uri={person?.avatar} size={48} />
-          ) : (
-            <SafeRemoteImage
-              uri={l?.imageUrl || l?.image}
-              style={{ width: 68, height: 62, borderRadius: 9 }}
-            />
-          )}
-          <View style={{ flex: 1, minWidth: 0, gap: 5 }}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`Ortaklık detayı: ${l ? displayListingTitle(l.title) : "ilan"}`}
+          onPress={() => router.push(`/partnership/${p.id}` as never)}
+          style={ms.row}
+        >
+          <SafeRemoteImage
+            uri={l?.imageUrl || l?.image}
+            style={{ width: 68, height: 68, borderRadius: 9 }}
+          />
+          <View style={{ flex: 1, minWidth: 0, gap: 3 }}>
             <Text numberOfLines={2} style={ms.section}>
-              {ownerMode
-                ? person?.name || "Ortak profili"
-                : l
-                  ? displayListingTitle(l.title)
-                  : "Ortaklık ilanı"}
+              {l ? displayListingTitle(l.title) : "Ortaklık ilanı"}
             </Text>
-            {l && (
+            {l && l.price > 0 && (
               <Text style={{ color: mobile.teal, fontWeight: "800" }}>
                 {moneyIn(l.price, l.currency)}
               </Text>
             )}
-            <Text
-              style={{
-                color: statusColor[p.status] || mobile.muted,
-                fontSize: 11,
-                fontWeight: "700",
-              }}
-            >
-              {status[p.status]}
+            <Text numberOfLines={1} style={ms.muted}>
+              {asOwner ? "Ortak" : "Satıcı"}: {other?.name || "Kullanıcı"}
             </Text>
           </View>
-        </View>
-        {l && (
-          <Text style={ms.muted}>
-            Potansiyel komisyon:{" "}
-            {potentialCommission(l, p) === null
-              ? "Komisyonu satıcıyla netleştir"
-              : moneyIn(potentialCommission(l, p)!, l.currency)}
-          </Text>
-        )}
-        <View style={[ms.row, { flexWrap: "wrap" }]}>
-          <MobileButton
-            secondary
-            style={{ flex: 1, minWidth: 120 }}
-            onPress={() => router.push(`/partnership/${p.id}` as never)}
+          <Text
+            style={{
+              color: statusColor[p.status] || mobile.muted,
+              fontSize: 11,
+              fontWeight: "700",
+              alignSelf: "flex-start",
+            }}
           >
-            {ownerMode ? "Ortaklığı Yönet" : "Ortaklık Detayı"}
-          </MobileButton>
-          {ownerMode && (
+            {status[p.status]}
+          </Text>
+        </Pressable>
+        {l && active && (
+          <View
+            style={[
+              ms.row,
+              {
+                justifyContent: "space-between",
+                backgroundColor: mobile.tealSoft,
+                borderRadius: 9,
+                paddingHorizontal: 10,
+                paddingVertical: 8,
+              },
+            ]}
+          >
+            <Text style={[ms.muted, { flex: 1 }]}>
+              {asOwner ? "Satışta ödeyeceğin komisyon" : "Satışta kazancın"}
+            </Text>
+            <Text style={{ color: mobile.darkTeal, fontWeight: "800" }}>
+              {commission === null
+                ? "Satıcıyla netleştir"
+                : moneyIn(commission, l.currency)}
+            </Text>
+          </View>
+        )}
+        {l && active && !asOwner && (
+          <View style={ms.row}>
             <MobileButton
-              secondary
-              style={{ flex: 1, minWidth: 120 }}
-              onPress={() => router.push(`/store/${p.partnerId}` as never)}
-            >
-              Profili Gör
-            </MobileButton>
-          )}
-          {l && (
-            <MobileButton
-              secondary
-              style={{ flex: 1, minWidth: 120 }}
-              onPress={() => {
-                void shareOrCopy({
-                  title: displayListingTitle(l.title),
-                  // Ortak paylaşıyorsa (komisyon ilişkisi) reklam bildirimi zorunlu; satıcı kendi ilanını paylaşırken yok.
-                  message: l.ownerId === store.currentUser.id ? undefined : `${adDisclosureLine(store.findUser(l.ownerId)?.name)}\n${displayListingTitle(l.title)}`,
-                  url: `https://www.ortaksat.com/listing/${l.id}`,
-                }).then((result) => {
-                  if (result === "copied") showToast("Bağlantı kopyalandı.");
-                  if (result === "failed")
-                    showToast("Paylaşılamadı. Lütfen tekrar dene.");
-                });
-              }}
+              icon="share-variant"
+              style={{ flex: 1 }}
+              onPress={() => share(l)}
             >
               Paylaş
             </MobileButton>
+            <MobileButton
+              secondary
+              icon="whatsapp"
+              style={{ flex: 1 }}
+              onPress={() => shareWhatsapp(l)}
+            >
+              WhatsApp
+            </MobileButton>
+          </View>
+        )}
+        <View style={ms.row}>
+          {l && active && (
+            <MobileButton
+              secondary
+              icon="chat-outline"
+              style={{ flex: 1 }}
+              onPress={() => message(l, asOwner ? p.partnerId : l.ownerId)}
+            >
+              {asOwner ? "Ortağa Yaz" : "Satıcıya Yaz"}
+            </MobileButton>
           )}
+          <MobileButton
+            secondary
+            style={{ flex: 1 }}
+            onPress={() => router.push(`/partnership/${p.id}` as never)}
+          >
+            {asOwner ? "Ortaklığı Yönet" : "Detay"}
+          </MobileButton>
         </View>
+        {asOwner && (
+          <Pressable
+            accessibilityRole="link"
+            onPress={() => router.push(`/store/${p.partnerId}` as never)}
+            hitSlop={6}
+          >
+            <Text style={{ color: mobile.teal, fontSize: 12, fontWeight: "700" }}>
+              Ortağın profilini gör
+            </Text>
+          </Pressable>
+        )}
       </MobileCard>
     );
   }
-  const partnershipRows = (ownerMode ? incoming : my).filter(
-    (p) => filter === "Tümü" || status[p.status] === filter,
+  // TALEP ile ORTAKLIK AYRI: "Talepler" yalnız karar bekleyen/reddedilen başvurulardır; onaylanan başvuru
+  // "Ortaklıklarım"a geçer. Eskiden aktif ortaklıklar da "Talepler"de "talep" diye listeleniyor, sayaçlar
+  // (Gelen 2) bekleyen iş varmış gibi görünüyordu.
+  const isRequest = (p: Partnership) => p.status === "pending" || p.status === "rejected";
+  const byRecency = (a: Partnership, b: Partnership) =>
+    (b.createdAt || "").localeCompare(a.createdAt || "");
+  const pendingIncoming = incoming.filter((p) => p.status === "pending").length,
+    pendingSent = my.filter((p) => p.status === "pending").length;
+  const requestRows = (requestTab === "Gelen" ? incoming : my)
+    .filter(isRequest)
+    .sort(
+      (a, b) =>
+        Number(b.status === "pending") - Number(a.status === "pending") ||
+        byRecency(a, b),
+    );
+  // "Ortaklıklarım": ortak olduğum ilanlar + (ilan sahibiysem) ilanlarımdaki ortaklar. Eskiden ilan sahibi
+  // kendi ortaklarını yalnız tek tek ilanın yönetim ekranından görebiliyordu.
+  const partnerSideAll = my.filter((p) => !isRequest(p)),
+    ownerSideAll = incoming.filter((p) => !isRequest(p));
+  const asOwner =
+    ownerMode ||
+    (ownerSideAll.length > 0 &&
+      (side === "owner" || (side === null && partnerSideAll.length === 0)));
+  const sideRows = asOwner ? ownerSideAll : partnerSideAll;
+  const presentStatuses = Object.keys(status).filter((key) =>
+    sideRows.some((p) => p.status === key),
   );
-  const requestRows = (requestTab === "Gelen" ? incoming : my).filter(
-    (p) => filter === "Tümü" || status[p.status] === filter,
+  const partnershipRows = sideRows
+    .filter((p) => filter === "Tümü" || status[p.status] === filter)
+    .sort(
+      (a, b) =>
+        Number(b.status === "active") - Number(a.status === "active") ||
+        byRecency(a, b),
+    );
+  function goTab(label: string) {
+    setTab(label);
+    setFilter("Tümü");
+    router.setParams({
+      tab:
+        label === "Talepler"
+          ? "requests"
+          : label === "Ortaklıklarım"
+            ? "active"
+            : label === "Kazançlar"
+              ? "earnings"
+              : "discover",
+    });
+  }
+  async function refresh() {
+    if (refreshing) return;
+    setRefreshing(true);
+    try {
+      await store.refreshUserData();
+    } catch {
+      /* liste eldeki haliyle kalır; hata kartı gerekirse aşağıda gösterilir */
+    } finally {
+      setRetry((v) => v + 1);
+      setRefreshing(false);
+    }
+  }
+  // Uygulamada bu ekranın ayrı bir başlık satırı YOK: logo satırı başlıktır, "Nasıl çalışır?" simgesi de
+  // o satırın sağındadır (eskiden üstte "Ortak Satış" yazılı ikinci bir satır daha vardı — fazlalık).
+  const brandHeader = isMobileApp && !ownerMode;
+  const helpButton = (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel="Nasıl Çalışır?"
+      hitSlop={6}
+      onPress={() => router.push("/nasil-calisir")}
+      style={{
+        width: 44,
+        height: 44,
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      <Icon name="help-circle-outline" size={26} color={mobile.teal} />
+    </Pressable>
   );
   return (
     <Screen
       headerShown={!isMobileApp}
       footer={isMobileApp ? undefined : <WebFooter />}
+      refreshControl={
+        desktop ? undefined : (
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={() => void refresh()}
+            tintColor={mobile.teal}
+            colors={[mobile.teal]}
+          />
+        )
+      }
       title={
-        ownerMode
-          ? "Ortaklık Yönetimi"
-          : desktop
-            ? tab === "Keşfet"
-              ? "Ortaklık fırsatları"
-              : tab === "Talepler"
-                ? "Ortaklık talepleri"
-                : tab === "Kazançlar"
-                  ? "Kazançlarım"
-                  : "Ortaklıklarım"
-            : isMobileApp
-              ? "Ortak Satış"
+        brandHeader
+          ? ""
+          : ownerMode
+            ? "Ortaklık Yönetimi"
+            : desktop
+              ? tab === "Keşfet"
+                ? "Ortaklık fırsatları"
+                : tab === "Talepler"
+                  ? "Ortaklık talepleri"
+                  : tab === "Kazançlar"
+                    ? "Kazançlarım"
+                    : "Ortaklıklarım"
               : "Ortaklık fırsatları"
       }
       back={ownerMode}
-      right={
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Nasıl Çalışır?"
-          onPress={() => router.push("/nasil-calisir")}
-        >
-          <Icon name="help-circle-outline" size={25} color={mobile.teal} />
-        </Pressable>
-      }
+      right={helpButton}
     >
       <TrustEntry />
-      {isMobileApp && !ownerMode && (
-        <View style={{ alignItems: "center", paddingVertical: 8 }}>
-          <MobileBrand size={30} />
-        </View>
-      )}
-      {!desktop && !ownerMode && tab !== "Keşfet" && (
-        <MobileCard style={{ backgroundColor: mobile.tealSoft }}>
-          <Text style={ms.section}>
-            Beğendiğin ürünlere ortak ol, komisyon kazan.
-          </Text>
-          <View style={[ms.row, { justifyContent: "space-between" }]}>
-            {[
-              "1 · Ürün bul",
-              "2 · Ortaklık iste",
-              "3 · Satışa katkı sağla",
-            ].map((t) => (
-              <Text
-                key={t}
-                style={{
-                  fontSize: 10,
-                  color: mobile.teal,
-                  flex: 1,
-                  textAlign: "center",
-                }}
-              >
-                {t}
-              </Text>
-            ))}
+      {brandHeader && (
+        <View
+          style={{ flexDirection: "row", alignItems: "center", paddingTop: 6 }}
+        >
+          <View style={{ width: 44 }} />
+          <View style={{ flex: 1, alignItems: "center" }}>
+            <MobileBrand size={30} />
           </View>
-          <Text style={ms.muted}>
-            Ödeme ve teslimat taraflar arasında gerçekleşir. Kazanç, tamamlanan
-            satışa ve anlaşma koşullarına bağlıdır.
-          </Text>
-        </MobileCard>
+          {helpButton}
+        </View>
       )}
       {desktop ? (
         <View
@@ -443,20 +559,7 @@ export function MobilePartnershipHub() {
               key={label}
               accessibilityRole="tab"
               accessibilityState={{ selected: tab === label }}
-              onPress={() => {
-                setTab(label);
-                setFilter("Tümü");
-                router.setParams({
-                  tab:
-                    label === "Talepler"
-                      ? "requests"
-                      : label === "Ortaklıklarım"
-                        ? "active"
-                        : label === "Kazançlar"
-                          ? "earnings"
-                          : "discover",
-                });
-              }}
+              onPress={() => goTab(label)}
               style={{
                 minHeight: 38,
                 justifyContent: "center",
@@ -498,23 +601,12 @@ export function MobilePartnershipHub() {
                   label={
                     ownerMode && label === "Ortaklıklarım"
                       ? "Ortaklarım"
-                      : label
+                      : label === "Talepler" && pendingIncoming
+                        ? `Talepler (${pendingIncoming})` // karar bekleyen gelen başvuru sayısı
+                        : label
                   }
                   selected={tab === label}
-                  onPress={() => {
-                    setTab(label);
-                    setFilter("Tümü");
-                    router.setParams({
-                      tab:
-                        label === "Talepler"
-                          ? "requests"
-                          : label === "Ortaklıklarım"
-                            ? "active"
-                            : label === "Kazançlar"
-                              ? "earnings"
-                              : "discover",
-                    });
-                  }}
+                  onPress={() => goTab(label)}
                 />
               ),
             )}
@@ -725,7 +817,8 @@ export function MobilePartnershipHub() {
               ),
             )}
           </HorizontalScroll>
-          {isMobileApp && (
+          {/* Tanıtım kartı yalnız HENÜZ ortaklığı olmayana: ortak olan kullanıcıda her açılışta ilanları aşağı itiyordu. */}
+          {isMobileApp && my.length === 0 && (
             <MobileCard
               style={{
           backgroundColor: mobile.tealSoft,
@@ -885,41 +978,45 @@ export function MobilePartnershipHub() {
       {tab === "Talepler" && (
         <>
           <View style={ms.row}>
-            {["Gelen", "Gönderdiğim"].map((label) => (
-              <MobileChip
-                key={label}
-                label={`${label} (${label === "Gelen" ? incoming.length : my.length})`}
-                selected={requestTab === label}
-                onPress={() => setRequestTab(label)}
-              />
-            ))}
+            {["Gelen", "Gönderdiğim"].map((label) => {
+              // Sayaç = karar bekleyen başvuru (eskiden aktif ortaklıklar da sayılıyordu).
+              const waiting = label === "Gelen" ? pendingIncoming : pendingSent;
+              return (
+                <MobileChip
+                  key={label}
+                  label={waiting ? `${label} (${waiting})` : label}
+                  selected={requestTab === label}
+                  onPress={() => setRequestTab(label)}
+                />
+              );
+            })}
           </View>
-          <HorizontalScroll
-            contentContainerStyle={{ gap: 7, paddingVertical: 12 }}
-          >
-            {["Tümü", "Onay bekliyor", "Aktif", "Reddedildi"].map((label) => (
-              <MobileChip
-                key={label}
-                label={label}
-                selected={filter === label}
-                onPress={() => setFilter(label)}
-              />
-            ))}
-          </HorizontalScroll>
+          <Text style={[ms.muted, { marginVertical: 10 }]}>
+            {requestTab === "Gelen"
+              ? "İlanlarına gelen ortaklık başvuruları. Onayladığın başvuru Ortaklıklarım sekmesine geçer."
+              : "Gönderdiğin ortaklık başvuruları. Satıcı onaylayınca Ortaklıklarım sekmesinde görünür."}
+          </Text>
           {requestRows.map((p) => {
             const l = listings.get(p.listingId),
+              incomingRow = requestTab === "Gelen",
               person = store.findUser(
-                requestTab === "Gelen" ? p.partnerId : l?.ownerId || "",
-              );
+                incomingRow ? p.partnerId : l?.ownerId || "",
+              ),
+              commission = l ? potentialCommission(l, p) : null;
             return (
               <MobileCard key={p.id}>
                 <View style={ms.row}>
-                  <UserAvatar uri={person?.avatar} size={45} />
-                  <View style={{ flex: 1, minWidth: 0 }}>
-                    <Text numberOfLines={1} style={ms.section}>
-                      {person?.name || "Kullanıcı profili"}
+                  <SafeRemoteImage
+                    uri={l?.imageUrl || l?.image}
+                    style={{ width: 56, height: 56, borderRadius: 9 }}
+                  />
+                  <View style={{ flex: 1, minWidth: 0, gap: 3 }}>
+                    <Text numberOfLines={2} style={ms.section}>
+                      {l ? displayListingTitle(l.title) : "İlan"}
                     </Text>
-                    <Text style={ms.muted}>
+                    <Text numberOfLines={1} style={ms.muted}>
+                      {incomingRow ? "Başvuran" : "Satıcı"}:{" "}
+                      {person?.name || "Kullanıcı"} ·{" "}
                       {new Date(p.createdAt).toLocaleDateString("tr-TR")}
                     </Text>
                   </View>
@@ -928,18 +1025,51 @@ export function MobilePartnershipHub() {
                       color: statusColor[p.status] || mobile.muted,
                       fontSize: 12,
                       fontWeight: "700",
+                      alignSelf: "flex-start",
                     }}
                   >
                     {status[p.status]}
                   </Text>
                 </View>
-                <Text numberOfLines={2} style={ms.section}>
-                  {l ? displayListingTitle(l.title) : "İlan"}
-                </Text>
-                <Text numberOfLines={6} style={ms.muted}>
-                  {p.note || "Ortaklık talebi"}
-                </Text>
-                {requestTab === "Gelen" && p.status === "pending" ? (
+                {l && commission !== null && (
+                  <Text style={ms.muted}>
+                    {incomingRow
+                      ? "Satışta ödeyeceğin komisyon"
+                      : "Onaylanırsa satışta kazancın"}
+                    :{" "}
+                    <Text style={{ color: mobile.darkTeal, fontWeight: "800" }}>
+                      {moneyIn(commission, l.currency)}
+                    </Text>
+                  </Text>
+                )}
+                {!!p.note && (
+                  <Text numberOfLines={6} style={ms.muted}>
+                    “{p.note}”
+                  </Text>
+                )}
+                {incomingRow && p.status === "pending" && (
+                  <View style={ms.row}>
+                    <MobileButton
+                      secondary
+                      icon="account-outline"
+                      style={{ flex: 1 }}
+                      onPress={() =>
+                        router.push(`/store/${p.partnerId}` as never)
+                      }
+                    >
+                      Profili Gör
+                    </MobileButton>
+                    <MobileButton
+                      secondary
+                      icon="chat-outline"
+                      style={{ flex: 1 }}
+                      onPress={() => message(l, p.partnerId)}
+                    >
+                      Başvurana Yaz
+                    </MobileButton>
+                  </View>
+                )}
+                {incomingRow && p.status === "pending" ? (
                   <View style={ms.row}>
                     <MobileButton
                       secondary
@@ -971,41 +1101,154 @@ export function MobilePartnershipHub() {
                     </MobileButton>
                   </View>
                 ) : (
-                  <MobileButton
-                    secondary
-                    onPress={() => router.push(`/partnership/${p.id}` as never)}
-                  >
-                    Detayı Gör
-                  </MobileButton>
+                  <View style={ms.row}>
+                    {!incomingRow && p.status === "pending" && l && (
+                      <MobileButton
+                        secondary
+                        icon="chat-outline"
+                        style={{ flex: 1 }}
+                        onPress={() => message(l, l.ownerId)}
+                      >
+                        Satıcıya Yaz
+                      </MobileButton>
+                    )}
+                    <MobileButton
+                      secondary
+                      style={{ flex: 1 }}
+                      onPress={() =>
+                        router.push(`/partnership/${p.id}` as never)
+                      }
+                    >
+                      Detayı Gör
+                    </MobileButton>
+                  </View>
                 )}
               </MobileCard>
             );
           })}
-          {!requestRows.length && (
-            <MobileCard>
-              <Text style={ms.muted}>Bu görünümde talep bulunmuyor.</Text>
-            </MobileCard>
-          )}
+          {!requestRows.length &&
+            (requestTab === "Gelen" ? (
+              <MobileCard>
+                <Text style={ms.section}>Bekleyen başvuru yok</Text>
+                <Text style={ms.muted}>
+                  {ownIds.size
+                    ? "İlanlarına ortak olmak isteyenlerin başvuruları burada görünür; yeni başvuruda bildirim alırsın."
+                    : "Ortaklığa açık bir ilan verdiğinde, ortak olmak isteyenlerin başvuruları burada görünür."}
+                </Text>
+                {!ownIds.size && (
+                  <MobileButton
+                    secondary
+                    icon="plus"
+                    onPress={() => router.push("/create" as never)}
+                  >
+                    İlan Ver
+                  </MobileButton>
+                )}
+              </MobileCard>
+            ) : (
+              <MobileCard>
+                <Text style={ms.section}>Bekleyen başvurun yok</Text>
+                <Text style={ms.muted}>
+                  Ortaklığa açık bir ilan seçip başvur. Onaylanan başvuruların
+                  Ortaklıklarım sekmesinde görünür.
+                </Text>
+                <MobileButton secondary onPress={() => goTab("Keşfet")}>
+                  Fırsatları Keşfet
+                </MobileButton>
+              </MobileCard>
+            ))}
         </>
       )}
       {tab === "Ortaklıklarım" && (
         <>
-          <View style={[ms.wrap, { marginBottom: 12 }]}>
-            {["Tümü", "Aktif", "Onay bekliyor", "Tamamlandı", "Reddedildi", "Sonlandırıldı", "Kapatıldı"].map((label) => (
+          {!ownerMode && ownerSideAll.length > 0 && (
+            <View style={[ms.row, { marginBottom: 10 }]}>
               <MobileChip
-                key={label}
-                label={label}
-                selected={filter === label}
-                onPress={() => setFilter(label)}
+                label={`Ortak Olduklarım (${partnerSideAll.length})`}
+                selected={!asOwner}
+                onPress={() => {
+                  setSide("partner");
+                  setFilter("Tümü");
+                }}
               />
-            ))}
-          </View>
-          {partnershipRows.map(pCard)}
-          {!partnershipRows.length && (
-            <MobileCard>
-              <Text style={ms.muted}>Bu görünümde ortaklık bulunmuyor.</Text>
-            </MobileCard>
+              <MobileChip
+                label={`İlanlarımın Ortakları (${ownerSideAll.length})`}
+                selected={asOwner}
+                onPress={() => {
+                  setSide("owner");
+                  setFilter("Tümü");
+                }}
+              />
+            </View>
           )}
+          {/* Durum çipleri yalnız listede GERÇEKTEN bulunan durumlar için ve sayılarıyla; eskiden yedi çip iki
+              satır kaplıyor, çoğu boş listeye götürüyordu. Tek durum varsa çip satırı hiç çizilmez. */}
+          {presentStatuses.length > 1 && (
+            <HorizontalScroll
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ gap: 7, paddingBottom: 12 }}
+            >
+              {["Tümü", ...presentStatuses.map((key) => status[key])].map(
+                (label) => (
+                  <MobileChip
+                    key={label}
+                    label={
+                      label === "Tümü"
+                        ? `Tümü (${sideRows.length})`
+                        : `${label} (${sideRows.filter((p) => status[p.status] === label).length})`
+                    }
+                    selected={filter === label}
+                    onPress={() => setFilter(label)}
+                  />
+                ),
+              )}
+            </HorizontalScroll>
+          )}
+          {partnershipRows.map(pCard)}
+          {!partnershipRows.length &&
+            (asOwner ? (
+              <MobileCard>
+                <Text style={ms.section}>Henüz ortağın yok</Text>
+                <Text style={ms.muted}>
+                  İlanına ortak olan kişiler burada görünür. Bekleyen
+                  başvuruları Talepler sekmesinden onaylayabilirsin.
+                </Text>
+                {pendingIncoming > 0 && (
+                  <MobileButton secondary onPress={() => goTab("Talepler")}>
+                    {`Bekleyen ${pendingIncoming} Başvuruyu Gör`}
+                  </MobileButton>
+                )}
+              </MobileCard>
+            ) : (
+              <MobileCard>
+                <Text style={ms.section}>Henüz ortaklığın yok</Text>
+                <Text style={ms.muted}>
+                  Ortaklığa açık bir ilan seç ve başvur. Onaylanınca ilan
+                  burada görünür; ilanı kendi çevrende tanıtırsın, satış
+                  gerçekleşince satıcıyla anlaştığın komisyonu kazanırsın.
+                </Text>
+                {pendingSent > 0 && (
+                  <Text style={[ms.muted, { color: colors.goldInk }]}>
+                    {pendingSent} başvurun satıcı onayı bekliyor.
+                  </Text>
+                )}
+                <MobileButton onPress={() => goTab("Keşfet")}>
+                  Fırsatları Keşfet
+                </MobileButton>
+                {pendingSent > 0 && (
+                  <MobileButton
+                    secondary
+                    onPress={() => {
+                      // ?tab=pending → "Talepler › Gönderdiğim" (bkz. yukarıdaki params.tab etkisi)
+                      setFilter("Tümü");
+                      router.setParams({ tab: "pending" });
+                    }}
+                  >
+                    Başvurularımı Gör
+                  </MobileButton>
+                )}
+              </MobileCard>
+            ))}
           {ownerMode && (
             <MobileButton
               secondary
