@@ -3,7 +3,7 @@ import { Asset } from "expo-asset";
 import { Image } from "expo-image";
 import * as SplashScreen from "expo-splash-screen";
 import { useEffect, useRef, useState } from "react";
-import { AccessibilityInfo, Animated, Easing, StyleSheet, Text, View } from "react-native";
+import { AccessibilityInfo, Animated, Dimensions, Easing, Platform, StyleSheet, Text, View, type ViewInstance } from "react-native";
 
 import { isMobileApp } from "@/lib/mobile-app";
 
@@ -20,6 +20,16 @@ const MAX_WAIT_MS = 4200; // oturum kontrolü gecikse de (uygulama çizildiyse) 
 const HARD_LIMIT_MS = 15000; // hiçbir koşul sağlanmasa bile açılış katmanı bu süreden uzun kalmaz
 const MOUNT_APP_AT_MS = 1000; // uygulama, eller yolun ~%93'ünü aldığında arkada kurulmaya başlar
 const PARTS_WAIT_MS = 700; // görseller bu sürede gelmezse animasyon yine başlar
+
+// YEREL AÇILIŞ EKRANIYLA HİZA (gerçek derlemede ekran kaydıyla ölçüldü, 2026-11-14):
+//  • Android'de yerel açılış ekranı halkayı TÜM ekranın ortasına çizer; bizim katman alt gezinme çubuğunu
+//    kapsamadığı için ortası ~12 dp yukarıdaydı. Katman, ekrandaki yerini ölçüp içeriği ekran ortasına kaydırır.
+//  • Android yerel ekranı görseli bizim 220 dp'lik kutudan ~%4 küçük çizer. Halka o boyutta BAŞLAR, açılış
+//    "nefesi" sırasında asıl boyutuna büyür.
+// İkisi hizalı değilken geçiş anında eski halka yeni halkanın arkasında "hayalet" gibi görünüyordu.
+const NATIVE_SCALE = Platform.OS === "android" ? 0.96 : 1;
+// Yerel ekran eriyerek değil, tek karede kalksın: iki halka üst üste bir an bile görünmesin.
+if (isMobileApp) { try { SplashScreen.setOptions({ fade: false, duration: 0 }); } catch { /* eski derlemede seçenek yok */ } }
 
 const RING = require("../assets/splash/ring.png");
 const HAND_LEFT = require("../assets/splash/hand-left.png");
@@ -139,7 +149,8 @@ const pumpShape = (t: number) => -Math.sin(2 * Math.PI * PUMPS * t) * Math.pow(1
 
 function buildTracks(master: Animated.Value) {
   return {
-    breath: track(master, 0, 460, bump, 16), // halkanın açılıştaki tek nefesi
+    breath: track(master, 0, 460, bump, 16), // halkanın açılıştaki tek nefesi (ortada tepe)
+    settle: track(master, 0, 460, inOutSine, 12), // yerel açılış ekranındaki boyuttan asıl boyuta geçiş
     hands: track(master, 360, 1200, reachShape, 28), // 0: eller dışarıda → 1: birleşti (≈ 1,03 sn'de; bir an 1'i geçer: bastırma)
     squeeze: track(master, 1020, 1330, bump, 14), // kavrama anındaki kısa sıkılaşma
     pump: track(master, 1200, 2080, pumpShape, 44), // el sıkışma salınımı
@@ -169,9 +180,11 @@ export function IntroSplash({ ready, appShown = true, onMountApp }: {
   if (!dots.current) dots.current = [0, 1, 2].map((k) => idleDot(idle, k));
   const tracks = useRef<ReturnType<typeof buildTracks> | null>(null);
   if (!tracks.current) tracks.current = buildTracks(master);
-  const { breath, hands, squeeze, pump, ripple, word, slogan, exact } = tracks.current;
+  const { breath, settle, hands, squeeze, pump, ripple, word, slogan, exact } = tracks.current;
 
   const laidOut = useRef(false);
+  const rootRef = useRef<ViewInstance>(null);
+  const [shiftY, setShiftY] = useState(0); // içeriği TÜM ekranın ortasına getiren kaydırma (yerel ekranla hiza)
   const loaded = useRef(0);
   const mountAppRef = useRef(onMountApp);
   mountAppRef.current = onMountApp;
@@ -193,9 +206,23 @@ export function IntroSplash({ ready, appShown = true, onMountApp }: {
   };
   const onFirstLayout = () => {
     if (laidOut.current) return;
-    laidOut.current = true;
-    if (loaded.current >= 3) begin();
-    else setTimeout(begin, PARTS_WAIT_MS);
+    const proceed = () => {
+      if (laidOut.current) return;
+      laidOut.current = true;
+      if (loaded.current >= 3) begin();
+      else setTimeout(begin, PARTS_WAIT_MS);
+    };
+    // Önce hiza: katmanın ekrandaki yeri ölçülür (yerel açılış ekranı hâlâ üstte, kaydırma görünmez). Ölçüm
+    // gelmezse 120 ms sonra hizasız devam edilir.
+    const fallback = setTimeout(proceed, 120);
+    try {
+      rootRef.current?.measureInWindow((_x: number, y: number, _w: number, height: number) => {
+        clearTimeout(fallback);
+        const offset = Math.round(Dimensions.get("screen").height / 2 - (y + height / 2));
+        if (Number.isFinite(offset) && Math.abs(offset) <= 80) setShiftY(offset);
+        proceed();
+      });
+    } catch { clearTimeout(fallback); proceed(); }
   };
   const onPartLoad = () => {
     loaded.current += 1;
@@ -262,7 +289,8 @@ export function IntroSplash({ ready, appShown = true, onMountApp }: {
   // Halka: açılışta bir nefes, kavrama anında çok hafif bir karşılık.
   const ringStyle = {
     transform: [
-      { scale: breath.interpolate({ inputRange: [0, 1], outputRange: [1, 1 + 0.045 * move] }) },
+      { scale: settle.interpolate({ inputRange: [0, 1], outputRange: [NATIVE_SCALE, 1] }) },
+      { scale: breath.interpolate({ inputRange: [0, 1], outputRange: [1, 1 + 0.035 * move] }) },
       { scale: squeeze.interpolate({ inputRange: [0, 1], outputRange: [1, 1 + 0.018 * move] }) }
     ]
   };
@@ -273,6 +301,7 @@ export function IntroSplash({ ready, appShown = true, onMountApp }: {
 
   return (
     <Animated.View
+      ref={rootRef}
       onLayout={onFirstLayout}
       accessibilityLabel="OrtakSat açılıyor"
       accessibilityRole="progressbar"
@@ -282,7 +311,7 @@ export function IntroSplash({ ready, appShown = true, onMountApp }: {
         transform: [{ scale: out.interpolate({ inputRange: [0, 1], outputRange: [1, 1.05] }) }]
       }]}
     >
-      <View style={styles.logoBox}>
+      <View style={[styles.logoBox, { transform: [{ translateY: shiftY }] }]}>
         {/* Kavrama anında dışa yayılan tek ince dalga (logonun arkasında başka hiçbir şekil yok). */}
         <Animated.View pointerEvents="none" style={[styles.ripple, rippleStyle]} />
         <Animated.View style={[StyleSheet.absoluteFill, ringStyle]}>
@@ -302,7 +331,7 @@ export function IntroSplash({ ready, appShown = true, onMountApp }: {
           <Image source={BRAND} style={[StyleSheet.absoluteFill, styles.fill]} contentFit="contain" transition={0} />
         </Animated.View>
       </View>
-      <View pointerEvents="none" style={styles.wordWrap}>
+      <View pointerEvents="none" style={[styles.wordWrap, { transform: [{ translateY: shiftY }] }]}>
         <Animated.View style={{
           opacity: word,
           transform: [
