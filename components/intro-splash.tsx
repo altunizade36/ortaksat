@@ -72,6 +72,33 @@ const reduceMotionQuery: Promise<boolean> = isMobileApp
  */
 const TIMELINE_MS = 2600;
 
+// BEKLEME NOKTALARI: hareket bittiğinde uygulama henüz hazır değilse (yavaş cihaz, deneme kipi) logo donmuş
+// gibi durmasın diye sloganın altında üç nokta sırayla yanıp söner. Ayrı, uzun ve doğrusal TEK bir yerel
+// animasyondur (ana çizelgeyle aynı anda başlar, JS'e hiç dönmez); noktalar ancak IDLE_FROM_MS'den sonra belirir,
+// yani uygulama zamanında hazırsa hiç görünmez.
+const IDLE_MS = 15000; // HARD_LIMIT_MS ile aynı: katman en geç o zaman kapanır
+const IDLE_FROM_MS = 3300; // ana hareket + olağan bekleyişten sonra
+const IDLE_CYCLE_MS = 960;
+
+/** Bekleme noktası k (0..2) için opaklık anahtar kareleri: önce görünmez, sonra sırayla parlayıp söner. */
+function idleDot(idle: Animated.Value, k: number) {
+  const inputRange: number[] = [0, IDLE_FROM_MS / IDLE_MS];
+  const outputRange: number[] = [0, 0];
+  const push = (ms: number, value: number) => {
+    const x = Math.min(1, ms / IDLE_MS);
+    if (x <= inputRange[inputRange.length - 1]) return; // artan sıra korunur
+    inputRange.push(x); outputRange.push(value);
+  };
+  push(IDLE_FROM_MS + 260, 0.28); // noktalar yumuşakça belirir
+  for (let start = IDLE_FROM_MS + 260 + k * 160; start + IDLE_CYCLE_MS <= IDLE_MS; start += IDLE_CYCLE_MS) {
+    push(start + 1, 0.28);
+    push(start + 240, 1);
+    push(start + 520, 0.28);
+  }
+  push(IDLE_MS, 0.28);
+  return idle.interpolate({ inputRange, outputRange, extrapolate: "clamp" });
+}
+
 const at = (ms: number) => ms / TIMELINE_MS;
 const outCubic = (t: number) => 1 - Math.pow(1 - t, 3);
 const inOutSine = (t: number) => -(Math.cos(Math.PI * t) - 1) / 2;
@@ -125,6 +152,9 @@ export function IntroSplash({ ready, appShown = true, onMountApp }: {
   const started = useRef(false);
   const master = useRef(new Animated.Value(0)).current;
   const out = useRef(new Animated.Value(0)).current; // katmanın erimesi
+  const idle = useRef(new Animated.Value(0)).current; // bekleme noktalarının zaman çizelgesi
+  const dots = useRef<Animated.AnimatedInterpolation<number>[] | null>(null);
+  if (!dots.current) dots.current = [0, 1, 2].map((k) => idleDot(idle, k));
   const tracks = useRef<ReturnType<typeof buildTracks> | null>(null);
   if (!tracks.current) tracks.current = buildTracks(master);
   const { breath, halo, hands, squeeze, shake, rippleA, rippleB, word, slogan, exact } = tracks.current;
@@ -144,6 +174,7 @@ export function IntroSplash({ ready, appShown = true, onMountApp }: {
     void Promise.race([hidden, capped]).then(() => {
       if (INTRO_SOUND_ENABLED) void playChime();
       Animated.timing(master, { toValue: 1, duration: TIMELINE_MS, easing: Easing.linear, useNativeDriver: true }).start(() => setAnimationDone(true));
+      Animated.timing(idle, { toValue: 1, duration: IDLE_MS, easing: Easing.linear, useNativeDriver: true }).start();
       // Uygulamayı eller birleşirken kur ("hareketi azalt"ta kayma yok → hemen).
       setTimeout(() => mountAppRef.current?.(), reduceMotionKnown ? 0 : MOUNT_APP_AT_MS);
     });
@@ -281,6 +312,10 @@ export function IntroSplash({ ready, appShown = true, onMountApp }: {
         <Animated.View style={{ opacity: slogan, transform: [{ translateY: slogan.interpolate({ inputRange: [0, 1], outputRange: [8 * move, 0] }) }] }}>
           <Text style={styles.slogan} allowFontScaling={false}>Al, Sat, Ortak Ol</Text>
         </Animated.View>
+        {/* Uygulama geç hazır olursa beliren bekleme noktaları (zamanında hazırsa hiç görünmez) */}
+        <View style={styles.dots} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+          {dots.current.map((opacity, k) => <Animated.View key={k} style={[styles.dot, { opacity }]} />)}
+        </View>
       </View>
     </Animated.View>
   );
@@ -321,5 +356,7 @@ const styles = StyleSheet.create({
   word: { fontSize: 36, fontWeight: "900", letterSpacing: -0.5 },
   wordDark: { color: "#09275E" },
   wordBlue: { color: "#0645C9" },
-  slogan: { color: "#4A5A7A", fontSize: 15, fontWeight: "700", marginTop: 4 }
+  slogan: { color: "#4A5A7A", fontSize: 15, fontWeight: "700", marginTop: 4 },
+  dots: { flexDirection: "row", gap: 8, marginTop: 22 },
+  dot: { backgroundColor: "#0645C9", borderRadius: 4, height: 8, width: 8 }
 });

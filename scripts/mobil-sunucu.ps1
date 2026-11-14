@@ -33,9 +33,14 @@ function Start-Server {
 }
 
 function Test-Server {
+  # DİKKAT: sunucunun /status yanıtında içerik türü başlığı YOK; PowerShell 5.1 bu durumda .Content'i metin değil
+  # BAYT DİZİSİ verir. Bayt dizisini -like ile karşılaştırmak her zaman boş döner → betik, çalışan sunucuyu
+  # "yanıt vermiyor" sanıp ~2,5 dakikada bir yeniden başlatıyordu (telefonda "Something went wrong").
+  # Bu yüzden yanıt önce metne çevrilir.
   try {
-    $r = Invoke-WebRequest -Uri "http://localhost:$port/status" -TimeoutSec 8 -UseBasicParsing
-    return ($r.Content -like "packager-status:running*")
+    $r = Invoke-WebRequest -Uri "http://127.0.0.1:$port/status" -TimeoutSec 8 -UseBasicParsing
+    $body = if ($r.Content -is [byte[]]) { [Text.Encoding]::UTF8.GetString($r.Content) } else { [string]$r.Content }
+    return ($r.StatusCode -eq 200 -and $body -like "packager-status:running*")
   } catch { return $false }
 }
 
