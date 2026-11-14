@@ -613,7 +613,7 @@ export function MobilePartnershipHub() {
           </HorizontalScroll>
         </>
       )}
-      {error && (
+      {!!error && (
         <MobileCard>
           <Text accessibilityRole="alert" style={ms.error}>
             {error}
@@ -931,7 +931,7 @@ export function MobilePartnershipHub() {
               </MobileButton>
             </MobileCard>
           )}
-          {moreError && (
+          {!!moreError && (
             <MobileCard>
               <Text accessibilityRole="alert" style={ms.error}>
                 {moreError}

@@ -172,7 +172,7 @@ function PriceAnalysis({ initialId }: { initialId?: string }) {
         </View>
       )}
       {loading && <Text style={ms.muted}>Benzer ilanlar hesaplanıyor…</Text>}
-      {error && (
+      {!!error && (
         <MobileCard>
           <Text accessibilityRole="alert" style={ms.error}>
             {error}
@@ -480,7 +480,7 @@ function Interests() {
           />
         ))}
       </View>
-      {message && (
+      {!!message && (
         <Text accessibilityRole="alert" style={ms.muted}>
           {message}
         </Text>

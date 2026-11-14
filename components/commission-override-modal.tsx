@@ -89,7 +89,7 @@ export function CommissionOverrideModal({
               {translateCopy("Bu ortağa uygulanacak", language)}: {type === "rate" ? `%${parsed.toLocaleString("tr-TR")}` : moneyIn(parsed, currency)}
             </Text>
           ) : null}
-          {error&&<Text accessibilityRole="alert" style={{color:colors.accent,fontSize:13}}>{translateCopy(error,language)}</Text>}
+          {!!error&&<Text accessibilityRole="alert" style={{color:colors.accent,fontSize:13}}>{translateCopy(error,language)}</Text>}
           <View pointerEvents={busy?"none":"auto"} style={{ flexDirection: "row", gap: 8,opacity:busy?0.6:1 }}>
             {currentType ? (
               <View style={{ flex: 1 }}><PrimaryButton tone="secondary" icon="restore" onPress={() => {void save(true);}}>{translateCopy("Kaldır", language)}</PrimaryButton></View>

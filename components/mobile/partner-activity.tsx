@@ -160,7 +160,7 @@ export function MobilePartnerActivity() {
           />
         ))}
       </HorizontalScroll>
-      {error && (
+      {!!error && (
         <MobileCard>
           <Text accessibilityRole="alert" style={ms.error}>
             {error}

@@ -564,7 +564,8 @@ export function MobileSellerStore({ id }: { id: string }) {
             </Pressable>
           ))}
         </View>
-        {error && (
+        {/* !!: boş metin ("") görünümün içine çocuk olarak düşmesin */}
+        {!!error && (
           <MobileCard>
             <Text style={ms.error}>{error}</Text>
             <MobileButton secondary onPress={() => setRetry((v) => v + 1)}>

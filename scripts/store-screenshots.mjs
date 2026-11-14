@@ -50,7 +50,9 @@ for (const device of DEVICES) {
   for (const screen of SCREENS) {
     // Uygulama içi gezinme: geliştirme sunucusunun sunucu tarafı çizim hatalarından etkilenmez.
     await page.evaluate((path) => { window.history.pushState({}, "", path); window.dispatchEvent(new PopStateEvent("popstate")); }, screen.path);
-    await page.waitForTimeout(5500);
+    await page.waitForTimeout(3500);
+    await page.waitForLoadState("networkidle", { timeout: 12000 }).catch(() => {}); // görseller insin
+    await page.waitForTimeout(1500);
     await page.screenshot({ path: join(out, `${screen.name}.png`) });
     console.log(device.dir, screen.name, "ok");
   }
