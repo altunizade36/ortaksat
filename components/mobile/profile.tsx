@@ -805,6 +805,14 @@ export function MobileProfile({
             </Text>
           )}
           <View style={{ gap: 8, marginTop: 18 }}>
+            {/* Kendi mağazasını alıcının gördüğü haliyle açar (ilan sırası: İlanlarım › Mağaza Sırası). */}
+            <MobileButton
+              secondary
+              icon="storefront-outline"
+              onPress={() => router.push(`/store/${me.id}` as never)}
+            >
+              Mağazamı Gör
+            </MobileButton>
             <MobileButton
               secondary
               icon="chart-line"
