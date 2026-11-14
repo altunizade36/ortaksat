@@ -1,3 +1,5 @@
+import { foldKey, trLower } from "@/lib/fast-text";
+
 export type BlogCategory =
   | "Satış İpuçları"
   | "Komisyon Rehberleri"
@@ -16,7 +18,8 @@ export type BlogPost = {
   readMin: number;
   date: string; // display string
   dateShort: string; // sidebar short date
-  image: string;
+  /** Yalnız yönetim panelinden eklenen yazının KENDİ görseli. Hazır yazıların kapağı kodla çizilir (components/blog-cover.tsx). */
+  image?: string;
   featured?: boolean;
   body: string[];
 };
@@ -29,8 +32,6 @@ export const BLOG_CATEGORIES: BlogCategory[] = [
   "Pazarlama",
   "Vaka Analizleri"
 ];
-
-const img = (id: string) => `https://images.unsplash.com/photo-${id}?w=900&q=80&auto=format&fit=crop`;
 
 const commonLegalNote =
   "Not: OrtakSat bir aracı ilan, eşleşme ve iletişim platformudur; ödeme almaz, para tutmaz, kargo veya teslimat yapmaz, komisyon tahsil etmez. Komisyon, teslimat ve ödeme şartları satıcı, alıcı ve ortak arasında ayrıca netleştirilir.";
@@ -46,7 +47,6 @@ export const BLOG_POSTS: BlogPost[] = [
     readMin: 7,
     date: "18 Haziran 2026",
     dateShort: "18 Haz",
-    image: img("1460925895917-afdab827c52f"),
     featured: true,
     body: [
       "Ticaret Bakanlığı'nın 12 Mayıs 2026'da yayımladığı Türkiye'de E-Ticaretin Görünümü 2025 raporuna göre Türkiye'de e-ticaret hacmi 2025'te %52,2 artarak 4,57 trilyon TL'ye, işlem sayısı ise 5,94 milyar adede ulaştı. Bu tablo küçük satıcılar için tek bir anlama geliyor: talep dijitalde büyüyor ama rekabet de aynı hızda sertleşiyor.",
@@ -72,7 +72,6 @@ export const BLOG_POSTS: BlogPost[] = [
     readMin: 6,
     date: "16 Haziran 2026",
     dateShort: "16 Haz",
-    image: img("1556742049-0cfed4f6a45d"),
     body: [
       "Komisyonla satışın en büyük riski yanlış beklenti oluşturmaktır. Ürün iyi olsa bile fiyat, stok, teslimat veya iade koşulu belirsizse alıcı güveni azalır. Ortak açısından da durum aynıdır: kendi çevresine önerdiği ürün sorunlu çıkarsa yalnızca bir satış değil, itibar da kaybedilir.",
       "1. Arkasında durabileceğin ürünü paylaş. Ortak, ürünün sahibi olmayabilir ama ürünü tavsiye ettiği için güven ilişkisine dahil olur. Bilmediğin, görmediğin veya satıcısına güvenmediğin üründe 'kesin tavsiye' dili kullanma.",
@@ -99,7 +98,6 @@ export const BLOG_POSTS: BlogPost[] = [
     readMin: 6,
     date: "14 Haziran 2026",
     dateShort: "14 Haz",
-    image: img("1554224155-6726b3ff858f"),
     body: [
       "Komisyon oranı yalnızca 'ortağa kaç para verilecek?' sorusu değildir. Ürünün satış fiyatı, brüt marjı, satış zorluğu, iade riski, stok hızı ve ortağın harcayacağı emek birlikte düşünülmelidir. Yanlış oran, ya satıcının kârını eritir ya da ortağın ürünü paylaşma isteğini düşürür.",
       "Önce toplam maliyeti çıkar. Ürün maliyeti, paketleme, kargo katkısı, olası iade maliyeti, pazaryeri veya reklam maliyeti ve vergi yükümlülükleri hesaba katılmadan komisyon belirlenmemeli. Satıcı 'satış fiyatı eksi ürün maliyeti' hesabıyla kalırsa gerçek marjı olduğundan yüksek görür.",
@@ -123,7 +121,6 @@ export const BLOG_POSTS: BlogPost[] = [
     readMin: 7,
     date: "11 Haziran 2026",
     dateShort: "11 Haz",
-    image: img("1563013544-824ae1b704d3"),
     body: [
       "Türkiye'de 2025 e-ticaret işlem sayısı 5,94 milyar adede ulaştı. Bu hacimde alıcıların karar süresi kısalıyor; kötü başlık, eksik görsel veya belirsiz teslimat bilgisi olan ilan hızla eleniyor. Dönüşüm oranını artırmak için önce alıcının karar anındaki şüphelerini azaltmak gerekir.",
       "1. Başlıkta ürünün kimliğini netleştir. Marka, model, kapasite, beden, ölçü, şehir ve durum bilgisi mümkünse başlıkta yer almalı. Alıcı arama sonucunda neye baktığını anlamazsa ilanın içine girmez.",
@@ -148,7 +145,6 @@ export const BLOG_POSTS: BlogPost[] = [
     readMin: 7,
     date: "9 Haziran 2026",
     dateShort: "9 Haz",
-    image: img("1507679799987-c73779587ccf"),
     body: [
       "Bu yazı uydurma bir marka hikayesi anlatmıyor. OrtakSat'ta blog içeriği yazarken gerçek kişi veya sahte başarı ismi kullanmak yerine, küçük satıcıların uygulayabileceği genel bir büyüme planını anlatmayı daha doğru buluyoruz.",
       "Başlangıç noktası genelde aynıdır: az ürün, sınırlı reklam bütçesi ve güven oluşturma ihtiyacı. Türkiye'de e-ticaret hacmi büyürken küçük satıcıların görünürlük kazanması kolaylaşmıyor; çünkü büyük oyuncular reklam, stok ve lojistik tarafında daha güçlü.",
@@ -174,7 +170,6 @@ export const BLOG_POSTS: BlogPost[] = [
     readMin: 6,
     date: "7 Haziran 2026",
     dateShort: "7 Haz",
-    image: img("1611162617474-5b21e879e113"),
     body: [
       "Sosyal medya ortak satış için güçlü bir kanal; ancak tüketicinin reklam veya ticari ilişkiyi anlayabilmesi gerekir. Reklam Kurulu'nun sosyal medya etkileyicileri kılavuzu, ticari reklamların açık ve anlaşılır biçimde ayırt edilebilir olmasını temel alır.",
       "Instagram'da ürün deneyimi görsel kanıtla desteklenmeli. Hikaye, Reels ve gönderide ürünün gerçek kullanımı, ölçüsü, teslimat durumu ve fiyatı net olmalı. Ürünü yalnızca linkle değil, kim için uygun olduğunu anlatarak paylaşmak daha sağlıklıdır.",
@@ -197,7 +192,6 @@ export const BLOG_POSTS: BlogPost[] = [
     readMin: 5,
     date: "5 Haziran 2026",
     dateShort: "5 Haz",
-    image: img("1521791136064-7986c2920216"),
     body: [
       "Online alışverişte güven yalnızca iyi niyetle kurulmaz; alıcıya karar verirken ihtiyaç duyduğu bilgilerin açıkça sunulması gerekir. Özellikle ikinci el, ortak satış veya komisyonlu ilanlarda taraflar birbirini tanımadığı için kayıtlı iletişim ve şeffaf açıklama daha da önemlidir.",
       "1. Kimlik ve iletişim doğrulamasını tamamla. Doğrulanmış telefon, e-posta, profil bilgisi ve geçmiş işlem sinyalleri alıcıya gerçek kişiyle konuştuğunu hissettirir. Eksik profil, iyi ürünlerde bile şüphe yaratabilir.",
@@ -221,7 +215,6 @@ export const BLOG_POSTS: BlogPost[] = [
     readMin: 5,
     date: "3 Haziran 2026",
     dateShort: "3 Haz",
-    image: img("1586528116311-ad8dd3c8310d"),
     body: [
       "Satış, alıcı ürünü sorunsuz teslim aldığında tamamlanır. Kötü paketleme, belirsiz kargo ücreti veya geç takip bilgisi, ürün iyi olsa bile memnuniyeti düşürür. Ortak satışta teslimat sorunu yalnızca satıcıyı değil, ürünü tavsiye eden ortağın güvenini de etkiler.",
       "Teslimat süresini gerçekçi yaz. 'Bugün kargo' diyorsan bunu aynı gün yapabilecek durumda olmalısın. Emin değilsen '1-2 iş günü içinde kargoya verilir' gibi daha doğru bir zaman aralığı kullan.",
@@ -244,7 +237,6 @@ export const BLOG_POSTS: BlogPost[] = [
     readMin: 5,
     date: "1 Haziran 2026",
     dateShort: "1 Haz",
-    image: img("1483985988355-763728e1935b"),
     body: [
       "Trend ürün seçimi yalnızca 'herkes bunu konuşuyor' diye yapılmaz. Asıl mesele sosyal medya ilgisini, kategori talebini, sezonu, fiyat uygunluğunu ve teslimat kapasitesini birlikte okumaktır. Aksi halde çok konuşulan ama satmayan ürünlere emek harcanır.",
       "1. Resmi e-ticaret eğilimlerini takip et. Ticaret Bakanlığı'nın e-ticaret raporları genel hacim, kategori büyümesi ve işlem sayısı gibi makro sinyaller verir. Bu veriler hangi kategorilerde dijital talebin güçlendiğini anlamaya yardımcı olur.",
@@ -268,7 +260,6 @@ export const BLOG_POSTS: BlogPost[] = [
     readMin: 6,
     date: "30 Mayıs 2026",
     dateShort: "30 May",
-    image: img("1556761175-5973dc0f32e7"),
     body: [
       "Ortak satışta birçok karar ilan sayfasında değil, mesajlaşmada verilir. Alıcı ürünü anlamak, satıcı güvenini ölçmek ve teslimat riskini görmek ister. Ortak ise yanlış bilgi vermeden süreci hızlandırmaya çalışır.",
       "İlk cevap kısa ve bilgi odaklı olmalı: 'Merhaba, ürün hâlâ satışta. Fiyat 8.500 TL, İstanbul içi elden teslim mümkün, şehir dışına kargo alıcı ödemeli yapılabilir.' Bu mesaj, alıcının en temel üç sorusunu aynı anda cevaplar.",
@@ -292,7 +283,6 @@ export const BLOG_POSTS: BlogPost[] = [
     readMin: 6,
     date: "1 Temmuz 2026",
     dateShort: "1 Tem",
-    image: img("1611162617474-5b21e879e113"),
     featured: true,
     body: [
       "Instagram'da takipçisi olan çoğu kişi aynı soruyu sorar: 'Bu hesabı nasıl gelire çeviririm?' En düşük riskli yol, ürün satın alıp stok tutmadan, yalnızca doğru ürünü tanıtıp satışta komisyon kazanmaktır. Ortak satış tam olarak budur: ürünü sen üretmezsin, kargolamazsın; sadece güvendiğin ürünü kitlene doğru anlatırsın.",
@@ -315,7 +305,6 @@ export const BLOG_POSTS: BlogPost[] = [
     readMin: 5,
     date: "2 Temmuz 2026",
     dateShort: "2 Tem",
-    image: img("1554224155-6726b3ff858f"),
     body: [
       "Ek gelir arayanların çoğu aynı engelle karşılaşır: başlamak için sermaye, stok veya teknik bilgi gerekiyor sanılır. Ortak satış bu engeli kaldırır. Ürünü sen almazsın; satıcının ürününü kitlene tanıtır, satış olursa komisyon kazanırsın.",
       "Model basit işler: satıcı ürününü OrtakSat'a ekler ve komisyon oranını belirler. Sen ürüne ortak olursun (satıcı onaylayınca); ürünü kendi yönteminle tanıtırsın. Getirdiğin müşteri satıcıyla iletişime geçip satın alırsa, satıcıyla anlaştığın komisyonu alırsın. Zorunlu bir takip linki yoktur; komisyon, satıcı ile ortak arasındaki karşılıklı anlaşmadır. Ödeme ve teslimat alıcı ile satıcı arasında yapılır; platform para tutmaz.",
@@ -337,7 +326,6 @@ export const BLOG_POSTS: BlogPost[] = [
     readMin: 6,
     date: "3 Temmuz 2026",
     dateShort: "3 Tem",
-    image: img("1556742049-0cfed4f6a45d"),
     body: [
       "Küçük satıcının en büyük sorunu görünürlüktür: ürün iyi ama yeterince insana ulaşmıyor. Reklam vermek ise bütçe ister ve sonucu belirsizdir. Ortak satış, reklam yerine performansa dayalı bir satış ordusu kurmanı sağlar: yalnızca satış olursa komisyon ödersin.",
       "Nasıl çalışır? Ürününü OrtakSat'a ücretsiz eklersin ve komisyon oranını belirlersin. Ortaklar ürüne katılır (istersen başvuruları tek tek onaylarsın) ve ürünü kendi yöntemleriyle takipçilerine tanıtır. Getirdikleri müşteri seninle iletişime geçip satın alır; ortağa anlaştığınız komisyonu ödersin. Önden reklam maliyeti yoktur.",
@@ -359,7 +347,6 @@ export const BLOG_POSTS: BlogPost[] = [
     readMin: 5,
     date: "4 Temmuz 2026",
     dateShort: "4 Tem",
-    image: img("1521791136064-7986c2920216"),
     body: [
       "Kısa video, bugün ürün tanıtmanın en hızlı büyüyen yolu. TikTok ve Instagram Reels, tek bir iyi videoyla küçük hesapların bile geniş kitleye ulaşmasını sağlar. Ortak satışla birleşince bu erişim doğrudan gelire dönüşebilir: ürüne ortak ol, kendi yönteminle tanıt, sattığında anlaştığın komisyonu kazan.",
       "Doğru ürünü seç. Kısa videoda en iyi çalışan ürünler görselliği güçlü, faydası ilk saniyede anlaşılan ve fiyatı makul olanlardır. İzleyicinin 'bunu ben de isterim' dediği ürünler daha çok tıklama getirir.",
@@ -381,7 +368,6 @@ export const BLOG_POSTS: BlogPost[] = [
     readMin: 6,
     date: "28 Haziran 2026",
     dateShort: "28 Haz",
-    image: img("1460925895917-afdab827c52f"),
     body: [
       "Affiliate marketing, yani satış ortaklığı, bir ürünü sen üretmeden ya da stoklamadan tanıtıp satışa aracılık etmen ve satış gerçekleşince komisyon kazanmandır. Türkçesiyle: başkasının ürününü kendi kitlene önerirsin, senin önerinle satış olursa pay alırsın.",
       "Model üç tarafı buluşturur: ürünü olan satıcı, ürünü tanıtan ortak (sen) ve satın alan alıcı. Satıcı görünürlük ve satış kazanır, ortak emeğinin karşılığında komisyon alır, alıcı ise güvendiği birinin önerisiyle ürüne ulaşır. OrtakSat bu üçünü aracı olarak buluşturur; ödeme ve teslimatı taraflar kendi arasında yapar.",
@@ -402,7 +388,6 @@ export const BLOG_POSTS: BlogPost[] = [
     readMin: 5,
     date: "29 Haziran 2026",
     dateShort: "29 Haz",
-    image: img("1521791136064-7986c2920216"),
     body: [
       "Öğrenciyken ek gelir aramak yaygın; ama çoğu 'iş' ya sermaye ya da esnek olmayan mesai ister. Oysa ders programına uyan, sıfır sermayeli ve evden yapılabilen yöntemler var. İşte gerçekçi olanlar.",
       "1. Satış ortaklığı (affiliate). Sosyal medya hesabın varsa bir ürüne ortak olup kendi yönteminle tanıtırsın; satış olursa anlaştığın komisyonu kazanırsın. Stok, para yatırma ve kargo yok. OrtakSat'ta bugün başlayabilirsin.",
@@ -424,7 +409,6 @@ export const BLOG_POSTS: BlogPost[] = [
     readMin: 5,
     date: "30 Haziran 2026",
     dateShort: "30 Haz",
-    image: img("1554224155-6726b3ff858f"),
     body: [
       "Ortak satışta komisyon, bir ürüne ortak olduğunda satıcıyla aranızdaki karşılıklı anlaşmadır. Ürünü sen üretmez, stoklamaz ya da kargolamazsın; güvendiğin ürünü kendi yönteminle kitlene tanıtırsın. Satış gerçekleşince, satıcıyla önceden anlaştığın komisyonu alırsın. OrtakSat'ta zorunlu bir referans linki, kodu veya takip sistemi yoktur.",
       "Mantığı basit: satıcı ürünü ekler ve komisyon oranını belirler. Sen ürüne ortak olursun (satıcı onaylayınca). Ürünü sosyal medyanda, kendi çevrende ya da müşterilerine kendi yönteminle tanıtırsın; getirdiğin müşteri satıcıyla iletişime geçip satın alırsa, anlaştığınız komisyon senin olur.",
@@ -445,7 +429,6 @@ export const BLOG_POSTS: BlogPost[] = [
     readMin: 5,
     date: "1 Temmuz 2026",
     dateShort: "1 Tem",
-    image: img("1611162617474-5b21e879e113"),
     body: [
       "Ortak satış için illa on binlerce takipçi gerekmez. WhatsApp ve Telegram gruplarındaki ilgili, güvenen küçük kitleler çoğu zaman büyük ama ilgisiz takipçiden daha çok satış getirir. Önemli olan doğru grupta, doğru ürünü, doğru şekilde paylaşmaktır.",
       "1. Doğru grubu seç. Site/mahalle, hobi, anne, öğrenci, ikinci el alışveriş grupları gibi ilgi alanı belli topluluklar en verimlisidir. Alakasız gruba ürün yağdırmak hem işe yaramaz hem seni spam'e düşürür.",
@@ -466,7 +449,6 @@ export const BLOG_POSTS: BlogPost[] = [
     readMin: 6,
     date: "2 Temmuz 2026",
     dateShort: "2 Tem",
-    image: img("1483985988355-763728e1935b"),
     body: [
       "Küçük ama etkileşimli bir sosyal medya hesabı — genelde 1.000–30.000 takipçili, ama kitlesiyle güçlü bağı olan bir içerik üreticisi — reklamverenlerin en sevdiği kitledir çünkü etkileşimleri yüksektir. İyi haber: gelire çevirmek için büyük markalarla anlaşmayı beklemene gerek yok; ortak satışla bugün başlayabilirsin.",
       "1. Nişini netleştir. Her şeyi paylaşan hesap kimseye satamaz. Moda, teknoloji, ev-yaşam, bebek, spor... kitleni tanı ve o alandaki ürünleri seç. OrtakSat'ta ürünü seçip ona ortak olursun (satıcı onaylayınca).",
@@ -488,7 +470,6 @@ export const BLOG_POSTS: BlogPost[] = [
     readMin: 6,
     date: "3 Temmuz 2026",
     dateShort: "3 Tem",
-    image: img("1507679799987-c73779587ccf"),
     body: [
       "İkinci el alışveriş büyük fırsatlar sunar ama dikkatsizlikte risk de taşır. Dolandırıcılığın neredeyse tamamı iki hatadan doğar: ürünü görmeden ödeme yapmak ve platform dışına çıkmak. Aşağıdaki adımlar seni korur.",
       "1. Ürünü görmeden kapora/ön ödeme gönderme. En yaygın tuzak budur. 'Başkası almadan kapora at' baskısı neredeyse her zaman kötü bir işarettir.",
@@ -512,7 +493,6 @@ export const BLOG_POSTS: BlogPost[] = [
     readMin: 5,
     date: "4 Temmuz 2026",
     dateShort: "4 Tem",
-    image: img("1556742049-0cfed4f6a45d"),
     body: [
       "Sahte ilanlar genelde gerçek bir üründen çalınmış fotoğraflarla, cazip bir fiyatla hazırlanır. Amaç, seni ürünü görmeden ödeme yapmaya ikna etmektir. Birkaç işaret bunları ele verir.",
       "Aşırı düşük fiyat. Piyasanın çok altında, 'kaçırma' baskısıyla sunulan fiyat en büyük kırmızı bayraktır. Gerçek satıcı ürününü sudan ucuza vermez.",
@@ -526,7 +506,63 @@ export const BLOG_POSTS: BlogPost[] = [
   }
 ];
 
-export const POPULAR_TAGS = ["#ortaksatış", "#komisyon", "#eticaret", "#girişimcilik", "#satışipuçları", "#pazarlama", "#güven", "#vaka"];
+/** Blog içi konu kısayolları: dokununca blog bu sözcükle süzülür (eskiden ilan aramasına gidiyordu → alakasız sonuç). */
+export const BLOG_TOPICS: Array<{ label: string; query: string }> = [
+  { label: "Ortak satış", query: "ortak satış" },
+  { label: "Komisyon", query: "komisyon" },
+  { label: "Ek gelir", query: "ek gelir" },
+  { label: "Sosyal medya", query: "sosyal medya" },
+  { label: "Instagram", query: "instagram" },
+  { label: "Güvenli alışveriş", query: "dolandırıcı" },
+  { label: "Kargo ve teslimat", query: "kargo" },
+  { label: "Referans bağlantısı", query: "referans" }
+];
+
+const TR_MONTHS = ["ocak", "şubat", "mart", "nisan", "mayıs", "haziran", "temmuz", "ağustos", "eylül", "ekim", "kasım", "aralık"];
+
+/** Yazının tarihi (ms). Hazır yazılarda "18 Haziran 2026", panelden eklenenlerde ISO tarih gelir; okunamazsa 0. */
+export function blogPostTime(post: Pick<BlogPost, "date">): number {
+  const text = (post.date ?? "").trim();
+  const match = text.match(/^(\d{1,2})\s+(\S+)\s+(\d{4})$/);
+  if (match) {
+    const month = TR_MONTHS.indexOf(trLower(match[2]));
+    if (month >= 0) return Date.UTC(Number(match[3]), month, Number(match[1]));
+  }
+  const parsed = Date.parse(text);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+/** Yazı, aranan sözcüklerin HEPSİNİ içeriyor mu (başlık + özet + kategori + gövde; Türkçe harf duyarsız). */
+export function blogPostMatches(post: BlogPost, query: string): boolean {
+  const words = foldKey(query).split(" ").filter(Boolean);
+  if (words.length === 0) return true;
+  // foldKey sonucu önbelleğe alır → her tuşta yazıların gövdesi yeniden işlenmez (Android'de ölçülebilir fark).
+  // Her yazının sonundaki ortak platform notu ve kaynak listesi aramaya katılmaz: "kargo", "komisyon" gibi sözcükler
+  // o notta geçtiği için arama bütün yazıları döndürüyordu.
+  const body = post.body.filter((para) => !para.startsWith("Not:") && !para.startsWith("Kaynaklar:")).join(" ");
+  const haystack = foldKey(`${post.title} ${post.excerpt} ${post.category} ${body}`);
+  return words.every((word) => haystack.includes(word));
+}
+
+const TR_MONTH_LABELS = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
+
+/** Yönetim panelinden eklenen yazı (ISO tarihli kayıt) → sayfaların kullandığı biçim; tarih okunur yazılır. */
+export function fromManagedPost(row: { slug: string; category: string; title: string; excerpt: string; author: string; authorRole: string; readMin: number; image: string; featured: boolean; body: string[]; createdAt: string }): BlogPost {
+  const time = Date.parse(row.createdAt);
+  const when = Number.isFinite(time) ? new Date(time) : null;
+  return {
+    slug: row.slug, category: row.category as BlogCategory, title: row.title, excerpt: row.excerpt, author: row.author, authorRole: row.authorRole,
+    readMin: row.readMin, featured: row.featured, body: row.body, image: row.image,
+    date: when ? `${when.getUTCDate()} ${TR_MONTH_LABELS[when.getUTCMonth()]} ${when.getUTCFullYear()}` : row.createdAt,
+    dateShort: when ? `${when.getUTCDate()} ${TR_MONTH_LABELS[when.getUTCMonth()].slice(0, 3)}` : row.createdAt.slice(5, 10)
+  };
+}
+
+/** Panel yazıları + hazır yazılar (aynı adresli hazır yazıyı panel yazısı ezer), en yeni önce. */
+export function mergeBlogPosts(managed: BlogPost[]): BlogPost[] {
+  const all = [...managed, ...BLOG_POSTS.filter((post) => !managed.some((row) => row.slug === post.slug))];
+  return all.map((post, index) => ({ post, index })).sort((a, b) => blogPostTime(b.post) - blogPostTime(a.post) || a.index - b.index).map((entry) => entry.post);
+}
 
 export function getPost(slug: string) {
   return BLOG_POSTS.find((p) => p.slug === slug);

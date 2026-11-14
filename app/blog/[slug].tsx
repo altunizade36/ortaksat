@@ -1,15 +1,22 @@
 import { MaterialCommunityIcons } from "@/components/icons";
 import { Link, useLocalSearchParams } from "expo-router";
 import Head from "expo-router/head";
+import { useState } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 
+import { BlogCover } from "@/components/blog-cover";
 import { colors } from "@/components/colors";
+import { PressLink } from "@/components/ui";
 import { openUrlSafe } from "@/lib/link";
-import { SafeRemoteImage } from "@/components/safe-remote-image";
+import { shareOrCopy } from "@/lib/share";
 import { WebFooter } from "@/components/web-landing";
-import { BLOG_POSTS, getPost, type BlogCategory, type BlogPost } from "@/lib/blog";
+import { BLOG_POSTS, fromManagedPost, getPost, type BlogPost } from "@/lib/blog";
 import { WebContainer } from "@/components/web-container";
 import { useStore } from "@/lib/use-store";
+
+// Paylaşım / yapısal veri görseli: sitenin kendi kapağı (yazı kapakları kodla çizilir, dosyası yoktur).
+const SHARE_IMAGE = "https://www.ortaksat.com/og-cover.png";
+const heading = (level: 1 | 2 | 3) => ({ role: "heading", "aria-level": level }) as Record<string, unknown>;
 
 // Statik export: her blog yazısını build'de kendi başlık/meta/içeriğiyle önceden
 // üret (SEO — her URL benzersiz başlıkla, JS beklemeden indekslenir).
@@ -20,10 +27,10 @@ export async function generateStaticParams(): Promise<Array<{ slug: string }>> {
 export default function BlogPostPage() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
   const { blogPosts } = useStore();
+  // Kanca erken dönüşten ÖNCE (yazı bulunamadı dalı aşağıda) — sıra her çizimde aynı kalmalı.
+  const [shareNote, setShareNote] = useState("");
   const db = blogPosts.find((p) => p.slug === slug && p.status === "published");
-  const post: BlogPost | undefined = db
-    ? { slug: db.slug, category: db.category as BlogCategory, title: db.title, excerpt: db.excerpt, author: db.author, authorRole: db.authorRole, readMin: db.readMin, date: db.createdAt, dateShort: db.createdAt.slice(5), image: db.image, featured: db.featured, body: db.body }
-    : getPost(slug);
+  const post: BlogPost | undefined = db ? fromManagedPost(db) : getPost(slug);
 
   if (!post) {
     return (
@@ -50,12 +57,21 @@ export default function BlogPostPage() {
   const metaTitle = `${post.title} | OrtakSat Blog`;
   const metaDesc = post.excerpt.replace(/\s+/g, " ").slice(0, 160);
   const metaUrl = `https://www.ortaksat.com/blog/${post.slug}`;
+  const ownImage = post.image && /^https:\/\//i.test(post.image) && !/unsplash\.com/i.test(post.image) ? post.image : SHARE_IMAGE;
+  const shareTitle = post.title;
+
+  async function share() {
+    const result = await shareOrCopy({ title: shareTitle, message: shareTitle, url: metaUrl });
+    if (result === "copied") setShareNote("Bağlantı kopyalandı");
+    else if (result === "failed") setShareNote("Paylaşılamadı; adres çubuğundaki bağlantıyı kopyalayabilirsin.");
+    else setShareNote("");
+  }
   const articleLd = JSON.stringify({
     "@context": "https://schema.org",
     "@type": "Article",
     headline: post.title,
     description: metaDesc,
-    image: [post.image].filter(Boolean),
+    image: [ownImage],
     articleSection: post.category,
     author: { "@type": "Organization", name: post.author },
     publisher: { "@type": "Organization", name: "OrtakSat", logo: { "@type": "ImageObject", url: "https://www.ortaksat.com/apple-touch-icon.png" } },
@@ -73,12 +89,12 @@ export default function BlogPostPage() {
         <meta property="og:locale" content="tr_TR" />
         <meta property="og:title" content={metaTitle} />
         <meta property="og:description" content={metaDesc} />
-        <meta property="og:image" content={post.image} />
+        <meta property="og:image" content={ownImage} />
         <meta property="og:url" content={metaUrl} />
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content={metaTitle} />
         <meta name="twitter:description" content={metaDesc} />
-        <meta name="twitter:image" content={post.image} />
+        <meta name="twitter:image" content={ownImage} />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: articleLd }} />
       </Head>
       <WebContainer max={820} padding={20} style={{ gap: 16 }}>
@@ -93,20 +109,26 @@ export default function BlogPostPage() {
         <View style={{ alignSelf: "flex-start", backgroundColor: colors.primarySoft, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 }}>
           <Text style={{ color: colors.primaryDark, fontSize: 11, fontWeight: "900" }}>{post.category}</Text>
         </View>
-        <Text style={{ color: colors.ink, fontSize: 30, fontWeight: "900", lineHeight: 38 }}>{post.title}</Text>
+        <Text accessibilityRole="header" {...heading(1)} style={{ color: colors.ink, fontSize: 30, fontWeight: "900", lineHeight: 38 }}>{post.title}</Text>
+        <Text style={{ color: colors.muted, fontSize: 16, fontWeight: "600", lineHeight: 25 }}>{post.excerpt}</Text>
 
-        <View style={{ alignItems: "center", flexDirection: "row", gap: 12 }}>
+        <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
           <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 999, height: 40, justifyContent: "center", width: 40 }}>
-            <MaterialCommunityIcons name="account" size={22} color={colors.primaryDark} />
+            <MaterialCommunityIcons name="account-edit-outline" size={22} color={colors.primaryDark} />
           </View>
-          <View style={{ gap: 1 }}>
+          <View style={{ flex: 1, gap: 1, minWidth: 150 }}>
             <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "800" }}>{post.author}</Text>
             <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600" }}>{post.date} · {post.readMin} dk okuma</Text>
           </View>
+          <Pressable testID="blog-share" accessibilityRole="button" accessibilityLabel="Yazıyı paylaş" onPress={() => void share()} style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.primary, borderRadius: 10, borderWidth: 1.5, flexDirection: "row", gap: 6, minHeight: 40, paddingHorizontal: 14 }}>
+            <MaterialCommunityIcons name="share-variant-outline" size={17} color={colors.primaryDark} />
+            <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "900" }}>Paylaş</Text>
+          </Pressable>
         </View>
+        {shareNote ? <Text accessibilityLiveRegion="polite" style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "800" }}>{shareNote}</Text> : null}
 
-        <View style={{ backgroundColor: colors.line, borderRadius: 16, height: 360, overflow: "hidden", width: "100%" }}>
-          <SafeRemoteImage uri={post.image} alt={post.title} accessibilityLabel={post.title} style={{ height: "100%", width: "100%" }} contentFit="cover" transition={160} />
+        <View style={{ borderRadius: 16, height: 200, overflow: "hidden", width: "100%" }}>
+          <BlogCover post={post} variant="hero" />
         </View>
 
         <View style={{ gap: 16 }}>
@@ -164,14 +186,33 @@ export default function BlogPostPage() {
           </Text>
         </View>
 
+        {/* Okuyan ne yapabilir: yazıdan doğrudan ürüne geçiş */}
+        <View style={{ backgroundColor: colors.primaryDark, borderRadius: 16, gap: 12, padding: 18 }}>
+          <Text {...heading(2)} style={{ color: "#FFFFFF", fontSize: 18, fontWeight: "900" }}>Okuduğunu uygulamaya hazır mısın?</Text>
+          <Text style={{ color: "#D7E2F6", fontSize: 13.5, fontWeight: "600", lineHeight: 20 }}>İlan vermek ve üyelik ücretsiz. Satıcıysan ürününü ortaklara aç; ortaksan komisyonu sana uyan bir ilan seç.</Text>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
+            <PressLink href="/create" accessibilityLabel="Ücretsiz ilan ver" style={{ alignItems: "center", backgroundColor: "#FFFFFF", borderRadius: 10, flexDirection: "row", gap: 6, minHeight: 44, paddingHorizontal: 16 }}>
+              <MaterialCommunityIcons name="plus-circle-outline" size={17} color={colors.primaryDark} />
+              <Text style={{ color: colors.primaryDark, fontSize: 13.5, fontWeight: "900" }}>Ücretsiz İlan Ver</Text>
+            </PressLink>
+            <PressLink href="/partner" accessibilityLabel="Ortaklık fırsatlarını gör" style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.14)", borderColor: "rgba(255,255,255,0.5)", borderRadius: 10, borderWidth: 1.5, flexDirection: "row", gap: 6, minHeight: 44, paddingHorizontal: 16 }}>
+              <MaterialCommunityIcons name="handshake-outline" size={17} color="#FFFFFF" />
+              <Text style={{ color: "#FFFFFF", fontSize: 13.5, fontWeight: "900" }}>Ortaklık Fırsatları</Text>
+            </PressLink>
+            <PressLink href="/nasil-calisir" accessibilityLabel="OrtakSat nasıl çalışır?" style={{ alignItems: "center", flexDirection: "row", gap: 5, minHeight: 44, paddingHorizontal: 6 }}>
+              <Text style={{ color: "#FFFFFF", fontSize: 13.5, fontWeight: "900", textDecorationLine: "underline" }}>Nasıl çalışır?</Text>
+            </PressLink>
+          </View>
+        </View>
+
         <View style={{ borderTopColor: colors.line, borderTopWidth: 1, gap: 14, marginTop: 8, paddingTop: 20 }}>
-          <Text style={{ color: colors.ink, fontSize: 20, fontWeight: "900" }}>İlgili yazılar</Text>
+          <Text {...heading(2)} style={{ color: colors.ink, fontSize: 20, fontWeight: "900" }}>İlgili yazılar</Text>
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 14 }}>
             {fallbackRelated.map((rp) => (
               <Link key={rp.slug} href={{ pathname: "/blog/[slug]", params: { slug: rp.slug } }} asChild>
-                <Pressable dataSet={{ card: "listing" }} style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 14, borderWidth: 1, flexBasis: 220, flexGrow: 1, maxWidth: 360, overflow: "hidden" }}>
-                  <View style={{ backgroundColor: colors.line, height: 110, width: "100%" }}>
-                    <SafeRemoteImage uri={rp.image} alt={rp.title} accessibilityLabel={rp.title} style={{ height: "100%", width: "100%" }} contentFit="cover" transition={140} />
+                <Pressable accessibilityRole="link" accessibilityLabel={rp.title} dataSet={{ card: "blog" }} style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 14, borderWidth: 1, flexBasis: 220, flexGrow: 1, maxWidth: 360, minWidth: 0, overflow: "hidden" }}>
+                  <View style={{ height: 110, width: "100%" }}>
+                    <BlogCover post={rp} />
                   </View>
                   <View style={{ gap: 4, padding: 12 }}>
                     <Text numberOfLines={2} style={{ color: colors.ink, fontSize: 13.5, fontWeight: "800", lineHeight: 18 }}>{rp.title}</Text>
@@ -201,9 +242,9 @@ function ArticleBlock({ text }: { text: string }) {
 
   if (isNote) {
     return (
-      <View style={{ backgroundColor: colors.infoSoft, borderColor: colors.line, borderRadius: 14, borderWidth: 1, gap: 6, padding: 14 }}>
+      <View style={{ backgroundColor: colors.primarySoft, borderColor: colors.line, borderRadius: 14, borderWidth: 1, gap: 6, padding: 14 }}>
         <View style={{ alignItems: "center", flexDirection: "row", gap: 7 }}>
-          <MaterialCommunityIcons name="information-outline" size={17} color={colors.info} />
+          <MaterialCommunityIcons name="information-outline" size={17} color={colors.primaryDark} />
           <Text style={{ color: colors.ink, fontSize: 14, fontWeight: "900" }}>Platform notu</Text>
         </View>
         <Text selectable style={{ color: colors.ink, fontSize: 14, fontWeight: "600", lineHeight: 22 }}>{text.replace(/^Not:\s*/, "")}</Text>

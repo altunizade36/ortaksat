@@ -213,8 +213,9 @@ const ROUTES = {
   "nasil-calisir.html": {
     title: "OrtakSat nasıl çalışır? Satıcı, ortak ve alıcı için | OrtakSat",
     description:
-      "İlan aç, ortaklar paylaşsın, satışta komisyon dağılsın. OrtakSat'ın ortak satış modelini adım adım anlatan basit rehber.",
-    canonical: "/nasil-calisir"
+      "Satıcı ilan verir ve komisyonu belirler, ortak ürünü tanıtır, satışta komisyonu satıcıdan alır. OrtakSat para tutmaz, pay almaz. Adım adım anlatım ve sık sorulanlar.",
+    canonical: "/nasil-calisir",
+    jsonld: howItWorksLd()
   },
   "hakkimizda.html": {
     title: "Hakkımızda — OrtakSat ortak satış pazaryeri",
@@ -285,6 +286,29 @@ function faqJsonLd() {
     "@type": "FAQPage",
     mainEntity: faq.map(([q, a]) => ({ "@type": "Question", name: q, acceptedAnswer: { "@type": "Answer", text: a } }))
   });
+}
+
+// "Nasıl Çalışır" sayfasının sık sorulan soruları → FAQPage yapısal verisi. Metin TEK yerde durur:
+// app/nasil-calisir.tsx içindeki FAQ dizisinden okunur (elle kopya tutulursa sayfayla ayrışır).
+// İşlev bildirimi olarak yazıldı: ROUTES nesnesi modül yüklenirken çağırır (const yardımcılar henüz tanımsız).
+function howItWorksLd() {
+  try {
+    const src = fs.readFileSync(path.join(__dirname, "..", "app", "nasil-calisir.tsx"), "utf8");
+    const start = src.indexOf("const FAQ:");
+    const end = start < 0 ? -1 : src.indexOf("\n];", start);
+    if (start < 0 || end < 0) return undefined;
+    const block = src.slice(start, end);
+    const plain = (s) => s.replace(/\\"/g, '"');
+    const items = [...block.matchAll(/\{\s*q:\s*"((?:[^"\\]|\\.)*)",\s*a:\s*"((?:[^"\\]|\\.)*)"\s*\}/g)].map((m) => [plain(m[1]), plain(m[2])]);
+    if (items.length === 0) return undefined;
+    return JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      mainEntity: items.map(([q, a]) => ({ "@type": "Question", name: q, acceptedAnswer: { "@type": "Answer", text: a } }))
+    });
+  } catch {
+    return undefined;
+  }
 }
 
 const escText = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -366,8 +390,7 @@ function blogPosts() {
         title,
         excerpt,
         author: field(block, "author", /author:\s*"((?:[^"\\]|\\.)*)"/) || "OrtakSat Editör Ekibi",
-        date: field(block, "date", /date:\s*"([^"]+)"/),
-        imageId: field(block, "image", /image:\s*img\("([^"]+)"\)/)
+        date: field(block, "date", /date:\s*"([^"]+)"/)
       });
     }
     return posts;
@@ -380,7 +403,8 @@ function blogPosts() {
 function blogArticleLd(p) {
   const url = `${BASE}/blog/${p.slug}`;
   const iso = trDateToIso(p.date);
-  const image = p.imageId ? `https://images.unsplash.com/photo-${p.imageId}?w=1200&q=80&auto=format&fit=crop` : OG_IMG;
+  // Yazı kapakları kodla çizilir (components/blog-cover.tsx); paylaşım görseli olarak sitenin kendi kapağı kullanılır.
+  const image = OG_IMG;
   const article = {
     "@context": "https://schema.org",
     "@type": "BlogPosting",
@@ -724,7 +748,7 @@ export function patchSeo() {
     const fp = path.join(DIST, "blog", `${p.slug}.html`);
     const title = `${p.title} | OrtakSat Blog`;
     // Blog paylaşımında GENERIC değil GERÇEK yazı görseli (paylaşım CTR'si + link-değeri).
-    const ogImage = p.imageId ? `https://images.unsplash.com/photo-${p.imageId}?w=1200&q=80&auto=format&fit=crop` : OG_IMG;
+    const ogImage = OG_IMG;
     if (rewriteSeoHead(fp, { title, description: p.excerpt, canonicalUrl: `${BASE}/blog/${p.slug}`, jsonld: [blogArticleLd(p)], ogImage })) blogN++;
   }
 

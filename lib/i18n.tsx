@@ -18,6 +18,7 @@ import { extraDict } from "@/lib/i18n-dict/extra";
 import { exploreDict } from "@/lib/i18n-dict/explore";
 import { pass2Dict } from "@/lib/i18n-dict/pass2";
 import { homeDict } from "@/lib/i18n-dict/home";
+import { howItWorksDict } from "@/lib/i18n-dict/how-it-works";
 import { marketingDict } from "@/lib/i18n-dict/marketing";
 import { profileDict } from "@/lib/i18n-dict/profile";
 import { socialDict } from "@/lib/i18n-dict/social";
@@ -1237,6 +1238,7 @@ let _trToEnCopy: Record<string, string> | null = null;
 function trToEnDict(): Record<string, string> {
   return _trToEnCopy ?? (_trToEnCopy = {
     ...baseTrToEnDict(),
+    ...howItWorksDict,
     ...homeDict,
     ...exploreDict,
     ...catalogDict,
