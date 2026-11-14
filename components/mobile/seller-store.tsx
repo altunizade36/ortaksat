@@ -435,10 +435,10 @@ export function MobileSellerStore({ id }: { id: string }) {
             >
               {seller.name} {seller.verifiedIdentity ? "✓" : ""}
             </Text>
-            {seller.username && (
+            {!!seller.username && (
               <Text style={ms.muted}>@{seller.username}</Text>
             )}
-            {seller.city && (
+            {!!seller.city && (
               <Text style={ms.muted}>
                 ⌖ {seller.city}
                 {seller.districtId
@@ -681,7 +681,7 @@ export function MobileSellerStore({ id }: { id: string }) {
             <Text style={{ color: mobile.muted, lineHeight: 21 }}>
               {seller.bio || "Satıcı henüz hakkında bilgisi eklememiş."}
             </Text>
-            {seller.website && (
+            {!!seller.website && (
               <MobileButton
                 secondary
                 onPress={() => {
@@ -691,7 +691,7 @@ export function MobileSellerStore({ id }: { id: string }) {
                 Web Sitesi
               </MobileButton>
             )}
-            {seller.instagram && (
+            {!!seller.instagram && (
               <MobileButton
                 secondary
                 onPress={() => {
@@ -703,7 +703,7 @@ export function MobileSellerStore({ id }: { id: string }) {
                 Instagram
               </MobileButton>
             )}
-            {seller.createdAt && (
+            {!!seller.createdAt && (
               <Text style={ms.muted}>
                 Üyelik:{" "}
                 {new Date(seller.createdAt).toLocaleDateString("tr-TR", {
