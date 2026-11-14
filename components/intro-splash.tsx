@@ -45,11 +45,20 @@ const reduceMotionQuery: Promise<boolean> = isMobileApp
 /**
  * UYGULAMA AÇILIŞ ANİMASYONU (yalnız iOS/Android, soğuk açılışta bir kez) — toplam ≈ 3,3 sn.
  *
- *   0,00 sn  halka "nefes alır" (hafif büyüyüp oturur), arkasında yumuşak bir ışık halesi belirir
- *   0,42 sn  iki el iki yandan, hafif eğik gelip halkanın altında BİRLEŞİR (≈ 1 sn, görülerek)
- *   1,42 sn  el sıkışma: küçük bir sıkma, üç kez azalan sallanma, dışa yayılan iki dalga
- *   1,80 sn  marka adı aşağıdan yükselir, ardından slogan belirir
+ *   0,00 sn  halka bir kez "nefes alır" (hafif büyüyüp oturur)
+ *   0,36 sn  iki el iki yandan, tutuş noktasına doğru dönerek uzanır (yavaş başlar, hızlanır, yavaşlar)
+ *   1,03 sn  kavrama: eller birbirine hafifçe bastırıp sıkılaşır, halka karşılık verir, tek ince dalga yayılır
+ *   1,20 sn  el sıkışma: tutuş noktası etrafında iki buçuk yumuşak salınım, her biri bir öncekinden küçük
+ *   1,56 sn  marka adı aşağıdan yükselir, ardından slogan belirir
  *   2,60 sn  kısa bekleyiş → katman eriyerek uygulamayı açar
+ *
+ * DOĞALLIK KURALLARI (2026-11-14, kullanıcı: "el sıkışma doğal olsun", "etrafındaki gri alanı kaldır"):
+ *   • Logonun arkasında daire/hale YOK; zemin düz. Yeniden ekleme.
+ *   • Sallanma köşeli değil: sönümlü sinüs 40 noktadan örneklenir (üç-dört anahtar kareyle doğrusal
+ *     gidip gelme "titreme" gibi görünüyordu).
+ *   • Dönme ve sıkma, kutunun ortası değil ELLERİN TUTUŞ NOKTASI etrafındadır (GRIP); yoksa eller halkanın
+ *     merkezine bağlı bir sarkaç gibi yana savruluyordu.
+ *   • El parçaları özgün logoyla birebir örtüşür (scripts/splash-hand-parts.py) → son karedeki geçiş görünmez.
  *
  * NEDEN TEK ZAMAN ÇİZELGESİ: bütün hareket tek bir değerin (0→1) doğrusal ilerleyişinden `interpolate` ile
  * türetilir ve yerel (native) sürücüde çalışır; başladıktan sonra JS ne kadar meşgul olursa olsun akar.
@@ -102,39 +111,42 @@ function idleDot(idle: Animated.Value, k: number) {
 const at = (ms: number) => ms / TIMELINE_MS;
 const outCubic = (t: number) => 1 - Math.pow(1 - t, 3);
 const inOutSine = (t: number) => -(Math.cos(Math.PI * t) - 1) / 2;
+const REACH = 0.8; // geliş süresinin bu kadarı uzanma, kalanı bastırıp geri oturma
+/**
+ * Elin uzanışı: yavaş başlar, hızlanır, tutuşa yaklaşırken yavaşlar (gerçek bir uzanma gibi — baştan en hızlı
+ * başlayan eğride eller ekranda "birden beliriyordu"); tutuşta karşı ele ≈ %3,5 bastırıp geri oturur.
+ */
+const reachShape = (t: number) => t < REACH ? inOutSine(t / REACH) : 1 + 0.035 * Math.sin(Math.PI * (t - REACH) / (1 - REACH));
 
-/** Zaman çizelgesindeki [başlangıç, bitiş] (ms) aralığını, yumuşatma eğrisi örneklenmiş 0→1 ilerlemeye çevirir. */
-function track(master: Animated.Value, startMs: number, endMs: number, ease: (t: number) => number = (t) => t) {
-  const steps = 12;
+/**
+ * Zaman çizelgesindeki [başlangıç, bitiş] (ms) aralığında `shape(0…1)` eğrisini örnekler. Aralığın dışında eğrinin
+ * uç değerleri geçerlidir. Örnek sayısı eğrinin kıvrımına göre seçilir (salınım için sık, düz geçiş için seyrek).
+ */
+function track(master: Animated.Value, startMs: number, endMs: number, shape: (t: number) => number = (t) => t, steps = 12) {
   const inputRange: number[] = [];
   const outputRange: number[] = [];
   for (let i = 0; i <= steps; i += 1) {
     inputRange.push(at(startMs + ((endMs - startMs) * i) / steps));
-    outputRange.push(ease(i / steps));
+    outputRange.push(shape(i / steps));
   }
   return master.interpolate({ inputRange, outputRange, extrapolate: "clamp" });
 }
 
+const bump = (t: number) => Math.sin(Math.PI * t); // 0 → 1 → 0, yumuşak tek tepe
+const PUMPS = 2.5; // el sıkışmadaki salınım sayısı
+/** El sıkışma: önce aşağı, sonra yukarı; genliği yumuşakça sönen sinüs (−1…1). */
+const pumpShape = (t: number) => -Math.sin(2 * Math.PI * PUMPS * t) * Math.pow(1 - t, 1.5);
+
 function buildTracks(master: Animated.Value) {
   return {
-    // Halkanın açılıştaki tek "nefesi": 0 → 1 → 0 (büyüyüp oturur).
-    breath: master.interpolate({ inputRange: [0, at(110), at(240), at(360), at(480)], outputRange: [0, 0.55, 1, 0.45, 0], extrapolate: "clamp" }),
-    // Arkadaki ışık halesi: belirir ve sonuna kadar durur (son karedeki logo zemini haleyle AYNI renkte olmalı).
-    halo: track(master, 0, 560, outCubic),
-    hands: track(master, 420, 1420, outCubic), // 0: eller dışarıda → 1: birleşti
-    // Birleşme anındaki sıkma: hızlı çık, geri esneyip otur.
-    squeeze: master.interpolate({ inputRange: [at(1420), at(1540), at(1670), at(1780), at(1880)], outputRange: [0, 1, -0.22, 0.08, 0], extrapolate: "clamp" }),
-    // El sıkışma sallanması: üç salınım, her biri bir öncekinden küçük (−1…1 arası; genlik stilde çarpılır).
-    shake: master.interpolate({
-      inputRange: [at(1500), at(1600), at(1720), at(1840), at(1950), at(2050), at(2140), at(2220)],
-      outputRange: [0, -1, 0.8, -0.55, 0.36, -0.18, 0.07, 0],
-      extrapolate: "clamp"
-    }),
-    rippleA: track(master, 1420, 2150, outCubic), // dışa yayılan birinci dalga
-    rippleB: track(master, 1620, 2400, outCubic), // ikinci dalga (biraz gecikmeli)
-    word: track(master, 1800, 2280, outCubic), // marka adı
-    slogan: track(master, 2060, 2500, inOutSine), // slogan
-    exact: track(master, 2380, 2560) // özgün logoya çapraz geçiş (piksel-tam son kare)
+    breath: track(master, 0, 460, bump, 16), // halkanın açılıştaki tek nefesi
+    hands: track(master, 360, 1200, reachShape, 28), // 0: eller dışarıda → 1: birleşti (≈ 1,03 sn'de; bir an 1'i geçer: bastırma)
+    squeeze: track(master, 1020, 1330, bump, 14), // kavrama anındaki kısa sıkılaşma
+    pump: track(master, 1200, 2080, pumpShape, 44), // el sıkışma salınımı
+    ripple: track(master, 1040, 1840, outCubic), // kavrama anında yayılan tek ince dalga
+    word: track(master, 1560, 2040, outCubic), // marka adı
+    slogan: track(master, 1820, 2260, inOutSine), // slogan
+    exact: track(master, 2200, 2420) // özgün logoya çapraz geçiş (piksel-tam son kare)
   };
 }
 
@@ -157,7 +169,7 @@ export function IntroSplash({ ready, appShown = true, onMountApp }: {
   if (!dots.current) dots.current = [0, 1, 2].map((k) => idleDot(idle, k));
   const tracks = useRef<ReturnType<typeof buildTracks> | null>(null);
   if (!tracks.current) tracks.current = buildTracks(master);
-  const { breath, halo, hands, squeeze, shake, rippleA, rippleB, word, slogan, exact } = tracks.current;
+  const { breath, hands, squeeze, pump, ripple, word, slogan, exact } = tracks.current;
 
   const laidOut = useRef(false);
   const loaded = useRef(0);
@@ -222,45 +234,42 @@ export function IntroSplash({ ready, appShown = true, onMountApp }: {
   if (!visible) return null;
 
   const move = reduced ? 0 : 1; // "hareketi azalt": yer değiştirme yok, yalnız erime
-  const handOpacity = hands.interpolate({ inputRange: [0, reduced ? 1 : 0.16, 1], outputRange: [0, 1, 1] });
-  const handScale = squeeze.interpolate({ inputRange: [-1, 0, 1], outputRange: [1 - 0.08 * move, 1, 1 + 0.08 * move] });
-  const leftStyle = {
+  // Eller yolun başında (uzaktayken) belirir; yaklaşırken zaten tam görünürdür.
+  const handOpacity = hands.interpolate({ inputRange: [0, reduced ? 1 : 0.09, 1], outputRange: [0, 1, 1], extrapolate: "clamp" });
+  // Kavrama: eller bir an sıkılaşır (tutuş noktası etrafında, bkz. styles.grip).
+  const handScale = squeeze.interpolate({ inputRange: [0, 1], outputRange: [1, 1 + 0.045 * move] });
+  // Geliş: yandan ve biraz aşağıdan, tutuş noktasına doğru dönerek. `hands` sonda 1'i az geçer → eller birbirine bastırır.
+  const approach = (side: -1 | 1) => ({
     opacity: handOpacity,
     transform: [
-      { translateX: hands.interpolate({ inputRange: [0, 1], outputRange: [-LOGO * 1.05 * move, 0] }) },
-      { translateY: hands.interpolate({ inputRange: [0, 0.6, 1], outputRange: [LOGO * 0.16 * move, LOGO * 0.03 * move, 0] }) },
-      { rotate: hands.interpolate({ inputRange: [0, 1], outputRange: [`${-20 * move}deg`, "0deg"] }) },
+      { translateX: hands.interpolate({ inputRange: [0, 1], outputRange: [side * LOGO * 0.92 * move, 0] }) },
+      { translateY: hands.interpolate({ inputRange: [0, 0.55, 1], outputRange: [LOGO * 0.13 * move, LOGO * 0.035 * move, 0], extrapolateRight: "clamp" }) },
+      { rotate: hands.interpolate({ inputRange: [0, 1], outputRange: [`${side * 17 * move}deg`, "0deg"] }) },
       { scale: handScale }
     ]
-  };
-  const rightStyle = {
-    opacity: handOpacity,
+  });
+  const leftStyle = approach(-1);
+  const rightStyle = approach(1);
+
+  // El sıkışma: birleşen eller birlikte, tutuş noktası etrafında küçük dikey hareket + hafif dönüş.
+  const pumpStyle = {
     transform: [
-      { translateX: hands.interpolate({ inputRange: [0, 1], outputRange: [LOGO * 1.05 * move, 0] }) },
-      { translateY: hands.interpolate({ inputRange: [0, 0.6, 1], outputRange: [LOGO * 0.16 * move, LOGO * 0.03 * move, 0] }) },
-      { rotate: hands.interpolate({ inputRange: [0, 1], outputRange: [`${20 * move}deg`, "0deg"] }) },
-      { scale: handScale }
+      { translateY: pump.interpolate({ inputRange: [-1, 1], outputRange: [-9 * move, 9 * move] }) },
+      { rotate: pump.interpolate({ inputRange: [-1, 1], outputRange: [`${-2.8 * move}deg`, `${2.8 * move}deg`] }) }
     ]
   };
 
-  // Sallanma: birleşen eller birlikte, küçük dikey hareket + hafif dönüşle (el sıkışma hissi).
-  const shakeStyle = {
-    transform: [
-      { translateY: shake.interpolate({ inputRange: [-1, 1], outputRange: [-9 * move, 9 * move] }) },
-      { rotate: shake.interpolate({ inputRange: [-1, 1], outputRange: [`${-3.2 * move}deg`, `${3.2 * move}deg`] }) }
-    ]
-  };
-
+  // Halka: açılışta bir nefes, kavrama anında çok hafif bir karşılık.
   const ringStyle = {
     transform: [
-      { scale: breath.interpolate({ inputRange: [0, 1], outputRange: [1, 1 + 0.06 * move] }) },
-      { scale: squeeze.interpolate({ inputRange: [-1, 0, 1], outputRange: [1 - 0.03 * move, 1, 1 + 0.03 * move] }) }
+      { scale: breath.interpolate({ inputRange: [0, 1], outputRange: [1, 1 + 0.045 * move] }) },
+      { scale: squeeze.interpolate({ inputRange: [0, 1], outputRange: [1, 1 + 0.018 * move] }) }
     ]
   };
-  const rippleStyle = (progress: Animated.AnimatedInterpolation<number>, peak: number) => ({
-    opacity: progress.interpolate({ inputRange: [0, 0.12, 1], outputRange: [0, peak, 0] }),
-    transform: [{ scale: progress.interpolate({ inputRange: [0, 1], outputRange: [0.9, reduced ? 0.9 : 1.62] }) }]
-  });
+  const rippleStyle = {
+    opacity: ripple.interpolate({ inputRange: [0, 0.14, 1], outputRange: [0, reduced ? 0 : 0.26, 0] }),
+    transform: [{ scale: ripple.interpolate({ inputRange: [0, 1], outputRange: [0.94, 1.5] }) }]
+  };
 
   return (
     <Animated.View
@@ -274,22 +283,16 @@ export function IntroSplash({ ready, appShown = true, onMountApp }: {
       }]}
     >
       <View style={styles.logoBox}>
-        {/* Arkadaki yumuşak ışık halesi: logoyu zeminden ayırır, açılışın ilk anında bile hareket vardır. */}
-        <Animated.View pointerEvents="none" style={[styles.halo, {
-          opacity: halo,
-          transform: [{ scale: halo.interpolate({ inputRange: [0, 1], outputRange: [reduced ? 1 : 0.72, 1] }) }]
-        }]} />
-        {/* Buluşma anında dışa yayılan iki ince dalga */}
-        <Animated.View pointerEvents="none" style={[styles.ripple, rippleStyle(rippleA, 0.42)]} />
-        <Animated.View pointerEvents="none" style={[styles.ripple, styles.rippleThin, rippleStyle(rippleB, 0.3)]} />
+        {/* Kavrama anında dışa yayılan tek ince dalga (logonun arkasında başka hiçbir şekil yok). */}
+        <Animated.View pointerEvents="none" style={[styles.ripple, rippleStyle]} />
         <Animated.View style={[StyleSheet.absoluteFill, ringStyle]}>
           <Image source={RING} style={styles.fill} contentFit="contain" transition={0} priority="high" onLoad={onPartLoad} onError={onPartLoad} />
         </Animated.View>
-        <Animated.View style={[StyleSheet.absoluteFill, shakeStyle]}>
-          <Animated.View style={[StyleSheet.absoluteFill, leftStyle]}>
+        <Animated.View style={[StyleSheet.absoluteFill, styles.grip, pumpStyle]}>
+          <Animated.View style={[StyleSheet.absoluteFill, styles.grip, leftStyle]}>
             <Image source={HAND_LEFT} style={styles.fill} contentFit="contain" transition={0} priority="high" onLoad={onPartLoad} onError={onPartLoad} />
           </Animated.View>
-          <Animated.View style={[StyleSheet.absoluteFill, rightStyle]}>
+          <Animated.View style={[StyleSheet.absoluteFill, styles.grip, rightStyle]}>
             <Image source={HAND_RIGHT} style={styles.fill} contentFit="contain" transition={0} priority="high" onLoad={onPartLoad} onError={onPartLoad} />
           </Animated.View>
         </Animated.View>
@@ -338,19 +341,14 @@ async function playChime() {
   }
 }
 
-const HALO = LOGO * 1.62;
-
 const styles = StyleSheet.create({
   root: { alignItems: "center", backgroundColor: BACKGROUND, justifyContent: "center", zIndex: 10000 },
   logoBox: { height: LOGO, width: LOGO },
   fill: { height: "100%", width: "100%" },
-  // Hale: zeminden bir ton açık, yumuşak kenarlı daire (logonun arkasında, ortalanmış).
-  halo: {
-    backgroundColor: "#F4F8FF", borderColor: "#FFFFFF", borderRadius: HALO, borderWidth: 7, height: HALO, width: HALO,
-    left: (LOGO - HALO) / 2, position: "absolute", top: (LOGO - HALO) / 2
-  },
-  ripple: { borderColor: "#0645C9", borderRadius: LOGO, borderWidth: 3, height: LOGO, left: 0, position: "absolute", top: 0, width: LOGO },
-  rippleThin: { borderWidth: 2 },
+  // Ellerin TUTUŞ NOKTASI (parça görsellerinde ellerin ortası: yatay %49, dikey %82). Dönme ve ölçek buradan
+  // yapılır; kutunun ortasından yapılınca eller halkanın merkezine bağlı sarkaç gibi yana savruluyordu.
+  grip: { transformOrigin: "49% 82%" },
+  ripple: { borderColor: "#0645C9", borderRadius: LOGO, borderWidth: 2, height: LOGO, left: 0, position: "absolute", top: 0, width: LOGO },
   // Logo tam ortada kalsın diye marka adı akışın dışında, logonun hemen altında konumlanır.
   wordWrap: { alignItems: "center", left: 0, position: "absolute", right: 0, top: "50%", marginTop: LOGO / 2 + 26 },
   word: { fontSize: 36, fontWeight: "900", letterSpacing: -0.5 },
