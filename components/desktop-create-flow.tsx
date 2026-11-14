@@ -1028,6 +1028,30 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
           </Text>
         </View>
 
+        {/* NEREDE YAYINLANDI — ilanın düştüğü yerler tek tek ve dokunulabilir: kategori (tam yol), Keşfet, mağaza.
+            Eskiden "yayında" deniyor ama nerede göründüğü söylenmiyordu; satıcı ilanını arayıp bulamayınca
+            yanlış kategoriye düştüğünü sanıyordu. */}
+        <View testID="publish-placement" style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 8, padding: 16 }}>
+          <Text style={{ color: colors.ink, fontSize: 15, fontWeight: "900" }}>
+            {translateCopy(published.review ? "Onaylanınca nerede yayınlanacak" : "İlanın nerede görünüyor", language)}
+          </Text>
+          {([
+            { icon: "shape-outline", title: path.length ? path.map((n) => n.label).join(" › ") : l.category, note: translateCopy("Kategori sayfası", language), href: path.length ? `/kategori/${path[path.length - 1].slug}` : undefined },
+            { icon: "compass-outline", title: translateCopy("Ana sayfa ve Keşfet", language), note: translateCopy("Yeni ilanlar arasında, arama sonuçlarında", language), href: "/explore" },
+            { icon: "storefront-outline", title: translateCopy("Mağazan", language), note: translateCopy("En başta; sırayı İlanlarım › Mağaza Sırası ile değiştirebilirsin", language), href: `/store/${l.ownerId}` }
+          ] as { icon: "shape-outline" | "compass-outline" | "storefront-outline"; title: string; note: string; href?: string }[]).map((place) => (
+            <Pressable key={place.icon} accessibilityRole={place.href && !published.review ? "link" : undefined} disabled={!place.href || published.review} onPress={() => place.href && router.push(place.href as never)}
+              style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 10, opacity: pressed ? 0.8 : 1, paddingHorizontal: 12, paddingVertical: 10 })}>
+              <MaterialCommunityIcons name={place.icon} size={19} color={colors.primaryDark} />
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <Text numberOfLines={2} style={{ color: colors.ink, fontSize: 13, fontWeight: "800" }}>{place.title}</Text>
+                <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600" }}>{place.note}</Text>
+              </View>
+              {place.href && !published.review ? <MaterialCommunityIcons name="chevron-right" size={18} color={colors.muted} /> : null}
+            </Pressable>
+          ))}
+        </View>
+
         {/* GERÇEK İLAN LİNKİ — eskiden yayından sonra kullanıcıya hiçbir link verilmiyordu. */}
         <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 10, padding: 16 }}>
           <Text style={{ color: colors.ink, fontSize: 15, fontWeight: "900" }}>{translateCopy("İlan linkin", language)}</Text>

@@ -1,4 +1,5 @@
 import { HorizontalScroll } from "@/components/horizontal-scroll";
+import { listingCategoryTrail } from "@/lib/mobile-catalog";
 import { CompactFooter } from "@/components/compact-footer";
 import { displayListingTitle } from "@/lib/listing-title";
 import { isMobileApp } from "@/lib/mobile-app";
@@ -84,6 +85,7 @@ function SellerScreenInner() {
     createSaleFromLead,
     recordSaleForPartner,
     currentUser,
+    categoryTree,
     findUser,
     leads,
     listings,
@@ -827,8 +829,13 @@ function SellerScreenInner() {
                   </Text>
                   <StatusPill label={listing.status === "active" ? (listing.stockCount <= 0 ? "Tükendi" : "Aktif") : listing.status === "pending_review" ? "İncelemede" : listing.status === "paused" ? "Pasif" : listing.status === "sold" ? "Satıldı" : listing.status === "draft" ? "Taslak" : listing.status} tone={listing.status === "active" ? (listing.stockCount <= 0 ? "danger" : "success") : listing.status === "pending_review" ? "info" : listing.status === "paused" || listing.status === "sold" ? "neutral" : "warning"} />
                 </View>
-                <Text selectable numberOfLines={1} style={{ color: colors.muted, fontSize: 12, fontWeight: "700" }}>
-                  {translateCopy(displayText(listing.category), language)} · {displayText(listing.location)}
+                {/* YAYIN YERİ: tam kategori yolu (yalnız yaprak adı "Bosch" gibi tek başına anlamsızdı) + alıcıya
+                    görünürlük durumu — uygulamadaki İlanlarım kartıyla aynı bilgi. */}
+                <Text selectable numberOfLines={2} style={{ color: colors.muted, fontSize: 12, fontWeight: "700" }}>
+                  {(() => { const trail = listingCategoryTrail(categoryTree, listing); return trail.length ? trail.map((n) => n.label).join(" › ") : translateCopy(displayText(listing.category), language); })()} · {displayText(listing.location)}
+                </Text>
+                <Text style={{ color: listing.status === "active" ? colors.primaryDark : colors.muted, fontSize: 11.5, fontWeight: "600" }}>
+                  {translateCopy(listing.status === "active" ? "Ana sayfa, Keşfet, arama ve bu kategoride görünüyor." : listing.status === "pending_review" ? "İncelemede — onaylanınca bu kategoride yayınlanır." : "Yayında değil — alıcılara görünmüyor.", language)}
                 </Text>
                 {/* Harici ürün kodu (SKU) — toplu yüklemede eşleştirme anahtarı; kataloğunu
                     kod ile takip eden satıcı için görünür (yalnız kodu olan ilanlarda). */}

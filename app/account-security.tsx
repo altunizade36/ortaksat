@@ -17,6 +17,12 @@ import { Alert } from "@/lib/alert";
 // Mobil web (iOS Safari) 16px altı input'a odaklanınca sayfayı yakınlaştırır → web'de 16px.
 const inputFont = Platform.OS === "web" ? { fontSize: 16 } : null;
 
+/** Giriş sağlayıcılarının okunur adı ("google" → "Google"); bilinmeyen sağlayıcı "giriş sağlayıcın" diye geçer. */
+function providerLabel(providers: string[]): string {
+  const names = providers.filter(p => p !== "email").map(p => p === "google" ? "Google" : p === "apple" ? "Apple" : "").filter(Boolean);
+  return names.length ? [...new Set(names)].join(" / ") : "Giriş sağlayıcın";
+}
+
 export default function AccountSecurity() {
   const store = useStore();
   if (!store.authReady || store.isAuthenticated && !store.accountLoaded) return <ScreenSkeleton/>;
@@ -25,7 +31,7 @@ export default function AccountSecurity() {
 }
 function Security() {
   const store = useStore(), router = useRouter(), account = store.currentUser.id;
-  const [email, setEmail] = useState(""), [pendingEmail, setPendingEmail] = useState(""), [passwordIdentity, setPasswordIdentity] = useState(false), [nextEmail, setNextEmail] = useState(""), [current, setCurrent] = useState(""), [password, setPassword] = useState(""), [repeat, setRepeat] = useState(""), [busy, setBusy] = useState(false), [error, setError] = useState(""), [message, setMessage] = useState(""), [history, setHistory] = useState<LoginEvent[]>([]), [historyError, setHistoryError] = useState(false), [loading, setLoading] = useState(true), [retry, setRetry] = useState(0);
+  const [email, setEmail] = useState(""), [pendingEmail, setPendingEmail] = useState(""), [passwordIdentity, setPasswordIdentity] = useState(false), [providers, setProviders] = useState<string[] | null>(null), [nextEmail, setNextEmail] = useState(""), [current, setCurrent] = useState(""), [password, setPassword] = useState(""), [repeat, setRepeat] = useState(""), [busy, setBusy] = useState(false), [error, setError] = useState(""), [message, setMessage] = useState(""), [history, setHistory] = useState<LoginEvent[]>([]), [historyError, setHistoryError] = useState(false), [loading, setLoading] = useState(true), [retry, setRetry] = useState(0);
   const lock = useRef(false);
   // Masaüstü web: site başlığı görünsün, telefon alt-gezinmesi çıkmasın (TrustPage ile aynı desen).
   const wide = useIsWideWeb();
@@ -34,7 +40,7 @@ function Security() {
     let alive = true; setLoading(true); setHistoryError(false); setError("");
     // Supabase yapılandırılmamışsa (ön izleme) `supabase!` çökmesin: dürüst hata göster.
     if (!supabase) { setError("Hesap bilgileri yüklenemedi."); setLoading(false); return () => { alive = false; }; }
-    void supabase.auth.getUser().then(({ data, error }) => { if (!alive) return; if (error || !data.user || data.user.id !== account) { setError("Hesap bilgileri doğrulanamadı. Tekrar yükle."); return; } setEmail(data.user.email || ""); setPendingEmail(data.user.new_email || ""); setPasswordIdentity(!!data.user.identities?.some(i => i.provider === "email")); }).catch(() => { if (alive) setError("Hesap bilgileri yüklenemedi."); });
+    void supabase.auth.getUser().then(({ data, error }) => { if (!alive) return; if (error || !data.user || data.user.id !== account) { setError("Hesap bilgileri doğrulanamadı. Tekrar yükle."); return; } setEmail(data.user.email || ""); setPendingEmail(data.user.new_email || ""); setPasswordIdentity(!!data.user.identities?.some(i => i.provider === "email")); setProviders((data.user.identities ?? []).map(i => i.provider)); }).catch(() => { if (alive) setError("Hesap bilgileri yüklenemedi."); });
     void fetchLoginHistory(account, 30, true).then(rows => { if (alive) setHistory(rows); }).catch(() => { if (alive) setHistoryError(true); }).finally(() => { if (alive) setLoading(false); });
     return () => { alive = false; };
   }, [account, retry]));
@@ -62,9 +68,18 @@ function Security() {
     {/* Tablet/masaüstünde form kenardan kenara gerilmesin: okunur genişlikte ortala. */}
     <View style={{ alignSelf: "center", maxWidth: 760, width: "100%" }}>
     <MobileCard><Text style={ms.section}>E-posta Adresin</Text><Text selectable style={ms.muted}>{email || "Yüklenemedi"}</Text>{pendingEmail ? <Text selectable style={{ color: mobile.teal, fontSize: 12, lineHeight: 18 }}>Doğrulama bekleyen adres: {pendingEmail}</Text> : null}<MobileButton secondary disabled={busy} onPress={() => setRetry(v => v + 1)}>Hesap Bilgilerini Yenile</MobileButton></MobileCard>
-    <MobileCard><Text style={ms.section}>Mevcut Şifreyle Doğrula</Text><Text style={ms.muted}>{passwordIdentity ? "Şifre ve e-posta değişikliği öncesinde mevcut şifren doğrulanır." : "Google gibi bir sağlayıcıyla giriş yaptıysan sağlayıcının güvenlik ayarlarından şifreni yönetebilirsin."}</Text>{passwordField("Mevcut Şifre", current, setCurrent)}</MobileCard>
+    {/* ŞİFRESİZ HESAP (yalnız Google/Apple ile giriş): eskiden üç form da çiziliyor, "Şifreyi Güncelle" hep pasif
+        duruyordu — kullanıcı çalışmayan alanları dolduruyordu. Bu hesaplarda şifre ve e-posta giriş sağlayıcısında
+        yönetilir; onun yerine tek açıklama kartı gösterilir. */}
+    {providers !== null && !passwordIdentity ? <MobileCard style={{ backgroundColor: mobile.tealSoft }}>
+      <Text style={ms.section}>Giriş Yöntemin: {providerLabel(providers)}</Text>
+      <Text style={ms.muted}>Bu hesapta OrtakSat şifresi yok; {providerLabel(providers)} hesabınla giriş yapıyorsun. Şifren, iki adımlı doğrulaman ve e-posta adresin o hesabın güvenlik ayarlarından yönetilir. Tanımadığın bir giriş görürsen aşağıdan tüm cihazlardan çıkış yap.</Text>
+    </MobileCard> : null}
+    {passwordIdentity ? <>
+    <MobileCard><Text style={ms.section}>Mevcut Şifreyle Doğrula</Text><Text style={ms.muted}>Şifre ve e-posta değişikliği öncesinde mevcut şifren doğrulanır.</Text>{passwordField("Mevcut Şifre", current, setCurrent)}</MobileCard>
     <MobileCard><Text style={ms.section}>Şifreni Değiştir</Text>{passwordField("Yeni Şifre", password, setPassword, true)}<PasswordStrengthMeter password={password}/>{passwordField("Yeni Şifre Tekrar", repeat, setRepeat, true)}<MobileButton disabled={busy || !passwordIdentity} onPress={() => void savePassword()}>{busy ? "İşlem Sürüyor…" : "Şifreyi Güncelle"}</MobileButton></MobileCard>
     <MobileCard><Text style={ms.section}>E-posta Adresini Değiştir</Text><View style={{ gap: 6 }}><Text style={ms.label}>Yeni E-posta</Text><TextInput accessibilityLabel="Yeni E-posta" value={nextEmail} onChangeText={setNextEmail} keyboardType="email-address" inputMode="email" autoCapitalize="none" autoCorrect={false} autoComplete="email" maxLength={254} style={[ms.input, inputFont]}/></View><Text style={ms.muted}>Doğrulama tamamlanmadan adres değişmiş olarak gösterilmez. E-posta adresin herkese açık profilinde yayınlanmaz.</Text><MobileButton secondary disabled={busy || !email} onPress={() => Alert.alert("E-posta Değişikliği", "Yeni adres için doğrulama işlemi başlatılsın mı?", [{ text: "Vazgeç", style: "cancel" }, { text: "Başlat", onPress: () => void saveEmail() }])}>E-posta Değişikliğini Başlat</MobileButton></MobileCard>
+    </> : null}
     {error ? <MobileCard><Text accessibilityRole="alert" style={ms.error}>{error}</Text></MobileCard> : null}{message ? <MobileCard><Text accessibilityRole="alert" style={{ color: mobile.teal, fontSize: 13, lineHeight: 19 }}>{message}</Text></MobileCard> : null}
     <MobileCard><Text style={ms.section}>Giriş Geçmişin</Text><Text style={ms.muted}>Son 30 giriş ve hesap olayı. Bu liste aktif cihaz oturumlarının listesi değildir.</Text>{loading && <Text style={ms.muted}>Yükleniyor…</Text>}{historyError ? <><Text style={ms.error}>Giriş geçmişi yüklenemedi.</Text><MobileButton secondary onPress={() => setRetry(v => v + 1)}>Geçmişi Tekrar Yükle</MobileButton></> : history.map(event => <View key={event.id} style={{ gap: 4, borderBottomWidth: 1, borderColor: mobile.line, paddingVertical: 10 }}><Text style={ms.label}>{actionLabel(event.action)}</Text><Text style={ms.muted}>{event.browser} · {event.os}</Text><Text style={ms.muted}>{new Date(event.when).toLocaleString("tr-TR")}</Text></View>)}{!loading && !historyError && !history.length && <Text style={ms.muted}>Kaydedilmiş giriş olayı bulunmuyor.</Text>}</MobileCard>
     <View style={{ gap: 12, marginVertical: 14 }}><MobileButton secondary disabled={busy} onPress={() => Alert.alert("Tüm Cihazlardan Çıkış", "Bu cihaz dahil tüm hesap oturumlarını kapatma işlemi başlatılsın mı? Bazı mevcut erişimlerin kapanması süre alabilir.", [{ text: "Vazgeç", style: "cancel" }, { text: "Çıkış Yap", onPress: () => void run(async () => { if (!await store.signOutAllDevices()) throw Error("Tüm oturumlar kapatılamadı. Tekrar dene."); allowLeave(); router.replace("/auth"); }) }])}>Tüm Cihazlardan Çıkış Yap</MobileButton><MobileButton secondary onPress={() => router.push("/engellenenler")}>Engellediğim Kullanıcılar</MobileButton><MobileButton secondary icon="trash-can-outline" onPress={() => router.push("/hesap-silme" as never)}>Hesabımı Sil</MobileButton></View>
