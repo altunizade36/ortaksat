@@ -1620,7 +1620,7 @@ function AdminScreenInner() {
 
 // Şikayet henüz işlem bekliyor mu (açık/incelemede).
 // Kullanıcılar tablosu sütun oranları (başlık ve satırlar aynı diziyi kullanır).
-const USER_COLS = [1.9, 1.1, 1.1, 1.35, 0.7, 0.8, 2.6];
+const USER_COLS = [1.8, 1.05, 1.05, 1.6, 0.7, 0.8, 2.55];
 
 function isOpenReport(r: { status: string }) {
   return r.status === "open" || r.status === "reviewing";
