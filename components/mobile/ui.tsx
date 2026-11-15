@@ -62,10 +62,11 @@ export function MobileScreen({ children, title, right, bottom, scroll = true, ba
   // İÇERİK YÜKSEKLİĞİ: web'de içerik ekranı doldurur (alt bilgi en alta itilsin). Uygulamada alt bilgi yok ve
   // doldurma, "flex: 1" taşıyan kutuları (MobileField, MobileSelect…) kısa sayfalarda dev boş alana çeviriyordu
   // (Engellenen Kullanıcılar, Piyasa Fiyat Analizi, Alıcı Bulma Merkezi) → uygulamada içerik kendi boyunda kalır.
+  // Web'de içerik büyümeyen bir kutuya sarılır: boş alan yalnız alt bilginin üst boşluğuna gider, kutulara değil.
   return <KeyboardAvoidingView behavior={keyboardBehavior ?? (Platform.OS === "web" ? undefined : "padding")} style={ms.screen}>
     <Stack.Screen options={{ headerShown }} />
     {title ? <View style={{ paddingTop: insets.top, backgroundColor: mobile.canvas }}><MobileHeader title={title} right={right} back={back} onBack={onBack} /></View> : null}
-    {scroll ? <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} refreshControl={refreshControl} scrollEventThrottle={onEndReached ? 120 : undefined} onScroll={onEndReached ? (event) => { const n = event.nativeEvent; if (n.contentOffset.y + n.layoutMeasurement.height > n.contentSize.height - 600) onEndReached(); } : undefined} contentContainerStyle={[{ flexGrow: Platform.OS === "web" ? 1 : 0, width: "100%", maxWidth, alignSelf: "center", paddingHorizontal: 16, paddingBottom: 0, paddingTop: title ? 4 : insets.top }, contentStyle]}>{children}{footer ?? <CompactFooter />}</ScrollView> : <View style={[{ flex: 1, width: "100%", maxWidth, alignSelf: "center" }, contentStyle]}>{children}</View>}
+    {scroll ? <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} refreshControl={refreshControl} scrollEventThrottle={onEndReached ? 120 : undefined} onScroll={onEndReached ? (event) => { const n = event.nativeEvent; if (n.contentOffset.y + n.layoutMeasurement.height > n.contentSize.height - 600) onEndReached(); } : undefined} contentContainerStyle={[{ flexGrow: Platform.OS === "web" ? 1 : 0, width: "100%", maxWidth, alignSelf: "center", paddingHorizontal: 16, paddingBottom: 0, paddingTop: title ? 4 : insets.top }, contentStyle]}>{Platform.OS === "web" ? <View>{children}</View> : children}{footer ?? <CompactFooter />}</ScrollView> : <View style={[{ flex: 1, width: "100%", maxWidth, alignSelf: "center" }, contentStyle]}>{children}</View>}
     {bottom}
   </KeyboardAvoidingView>;
 }
