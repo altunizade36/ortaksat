@@ -93,7 +93,7 @@ function Inner() {
 
         {/* Kategori filtresi (yalnız feed) */}
         {mode === "feed" ? (
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 7, paddingVertical: 2 }} style={{ marginBottom: 12 }}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 7, paddingVertical: 2 }} style={{ flexGrow: 0, marginBottom: 12 }}>
             <Chip tone="primary" active={category === null} label={t("Tümü")} onPress={() => setCategory(null)} />
             {TOP_CATEGORIES.map((c) => <Chip key={c} tone="primary" active={category === c} label={t(categoryChipLabel(c))} onPress={() => setCategory(category === c ? null : c)} />)}
           </ScrollView>
@@ -159,7 +159,7 @@ function CreateForm({ onDone, onCancel }: { onDone: () => void; onCancel: () => 
       <Field label={t("Açıklama")} value={desc} onChangeText={setDesc} placeholder={t("Ne satılacak, ortaktan beklentin ne? (opsiyonel)")} multiline />
       <View>
         <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "800", marginBottom: 6 }}>{t("Kategori")}</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 7 }}>
+        <ScrollView style={{ flexGrow: 0 }} horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 7 }}>
           {TOP_CATEGORIES.map((c) => <Chip key={c} tone="primary" active={cat === c} label={t(categoryChipLabel(c))} onPress={() => setCat(cat === c ? null : c)} />)}
         </ScrollView>
       </View>

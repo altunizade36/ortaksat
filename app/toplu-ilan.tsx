@@ -1067,7 +1067,7 @@ function BulkUploadInner() {
                 </View>
               ) : null}
             </View>
-            <ScrollView horizontal showsHorizontalScrollIndicator style={{ maxWidth: "100%" }}>
+            <ScrollView horizontal showsHorizontalScrollIndicator style={{ flexGrow: 0, maxWidth: "100%" }}>
               <View style={{ gap: 6, minWidth: 812 }}>
                 <View style={{ flexDirection: "row", gap: 8, paddingBottom: 6 }}>
                   {[["#", 26], [translateCopy("Durum", language), 58], [translateCopy("İşlem", language), 78], [translateCopy("SKU", language), 96], [translateCopy("Başlık", language), 190], [translateCopy("Fiyat", language), 84], [translateCopy("Kategori", language), 130], [translateCopy("İl", language), 78], ["%", 40]].map(([h, w], i) => (

@@ -545,7 +545,7 @@ function Renewal() {
         Yeniden yayınlamadan önce güncel fiyat, stok, fotoğraf ve ortaklık
         koşullarını kontrol et. Eksik bilgisi olan ilanlar önce düzenlenmelidir.
       </Text>
-      <ScrollView
+      <ScrollView style={{ flexGrow: 0 }}
         horizontal
         contentContainerStyle={{ gap: 7, marginBottom: 16 }}
       >
@@ -687,7 +687,7 @@ function SafetyGuide() {
           ];
   return (
     <>
-      <ScrollView
+      <ScrollView style={{ flexGrow: 0 }}
         horizontal
         contentContainerStyle={{ gap: 7, paddingVertical: 15 }}
       >

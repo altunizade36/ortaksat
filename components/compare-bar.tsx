@@ -131,7 +131,7 @@ export function CompareBar() {
               </Pressable>
             </View>
             <ScrollView>
-              <ScrollView horizontal contentContainerStyle={{ padding: 16 }}>
+              <ScrollView style={{ flexGrow: 0 }} horizontal contentContainerStyle={{ padding: 16 }}>
                 <View style={{ gap: 0 }}>
                   {/* Ürün başlıkları */}
                   <View style={{ flexDirection: "row" }}>

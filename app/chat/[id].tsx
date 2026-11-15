@@ -368,7 +368,7 @@ function ChatScreenInner() {
       {!blockedHere && !blockedByOther && currentConversation.status === "open" && conversationMessages.length === 0 && !body.trim() ? (
         <View testID="chat-starters" style={{ backgroundColor: colors.surface, borderTopColor: colors.line, borderTopWidth: 1, gap: 6, paddingTop: 9 }}>
           <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "700", paddingHorizontal: 12 }}>{translateCopy("Mesajını yaz ya da bir öneriye dokun; kutuya yazılır, göndermek sana kalır.", language)}</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={{ gap: 6, paddingHorizontal: 10, paddingBottom: 2 }}>
+          <ScrollView style={{ flexGrow: 0 }} horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={{ gap: 6, paddingHorizontal: 10, paddingBottom: 2 }}>
             {chatStarters(partnerChat ? "partner" : listing && listing.ownerId === currentUser.id ? "seller" : "buyer").map((starter) => (
               <Pressable key={starter} accessibilityRole="button" accessibilityLabel={`${translateCopy("Kutuya yaz", language)}: ${translateCopy(starter, language)}`} onPress={() => setBody(translateCopy(starter, language))} style={{ backgroundColor: colors.primarySoft, borderColor: colors.primary, borderRadius: 999, borderWidth: 1, justifyContent: "center", minHeight: 36, paddingHorizontal: 13 }}>
                 <Text style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "800" }}>{translateCopy(starter, language)}</Text>
@@ -381,7 +381,7 @@ function ChatScreenInner() {
       {/* Hızlı yanıt önerileri — kutu boşken ve odak yokken. Odaklanınca gizlenir ki
           yazmaya başlayınca ekran "zıplamasın" (kayma tek seferde klavye açılışına biner). */}
       {!blockedHere && !blockedByOther && currentConversation.status === "open" && showReplies ? (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={{ gap: 6, paddingHorizontal: 10, paddingVertical: 8 }} style={{ backgroundColor: colors.surface, borderTopColor: colors.line, borderTopWidth: 1, maxHeight: 52 }}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={{ gap: 6, paddingHorizontal: 10, paddingVertical: 8 }} style={{ flexGrow: 0, backgroundColor: colors.surface, borderTopColor: colors.line, borderTopWidth: 1, maxHeight: 52 }}>
           <Pressable onPress={() => setBody(translateCopy("Bu ürün için ortak satış yapmak istiyorum; komisyon ve şartları konuşabilir miyiz?", language))} style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderColor: colors.primary, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 5, paddingHorizontal: 12, paddingVertical: 7 }}>
             <MaterialCommunityIcons name="handshake-outline" size={13} color={colors.primaryDark} />
             <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "800" }}>{translateCopy("Ortaklık öner", language)}</Text>

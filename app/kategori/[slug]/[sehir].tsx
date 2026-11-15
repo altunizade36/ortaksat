@@ -209,7 +209,7 @@ export default function CityCategoryScreen() {
         {isWideWeb ? (
           <View style={{ gap: 6 }}>
             <Text style={{ color: colors.subtle, fontSize: 11.5, fontWeight: "800", textTransform: "uppercase" }}>Diğer şehirlerde {node.label}</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 7, paddingRight: 12 }}>{cityLinks}</ScrollView>
+            <ScrollView style={{ flexGrow: 0 }} horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 7, paddingRight: 12 }}>{cityLinks}</ScrollView>
           </View>
         ) : null}
 
@@ -234,7 +234,7 @@ export default function CityCategoryScreen() {
         ) : (
         /* GENİŞ EKRAN: sıralama + hızlı filtre (değişmedi) */
         <View style={{ gap: 8 }}>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 7, paddingRight: 12 }}>
+          <ScrollView style={{ flexGrow: 0 }} horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 7, paddingRight: 12 }}>
             {SORT_OPTIONS.map(([k, lbl]) => {
               const on = sortMode === k;
               return (

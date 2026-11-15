@@ -160,7 +160,7 @@ function Inner() {
 
         {/* Kategori çipleri (yalnız tüm-ortaklar modunda) */}
         {!mine ? (
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 7, paddingVertical: 2 }} style={{ marginBottom: 14 }}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 7, paddingVertical: 2 }} style={{ flexGrow: 0, marginBottom: 14 }}>
             <Chip tone="primary" active={category === null} label="Tümü" onPress={() => setCategory(null)} />
             {TOP_CATEGORIES.map((c) => (
               <Chip key={c} tone="primary" active={category === c} label={categoryChipLabel(c)} onPress={() => setCategory(category === c ? null : c)} />

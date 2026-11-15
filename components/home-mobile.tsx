@@ -124,7 +124,7 @@ export function HomeMobile() {
       </View>
       {featuredPartners.length > 0 && <>
         <View style={s.sectionHeading}><Text accessibilityRole="header" style={s.sectionTitle}>{tr("Öne çıkan ortaklar")}</Text><Pressable accessibilityRole="button" onPress={() => router.push("/ortaklar" as never)} style={s.seeAll}><Text style={s.seeAllText}>{tr("Tümünü Gör")}</Text><Icon name="chevron-right" size={17} color={teal} /></Pressable></View>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingRight: 16 }} style={{ marginBottom: 6 }}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingRight: 16 }} style={{ flexGrow: 0, marginBottom: 6 }}>
           {featuredPartners.map((p) => <Pressable key={p.partnerId} accessibilityRole="button" accessibilityLabel={`${p.fullName} ortak vitrini`} onPress={() => router.push(`/ortak/${p.partnerId}` as never)} style={{ alignItems: "center", backgroundColor: "white", borderColor: mobile.line, borderRadius: 14, borderWidth: 1, gap: 5, padding: 12, width: 128 }}>
             <UserAvatar uri={p.avatarUrl} name={p.fullName} size={50} />
             <Text numberOfLines={1} style={{ color: mobile.ink, fontSize: 12.5, fontWeight: "800", maxWidth: 108 }}>{p.fullName}</Text>

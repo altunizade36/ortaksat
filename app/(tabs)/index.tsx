@@ -318,7 +318,7 @@ function DesktopHomeScreen() {
           </View>
           <CategoryShowcase categoryTree={categoryTree} listings={activeListings} isWideWeb={false} />
           <View style={{ gap: 7 }}>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingRight: 12 }}>
+            <ScrollView style={{ flexGrow: 0 }} horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingRight: 12 }}>
               {filters.map((item) => (
                 <FilterChip key={item.key} label={item.label} icon={item.icon} active={item.key === filter} onPress={() => setFilter(item.key)} />
               ))}
@@ -439,7 +439,7 @@ function DesktopHomeScreen() {
           {topEarn.length >= 3 && !advancedOpen && !hasAdvanced && filter === "all" && !query ? (
             <View testID="top-earning-listing-carousel" style={{ gap: 8 }}>
               <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>{translateCopy("En Çok Kazandıran Fırsatlar", language)}</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingRight: 12 }}>
+              <ScrollView style={{ flexGrow: 0 }} horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingRight: 12 }}>
                 {topEarn.map((l) => <ListingCard key={l.id} listing={l} owner={findUser(l.ownerId)} width={cardWidth} />)}
               </ScrollView>
             </View>
@@ -455,7 +455,7 @@ function DesktopHomeScreen() {
                   <MaterialCommunityIcons name="arrow-right" size={13} color={colors.primaryDark} />
                 </Pressable>
               </View>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingRight: 12 }}>
+              <ScrollView style={{ flexGrow: 0 }} horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingRight: 12 }}>
                 {featuredPartners.map((p) => (
                   <Pressable key={p.partnerId} accessibilityRole="button" accessibilityLabel={p.fullName} onPress={() => router.push(`/ortak/${p.partnerId}`)} style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 14, borderWidth: 1, gap: 5, padding: 12, width: 132 }}>
                     <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 999, height: 50, justifyContent: "center", overflow: "hidden", width: 50 }}>
@@ -474,7 +474,7 @@ function DesktopHomeScreen() {
           {recentListings.length >= 3 && !advancedOpen && !hasAdvanced && filter === "all" && !query ? (
             <View testID="recent-listing-carousel" style={{ gap: 8 }}>
               <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>{translateCopy("Son Gezdiklerin", language)}</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingRight: 12 }}>
+              <ScrollView style={{ flexGrow: 0 }} horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingRight: 12 }}>
                 {recentListings.map((l) => <ListingCard key={l.id} listing={l} owner={findUser(l.ownerId)} width={cardWidth} />)}
               </ScrollView>
             </View>
@@ -486,7 +486,7 @@ function DesktopHomeScreen() {
                 <MaterialCommunityIcons name="new-box" size={17} color={colors.primaryDark} />
                 <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>{translateCopy("En Yeni İlanlar", language)}</Text>
               </View>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingRight: 12 }}>
+              <ScrollView style={{ flexGrow: 0 }} horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingRight: 12 }}>
                 {newestListings.map((l) => <ListingCard key={l.id} listing={l} owner={findUser(l.ownerId)} width={cardWidth} />)}
               </ScrollView>
             </View>
@@ -767,7 +767,7 @@ function CategoryShowcase({ categoryTree, listings, isWideWeb }: { categoryTree:
           {cats.map((node, i) => <Tile key={node.key} node={node} rank={i} />)}
         </View>
       ) : (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 14, paddingRight: 12, paddingTop: 2 }}>
+        <ScrollView style={{ flexGrow: 0 }} horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 14, paddingRight: 12, paddingTop: 2 }}>
           {cats.map((node, i) => <Tile key={node.key} node={node} rank={i} />)}
         </ScrollView>
       )}

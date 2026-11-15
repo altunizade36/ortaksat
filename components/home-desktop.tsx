@@ -476,7 +476,7 @@ export function HomeDesktop() {
               </Link>
             </View>
             {/* En çok kazandıran fırsatlar */}
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12, paddingRight: 4 }}>
+            <ScrollView style={{ flexGrow: 0 }} horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12, paddingRight: 4 }}>
               {topEarn.map((l) => (
                 <Pressable key={l.id} onPress={() => router.push(`/listing/${l.id}`)} style={{ backgroundColor: colors.surface, borderRadius: 14, overflow: "hidden", width: 156 }}>
                   <View style={{ height: 92, width: "100%" }}>
@@ -510,7 +510,7 @@ export function HomeDesktop() {
                 </Pressable>
               </Link>
             </View>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12, paddingRight: 12 }}>
+            <ScrollView style={{ flexGrow: 0 }} horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12, paddingRight: 12 }}>
               {featuredPartners.map((p) => (
                 <Pressable key={p.partnerId} onPress={() => router.push(`/ortak/${p.partnerId}`)} style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 6, padding: 14, width: 150 }}>
                   <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 999, height: 56, justifyContent: "center", overflow: "hidden", width: 56 }}>
@@ -534,7 +534,7 @@ export function HomeDesktop() {
         {recentListings.length > 0 ? (
           <View style={{ gap: 10 }}>
             <Text style={{ color: colors.ink, fontSize: 17, fontWeight: "900" }}>{translateCopy("Son Gezdiklerin", language)}</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12, paddingRight: 12 }}>
+            <ScrollView style={{ flexGrow: 0 }} horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12, paddingRight: 12 }}>
               {recentListings.map((l) => (
                 <Pressable key={l.id} onPress={() => router.push(`/listing/${l.id}`)} style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 14, borderWidth: 1, overflow: "hidden", width: 150 }}>
                   <SafeRemoteImage uri={l.image} style={{ height: 96, width: "100%" }} contentFit="cover" />
@@ -551,7 +551,7 @@ export function HomeDesktop() {
         {/* Popüler kategoriler */}
         <View style={{ gap: 10 }}>
           <Text style={{ color: colors.ink, fontSize: 17, fontWeight: "900" }}>{translateCopy("Popüler Kategoriler", language)}</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingRight: 12 }}>
+          <ScrollView style={{ flexGrow: 0 }} horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingRight: 12 }}>
             {popular.map((n) => (
               <Link key={n.key} href={{ pathname: "/kategori/[slug]", params: { slug: n.key } } as unknown as Href} asChild>
                 <Pressable accessibilityRole="link" accessibilityLabel={`${translateCopy(n.label, language)} kategorisi`} style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 7, paddingHorizontal: 14, paddingVertical: 9 }}>
@@ -576,7 +576,7 @@ export function HomeDesktop() {
           </View>
           <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
             <Text style={{ color: colors.ink, fontSize: 12.5, fontWeight: "900" }}>{translateCopy("Sırala:", language)}</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 7, paddingRight: 12 }}>
+            <ScrollView style={{ flexGrow: 0 }} horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 7, paddingRight: 12 }}>
               {SORTS.map(([key, lbl]) => {
                 const on = sortMode === key;
                 return (
@@ -589,7 +589,7 @@ export function HomeDesktop() {
           </View>
           {/* Uygulanan filtreler — kaldırılabilir özet çipler (mobil ile parite) */}
           {activeFilterCount > 0 ? (
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ alignItems: "center", gap: 8, paddingRight: 12 }}>
+            <ScrollView style={{ flexGrow: 0 }} horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ alignItems: "center", gap: 8, paddingRight: 12 }}>
               {selectedNode ? <ActiveChip label={translateCopy(selectedNode.label, language)} onRemove={() => setSelectedNode(null)} /> : null}
               {pMin || pMax ? <ActiveChip label={`${pMin ? moneyIn(pMin, "TRY") : "0"}–${pMax ? moneyIn(pMax, "TRY") : "∞"}`} onRemove={() => { setPriceMin(""); setPriceMax(""); }} /> : null}
               {loc.provinceId != null ? <ActiveChip label={translateCopy("Konum", language)} onRemove={() => setLoc({})} /> : null}

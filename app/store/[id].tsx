@@ -826,7 +826,7 @@ function StoreScreenLegacy() {
         <StoreFilterChip active={filter === "partner"} icon="handshake-outline" label="Ortaklığa açık" onPress={() => setFilter("partner")} />
         <StoreFilterChip active={filter === "all"} icon="view-grid-outline" label="Tümü" onPress={() => setFilter("all")} />
       </View>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
+      <ScrollView style={{ flexGrow: 0 }} horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
         <StoreFilterChip active={storeSort === "store"} icon="storefront-outline" label="Mağaza sırası" onPress={() => setStoreSort("store")} />
                     <StoreFilterChip active={storeSort === "new"} icon="clock-outline" label="En yeni" onPress={() => setStoreSort("new")} />
         <StoreFilterChip active={storeSort === "priceAsc"} icon="sort-ascending" label="En düşük fiyat" onPress={() => setStoreSort("priceAsc")} />
@@ -1008,7 +1008,7 @@ function StoreCategoryBar({ categories, value, onChange, total, language }: { ca
     </Pressable>
   );
   return (
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={{ gap: 8, paddingVertical: 1 }}>
+    <ScrollView style={{ flexGrow: 0 }} horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={{ gap: 8, paddingVertical: 1 }}>
       <Chip label={translateCopy("Tümü", language)} count={total} on={value === "all"} onPress={() => onChange("all")} />
       {categories.map(([c, n]) => <Chip key={c} label={translateCopy(c, language)} count={n} on={value === c} onPress={() => onChange(c)} />)}
     </ScrollView>

@@ -583,7 +583,7 @@ function AdminScreenInner() {
             </Link>
           </View>
           {/* Tüm bölümler tek yatay şeritte (kaydırılır) — menüyü açmadan bölüm değiştirilir. */}
-          <ScrollView ref={tabsRef} horizontal showsHorizontalScrollIndicator={false} accessibilityRole="tablist" contentContainerStyle={{ gap: 6, paddingHorizontal: 12 }}>
+          <ScrollView style={{ flexGrow: 0 }} ref={tabsRef} horizontal showsHorizontalScrollIndicator={false} accessibilityRole="tablist" contentContainerStyle={{ gap: 6, paddingHorizontal: 12 }}>
             {NAV.map((n) => {
               const on = section === n.key;
               const badge = navBadge(n.key);

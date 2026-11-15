@@ -51,7 +51,7 @@ function RequestCentre() {
   return <MobileScreen title="Alıcı Bulma Merkezi" bottom={<MobileBottomNav/>}>
     <Text style={[ms.muted, { marginVertical: 10 }]}>Alıcıların aradığı ürünleri gör, uygun ilanını öner. Aradığın ürünü bulmak için kendi talebini oluştur.</Text>
     <MobileButton icon="plus" onPress={() => router.push("/buyer-requests?view=create" as never)}>Talep Oluştur</MobileButton>
-    <ScrollView horizontal contentContainerStyle={{ gap: 7, paddingVertical: 14 }}>{["Tüm Talepler", "Yakınımdaki", "Taleplerim"].map(label => <MobileChip key={label} label={label} selected={tab === label} onPress={() => setTab(label)}/>)}</ScrollView>
+    <ScrollView style={{ flexGrow: 0 }} horizontal contentContainerStyle={{ gap: 7, paddingVertical: 14 }}>{["Tüm Talepler", "Yakınımdaki", "Taleplerim"].map(label => <MobileChip key={label} label={label} selected={tab === label} onPress={() => setTab(label)}/>)}</ScrollView>
     <MobileField placeholder="Alıcı taleplerinde ara…" value={search} onChange={setSearch}/>
     {tab === "Yakınımdaki" && <View style={{ marginTop: 12 }}><MobileSelect label="İl" value={city} options={["Tüm İller", ...provinces.map(p => p.name)]} onChange={setCity}/><Text style={ms.muted}>Konum filtresi seçtiğin ile göre çalışır.</Text></View>}
     <Text accessibilityLiveRegion="polite" style={[ms.muted, { marginVertical: 12 }]}>{loading ? "Yükleniyor…" : `${total} talep`}</Text>

@@ -1450,7 +1450,7 @@ function RelatedListingsSection({
         </PressLink>
       ) : undefined}
     >
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingRight: 4 }}>
+      <ScrollView style={{ flexGrow: 0 }} horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingRight: 4 }}>
         {listings.map((item) => (
           <ListingCard key={item.id} listing={item} owner={ownersById(item.ownerId)} width={cardWidth} />
         ))}
