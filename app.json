@@ -201,7 +201,11 @@
     "extra": {
       "privacyUrl": "https://www.ortaksat.com/gizlilik-politikasi",
       "supportUrl": "https://www.ortaksat.com/iletisim",
-      "termsUrl": "https://www.ortaksat.com/kullanim-sartlari"
-    }
+      "termsUrl": "https://www.ortaksat.com/kullanim-sartlari",
+      "eas": {
+        "projectId": "0d814a51-7a5d-4112-93ba-95363cc31898"
+      }
+    },
+    "owner": "fatih3434"
   }
 }

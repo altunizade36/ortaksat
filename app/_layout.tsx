@@ -13,6 +13,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { Alert } from "@/lib/alert";
 import { AppHeader } from "@/components/app-header";
+import { NativeStackHeader } from "@/components/mobile/native-stack-header";
 import { colors } from "@/components/colors";
 import { CompareBar } from "@/components/compare-bar";
 import { PresenceHeartbeat } from "@/components/presence-heartbeat";
@@ -125,7 +126,8 @@ function RootStack({ onShown }: { onShown?: () => void }) {
       <Stack
         screenOptions={{
           contentStyle: { backgroundColor: colors.background },
-          header: () => <AppHeader />,
+          // Uygulamada site başlığı (arama kutusu + site gezinme şeridi) çizilmez: geri + logo (bkz. NativeStackHeader).
+          header: () => (isMobileApp ? <NativeStackHeader /> : <AppHeader />),
           headerShadowVisible: false
         }}
       >

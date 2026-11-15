@@ -25,13 +25,11 @@ export default function LegalScreen() {
   const initialDoc = typeof legalParams.doc === "string" ? legalParams.doc : undefined;
   const {
     authError,
-    backendMode,
     createSupportTicket,
     currentUser,
     recordLegalConsent
   } = useStore();
   const router = useRouter();
-  const isLiveAccount = backendMode === "supabase" && currentUser.id.includes("-");
   const isWideWeb = useIsWideWeb();
   const [subject, setSubject] = useState("Destek talebi");
   const [message, setMessage] = useState("Merhaba, OrtakSat hesabım veya ilan sürecim hakkında destek istiyorum.");
@@ -212,8 +210,7 @@ export default function LegalScreen() {
         <Seo title="Yasal & Destek — Sözleşmeler, KVKK, gizlilik | OrtakSat" description="OrtakSat yasal belgeleri: kullanım şartları, aracılık sözleşmesi, KVKK aydınlatma, gizlilik ve çerez politikası, yasaklı ürünler. Tümü tek sayfada." path="/legal" />
         <Card>
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
-            <StatusPill label="KVKK / Gizlilik" tone="success" />
-            <StatusPill label={isLiveAccount ? "Canlı hesap" : "Ön izleme"} tone={isLiveAccount ? "success" : "warning"} />
+            <StatusPill label="KVKK / Gizlilik" tone="info" />
           </View>
           <Text selectable style={{ color: colors.ink, fontSize: 24, fontWeight: "900", lineHeight: 30 }}>
             {translateCopy("Yasal ve destek merkezi", language)}

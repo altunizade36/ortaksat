@@ -44,7 +44,7 @@
       "conditionGroup": [
         { "conditions": [
           { "type": "geo_country", "op": "neq", "value": "TR" },
-          { "type": "path", "op": "re", "neg": true, "value": "^/(erisim-kisitli(\\.html)?|gizlilik-politikasi|kvkk|cerez-politikasi|hesap-silme|sozlesmeler|legal|destek|support|iletisim|robots\\.txt|\\.well-known/.*|_expo/.*|assets/.*|fonts/.*|.*\\.(png|jpe?g|webp|avif|gif|svg|ico|css|js|mjs|json|xml|txt|woff2?|ttf|otf|mp4|webm|webmanifest|map))$" }
+          { "type": "path", "op": "re", "neg": true, "value": "^/(erisim-kisitli(\\.html)?|gizlilik-politikasi|kullanim-sartlari|kvkk|cerez-politikasi|hesap-silme|sozlesmeler|legal|destek|support|iletisim|robots\\.txt|\\.well-known/.*|_expo/.*|assets/.*|fonts/.*|.*\\.(png|jpe?g|webp|avif|gif|svg|ico|css|js|mjs|json|xml|txt|woff2?|ttf|otf|mp4|webm|webmanifest|map))$" }
         ] }
       ],
       "action": { "mitigate": { "action": "redirect", "redirect": { "location": "/erisim-kisitli", "permanent": false } } }

@@ -291,8 +291,9 @@ function PartnerCard({ entry, width, favorited, isSelf, onFav }: { entry: Partne
           {chips.length > 0 ? (
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 5 }}>
               {chips.map((c) => (
-                <View key={c} style={{ backgroundColor: colors.primarySoft, borderRadius: narrow ? 10 : 999, maxWidth: "100%", paddingHorizontal: 8, paddingVertical: 3 }}>
-                  <Text numberOfLines={narrow ? 2 : 1} style={{ color: colors.primaryDark, fontSize: 10.5, fontWeight: "800", lineHeight: 14 }}>{t(categoryChipLabel(c))}</Text>
+                <View key={c} style={{ backgroundColor: colors.primarySoft, borderRadius: 999, flexShrink: 1, maxWidth: "100%", paddingHorizontal: 8, paddingVertical: 3 }}>
+                  {/* Tek satır + üç nokta: dar kartta iki satıra inen etiket uygulamada kırpılıp yarım görünüyordu. */}
+                  <Text numberOfLines={1} style={{ color: colors.primaryDark, fontSize: 10.5, fontWeight: "800", lineHeight: 14 }}>{t(categoryChipLabel(c))}</Text>
                 </View>
               ))}
               {entry.expertiseCategories.length > 3 ? (

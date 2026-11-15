@@ -1,4 +1,5 @@
 import { PartnerInviteButton } from "@/components/partner-invite-button";
+import { BlockUserSheet } from "@/components/mobile/block-user-sheet";
 import { MaterialCommunityIcons } from "@/components/icons";
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
@@ -41,6 +42,7 @@ function Inner() {
   const [favorited, setFavorited] = useState(false);
   const [favCount, setFavCount] = useState(0);
   const isOwnShop = Boolean(currentUser?.id && currentUser.id === partnerId);
+  const [blockOpen, setBlockOpen] = useState(false);
   // Ortak olarak aldığı değerlendirmeler (satıcıların, tamamlanmış satış sonrası yazdığı). Yoksa bölüm hiç çizilmez.
   // SAYFALI (20'şer; "Daha fazla değerlendirme göster" ekler). Tür süzgeci SUNUCUDA uygulanır; başlıktaki
   // sayı ve özet TÜM ortak değerlendirmelerinden gelir. Eskiden kullanıcının ilk 100 yorumu çekilip
@@ -190,6 +192,22 @@ function Inner() {
               <PrimaryButton icon={copied ? "check" : "share-variant"} tone="secondary" onPress={() => void copyShop()}>{copied ? translateCopy("Kopyalandı", language) : translateCopy("Vitrini paylaş", language)}</PrimaryButton>
             </View>
           </View>
+          {/* GÜVENLİK: kullanıcı içeriği gösteren her profilde şikâyet + engelleme bulunur (mağaza sayfasıyla aynı akışlar;
+              uygulama mağazası kuralı). Kendi vitrininde gösterilmez; giriş yoksa giriş ekranına götürür. */}
+          {partnerId && profile && !isOwnShop ? (
+            <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 4, justifyContent: "center" }}>
+              <Pressable testID="partner-report" accessibilityRole="button" hitSlop={4} onPress={() => router.push((isAuthenticated ? `/report?userId=${partnerId}` : "/auth") as never)} style={{ alignItems: "center", flexDirection: "row", gap: 5, minHeight: 40, paddingHorizontal: 8 }}>
+                <MaterialCommunityIcons name="flag-outline" size={15} color={colors.muted} />
+                <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "700" }}>{translateCopy("Kullanıcıyı şikâyet et", language)}</Text>
+              </Pressable>
+              <Text style={{ color: colors.line, fontSize: 12 }}>|</Text>
+              <Pressable testID="partner-block" accessibilityRole="button" hitSlop={4} onPress={() => { if (!isAuthenticated) router.push("/auth"); else setBlockOpen(true); }} style={{ alignItems: "center", flexDirection: "row", gap: 5, minHeight: 40, paddingHorizontal: 8 }}>
+                <MaterialCommunityIcons name="account-cancel-outline" size={15} color={colors.muted} />
+                <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "700" }}>{translateCopy("Kullanıcıyı engelle", language)}</Text>
+              </Pressable>
+            </View>
+          ) : null}
+          <BlockUserSheet target={blockOpen && partnerId && profile ? { id: partnerId, name: profile.fullName || "OrtakSat kullanıcısı", avatar: profile.avatarUrl ?? "", city: profile.city ?? undefined, username: undefined } : null} onClose={() => setBlockOpen(false)} />
         </View>
 
         {/* Vitrin ilanları */}

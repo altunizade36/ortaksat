@@ -198,10 +198,11 @@ export function EmptyState({ title, body, action, mascot, icon }: { title: strin
             <MaterialCommunityIcons name={icon} size={27} color={colors.primaryDark} />
           </View>
         ) : null}
-        <Text selectable style={{ color: colors.ink, fontSize: 17, fontWeight: "900", textAlign: mascot || icon ? "center" : "left" }}>
+        {/* alignSelf "stretch" + satır yüksekliği: ortalanmış sütunda Android iki satıra inen başlığın ikinci satırını kırpıyordu. */}
+        <Text selectable style={{ alignSelf: "stretch", color: colors.ink, fontSize: 17, fontWeight: "900", lineHeight: 23, textAlign: mascot || icon ? "center" : "left" }}>
           {translateCopy(title, language)}
         </Text>
-        <Text selectable style={{ color: colors.muted, fontSize: 14, lineHeight: 20, textAlign: mascot || icon ? "center" : "left" }}>
+        <Text selectable style={{ alignSelf: "stretch", color: colors.muted, fontSize: 14, lineHeight: 20, textAlign: mascot || icon ? "center" : "left" }}>
           {translateCopy(body, language)}
         </Text>
         {action?.href ? <Link href={action.href} asChild>{cta}</Link> : cta}

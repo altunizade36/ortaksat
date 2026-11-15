@@ -101,6 +101,7 @@ export const accountDict: Record<string, string> = {
   "Kodu doğrula ve şifreyi güncelle": "Verify code and update password",
   "veya": "or",
   "Google ile devam et": "Continue with Google",
+  "Apple ile Devam Et": "Continue with Apple",
   "Hesabınız yok mu? ": "Don't have an account? ",
   "Zaten hesabınız var mı? ": "Already have an account? ",
   "Kayıt olun": "Sign up",

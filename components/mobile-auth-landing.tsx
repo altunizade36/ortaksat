@@ -29,8 +29,9 @@ const messages = ["Ürününü paylaş, ortak bul,", "Ücretsiz ilan ver, birlik
 
 // iOS SOSYAL GİRİŞ. App Store kuralı 4.8: üçüncü taraf girişi (Google) sunan iOS uygulaması
 // "Apple ile Giriş"i de sunmak ZORUNDA → iOS'ta ikisi BİRLİKTE gösterilir, Apple düğmesi üstte.
-// Apple girişi yalnız iOS'ta vardır (yerel pencere): iOS'ta Apple ve Google YAN YANA iki eşit düğmedir,
-// Android'de yalnız Google (tam genişlik) görünür. Çalışmayan "Yakında" düğmeleri mağaza incelemesinde
+// Apple girişi yalnız iOS'ta vardır (yerel pencere): iOS'ta Apple (üstte) ve Google ALT ALTA iki tam genişlik
+// düğmedir; Android'de yalnız Google görünür. Apple düğmesinin yazısı Apple'ın izin verdiği kalıplardan biri
+// olmalı ("Apple ile Devam Et"); yalnız "Apple" yazan düğme tasarım kuralına uymaz (mağaza incelemesi 4.8). Çalışmayan "Yakında" düğmeleri mağaza incelemesinde
 // ret sebebidir; ekleme.
 const appleLogin = Platform.OS === "ios";
 const socialLogin = true;
@@ -72,10 +73,10 @@ export function MobileAuthLanding({ mode, onModeChange, onEmail, onGoogle, onApp
     showConsentIfMissing();
     onApple?.();
   }
-  // SOSYAL GİRİŞ DÜĞMELERİ: iOS'ta Apple (siyah) + Google (beyaz) yan yana; Android'de yalnız Google.
-  const socialButtons = <View style={{ flexDirection: "row", gap: 10 }}>
-    {appleLogin ? <Pressable accessibilityRole="button" accessibilityLabel={tr("Apple ile devam et")} disabled={busy} accessibilityState={{ disabled: busy, busy }} onPress={continueWithApple} style={[s.button, s.apple, s.half, { opacity: busy ? 0.6 : 1 }]}><Icon name="apple" size={24} color="white" /><Text style={[s.buttonText, { color: "white" }]}>Apple</Text></Pressable> : null}
-    <Pressable accessibilityRole="button" accessibilityLabel={tr("Google ile devam et")} disabled={busy} accessibilityState={{ disabled: busy, busy }} onPress={continueWithGoogle} style={[s.button, s.half, { opacity: busy ? 0.6 : 1 }]}><GoogleMark /><Text style={s.buttonText}>{appleLogin ? "Google" : tr(busy ? "Bağlanıyor…" : "Google ile devam et")}</Text></Pressable>
+  // SOSYAL GİRİŞ DÜĞMELERİ: iOS'ta Apple (siyah, üstte) + Google (beyaz) alt alta; Android'de yalnız Google.
+  const socialButtons = <View style={appleLogin ? undefined : { flexDirection: "row", gap: 10 }}>
+    {appleLogin ? <Pressable accessibilityRole="button" accessibilityLabel={tr("Apple ile devam et")} disabled={busy} accessibilityState={{ disabled: busy, busy }} onPress={continueWithApple} style={[s.button, s.apple, { opacity: busy ? 0.6 : 1 }]}><Icon name="apple" size={24} color="white" /><Text style={[s.buttonText, { color: "white" }]}>{tr("Apple ile Devam Et")}</Text></Pressable> : null}
+    <Pressable accessibilityRole="button" accessibilityLabel={tr("Google ile devam et")} disabled={busy} accessibilityState={{ disabled: busy, busy }} onPress={continueWithGoogle} style={[s.button, appleLogin ? null : s.half, { opacity: busy ? 0.6 : 1 }]}><GoogleMark /><Text style={s.buttonText}>{tr(busy ? "Bağlanıyor…" : "Google ile devam et")}</Text></Pressable>
   </View>;
   return <ScrollView ref={scrollRef} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" onScroll={event => { scrollY.current = event.nativeEvent.contentOffset.y; }} scrollEventThrottle={16} style={s.screen} contentContainerStyle={{ flexGrow: 1 }}>
     <View testID="auth-responsive-frame" style={{ flexGrow: 1, width: "100%", maxWidth: 1440, alignSelf: "center", flexDirection: tablet ? "row" : "column", minHeight: tablet ? Math.max(height, 680) : undefined }}>

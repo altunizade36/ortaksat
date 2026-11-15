@@ -5,6 +5,7 @@
 #   python scripts/vercel-firewall.py kapat          → "Türkiye dışı erişim" kuralını KAPATIR (site her ülkeden açılır)
 #   python scripts/vercel-firewall.py ac             → kuralı yeniden AÇAR
 #   python scripts/vercel-firewall.py kur            → kurallar hiç yoksa scripts/firewall-rules.json'dan kurar
+#   python scripts/vercel-firewall.py guncelle       → firewall-rules.json'daki değişikliği kurulu kurallara işler (ada göre eşler)
 #
 # Erişim anahtarı .env içindeki VERCEL_TOKEN'dan okunur; hiçbir yere yazdırılmaz.
 # Kuralların ne yaptığı ve muaf adresler: scripts/firewall-rules.json. Ücretsiz planda en çok 3 özel kural olur.
@@ -77,6 +78,22 @@ def install():
     show(config())
 
 
+def update():
+    live = {str(r.get("name")): r for r in config().get("rules") or []}
+    for body in json.load(open(RULES_FILE, encoding="utf-8")):
+        value = body["value"]
+        rule = live.get(value["name"])
+        if not rule:
+            print(value["name"], "→ kurulu değil, atlandı (önce 'kur')")
+            continue
+        # Açık/kapalı durumu canlıdaki gibi kalır: 'kapat' ile kapatılmış kural güncellemeyle sessizce açılmasın.
+        payload = {key: value[key] for key in ("name", "description", "conditionGroup", "action")}
+        payload["active"] = bool(rule.get("active"))
+        status, result = call("PATCH", BASE + QUERY, {"action": "rules.update", "id": rule["id"], "value": payload})
+        print(value["name"], "→", status, json.dumps(result, ensure_ascii=False)[:300])
+    show(config())
+
+
 command = sys.argv[1] if len(sys.argv) > 1 else "durum"
 if command == "durum":
     show(config())
@@ -86,5 +103,7 @@ elif command == "ac":
     set_geo(True)
 elif command == "kur":
     install()
+elif command == "guncelle":
+    update()
 else:
-    sys.exit("Kullanım: python scripts/vercel-firewall.py durum | kapat | ac | kur")
+    sys.exit("Kullanım: python scripts/vercel-firewall.py durum | kapat | ac | kur | guncelle")
