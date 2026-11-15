@@ -97,5 +97,14 @@ test("yönetim: üyeler bölümü telefonda taşmadan çizilir", async ({ browse
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
   expect(overflow, "yatay taşma olmamalı").toBeLessThanOrEqual(0);
   await page.screenshot({ path: `${OUT}/m-users.png`, fullPage: true });
+
+  // Telefon alt çubuğu: dört ana bölüm + menü; dokununca bölüm değişir, "Tümü" çekmeceyi açar.
+  await expect(page.getByTestId("admin-bottom-users")).toBeVisible();
+  await page.getByTestId("admin-bottom-listings").click();
+  await expect(page.getByText("İlan Moderasyonu").first()).toBeVisible({ timeout: 10_000 });
+  await page.getByTestId("admin-bottom-menu").click();
+  await expect(page.getByText("OrtakSat Yönetim", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: /^Ayarlar/ }).first().click();
+  await expect(page.getByText("Platform Ayarları").first()).toBeVisible({ timeout: 10_000 });
   await ctx.close();
 });

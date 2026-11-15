@@ -1,8 +1,10 @@
 import { MaterialCommunityIcons } from "@/components/icons";
 import { ListingFunnelPanel } from "@/components/listing-funnel-panel";
 import { Link, useRouter } from "expo-router";
-import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { createContext, isValidElement, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, Text, TextInput, useWindowDimensions, View, type ScrollViewInstance } from "react-native";
+
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { Alert } from "@/lib/alert";
 
@@ -156,6 +158,10 @@ function monthlyListingChart(listings: Array<{ createdAt: string }>): { data: nu
 
 function AdminScreenInner() {
   const isWideWeb = useIsWideWeb();
+  // Uygulamada bu ekranın yığın başlığı yok: üst çubuk çentiğin/durum çubuğunun, alt çubuk ana ekran çizgisinin
+  // altında kalmasın diye güvenli alan boşlukları elle eklenir (web'de değerler 0'dır).
+  const insets = useSafeAreaInsets();
+  const contentRef = useRef<ScrollViewInstance>(null);
   const { height: viewportHeight } = useWindowDimensions();
   const router = useRouter();
   const {
@@ -478,7 +484,13 @@ function AdminScreenInner() {
   const selectSection = (next: Section) => {
     setSection(next);
     setAdminNavOpen(false);
+    // Yeni bölüm baştan görünsün (önceki bölümde aşağı kaydırılmışsa içerik ortasından açılıyordu).
+    contentRef.current?.scrollTo({ y: 0, animated: false });
   };
+  // Telefonda alt çubuk: en sık kullanılan dört bölüm + menü. Menü rozeti, çubukta olmayan bölümlerdeki bekleyen işleri toplar.
+  const BOTTOM_KEYS: Section[] = ["dashboard", "users", "listings", "complaints"];
+  const bottomItems = BOTTOM_KEYS.map((key) => ({ key, icon: NAV.find((item) => item.key === key)?.icon ?? "circle-outline", label: key === "dashboard" ? "Panel" : key === "users" ? "Üyeler" : key === "listings" ? "İlanlar" : "Şikâyetler", badge: navBadge(key) }));
+  const menuBadge = NAV.filter((item) => !BOTTOM_KEYS.includes(item.key)).reduce((sum, item) => sum + (navBadge(item.key) || 0), 0);
 
   // Derinlemesine savunma: bu bileşen yalnız AdminScreen'in rol kapısından sonra render edilir;
   // yine de rol düşerse (oturum değişimi) HİÇBİR yönetim verisi çizilmez. (Tüm hook'lar yukarıda.)
@@ -547,7 +559,7 @@ function AdminScreenInner() {
           </View>
         </View>
       ) : (
-        <View style={{ backgroundColor: colors.primaryDark, gap: 8, paddingBottom: 8, paddingTop: 10 }}>
+        <View style={{ backgroundColor: colors.primaryDark, gap: 8, paddingBottom: 8, paddingTop: 10 + insets.top }}>
           <View style={{ alignItems: "center", flexDirection: "row", gap: 8, paddingHorizontal: 12 }}>
             <Pressable
               accessibilityLabel="Yönetim menüsünü aç"
@@ -588,7 +600,7 @@ function AdminScreenInner() {
       )}
 
       {/* Content */}
-      <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false} contentContainerStyle={{ alignSelf: "center", gap: 16, maxWidth: 1280, padding: isWideWeb ? 24 : 12, paddingBottom: 72, width: "100%" }}>
+      <ScrollView ref={contentRef} style={{ flex: 1 }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={{ alignSelf: "center", gap: isWideWeb ? 16 : 12, maxWidth: 1280, padding: isWideWeb ? 24 : 12, paddingBottom: isWideWeb ? 72 : 28, width: "100%" }}>
         {section !== "dashboard" ? (
           <View style={{ alignItems: isWideWeb ? "center" : "stretch", flexDirection: isWideWeb ? "row" : "column", gap: 10, justifyContent: "space-between" }}>
             <View style={{ flexGrow: isWideWeb ? 1 : 0, flexShrink: 1, gap: 3, minWidth: 0 }}>
@@ -1472,12 +1484,38 @@ function AdminScreenInner() {
         ) : null}
       </ScrollView>
 
+      {/* TELEFON ALT ÇUBUĞU (2026-11-15): başparmakla erişilen dört ana bölüm + menü; bekleyen işler rozetle görünür.
+          İçeriğin kardeşi olarak durur (üstüne binmez), uygulamada ana ekran çizgisi için alt boşluk bırakır. */}
+      {!isWideWeb ? (
+        <View accessibilityRole="tablist" style={{ backgroundColor: colors.surface, borderTopColor: colors.line, borderTopWidth: 1, flexDirection: "row", paddingBottom: Math.max(insets.bottom, 6), paddingHorizontal: 4, paddingTop: 6 }}>
+          {bottomItems.map((item) => {
+            const on = section === item.key;
+            return (
+              <Pressable key={item.key} testID={`admin-bottom-${item.key}`} accessibilityRole="tab" accessibilityLabel={`${item.label}${item.badge ? ` — ${item.badge} bekleyen` : ""}`} accessibilityState={{ selected: on }} onPress={() => selectSection(item.key)} style={{ alignItems: "center", flex: 1, gap: 2, justifyContent: "center", minHeight: 48 }}>
+                <View>
+                  <MaterialCommunityIcons name={item.icon} size={22} color={on ? colors.primary : colors.muted} />
+                  {item.badge ? <View style={{ alignItems: "center", backgroundColor: colors.accent, borderColor: colors.surface, borderRadius: 999, borderWidth: 1.5, height: 17, justifyContent: "center", minWidth: 17, paddingHorizontal: 3, position: "absolute", right: -11, top: -5 }}><Text style={{ color: "#FFFFFF", fontSize: 9.5, fontWeight: "900" }}>{item.badge > 99 ? "99+" : item.badge}</Text></View> : null}
+                </View>
+                <Text numberOfLines={1} style={{ color: on ? colors.primary : colors.muted, fontSize: 10.5, fontWeight: on ? "900" : "700" }}>{item.label}</Text>
+              </Pressable>
+            );
+          })}
+          <Pressable testID="admin-bottom-menu" accessibilityRole="button" accessibilityLabel={`Tüm bölümler${menuBadge ? ` — ${menuBadge} bekleyen` : ""}`} onPress={() => setAdminNavOpen(true)} style={{ alignItems: "center", flex: 1, gap: 2, justifyContent: "center", minHeight: 48 }}>
+            <View>
+              <MaterialCommunityIcons name="menu" size={22} color={BOTTOM_KEYS.includes(section) ? colors.muted : colors.primary} />
+              {menuBadge ? <View style={{ alignItems: "center", backgroundColor: colors.accent, borderColor: colors.surface, borderRadius: 999, borderWidth: 1.5, height: 17, justifyContent: "center", minWidth: 17, paddingHorizontal: 3, position: "absolute", right: -11, top: -5 }}><Text style={{ color: "#FFFFFF", fontSize: 9.5, fontWeight: "900" }}>{menuBadge > 99 ? "99+" : menuBadge}</Text></View> : null}
+            </View>
+            <Text numberOfLines={1} style={{ color: BOTTOM_KEYS.includes(section) ? colors.muted : colors.primary, fontSize: 10.5, fontWeight: BOTTOM_KEYS.includes(section) ? "700" : "900" }}>Tümü</Text>
+          </Pressable>
+        </View>
+      ) : null}
+
       {/* Mobil yönetim menüsü: tüm bölümleri tek yatay şeride sıkıştırmak yerine
           gruplu, okunabilir ve rozetli bir çekmece içinde gösterir. */}
       <Modal visible={!isWideWeb && adminNavOpen} transparent animationType="fade" onRequestClose={() => setAdminNavOpen(false)}>
         <View style={{ flex: 1, flexDirection: "row" }}>
           <View style={{ backgroundColor: colors.surface, maxWidth: 340, width: "86%", shadowColor: colors.primaryDark, shadowOffset: { width: 8, height: 0 }, shadowOpacity: 0.18, shadowRadius: 22 }}>
-            <View style={{ backgroundColor: colors.primaryDark, gap: 12, paddingBottom: 14, paddingHorizontal: 16, paddingTop: 18 }}>
+            <View style={{ backgroundColor: colors.primaryDark, gap: 12, paddingBottom: 14, paddingHorizontal: 16, paddingTop: 18 + insets.top }}>
               <View style={{ alignItems: "center", flexDirection: "row", gap: 10 }}>
                 <View style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.14)", borderRadius: 11, height: 38, justifyContent: "center", width: 38 }}>
                   <MaterialCommunityIcons name="shield-crown" size={21} color="#FFFFFF" />
@@ -1495,7 +1533,7 @@ function AdminScreenInner() {
                 <Text style={{ color: "#FFFFFF", fontSize: 11, fontWeight: "800" }}>Yetkili yönetim oturumu</Text>
               </View>
             </View>
-            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ gap: 4, padding: 12, paddingBottom: 30 }}>
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ gap: 4, padding: 12, paddingBottom: 30 + insets.bottom }}>
               {NAV_GROUPS.map((group) => (
                 <View key={group.title} style={{ gap: 3, marginBottom: 8 }}>
                   <Text style={{ color: colors.subtle, fontSize: 9.5, fontWeight: "900", letterSpacing: 0.7, paddingHorizontal: 10, paddingVertical: 7 }}>{group.title.toLocaleUpperCase("tr-TR")}</Text>
@@ -1963,18 +2001,44 @@ function Table({ head, cols, children }: { head: string[]; cols: number[]; child
     </TableCtx.Provider>
   );
 }
+// Telefon kartında tam genişlik isteyen (uzun metinli) sütunlar ve satır sonundaki işlem sütunları.
+const MOBILE_LONG_HEADS = new Set(["MESAJ", "NEDEN", "SORU", "CEVAP", "YORUM", "İLAN", "BAŞLIK", "GÖNDEREN → ALICI"]);
+const MOBILE_ACTION_HEADS = new Set(["İŞLEM", "AKSİYON", "ARABULUCULUK"]);
+/**
+ * Hücre boş mu: yok, ya da içinde yalnız "—" yazıyor (bir kutunun içinde, boş kardeşlerle birlikte olsa da).
+ * Telefonda yer kaplamasın diye çizilmez. Çocuğu OLMAYAN öğeler (simge, rozet, hazır hücre bileşeni) içerik sayılır.
+ */
+function isBlankCell(cell: ReactNode): boolean {
+  if (cell == null || cell === false || cell === true || cell === "" || cell === "—") return true;
+  if (Array.isArray(cell)) return cell.every(isBlankCell);
+  if (!isValidElement(cell)) return false;
+  const children = (cell.props as { children?: ReactNode }).children;
+  return children === undefined ? false : isBlankCell(children);
+}
+
 function Row({ cols, cells }: { cols: number[]; cells: ReactNode[] }) {
   const { head, wide } = useContext(TableCtx);
   if (!wide) {
-    // Mobil kart: her hücre kendi etiketiyle tam-genişlik → sıkışma/binme yok
+    // TELEFON KARTI (2026-11-15). Eskiden her sütun kendi satırındaydı ("ETİKET: değer" × 6-7) → 34 üyelik liste
+    // 9.500 px, tek satır ~280 px tutuyordu. Şimdi: ilk hücre başlık, kısa alanlar iki sütunlu ızgarada (etiket üstte),
+    // uzun metinler tam genişlikte, işlem düğmeleri en altta tek blok; değeri "—" olan alan hiç çizilmez.
+    const last = cells.length - 1;
+    const isAction = (i: number) => i === last && MOBILE_ACTION_HEADS.has(head[i] ?? "");
+    const fields = cells.map((cell, i) => ({ cell, i })).filter(({ cell, i }) => i > 0 && !isAction(i) && !isBlankCell(cell));
     return (
-      <View style={{ borderBottomColor: colors.line, borderBottomWidth: 1, gap: 9, paddingVertical: 13 }}>
-        {cells.map((c, i) => (
-          <View key={i} style={{ alignItems: "flex-start", flexDirection: "row", gap: 10 }}>
-            <Text style={{ color: colors.subtle, fontSize: 10.5, fontWeight: "900", letterSpacing: 0.4, marginTop: 3, textTransform: "uppercase", width: 82 }}>{head[i] ?? ""}</Text>
-            <View style={{ flex: 1, minWidth: 0 }}>{c}</View>
+      <View style={{ borderBottomColor: colors.line, borderBottomWidth: 1, gap: 8, paddingVertical: 12 }}>
+        <View style={{ minWidth: 0 }}>{cells[0]}</View>
+        {fields.length ? (
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+            {fields.map(({ cell, i }) => (
+              <View key={i} style={{ alignItems: "flex-start", flexBasis: MOBILE_LONG_HEADS.has(head[i] ?? "") ? "100%" : "46%", flexGrow: 1, gap: 3, minWidth: 0 }}>
+                <Text style={{ color: colors.subtle, fontSize: 9.5, fontWeight: "900", letterSpacing: 0.4, textTransform: "uppercase" }}>{head[i] ?? ""}</Text>
+                <View style={{ alignSelf: "stretch", minWidth: 0 }}>{cell}</View>
+              </View>
+            ))}
           </View>
-        ))}
+        ) : null}
+        {last > 0 && isAction(last) && !isBlankCell(cells[last]) ? <View style={{ minWidth: 0 }}>{cells[last]}</View> : null}
       </View>
     );
   }
@@ -2009,19 +2073,20 @@ function SuggestionRow({ title, note, meta, status, onApprove, onReject }: { tit
 
 function FilterChips<T extends string>({ value, onChange, options }: { value: T; onChange: (v: T) => void; options: Array<{ key: T; label: string; count?: number }> }) {
   const wide = useContext(AdminWideCtx);
-  return (
-    <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 7, marginBottom: 12 }}>
-      {options.map((o) => {
+  // Telefonda tek satır + yana kaydırma (sekiz süzgeç üç satır kaplıyordu); geniş ekranda eskisi gibi sarar.
+  // (İç bileşen tanımlanmaz: her çizimde yeni bileşen türü oluşur, şerit yeniden kurulup kaydırma başa döner.)
+  const chips = options.map((o) => {
         const on = value === o.key;
         return (
-          <Pressable key={o.key} accessibilityRole="button" accessibilityState={{ selected: on }} onPress={() => onChange(o.key)} style={{ alignItems: "center", backgroundColor: on ? colors.primary : colors.surfaceAlt, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 5, minHeight: wide ? 32 : 40, paddingHorizontal: 13 }}>
+          <Pressable key={o.key} accessibilityRole="button" accessibilityState={{ selected: on }} onPress={() => onChange(o.key)} style={{ alignItems: "center", backgroundColor: on ? colors.primary : colors.surfaceAlt, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 5, minHeight: wide ? 32 : 38, paddingHorizontal: 13 }}>
             <Text style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 12, fontWeight: "800" }}>{o.label}</Text>
             {typeof o.count === "number" ? <View style={{ alignItems: "center", backgroundColor: on ? "rgba(255,255,255,0.25)" : colors.line, borderRadius: 999, justifyContent: "center", minWidth: 16, paddingHorizontal: 4 }}><Text style={{ color: on ? "#FFFFFF" : colors.muted, fontSize: 10, fontWeight: "900" }}>{o.count}</Text></View> : null}
           </Pressable>
         );
-      })}
-    </View>
-  );
+  });
+  return wide
+    ? <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 7, marginBottom: 12 }}>{chips}</View>
+    : <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled" style={{ flexGrow: 0, marginBottom: 10, marginHorizontal: -2 }} contentContainerStyle={{ gap: 7, paddingHorizontal: 2, paddingRight: 16 }}>{chips}</ScrollView>;
 }
 
 function slugifyTr(s: string) {
