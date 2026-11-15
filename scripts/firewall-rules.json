@@ -1,0 +1,53 @@
+[
+  {
+    "action": "rules.insert",
+    "id": null,
+    "value": {
+      "name": "Arama motoru ve bağlantı önizleme botlarına izin",
+      "description": "Türkiye dışı kuralından ÖNCE çalışır. Büyük arama motorları ve Meta, tarayıcı kimliği + ağ sahibi (ASN) birlikte tutarsa geçer; sahte kimlik geçemez.",
+      "active": true,
+      "conditionGroup": [
+        { "conditions": [
+          { "type": "user_agent", "op": "re", "value": "Googlebot|Google-InspectionTool|GoogleOther|AdsBot-Google|Mediapartners-Google|Storebot-Google|Google-Site-Verification|GoogleImageProxy|APIs-Google|FeedFetcher-Google|Google-Read-Aloud|Chrome-Lighthouse" },
+          { "type": "geo_as_number", "op": "inc", "value": ["15169"] }
+        ] },
+        { "conditions": [
+          { "type": "user_agent", "op": "re", "value": "bingbot|BingPreview|MicrosoftPreview|adidxbot|msnbot" },
+          { "type": "geo_as_number", "op": "inc", "value": ["8075"] }
+        ] },
+        { "conditions": [
+          { "type": "user_agent", "op": "re", "value": "facebookexternalhit|Facebot|meta-external|facebookcatalog" },
+          { "type": "geo_as_number", "op": "inc", "value": ["32934", "63293"] }
+        ] },
+        { "conditions": [
+          { "type": "user_agent", "op": "re", "value": "Applebot" },
+          { "type": "geo_as_number", "op": "inc", "value": ["714", "6185"] }
+        ] },
+        { "conditions": [
+          { "type": "user_agent", "op": "re", "value": "Yandex" },
+          { "type": "geo_as_number", "op": "inc", "value": ["13238", "208722", "200350"] }
+        ] },
+        { "conditions": [
+          { "type": "user_agent", "op": "re", "value": "Twitterbot|LinkedInBot|TelegramBot|WhatsApp|Slackbot|Discordbot|Pinterest|redditbot|DuckDuckBot|GPTBot|OAI-SearchBot|ChatGPT-User|ClaudeBot|Claude-User|Claude-SearchBot|PerplexityBot|Perplexity-User" }
+        ] }
+      ],
+      "action": { "mitigate": { "action": "bypass" } }
+    }
+  },
+  {
+    "action": "rules.insert",
+    "id": null,
+    "value": {
+      "name": "Türkiye dışı erişim → uyarı sayfası",
+      "description": "Türkiye dışından gelen sayfa istekleri /erisim-kisitli sayfasına yönlenir. Muaf: uyarı sayfası, yasal sayfalar, destek, statik dosyalar, robots/sitemap, .well-known.",
+      "active": true,
+      "conditionGroup": [
+        { "conditions": [
+          { "type": "geo_country", "op": "neq", "value": "TR" },
+          { "type": "path", "op": "re", "neg": true, "value": "^/(erisim-kisitli(\\.html)?|gizlilik-politikasi|kvkk|cerez-politikasi|hesap-silme|sozlesmeler|legal|destek|support|iletisim|robots\\.txt|\\.well-known/.*|_expo/.*|assets/.*|fonts/.*|.*\\.(png|jpe?g|webp|avif|gif|svg|ico|css|js|mjs|json|xml|txt|woff2?|ttf|otf|mp4|webm|webmanifest|map))$" }
+        ] }
+      ],
+      "action": { "mitigate": { "action": "redirect", "redirect": { "location": "/erisim-kisitli", "permanent": false } } }
+    }
+  }
+]
