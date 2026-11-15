@@ -11,8 +11,10 @@
 | App Store iPhone 6,9 inç 1320 × 2868 | `screenshots/ios-6.9/` |
 | App Store iPad 13 inç 2064 × 2752 | `screenshots/ipad-13/` |
 
-Ekran görüntüleri gerçek uygulamadan (Android yayın derlemesi) çekildi; durum çubuğu ve sistem hareket çizgisi
-uygulamanın zemin rengiyle örtüldü. Uygulama değişince yeniden çekilmeli.
+Ekran görüntüleri KİŞİSEL VERİ İÇERMEZ: yalnız OrtakSat'ın kendi ekranları (karşılama, ana sayfanın üst kısmı,
+kategoriler, nasıl çalışır, ilan verme, güvenli alışveriş). Gerçek kullanıcı adı, fotoğrafı veya başkasına ait ilan
+gösteren ekranlar (keşfet akışı, ilan detayı, mesajlar, ortak listeleri) bilerek kullanılmadı. Başlıklı mağaza
+çerçevesi içindedir. Yeniden üretirken de bu kurala uy.
 
 Gizlilik politikası, kullanım şartları ve hesap silme sayfaları sitede yayında (bağlantılar `store-listing.md` içinde);
 ayrı bir taslak metin tutulmaz.
