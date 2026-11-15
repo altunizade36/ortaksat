@@ -87,6 +87,8 @@ test("yönetim: üyeler bölümü telefonda taşmadan çizilir", async ({ browse
   test.setTimeout(200_000);
   const { email } = await makeAdmin("adminmembersm", "Yönetici Mobil");
   const ctx = await browser.newContext({ ...devices["iPhone 13"] });
+  // Çerez bandı ekranın altını kaplar ve alt çubuğa dokunmayı engeller; gerçek yönetici bandı bir kez kapatır.
+  await ctx.addInitScript(() => { try { localStorage.setItem("ortaksat.cookieConsent.v1", JSON.stringify({ v: 1, analytics: false, marketing: false, at: "t" })); } catch {} });
   const page = await ctx.newPage();
   await login(page, email);
   await page.goto("/admin", { waitUntil: "domcontentloaded" });
@@ -104,7 +106,7 @@ test("yönetim: üyeler bölümü telefonda taşmadan çizilir", async ({ browse
   await expect(page.getByText("İlan Moderasyonu").first()).toBeVisible({ timeout: 10_000 });
   await page.getByTestId("admin-bottom-menu").click();
   await expect(page.getByText("OrtakSat Yönetim", { exact: true })).toBeVisible();
-  await page.getByRole("button", { name: /^Ayarlar/ }).first().click();
+  await page.getByText("Ayarlar", { exact: true }).last().click();
   await expect(page.getByText("Platform Ayarları").first()).toBeVisible({ timeout: 10_000 });
   await ctx.close();
 });
