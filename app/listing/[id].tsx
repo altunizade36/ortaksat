@@ -1,3 +1,4 @@
+import { PriceHistoryNote } from "@/components/price-history";
 import { ListingTermsSummary } from "@/components/listing-terms-summary";
 import { listingFlowPaths, listingJoinAction } from "@/lib/listing-actions";
 import { listingMedia } from "@/lib/mobile-listing";
@@ -969,6 +970,7 @@ export default function ListingDetailScreen() {
       {urgentDaysLeft ? <DetailNotice icon="fire" tone="danger" title={`${translateCopy("Acil satış", language)} — ${urgentDaysLeft} ${translateCopy("gün içinde satılmalı", language)}`} /> : null}
       <CommissionSummary listing={currentListing} demand={isDemand} />
       {/* Sosyal kanıt — görüntülenme + favori (yalnız >0). */}
+      <PriceHistoryNote listingId={currentListing.id} currency={currentListing.currency} />
       {(currentListing.viewCount > 0 || currentListing.favoriteCount > 0) ? (
         <Text style={{ color: colors.muted, fontSize: 12, fontVariant: ["tabular-nums"], fontWeight: "500", lineHeight: 16 }}>
           {[currentListing.viewCount > 0 ? `${currentListing.viewCount} ${translateCopy("kez görüntülendi", language)}` : "", currentListing.favoriteCount > 0 ? `${currentListing.favoriteCount} ${translateCopy("favori", language)}` : ""].filter(Boolean).join("  ·  ")}

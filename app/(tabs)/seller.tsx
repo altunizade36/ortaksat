@@ -1,3 +1,4 @@
+import { ListingStrengthCard } from "@/components/listing-strength";
 import { HorizontalScroll } from "@/components/horizontal-scroll";
 import { listingCategoryTrail } from "@/lib/mobile-catalog";
 import { CompactFooter } from "@/components/compact-footer";
@@ -872,6 +873,8 @@ function SellerScreenInner() {
                 <Text style={{ color: listing.status === "active" ? colors.primaryDark : colors.muted, fontSize: 11.5, fontWeight: "600" }}>
                   {translateCopy(listing.status === "active" ? "Ana sayfa, Keşfet, arama ve bu kategoride görünüyor." : listing.status === "pending_review" ? "İncelemede — onaylanınca bu kategoride yayınlanır." : "Yayında değil — alıcılara görünmüyor.", language)}
                 </Text>
+                {/* İLAN GÜCÜ: yalnız düzenlenebilir ilanlarda (yayında / taslak / duraklatılmış). */}
+                {["active", "draft", "paused"].includes(listing.status) ? <ListingStrengthCard listing={listing} onImprove={() => router.push({ pathname: "/listing-edit/[id]", params: { id: listing.id } })} /> : null}
                 {/* Harici ürün kodu (SKU) — toplu yüklemede eşleştirme anahtarı; kataloğunu
                     kod ile takip eden satıcı için görünür (yalnız kodu olan ilanlarda). */}
                 {listing.externalId ? (

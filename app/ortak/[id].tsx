@@ -1,3 +1,4 @@
+import { PartnerInviteButton } from "@/components/partner-invite-button";
 import { MaterialCommunityIcons } from "@/components/icons";
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
@@ -165,6 +166,8 @@ function Inner() {
               </Pressable>
             ) : null}
           </View>
+          {/* Satıcı bu ortağı kendi ilanına çağırır (giriş yapmış ve kendi vitrini olmayan herkese görünür). */}
+          {partnerId && !isOwnShop ? <PartnerInviteButton partnerId={partnerId} partnerName={profile?.fullName || undefined} /> : null}
           {/* Uzmanlık kategorileri — satıcı, ortağın deneyimli olduğu alanları görür. */}
           {(profile?.expertiseCategories?.length ?? 0) > 0 ? (
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>

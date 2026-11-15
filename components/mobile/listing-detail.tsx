@@ -1,3 +1,4 @@
+import { PriceHistoryNote } from "@/components/price-history";
 import { ListingTermsSummary } from "@/components/listing-terms-summary";
 import { listingJoinAction, type ListingJoinAction } from "@/lib/listing-actions";
 import { listingMedia } from "@/lib/mobile-listing";
@@ -144,6 +145,7 @@ export function MobileListingDetail({ similar = [], listing: l, owner, favorite,
             <Text accessibilityRole="header" numberOfLines={3} style={s.title}>{displayListingTitle(l.title)}</Text>
             <Text testID="listing-detail-price" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6} style={[s.price, { fontSize: priceSize, lineHeight: Math.round(priceSize * 1.18) }]}>{priceLabel}</Text>
             <DetailMetaLine listing={l} />
+            <PriceHistoryNote listingId={l.id} currency={l.currency} />
             {unavailable ? <DetailNotice icon={l.status === "sold" ? "check-decagram" : "close-circle-outline"} tone="danger" title={unavailable} /> : null}
             {l.demo ? <DetailNotice icon="eye-outline" tone="neutral" title={translateCopy("Örnek ilan — ortaklık ve iletişim kapalıdır.", language)} /> : null}
             <CommissionSummary listing={l} demand={l.attributes?._formKey === "arayan"} />
