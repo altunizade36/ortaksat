@@ -24,7 +24,8 @@ test("satıcı ortağı ilanına davet eder; fiyat geçmişi ve ilan gücü gör
   test.setTimeout(400_000);
   const sellerEmail = uniqueEmail("invseller");
   const sellerId = await createConfirmedUser(sellerEmail, PW, "E2E Davet Satici");
-  const partnerId = await createConfirmedUser(uniqueEmail("invpartner"), PW, "E2E Davet Ortak");
+  const partnerEmail = uniqueEmail("invpartner");
+  const partnerId = await createConfirmedUser(partnerEmail, PW, "E2E Davet Ortak");
   const listing = await one<{ id: string }>(`insert into listings
     (id, owner_id, title, slug, location, description, category, price, commission_type, commission_value, status, stock_count, demo, partnership_mode)
     values (gen_random_uuid(), '${sellerId}', 'E2E DAVET URUNU', 'e2e-inv-' || substr(md5(random()::text),1,8), 'İstanbul',
@@ -60,6 +61,50 @@ test("satıcı ortağı ilanına davet eder; fiyat geçmişi ve ilan gücü gör
   await expect(page.getByText("Bu ortağı bu ilana daha önce davet etmiştin.")).toBeVisible({ timeout: 15_000 });
   const notifCount = await one<{ n: number }>(`select count(*)::int as n from notifications where user_id='${partnerId}' and title='Ortaklık daveti'`);
   expect(notifCount?.n, "tekrar davet yeni bildirim üretmemeli").toBe(1);
+
+  // ---- 1b) Davet kutusu: satıcı gönderdiğini, ortak geleni görür; ortak "İlgilenmiyorum" der.
+  // Giden davetler "Talepler" sekmesinde; gelen davetler ilk sekmenin ("Fırsatları keşfet") başında.
+  await page.goto("/partner", { waitUntil: "domcontentloaded" });
+  await page.getByRole("tab", { name: "Talepler" }).click({ timeout: 25_000 });
+  await expect(page.getByTestId("partner-invite-sent").first()).toBeVisible({ timeout: 25_000 });
+  await expect(page.getByTestId("partner-invite-sent").first()).toContainText("E2E Davet Ortak");
+  await expect(page.getByTestId("partner-invite-sent").first()).toContainText("Yanıt bekliyor");
+
+  // Ortak dizini kartında küçük davet düğmesi (ortak, uzmanlık beyan edince dizinde görünür).
+  await runSql(`update profiles set expertise_categories = array['Elektronik'] where id='${partnerId}'`);
+  await page.goto("/ortaklar", { waitUntil: "domcontentloaded" });
+  await expect(page.getByText("E2E Davet Ortak").first()).toBeVisible({ timeout: 25_000 });
+  await expect(page.getByRole("button", { name: "E2E Davet Ortak ilanıma davet et" }).first()).toBeVisible();
+  await page.screenshot({ path: "e2e-artifacts/invite/1b-dizin.png" });
+
+  const partnerCtx = await browser.newContext({ viewport: { width: 1366, height: 900 }, locale: "tr-TR" });
+  await partnerCtx.addInitScript(() => { try { localStorage.setItem("ortaksat.cookieConsent.v1", JSON.stringify({ v: 1, analytics: false, marketing: false, at: "t" })); } catch {} });
+  const partnerPage = await partnerCtx.newPage();
+  partnerPage.on("pageerror", (e) => errors.push("ortak: " + e.message.slice(0, 120)));
+  await login(partnerPage, partnerEmail);
+  await partnerPage.goto("/partner", { waitUntil: "domcontentloaded" });
+  const received = partnerPage.getByTestId("partner-invite-received").first();
+  await expect(received).toBeVisible({ timeout: 25_000 });
+  await expect(received).toContainText("E2E DAVET URUNU");
+  await expect(received).toContainText("E2E Davet Satici davet etti");
+  await expect(received).toContainText("kazancın");
+  await partnerPage.screenshot({ path: "e2e-artifacts/invite/1c-gelen.png" });
+  // Telefon genişliğinde kutu taşmamalı.
+  await partnerPage.setViewportSize({ width: 360, height: 760 });
+  await partnerPage.waitForTimeout(1200);
+  await expect(partnerPage.getByTestId("partner-invite-received").first()).toBeVisible();
+  expect(await partnerPage.evaluate(() => document.documentElement.scrollWidth - window.innerWidth), "telefon genişliğinde yatay taşma olmamalı").toBeLessThanOrEqual(1);
+  await partnerPage.screenshot({ path: "e2e-artifacts/invite/1c-gelen-telefon.png" });
+  await partnerPage.getByTestId("partner-invite-dismiss").first().click();
+  await expect(partnerPage.getByTestId("partner-invite-received")).toHaveCount(0, { timeout: 15_000 });
+  const dismissed = await one<{ n: number }>(`select count(*)::int as n from partnership_invites where listing_id='${listingId}' and partner_id='${partnerId}' and dismissed_at is not null`);
+  expect(dismissed?.n, "davet kapatılmış olmalı").toBe(1);
+  await partnerCtx.close();
+
+  await page.goto("/partner", { waitUntil: "domcontentloaded" });
+  await page.getByRole("tab", { name: "Talepler" }).click({ timeout: 25_000 });
+  await expect(page.getByTestId("partner-invite-sent").first()).toContainText("İlgilenmedi", { timeout: 25_000 });
+  await page.screenshot({ path: "e2e-artifacts/invite/1d-giden.png" });
 
   // ---- 2) Fiyat geçmişi
   await runSql(`update listings set price = 27000 where id='${listingId}'`);

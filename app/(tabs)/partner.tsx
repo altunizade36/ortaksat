@@ -1,3 +1,4 @@
+import { PartnerInvitesPanel } from "@/components/partner-invites";
 import { HorizontalScroll } from "@/components/horizontal-scroll";
 import { CompactFooter } from "@/components/compact-footer";
 import { displayListingTitle } from "@/lib/listing-title";
@@ -527,7 +528,9 @@ function PartnerScreenInner() {
 
         {/* Main + sidebar */}
         <View style={{ alignItems: "flex-start", flexDirection: "row", gap: 20 }}>
-          <View style={{ flex: 1, minWidth: 0 }}>
+          <View style={{ flex: 1, gap: 14, minWidth: 0 }}>
+            {/* Gelen / giden ortaklık davetleri — davet yoksa hiçbir şey çizmez. */}
+            {tab === "all" || tab === "pending" ? <PartnerInvitesPanel /> : null}
             {tab === "all" ? (
               <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, padding: 16 }}>
                 <View style={{ alignItems: "flex-end", flexDirection: "row", gap: 10, justifyContent: "space-between", marginBottom: 12 }}>

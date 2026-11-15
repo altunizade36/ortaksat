@@ -17,7 +17,7 @@ import { useStore } from "@/lib/use-store";
  * ORTAKLIĞA AÇIK ilanları listelenir; birine dokununca sunucuya davet gider (ortağa bildirim). Davet yalnız çağrıdır;
  * ortaklık yine ortağın başvurusu ve satıcının kabulüyle kurulur. Sunucu kuralları: lib/partner-invite.ts.
  */
-export function PartnerInviteButton({ partnerId, partnerName }: { partnerId: string; partnerName?: string }) {
+export function PartnerInviteButton({ partnerId, partnerName, compact, iconOnly }: { partnerId: string; partnerName?: string; compact?: boolean; iconOnly?: boolean }) {
   const router = useRouter();
   const { currentUser, isAuthenticated, listings } = useStore();
   const [open, setOpen] = useState(false);
@@ -29,6 +29,8 @@ export function PartnerInviteButton({ partnerId, partnerName }: { partnerId: str
     [listings, currentUser.id]
   );
   if (!isAuthenticated || !partnerId || partnerId === currentUser.id) return null;
+  // Küçük biçim (ortak dizini kartı): davet edecek ilanı olmayan kullanıcıya düğme göstermek kartı kalabalıklaştırır.
+  if (compact && mine.length === 0) return null;
 
   async function invite(listingId: string) {
     if (busyId) return;
@@ -45,11 +47,19 @@ export function PartnerInviteButton({ partnerId, partnerName }: { partnerId: str
 
   return (
     <>
-      <Pressable testID="partner-invite-open" accessibilityRole="button" accessibilityLabel={`${partnerName || "Bu ortağı"} ilanıma davet et`} onPress={() => { setError(""); setOpen(true); }}
-        style={{ alignItems: "center", alignSelf: "flex-start", backgroundColor: colors.primary, borderRadius: 11, flexDirection: "row", gap: 7, minHeight: 42, paddingHorizontal: 15 }}>
-        <MaterialCommunityIcons name="account-plus-outline" size={18} color="#FFFFFF" />
-        <Text style={{ color: "#FFFFFF", fontSize: 13.5, fontWeight: "900" }}>İlanıma davet et</Text>
-      </Pressable>
+      {compact ? (
+        <Pressable testID="partner-invite-open" accessibilityRole="button" accessibilityLabel={`${partnerName || "Bu ortağı"} ilanıma davet et`} hitSlop={6} onPress={() => { setError(""); setOpen(true); }}
+          style={{ alignItems: "center", flexDirection: "row", gap: 4, justifyContent: "center", minHeight: 40, minWidth: 40 }}>
+          <MaterialCommunityIcons name="account-plus-outline" size={18} color={colors.primary} />
+          {iconOnly ? null : <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "800" }}>Davet et</Text>}
+        </Pressable>
+      ) : (
+        <Pressable testID="partner-invite-open" accessibilityRole="button" accessibilityLabel={`${partnerName || "Bu ortağı"} ilanıma davet et`} onPress={() => { setError(""); setOpen(true); }}
+          style={{ alignItems: "center", alignSelf: "flex-start", backgroundColor: colors.primary, borderRadius: 11, flexDirection: "row", gap: 7, minHeight: 42, paddingHorizontal: 15 }}>
+          <MaterialCommunityIcons name="account-plus-outline" size={18} color="#FFFFFF" />
+          <Text style={{ color: "#FFFFFF", fontSize: 13.5, fontWeight: "900" }}>İlanıma davet et</Text>
+        </Pressable>
+      )}
 
       <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
         <Pressable accessibilityLabel="Kapat" onPress={() => setOpen(false)} style={{ alignItems: "center", backgroundColor: "rgba(9,39,94,0.45)", flex: 1, justifyContent: "center", padding: 16 }}>

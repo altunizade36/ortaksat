@@ -1,3 +1,4 @@
+import { PartnerInviteButton } from "@/components/partner-invite-button";
 import { MaterialCommunityIcons } from "@/components/icons";
 import { Link, router, type Href } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
@@ -310,6 +311,8 @@ function PartnerCard({ entry, width, favorited, isSelf, onFav }: { entry: Partne
             <MaterialCommunityIcons name="arrow-right" size={14} color={colors.primaryDark} />
           </Pressable>
         </Link>
+        {/* Satıcı, dizinden çıkmadan ortağı kendi ilanına davet eder (yalnız ortaklığa açık ilanı olana görünür). */}
+        {!isSelf ? <PartnerInviteButton compact iconOnly={narrow} partnerId={entry.partnerId} partnerName={entry.fullName || undefined} /> : null}
         {!isSelf ? (
           <Pressable
             accessibilityRole="button"

@@ -1,3 +1,4 @@
+import { PartnerInvitesPanel } from "@/components/partner-invites";
 import { marketplaceCardGrid } from "@/lib/card-layout";
 import { TrustEntry } from "@/components/trust/entry";
 import { PartnershipWebLayout } from "@/components/partnership-web-layout";
@@ -722,6 +723,8 @@ export function MobilePartnershipHub() {
               gerçekleşince anlaşmana göre komisyon kazan.
             </Text>
           )}
+          {/* Satıcıların gönderdiği davetler: başlığın altında, aramanın üstünde (yoksa hiçbir şey çizmez). */}
+          <PartnerInvitesPanel only="received" style={{ marginBottom: 12 }} />
           <View style={[ms.row, desktop && { gap: 10 }]}>
             {desktop ? (
               <View
@@ -1064,6 +1067,8 @@ export function MobilePartnershipHub() {
       )}
       {tab === "Talepler" && (
         <>
+          {/* Gelen / giden ortaklık davetleri — davet yoksa hiçbir şey çizmez. */}
+          <PartnerInvitesPanel style={{ marginBottom: 12 }} />
           <View style={ms.row}>
             {["Gelen", "Gönderdiğim"].map((label) => {
               // Sayaç = karar bekleyen başvuru (eskiden aktif ortaklıklar da sayılıyordu).
