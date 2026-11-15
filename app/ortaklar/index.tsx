@@ -280,7 +280,8 @@ function PartnerCard({ entry, width, favorited, isSelf, onFav }: { entry: Partne
 
           {/* Performans satırı: onaylı satış + tamamlanan ortaklık + kazanç */}
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
-            <StatChip icon="check-circle" label={`${entry.confirmedSales} ${t("satış")}`} />
+            {/* Satışı olmayan ortakta "0 satış" yazmak olumsuz bir sinyal veriyordu; satış olunca gösterilir. */}
+            {entry.confirmedSales > 0 ? <StatChip icon="check-circle" label={`${entry.confirmedSales} ${t("satış")}`} /> : null}
             {entry.completedPartnerships > 0 ? <StatChip icon="handshake" label={`${entry.completedPartnerships} ${t("ortaklık")}`} /> : null}
             {entry.paidEarned > 0 ? <StatChip icon="cash" label={moneyIn(entry.paidEarned, "TRY")} tone="success" /> : null}
           </View>
@@ -302,9 +303,9 @@ function PartnerCard({ entry, width, favorited, isSelf, onFav }: { entry: Partne
       </Link>
 
       {/* Alt aksiyon: vitrini gör + favori kalp — marginTop:auto → kart uzasa da hep DİPTE (eşit yükseklik). */}
-      <View style={{ alignItems: "center", borderTopColor: colors.line, borderTopWidth: 1, flexDirection: "row", justifyContent: "space-between", marginTop: "auto", paddingHorizontal: 14, paddingVertical: 8 }}>
+      <View style={{ alignItems: "center", borderTopColor: colors.line, borderTopWidth: 1, flexDirection: "row", justifyContent: "space-between", marginTop: "auto", paddingHorizontal: 14, paddingVertical: 2 }}>
         <Link href={{ pathname: "/ortak/[id]", params: { id: entry.partnerId } }} asChild>
-          <Pressable accessibilityRole="link" style={{ alignItems: "center", flexDirection: "row", gap: 4 }}>
+          <Pressable accessibilityRole="link" hitSlop={6} style={{ alignItems: "center", flexDirection: "row", gap: 4, minHeight: 40 }}>
             <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "800" }}>{t("Vitrini gör")}</Text>
             <MaterialCommunityIcons name="arrow-right" size={14} color={colors.primaryDark} />
           </Pressable>
@@ -316,9 +317,9 @@ function PartnerCard({ entry, width, favorited, isSelf, onFav }: { entry: Partne
             accessibilityLabel={favorited ? t("Favorilerden çıkar") : t("Favori ortak yap")}
             onPress={onFav}
             hitSlop={8}
-            style={({ pressed }) => ({ alignItems: "center", flexDirection: "row", gap: 4, opacity: pressed ? 0.6 : 1 })}
+            style={({ pressed }) => ({ alignItems: "center", flexDirection: "row", gap: 4, justifyContent: "center", minHeight: 40, minWidth: 40, opacity: pressed ? 0.6 : 1 })}
           >
-            <MaterialCommunityIcons name={favorited ? "heart" : "heart-outline"} size={18} color={favorited ? colors.accent : colors.muted} />
+            <MaterialCommunityIcons name={favorited ? "heart" : "heart-outline"} size={20} color={favorited ? colors.accent : colors.muted} />
             {entry.favoriteCount > 0 ? <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "800" }}>{entry.favoriteCount}</Text> : null}
           </Pressable>
         ) : null}

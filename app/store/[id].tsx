@@ -311,6 +311,7 @@ function StoreScreenLegacy() {
   const memberLabel = memberSinceLabel(seller.createdAt, language);
 
   // Doğrulama/başarı rozetleri — hem masaüstü hem mobil dal kullanır.
+  // (mobileBadges aşağıda: telefonda ziyaretçiye yalnız kazanılmış olanlar.)
   const badges: Array<{ icon: keyof typeof MaterialCommunityIcons.glyphMap; label: string; sub: string; on: boolean; tint: string; color: string }> = [
     { icon: "check-decagram", label: translateCopy("Kimlik Doğrulandı", language), sub: translateCopy("Resmi kimlik onaylı", language), on: seller.verifiedIdentity, tint: colors.successSoft, color: colors.success },
     { icon: "phone-check", label: translateCopy("Telefon Doğrulandı", language), sub: translateCopy("Numara onaylı", language), on: seller.verifiedPhone, tint: colors.infoSoft, color: colors.info },
@@ -319,6 +320,7 @@ function StoreScreenLegacy() {
     { icon: "trophy", label: translateCopy("Çok Satan", language), sub: translateCopy("50+ başarılı satış", language), on: seller.successfulSales >= 50, tint: colors.primarySoft, color: colors.primaryDark },
     { icon: "lightning-bolt", label: translateCopy("Hızlı Yanıt", language), sub: translateCopy("%90+ yanıt oranı", language), on: seller.responseRate >= 90, tint: colors.accentSoft, color: colors.accent }
   ];
+  const mobileBadges = isOwnStore ? badges : badges.filter((b) => b.on);
 
   if (isWideWeb) {
     const sellerPartnerships = partnerships.filter((p) => activeListings.some((l) => l.id === p.listingId));
@@ -716,11 +718,15 @@ function StoreScreenLegacy() {
           <Metric label={t("activeListing")} value={`${activeListings.length}`} />
           <Metric label={translateCopy("Takipçi", language)} value={`${seller.followerCount}`} />
         </View>
-        <View style={{ flexDirection: "row", gap: 8 }}>
-          <Metric label={translateCopy("Puan", language)} value={ratingText} />
-          {seller.responseRate > 0 ? <Metric label={translateCopy("Yanıt oranı", language)} value={`%${seller.responseRate}`} /> : activityLabel ? <Metric label={translateCopy("Aktiflik", language)} value={translateCopy(activityLabel, language)} /> : null}
-          <Metric label={translateCopy("Satıcı güveni", language)} value={trust?.seller.score == null ? "Henüz yok" : `%${trust.seller.score}`} />
-        </View>
+        {/* Değeri olmayan ölçüm kutusu çizilmez (2026-11-15): yeni mağazada "Puan —" ve "Satıcı güveni: Henüz yok"
+            kutuları boş bir mağaza izlenimi veriyordu. Hiçbiri yoksa satırın tamamı kalkar. */}
+        {ratingValue != null || seller.responseRate > 0 || !!activityLabel || trust?.seller.score != null ? (
+          <View style={{ flexDirection: "row", gap: 8 }}>
+            {ratingValue != null ? <Metric label={translateCopy("Puan", language)} value={ratingText} /> : null}
+            {seller.responseRate > 0 ? <Metric label={translateCopy("Yanıt oranı", language)} value={`%${seller.responseRate}`} /> : activityLabel ? <Metric label={translateCopy("Aktiflik", language)} value={translateCopy(activityLabel, language)} /> : null}
+            {trust?.seller.score != null ? <Metric label={translateCopy("Satıcı güveni", language)} value={`%${trust.seller.score}`} /> : null}
+          </View>
+        ) : null}
         {!isOwnStore ? (
           <Pressable onPress={handleFollow} accessibilityRole="button" style={{ alignItems: "center", backgroundColor: following ? colors.surfaceAlt : colors.primary, borderColor: colors.primary, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 8, justifyContent: "center", paddingVertical: 12 }}>
             <MaterialCommunityIcons name={following ? "account-heart" : "account-heart-outline"} size={18} color={following ? colors.primary : "#FFFFFF"} />
@@ -784,11 +790,14 @@ function StoreScreenLegacy() {
         ) : null}
       </View>
 
-      {/* Doğrulama rozetleri (mobil) — güven sinyali masaüstündeki gibi görünür. */}
+      {/* Doğrulama rozetleri (mobil). Ziyaretçi yalnız KAZANILMIŞ rozetleri görür; altı kilitli gri rozet mağazayı
+          "hiçbir şeyi yok" gibi gösteriyordu. Mağaza sahibi neleri kazanabileceğini görsün diye hepsini görür.
+          Gösterilecek rozet de uzmanlık da yoksa kutu hiç çizilmez. */}
+      {mobileBadges.length > 0 || (seller.expertiseCategories?.length ?? 0) > 0 ? (
       <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 8, borderWidth: 1, gap: 8, padding: 12 }}>
-        <Text style={{ color: colors.ink, fontSize: 14, fontWeight: "900" }}>{translateCopy("Doğrulama & rozetler", language)}</Text>
+        {mobileBadges.length > 0 ? <Text style={{ color: colors.ink, fontSize: 14, fontWeight: "900" }}>{translateCopy("Doğrulama & rozetler", language)}</Text> : null}
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 7 }}>
-          {badges.map((b) => (
+          {mobileBadges.map((b) => (
             <View key={b.label} style={{ alignItems: "center", backgroundColor: b.on ? b.tint : colors.surfaceAlt, borderRadius: 999, flexDirection: "row", gap: 5, opacity: b.on ? 1 : 0.55, paddingHorizontal: 10, paddingVertical: 6 }}>
               <MaterialCommunityIcons name={b.on ? b.icon : "lock-outline"} size={13} color={b.on ? b.color : colors.subtle} />
               <Text style={{ color: b.on ? b.color : colors.subtle, fontSize: 11.5, fontWeight: "800" }}>{b.label}</Text>
@@ -796,7 +805,7 @@ function StoreScreenLegacy() {
           ))}
         </View>
         {seller.expertiseCategories && seller.expertiseCategories.length > 0 ? (
-          <View style={{ borderTopColor: colors.line, borderTopWidth: 1, gap: 7, marginTop: 2, paddingTop: 10 }}>
+          <View style={mobileBadges.length > 0 ? { borderTopColor: colors.line, borderTopWidth: 1, gap: 7, marginTop: 2, paddingTop: 10 } : { gap: 7 }}>
             <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "900" }}>{translateCopy("Uzmanlık alanları", language)}</Text>
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 7 }}>
               {seller.expertiseCategories.map((cat) => (
@@ -809,6 +818,7 @@ function StoreScreenLegacy() {
           </View>
         ) : null}
       </View>
+      ) : null}
 
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
         <StoreFilterChip active={filter === "active"} icon="check-circle-outline" label="Aktif" onPress={() => setFilter("active")} />

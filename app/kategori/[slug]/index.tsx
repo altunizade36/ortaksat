@@ -422,7 +422,7 @@ function CategoryLandingScreenLegacy() {
   const siblingLinks = siblings.map((s) => (
     <Link key={s.key} href={catHref(s.slug)} asChild>
       <Pressable style={{ justifyContent: "center", minHeight: 44, maxWidth: 240, backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 7 }}>
-        <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 12, fontWeight: "600" }}>{translateCopy(categoryChipLabel(s.label), language)}</Text>
+        <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 12.5, fontWeight: "700" }}>{translateCopy(categoryChipLabel(s.label), language)}</Text>
       </Pressable>
     </Link>
   ));
@@ -457,13 +457,13 @@ function CategoryLandingScreenLegacy() {
       <WebContainer max={1280} padding={12} style={{ gap: 14 }}>
         {/* Breadcrumb — tam ata zinciri (her üst kategori tıklanabilir) */}
         <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 4 }}>
-          <Link href="/" asChild><Pressable><Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "700" }}>{translateCopy("Ana Sayfa", language)}</Text></Pressable></Link>
+          <Link href="/" asChild><Pressable hitSlop={8} style={{ justifyContent: "center", minHeight: 32 }}><Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "700" }}>{translateCopy("Ana Sayfa", language)}</Text></Pressable></Link>
           <MaterialCommunityIcons name="chevron-right" size={14} color={colors.subtle} />
-          <Link href="/kategoriler" asChild><Pressable><Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "700" }}>{translateCopy("Kategoriler", language)}</Text></Pressable></Link>
+          <Link href="/kategoriler" asChild><Pressable hitSlop={8} style={{ justifyContent: "center", minHeight: 32 }}><Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "700" }}>{translateCopy("Kategoriler", language)}</Text></Pressable></Link>
           {ancestors.map((a) => (
             <View key={a.key} style={{ alignItems: "center", flexDirection: "row", gap: 4 }}>
               <MaterialCommunityIcons name="chevron-right" size={14} color={colors.subtle} />
-              <Link href={catHref(a.slug)} asChild><Pressable><Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "700" }}>{translateCopy(a.label, language)}</Text></Pressable></Link>
+              <Link href={catHref(a.slug)} asChild><Pressable hitSlop={8} style={{ justifyContent: "center", minHeight: 32 }}><Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "700" }}>{translateCopy(a.label, language)}</Text></Pressable></Link>
             </View>
           ))}
           <MaterialCommunityIcons name="chevron-right" size={14} color={colors.subtle} />

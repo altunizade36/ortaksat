@@ -450,7 +450,7 @@ function DesktopHomeScreen() {
             <View testID="newest-listing-carousel" style={{ gap: 8 }}>
               <View style={{ alignItems: "center", flexDirection: "row", gap: 10 }}>
                 <Text style={{ color: colors.ink, flex: 1, fontSize: 16, fontWeight: "900" }}>{translateCopy("Öne Çıkan Ortaklar", language)}</Text>
-                <Pressable accessibilityRole="button" onPress={() => router.push("/ortaklar" as Href)} style={{ alignItems: "center", flexDirection: "row", gap: 3 }}>
+                <Pressable accessibilityRole="button" hitSlop={8} onPress={() => router.push("/ortaklar" as Href)} style={{ alignItems: "center", flexDirection: "row", gap: 3, minHeight: 36 }}>
                   <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "800" }}>{translateCopy("Tümü", language)}</Text>
                   <MaterialCommunityIcons name="arrow-right" size={13} color={colors.primaryDark} />
                 </Pressable>
