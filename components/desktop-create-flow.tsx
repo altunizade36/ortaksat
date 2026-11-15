@@ -3,6 +3,7 @@ import { LISTING_DRAFT_PREFIX, LISTING_DRAFT_TTL_MS, LISTING_VIDEO_ENABLED, dele
 import { ListingVideoField, type ListingVideoStatus } from "@/components/listing-video-field";
 import { categoryLegalNotice } from "@/lib/category-legal-notice";
 import { categoryPathAttributes, isLeafCategoryPath, resolveCategoryPath, searchCategoryTree } from "@/lib/category-path";
+import { CategoryNudge } from "@/components/category-nudge";
 import { ListingLocationFields } from "@/components/listing-location-fields";
 import { displayListingTitle, validateListingTitle } from "@/lib/listing-title";
 import { ListingTitleInput } from "@/components/listing-title-input";
@@ -1347,6 +1348,7 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
                   <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 14 }}>{renderField(titleField)}</View>
                   {/* MÜKERRER BAŞLIK — risk motoru bunu zaten yakalıyor ve ilanı sessizce
                       incelemeye düşürüyordu; kullanıcı nedenini asla öğrenemiyordu. */}
+                  <CategoryNudge path={path} title={String(values.title ?? "")} onPick={changePath} />
                   {duplicateTitle ? (
                     <View style={{ alignItems: "flex-start", backgroundColor: colors.goldSoft, borderColor: colors.gold, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 7, padding: 10 }}>
                       <MaterialCommunityIcons name="alert-outline" size={15} color={colors.goldInk} />

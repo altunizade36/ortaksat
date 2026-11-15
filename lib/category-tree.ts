@@ -1886,7 +1886,7 @@ export const categoryTree: CategoryNode[] = [
   node("İkinci El & Sıfır Alışveriş", [
     node("Elektronik", [
       node("Televizyon", brandModelNodes(TV_BRANDS, TV_MODELS, "televizyon"), "televizyon"),
-      node("Tablet", leaves(["iPad", "Samsung Galaxy Tab", "Xiaomi Pad", "Huawei MatePad", "Lenovo Tab", "Reeder Tablet", "Diğer Tablet"], "elektronik"), "elektronik"),
+      node("Tablet", leaves(["iPad", "Samsung Galaxy Tab", "Xiaomi Pad", "Huawei MatePad", "Lenovo Tab", "Reeder Tablet", "E-Kitap Okuyucu", "Grafik Tablet", "Diğer Tablet"], "elektronik"), "elektronik"),
       node("Ses & Kulaklık", leaves(["Kablosuz Kulaklık", "Kulak İçi Kulaklık", "Kulak Üstü Kulaklık", "Bluetooth Hoparlör", "Soundbar", "Ev Sinema Sistemi", "Mikrofon"], "elektronik"), "elektronik"),
       // Foto & Kamera Sahibinden granülerliğine çıkarıldı (Analog/Lens & Filtre/Stüdyo + optik: Dürbün/Teleskop/Mikroskop).
       node("Foto & Kamera", leaves(["DSLR Fotoğraf Makinesi", "Aynasız Fotoğraf Makinesi", "Kompakt Kamera", "Analog Fotoğraf Makinesi", "Aksiyon Kamera", "Objektif", "Lens & Filtre", "Tripod", "Stüdyo Ekipmanı (Işık/Softbox)", "Drone", "Güvenlik Kamerası", "Dürbün", "Teleskop", "Mikroskop"], "elektronik"), "elektronik"),
@@ -1895,6 +1895,13 @@ export const categoryTree: CategoryNode[] = [
       node("Elektrikli Ulaşım", leaves(["Elektrikli Scooter", "Hoverboard", "Elektrikli Kaykay", "Segway", "Scooter Yedek Parça"], "elektronik"), "elektronik"),
       // Teknik/hobi elektroniği (Sahibinden "Teknik Elektronik", 120K ilan) — bizde HİÇ yoktu: maker/tekniker segmenti.
       node("Teknik Elektronik", leaves(["Devre & Montaj", "Test & Ölçüm Cihazı", "Metal Dedektörü", "Terazi & Tartı", "Pil & Batarya", "Güç Kaynağı & Adaptör", "Lisanssız Telsiz", "El Feneri & Lazer", "Lehim & Havya", "Sensör & Modül", "Arduino & Geliştirme Kartı", "Kablo & Konnektör", "Yedek Parça"], "elektronik"), "elektronik"),
+      // 2026-11-15 genişletme (yalnız EKLEME; mevcut ad/adres değişmedi). Tetikleyen: "Yıkama Dronu" ilanı
+      // Elektronik › Diğer'e düştü — dron yalnız "Foto & Kamera" içinde tek yapraktı, bulunamıyordu. Dron artık
+      // kendi dalı; ayrıca diğer ilan sitelerinde talebi yüksek olup bizde hiç olmayan dallar eklendi.
+      node("Drone", leaves(["Kamera Dronu", "FPV & Yarış Dronu", "Mini & Oyuncak Drone", "Tarım & İlaçlama Dronu", "Temizlik & Yıkama Dronu", "Kargo & Endüstriyel Drone", "Drone Bataryası", "Pervane & Yedek Parça", "Kumanda & FPV Gözlük", "Drone Çanta & Aksesuar"], "elektronik"), "elektronik"),
+      node("3D Yazıcı & Maker", leaves(["3D Yazıcı (FDM)", "3D Yazıcı (Reçine)", "Filament & Reçine", "3D Tarayıcı", "Lazer Kazıma & Kesim", "Hobi CNC", "3D Yazıcı Yedek Parça"], "elektronik"), "elektronik"),
+      node("Güç & Enerji", leaves(["Kesintisiz Güç Kaynağı (UPS)", "Taşınabilir Güç İstasyonu", "Taşınabilir Güneş Paneli", "İnvertör", "Akü & Şarj Cihazı", "Elektrikli Araç Şarj Cihazı", "Regülatör"], "elektronik"), "elektronik"),
+      node("İş Yeri Elektroniği", leaves(["Barkod Okuyucu", "Barkod & Etiket Yazıcı", "Yazar Kasa & POS", "Para Sayma Makinesi", "Kiosk & Sıramatik", "LED Ekran & Dijital Tabela", "Fotokopi Makinesi", "Test & Ölçüm (Osiloskop)"], "elektronik"), "elektronik"),
       ...leaves(["Projeksiyon", "Yazıcı & Tarayıcı", "Network & Modem", "Elektronik Aksesuar"], "elektronik")
     ], "elektronik"),
     node("Telefon & Aksesuar", [
@@ -1912,8 +1919,14 @@ export const categoryTree: CategoryNode[] = [
       leaf("Yazılım & Lisans", "dijitalHizmet")
     ], "bilgisayar"),
     node("Ev & Yaşam", [
-      node("Mobilya", leaves(["Koltuk Takımı", "Köşe Koltuk", "Kanepe", "Berjer", "Masa", "Sandalye", "Yatak", "Baza", "Gardırop", "Kitaplık", "TV Ünitesi", "Çalışma Masası", "Bebek Mobilyası"], "mobilya"), "mobilya"),
-      ...leaves(["Dekorasyon", "Aydınlatma", "Ev Tekstili", "Banyo", "Bahçe & Balkon", "Temizlik Ürünleri", "Düzenleyiciler", "Ev Gereçleri"], "alisverisGenel")
+      node("Mobilya", leaves(["Koltuk Takımı", "Köşe Koltuk", "Kanepe", "Berjer", "Masa", "Sandalye", "Yatak", "Baza", "Gardırop", "Kitaplık", "TV Ünitesi", "Çalışma Masası", "Bebek Mobilyası", "Yatak Odası Takımı", "Yemek Odası Takımı", "Çocuk & Genç Odası", "Ofis Koltuğu", "Oyuncu Koltuğu", "Mutfak Dolabı", "Ayakkabılık & Portmanto", "Para Kasası"], "mobilya"), "mobilya"),
+      // 2026-11-15: bu dört başlık tek yapraktı (altı boştu); alt kategorileri eklendi. Adları ve adresleri aynı.
+      node("Dekorasyon", leaves(["Tablo & Çerçeve", "Ayna", "Duvar Kağıdı & Sticker", "Vazo & Biblo", "Duvar Saati", "Mum & Oda Kokusu", "Yapay Çiçek"], "alisverisGenel"), "alisverisGenel"),
+      node("Aydınlatma", leaves(["Avize", "Abajur & Lambader", "Aplik", "LED & Şerit Aydınlatma", "Spot", "Masa Lambası", "Ampul"], "alisverisGenel"), "alisverisGenel"),
+      node("Ev Tekstili", leaves(["Nevresim Takımı", "Battaniye & Pike", "Yorgan & Yastık", "Perde & Stor", "Halı & Kilim", "Havlu & Bornoz", "Masa Örtüsü", "Yatak Örtüsü", "Kırlent"], "alisverisGenel"), "alisverisGenel"),
+      node("Banyo", leaves(["Duşakabin", "Banyo Dolabı", "Lavabo & Batarya", "Klozet", "Küvet & Jakuzi", "Banyo Aksesuarı"], "alisverisGenel"), "alisverisGenel"),
+      node("Isıtma & Soğutma", leaves(["Soba (Odun & Kömür)", "Pelet Sobası", "Şömine", "Elektrikli Isıtıcı", "Vantilatör", "Hava Soğutucu"], "alisverisGenel"), "alisverisGenel"),
+      ...leaves(["Bahçe & Balkon", "Temizlik Ürünleri", "Düzenleyiciler", "Ev Gereçleri"], "alisverisGenel")
     ], "alisverisGenel"),
     node("Beyaz Eşya", [
       node("Buzdolabı", leaves(WHITE_GOODS_BRANDS, "beyazEsya"), "beyazEsya"),
@@ -1930,8 +1943,8 @@ export const categoryTree: CategoryNode[] = [
     node("Mutfak", leaves(["Tencere & Tava", "Düdüklü Tencere", "Çaydanlık & Cezve", "Bıçak & Kesim Aletleri", "Sofra Takımı", "Bardak & Kupa", "Saklama Kabı", "Pişirme Kabı", "Fırın & Pasta Malzemesi", "Kahve & Çay Ekipmanı", "Mutfak Gereçleri", "Mutfak Düzenleme"], "alisverisGenel"), "alisverisGenel"),
     node("Küçük Ev Aletleri", leaves(["Elektrikli Süpürge", "Robot Süpürge", "Dikey Süpürge", "Ütü & Ütü Sistemi", "Blender & Rondo", "El Blenderi", "Su Isıtıcı (Kettle)", "Airfryer & Fritöz", "Kahve Makinesi", "Çay Makinesi", "Tost & Izgara Makinesi", "Mikser & Çırpıcı", "Meyve/Sebze Sıkacağı", "Doğrayıcı", "Ekmek & Yoğurt Makinesi", "Semaver", "Nem Alma & Hava Temizleyici", "Saç Kurutma & Şekillendirme"], "beyazEsya"), "beyazEsya"),
     node("Moda", [
-      node("Kadın Giyim", leaves(["Elbise", "Bluz", "Gömlek", "Pantolon", "Etek", "Şort", "Tulum", "Ceket", "Mont", "Kazak", "Sweatshirt", "Takım", "Abiye", "Gelinlik", "Pijama & Gecelik", "İç Giyim"], "moda"), "moda"),
-      node("Erkek Giyim", leaves(["Tişört", "Gömlek", "Pantolon", "Şort", "Ceket", "Mont", "Takım Elbise", "Sweatshirt", "Kazak", "Yelek", "Spor Giyim", "Pijama", "İç Giyim"], "moda"), "moda"),
+      node("Kadın Giyim", leaves(["Elbise", "Bluz", "Gömlek", "Pantolon", "Etek", "Şort", "Tulum", "Ceket", "Mont", "Kazak", "Sweatshirt", "Takım", "Abiye", "Gelinlik", "Pijama & Gecelik", "İç Giyim", "Mayo & Bikini", "Eşofman"], "moda"), "moda"),
+      node("Erkek Giyim", leaves(["Tişört", "Gömlek", "Pantolon", "Şort", "Ceket", "Mont", "Takım Elbise", "Sweatshirt", "Kazak", "Yelek", "Spor Giyim", "Pijama", "İç Giyim", "Damatlık", "Eşofman", "Mayo & Deniz Şortu"], "moda"), "moda"),
       node("Çocuk Giyim", leaves(["Kız Çocuk", "Erkek Çocuk", "Bebek Giyim", "Okul Kıyafeti"], "moda"), "moda"),
       node("Ayakkabı", leaves(["Kadın Ayakkabı", "Erkek Ayakkabı", "Spor Ayakkabı", "Bot & Çizme", "Sandalet & Terlik", "Çocuk Ayakkabı"], "ayakkabi"), "ayakkabi"),
       node("Çanta", leaves(["Kadın Çanta", "Sırt Çantası", "Cüzdan", "Valiz & Bavul", "Laptop Çantası", "El Çantası"], "ayakkabi"), "ayakkabi"),
@@ -1939,6 +1952,8 @@ export const categoryTree: CategoryNode[] = [
       node("Gözlük", brandModelNodes(EYEWEAR_BRANDS, {}, "aksesuar"), "aksesuar"),
       node("Takı & Mücevher", leaves(["Yüzük", "Kolye", "Bilezik", "Küpe", "Altın", "Pırlanta", "Gümüş", "Saat Kordonu"], "aksesuar"), "aksesuar"),
       node("Şapka, Kemer & Aksesuar", leaves(["Şapka & Bere", "Kemer", "Atkı, Şal & Fular", "Eldiven", "Kravat & Papyon", "Çorap", "Saç Aksesuarı", "Şemsiye"], "aksesuar"), "aksesuar"),
+      node("İş Kıyafeti & Üniforma", leaves(["İş Elbisesi & Tulum", "Önlük & Forma", "Aşçı Kıyafeti", "Güvenlik Kıyafeti", "Okul Forması", "İş Ayakkabısı"], "moda"), "moda"),
+      node("Kostüm & Özel Gün", leaves(["Kostüm", "Kına & Bindallı", "Sünnet Kıyafeti", "Mezuniyet Kıyafeti", "Halk Oyunları Kıyafeti"], "moda"), "moda"),
       ...leaves(["Tesettür Giyim", "Spor Giyim"], "moda")
     ], "moda"),
     node("Anne & Bebek", [
@@ -1951,21 +1966,33 @@ export const categoryTree: CategoryNode[] = [
     node("Kozmetik & Kişisel Bakım", [
       node("Parfüm", brandModelNodes(PERFUME_BRANDS, {}, "kozmetik"), "kozmetik"),
       node("Makyaj", brandModelNodes(COSMETIC_BRANDS, {}, "kozmetik"), "kozmetik"),
-      ...leaves(["Cilt Bakımı", "Saç Bakımı", "Erkek Bakım", "Kişisel Bakım Cihazları", "Ağız Bakımı", "Tıraş Ürünleri", "Güneş Bakımı"], "kozmetik")
+      ...leaves(["Cilt Bakımı", "Saç Bakımı", "Erkek Bakım", "Kişisel Bakım Cihazları", "Ağız Bakımı", "Tıraş Ürünleri", "Güneş Bakımı", "Peruk & Saç Ekleme"], "kozmetik")
     ], "kozmetik"),
     node("Spor & Outdoor", [
       node("Fitness & Kondisyon", leaves(["Koşu Bandı", "Kondisyon Bisikleti", "Eliptik", "Ağırlık & Dambıl", "Kürek Çekme", "Fitness İstasyonu", "Direniş Bandı", "Yoga & Pilates"], "spor"), "spor"),
       node("Bisiklet", leaves(["Dağ Bisikleti", "Yol Bisikleti", "Şehir Bisikleti", "Elektrikli Bisiklet", "Çocuk Bisikleti", "Katlanır Bisiklet", "Bisiklet Parçaları"], "spor"), "spor"),
       node("Kamp & Doğa", leaves(["Çadır", "Uyku Tulumu", "Kamp Sandalyesi", "Kamp Ocağı", "Sırt Çantası", "Termos & Matara", "Outdoor Giyim & Ayakkabı"], "spor"), "spor"),
       node("Takım Sporları", leaves(["Futbol", "Basketbol", "Voleybol", "Tenis", "Masa Tenisi", "Badminton"], "spor"), "spor"),
-      ...leaves(["Su Sporları", "Kış Sporları", "Avcılık & Balıkçılık", "Dövüş Sporları", "Kaykay & Paten"], "spor")
+      // 2026-11-15: dört başlık tek yapraktı; alt kategorileri + eksik spor dalları eklendi. (Ateşli silah, mühimmat
+      // ve bıçak yok — yasaklı ürünler listesinde; avcılık yalnız kıyafet/optik, balıkçılık olta takımı.)
+      node("Su Sporları", leaves(["Dalış Ekipmanı", "Şnorkel & Maske", "Sörf & Kitesurf", "SUP (Kürek Sörfü)", "Yüzme Ekipmanı", "Wetsuit & Dalış Elbisesi", "Can Yeleği"], "spor"), "spor"),
+      node("Kış Sporları", leaves(["Kayak Takımı", "Snowboard", "Kayak Giyim", "Kızak", "Buz Pateni"], "spor"), "spor"),
+      node("Avcılık & Balıkçılık", leaves(["Olta Kamışı", "Olta Makinesi", "Yem & Suni Yem", "Olta Aksesuarı", "Balıkçı Kıyafeti & Çizme", "Balık Bulucu", "Av Kıyafeti & Kamuflaj", "Gözetleme & Optik"], "spor"), "spor"),
+      node("Dövüş Sporları", leaves(["Boks", "Kickboks & Muay Thai", "Taekwondo & Karate", "Judo & Güreş", "Kum Torbası", "Koruyucu Ekipman"], "spor"), "spor"),
+      node("Okçuluk", leaves(["Yay", "Ok & Sadak", "Hedef & Aksesuar"], "spor"), "spor"),
+      node("Tırmanış & Dağcılık", leaves(["Tırmanış Ayakkabısı", "Emniyet Kemeri & Karabina", "İp & Kask", "Trekking Batonu"], "spor"), "spor"),
+      node("Salon & Oyun Sporları", leaves(["Bilardo", "Langırt", "Dart", "Hava Hokeyi", "Bowling"], "spor"), "spor"),
+      node("Trambolin & Oyun Parkı", leaves(["Trambolin", "Çocuk Oyun Parkı", "Salıncak & Kaydırak"], "spor"), "spor"),
+      leaf("Kaykay & Paten", "spor")
     ], "spor"),
     node("Kitap & Hobi", [
       node("Kitap", leaves(["Roman", "Öykü & Şiir", "Edebiyat & Klasikler", "Kişisel Gelişim", "Bilim & Felsefe", "Tarih & Politika", "Din & Maneviyat", "Çocuk & Gençlik", "Ders & Sınav Kitabı", "Akademik & Referans", "Sanat & Tasarım", "Çizgi Roman & Manga", "Yabancı Dil", "Sözlük & Ansiklopedi", "Sağlık & Yaşam", "Yemek & Mutfak", "Sahaf / Eski Baskı"], "kitap"), "kitap"),
       node("Dergi & Gazete", leaves(["Dergi", "Gazete", "Koleksiyon Dergi", "Fasikül"], "kitap"), "kitap"),
       node("Müzik & Film", leaves(["Plak (LP)", "CD", "Kaset", "DVD & Blu-ray", "Dijital Müzik"], "alisverisGenel"), "alisverisGenel"),
       node("Hobi & El Sanatları", leaves(["Model & Maket", "Puzzle & Yapboz", "Örgü & Dikiş", "Resim & Boyama", "Takı Tasarım", "Ahşap Boyama", "Seramik & Kil", "Astronomi & Teleskop", "RC / Drone Hobi", "Kokulu Taş & Mum"], "alisverisGenel"), "alisverisGenel"),
-      node("Kırtasiye & Ofis", leaves(["Defter & Bloknot", "Kalem", "Dosya & Klasör", "Sanat Malzemesi", "Okul Malzemesi"], "alisverisGenel"), "alisverisGenel")
+      node("Kırtasiye & Ofis", leaves(["Defter & Bloknot", "Kalem", "Dosya & Klasör", "Sanat Malzemesi", "Okul Malzemesi"], "alisverisGenel"), "alisverisGenel"),
+      node("Oyun & Eğlence", leaves(["Tavla", "Okey Takımı", "Satranç", "Kart Oyunları", "Koleksiyon Kartları", "Kutu Oyunu"], "alisverisGenel"), "alisverisGenel"),
+      node("El Yapımı Ürünler", leaves(["El Yapımı Takı", "Örgü & Amigurumi", "Ahşap El İşi", "Seramik & Çini", "Sabun & Mum", "Makrome", "Deri El İşi"], "alisverisGenel"), "alisverisGenel")
     ], "kitap"),
     node("Koleksiyon & Antika", [
       node("Nümizmatik (Para)", leaves(["Osmanlı Parası", "Cumhuriyet Parası", "Madeni Para", "Kağıt Para (Banknot)", "Yabancı Para", "Hatıra Para", "Altın Sikke"], "koleksiyon"), "koleksiyon"),
@@ -1973,11 +2000,11 @@ export const categoryTree: CategoryNode[] = [
       node("Antika", leaves(["Antika Mobilya", "Antika Saat", "Gramofon & Radyo", "Porselen & Seramik", "Bakır & Pirinç", "Antika Aydınlatma", "Tablo & Yağlıboya", "El Yazması & Belge"], "koleksiyon"), "koleksiyon"),
       node("Koleksiyon Ürünleri", leaves(["Kartpostal", "Rozet & Madalya", "Telefon Kartı", "Kibrit & Etiket", "Plak Koleksiyonu", "Oyuncak Koleksiyonu", "Figür & Aksiyon Figür", "Model Araba", "Askeri Malzeme", "Taş & Mineral", "İmza & Fotoğraf", "Saat Koleksiyonu"], "koleksiyon"), "koleksiyon")
     ], "koleksiyon"),
-    node("Süpermarket & Gıda", leaves(["Temel Gıda", "Kahvaltılık", "Atıştırmalık & Şekerleme", "Bakliyat & Makarna", "Konserve & Hazır Yemek", "Kahve & Çay", "İçecek", "Su & Maden Suyu", "Süt & Süt Ürünleri", "Bebek Maması & Gıdası", "Organik & Glutensiz", "Baharat & Sos", "Zeytin & Zeytinyağı", "Bal & Reçel", "Kuruyemiş & Kurutulmuş Gıda", "Deterjan & Temizlik", "Kağıt Ürünleri", "Kişisel Temizlik & Hijyen"], "alisverisGenel"), "alisverisGenel"),
+    node("Süpermarket & Gıda", leaves(["Temel Gıda", "Kahvaltılık", "Atıştırmalık & Şekerleme", "Bakliyat & Makarna", "Konserve & Hazır Yemek", "Kahve & Çay", "İçecek", "Su & Maden Suyu", "Süt & Süt Ürünleri", "Bebek Maması & Gıdası", "Organik & Glutensiz", "Baharat & Sos", "Zeytin & Zeytinyağı", "Bal & Reçel", "Kuruyemiş & Kurutulmuş Gıda", "Deterjan & Temizlik", "Kağıt Ürünleri", "Kişisel Temizlik & Hijyen", "Yöresel Ürünler", "Peynir & Şarküteri"], "alisverisGenel"), "alisverisGenel"),
     node("Ofis & Kırtasiye", leaves(["Kırtasiye Malzemesi", "Defter & Bloknot", "Kalem & Yazı Gereçleri", "Ofis Mobilyası", "Yazıcı & Sarf Malzeme", "Dosyalama & Arşiv", "Sunum & Pano", "Hesap Makinesi", "Ofis Elektroniği", "Okul Malzemesi"], "alisverisGenel"), "alisverisGenel"),
     node("Oyuncak", leaves(["Eğitici Oyuncak", "Peluş Oyuncak", "Yapı & Bloklar (Lego)", "Uzaktan Kumandalı", "Bebek & Figür", "Puzzle & Zeka Oyunları", "Kutu Oyunları", "Oyun Seti", "Araba & Araç Oyuncak", "Su & Kum Oyuncakları", "Elektronik Oyuncak", "Bebek Oyuncakları (0-3 yaş)"], "oyuncak"), "oyuncak"),
     node("Dijital Ürünler", leaves(["Yazılım Lisansı", "Dijital Eğitim", "E-kitap", "Tasarım Dosyası", "Oyun Kodu", "Tema & Şablon", "Dijital Hesap", "Online Hizmet"], "dijitalHizmet"), "dijitalHizmet"),
-    node("Evcil Hayvan Ürünleri", leaves(["Kedi Ürünleri", "Köpek Ürünleri", "Kuş Ürünleri", "Balık & Akvaryum", "Kemirgen Ürünleri", "Mama & Yem", "Kafes & Aksesuar", "Pet Bakım & Hijyen", "Tasma & Gezdirme", "Oyuncak & Kaşıma"], "petUrun"), "petUrun"),
+    node("Evcil Hayvan Ürünleri", leaves(["Kedi Ürünleri", "Köpek Ürünleri", "Kuş Ürünleri", "Balık & Akvaryum", "Kemirgen Ürünleri", "Mama & Yem", "Kafes & Aksesuar", "Pet Bakım & Hijyen", "Tasma & Gezdirme", "Oyuncak & Kaşıma", "Kedi Kumu & Tuvalet", "Pet Taşıma Çantası"], "petUrun"), "petUrun"),
     // Eski KÖK "Yapı Market & Bahçe" → İkinci El altına taşındı (ana kategori konsolidasyonu).
     node("Bahçe & Yapı Market", [
       node("Elektrikli El Aletleri", leaves([
@@ -2111,7 +2138,7 @@ export const categoryTree: CategoryNode[] = [
         "Tıbbi Çorap (Varis)", "Uyku Ürünleri"
       ], "medikal"), "medikal")
     ], "medikal"),
-    leaf("Hediyelik Ürünler", "alisverisGenel"),
+    node("Hediyelik Ürünler", leaves(["Kişiye Özel Hediye", "Doğum Günü Hediyesi", "Düğün & Nişan Hediyesi", "Bebek Hediyesi", "Kurumsal Hediye & Promosyon", "Hediye Sepeti", "Çiçek & Çikolata"], "alisverisGenel"), "alisverisGenel"),
     leaf("Diğer Alışveriş", "alisverisGenel")
   ], "alisverisGenel", IMG("1498049794561-7780e7231661")),
 
@@ -2129,7 +2156,8 @@ export const categoryTree: CategoryNode[] = [
       "Silaj Makinesi", "Pulluk", "Diskaro", "Kültivatör", "Rotovatör", "Ekim Makinesi",
       "Mibzer", "Gübre Dağıtma Makinesi", "İlaçlama Makinesi", "Sırt Pülverizatörü", "Römork (Tarım)",
       "Süt Sağım Makinesi", "Yem Karma Makinesi", "Hasat Makinesi", "Çapa Makinesi",
-      "Su Pompası (Tarım)", "Damla Sulama Sistemi", "Sera Ekipmanı", "Traktör Ataşmanı"
+      "Su Pompası (Tarım)", "Damla Sulama Sistemi", "Sera Ekipmanı", "Traktör Ataşmanı",
+      "Tarım & İlaçlama Dronu", "Saman & Yem Kırma Makinesi"
     ], "isMakinesi"), "isMakinesi"),
     node("Sanayi Makineleri", leaves([
       "CNC Torna", "CNC Freze", "CNC Router", "Lazer Kesim Makinesi", "Plazma Kesim", "Su Jeti",
@@ -2138,7 +2166,7 @@ export const categoryTree: CategoryNode[] = [
       "Kaynak Makinesi (Argon)", "Punta Kaynak", "Enjeksiyon Makinesi", "Ekstruder",
       "Paketleme Makinesi", "Dolum Makinesi", "Etiketleme Makinesi", "Matbaa Makinesi",
       "Serigrafi Makinesi", "Gıda Üretim Makinesi", "Değirmen Makinesi", "Tekstil Makinesi",
-      "Dikiş Makinesi (Sanayi)", "Overlok Makinesi", "Ağaç İşleme Makinesi", "Konveyör Sistemi"
+      "Dikiş Makinesi (Sanayi)", "Overlok Makinesi", "Nakış Makinesi", "Ağaç İşleme Makinesi", "Konveyör Sistemi"
     ], "isMakinesi"), "isMakinesi"),
     node("Elektrik & Enerji", leaves([
       "Güneş Paneli (Monokristal)", "Güneş Paneli (Polikristal)", "İnvertör (On-Grid)", "İnvertör (Off-Grid)",
@@ -2169,21 +2197,22 @@ export const categoryTree: CategoryNode[] = [
     node("Endüstriyel Ürünler", leaves([
       "Endüstriyel Mutfak", "Endüstriyel Mobilya", "Endüstriyel Temizlik", "Endüstriyel Hırdavat",
       "Raf & Ürün Teşhir", "Çadır, Tente & Kepenk", "Konteyner & Kabin", "Koruma & Sığınak Sistemleri",
-      "Kompresör", "Taşıma & İstifleme Ekipmanı", "Vinç & Kaldırma Ekipmanı", "Soğutma & İklimlendirme"
+      "Kompresör", "Taşıma & İstifleme Ekipmanı", "Vinç & Kaldırma Ekipmanı", "Soğutma & İklimlendirme",
+      "Temizlik Robotu & Yıkama Dronu", "Rulman, Kayış & Güç Aktarım", "Kazan & Brülör", "Koli & Ambalaj Malzemesi", "Mağaza Mankeni & Vitrin"
     ], "isMakinesi"), "isMakinesi")
   ], "isMakinesi", IMG("1581094794329-c8112a89af12")),
 
   node("Ustalar & Hizmetler", [
     node("Ev Tadilat & Dekorasyon", leaves(["Ev Tadilat", "Boya & Badana", "Alçı & Alçıpan", "Fayans & Seramik", "Parke & Zemin", "Cam & Alüminyum", "Kapı, Pencere & Cam Balkon", "Mutfak & Dolap", "Marangoz & Doğrama", "Demir & Ferforje", "Duvar Kağıdı", "Asma Tavan", "İç Mimari & Dekorasyon", "Mimarlık & Mühendislik", "Bahçe & Peyzaj Düzenleme", "Mantolama & Dış Cephe", "Su Yalıtımı & İzolasyon", "Çatı & Oluk"], "hizmet"), "hizmet"),
-    node("Tesisat & Teknik", leaves(["Elektrikçi", "Su Tesisatçısı", "Doğalgaz Tesisatı", "Kombi & Klima Servisi", "Beyaz Eşya Servisi", "Asansör Bakım", "Jeneratör Servisi", "Güneş Enerjisi Kurulumu", "Uydu & Anten"], "hizmet"), "hizmet"),
-    node("Teknik Servis & Tamir", leaves(["Bilgisayar Teknik Servis", "Telefon Tamiri", "TV & Elektronik Tamiri", "Mobilya Montaj & Tamir", "Saat Tamiri", "Ayakkabı & Çanta Tamiri", "Anahtarcı & Çilingir", "Enstrüman Tamiri & Piyano Akort", "Jakuzi & Havuz Tamiri", "Tekstil Tadilatı & Terzi", "Yazıcı & Fotokopi Tamiri", "Bisiklet Tamiri", "Altın & Gümüş Tamiri", "Tabela Tamiri"], "hizmet"), "hizmet"),
+    node("Tesisat & Teknik", leaves(["Elektrikçi", "Su Tesisatçısı", "Doğalgaz Tesisatı", "Kombi & Klima Servisi", "Beyaz Eşya Servisi", "Asansör Bakım", "Jeneratör Servisi", "Güneş Enerjisi Kurulumu", "Uydu & Anten", "Klima Montaj & Bakım", "Elektrikli Araç Şarj İstasyonu Kurulumu"], "hizmet"), "hizmet"),
+    node("Teknik Servis & Tamir", leaves(["Bilgisayar Teknik Servis", "Telefon Tamiri", "TV & Elektronik Tamiri", "Mobilya Montaj & Tamir", "Saat Tamiri", "Ayakkabı & Çanta Tamiri", "Anahtarcı & Çilingir", "Enstrüman Tamiri & Piyano Akort", "Jakuzi & Havuz Tamiri", "Tekstil Tadilatı & Terzi", "Yazıcı & Fotokopi Tamiri", "Bisiklet Tamiri", "Altın & Gümüş Tamiri", "Tabela Tamiri", "Veri Kurtarma", "Drone Tamiri"], "hizmet"), "hizmet"),
     // Sahibinden "Araç Servis & Bakım" sekmesinin TAMAMI eksikti (yalnız "Oto Servis" tek yaprak vardı) → tam dal.
     node("Araç Servis & Bakım", leaves(["Oto Tamir & Servis", "Oto Kaporta & Boya", "Oto Lastik Tamiri", "Oto Elektrik & Ses", "Oto Ekspertiz", "Oto Modifiye", "Oto Döşeme", "Oto Plaka", "Oto Temizlik & Yıkama", "Çekici & Yol Yardım", "Motosiklet Servisi", "Marina & Liman Hizmetleri", "Tekne & Yat Tamiri", "Trafik Müşavirliği"], "hizmet"), "hizmet"),
     node("Nakliye & Lojistik", leaves(["Evden Eve Nakliyat", "Şehirler Arası Nakliyat", "Ofis Taşıma", "Parça Eşya Taşıma", "Asansörlü Taşıma", "Depolama & Ambar", "Kurye & Kargo", "Uluslararası Taşıma"], "hizmet"), "hizmet"),
-    node("Temizlik & Bakım", leaves(["Ev Temizliği", "Ofis Temizliği", "İnşaat Sonrası Temizlik", "Cam Temizliği", "Halı & Koltuk Yıkama", "Dezenfeksiyon", "İlaçlama & Haşere", "Bahçe Bakımı"], "hizmet"), "hizmet"),
+    node("Temizlik & Bakım", leaves(["Ev Temizliği", "Ofis Temizliği", "İnşaat Sonrası Temizlik", "Cam Temizliği", "Halı & Koltuk Yıkama", "Dezenfeksiyon", "İlaçlama & Haşere", "Bahçe Bakımı", "Dış Cephe & Güneş Paneli Yıkama", "Havuz Temizliği"], "hizmet"), "hizmet"),
     node("Güzellik & Kişisel Bakım", leaves(["Kuaför & Berber", "Saç Boyama & Bakım", "Cilt Bakımı", "Ağda & Epilasyon", "Lazer Epilasyon", "Manikür & Pedikür", "Kalıcı Makyaj", "Makyaj (Gelin & Özel Gün)", "Masaj & Spa", "Dövme & Piercing", "Solaryum", "Evde Güzellik Hizmeti"], "hizmet"), "hizmet"),
-    node("Organizasyon & Etkinlik", leaves(["Düğün Organizasyon", "Nişan & Kına", "Doğum Günü", "Catering & İkram", "Fotoğraf & Video Çekimi", "Müzik & DJ", "Süsleme & Balon", "Davetiye & Matbaa", "Sahne & Ses Sistemi"], "hizmet"), "hizmet"),
-    node("Profesyonel Hizmetler", leaves(["Danışmanlık", "Muhasebe & Mali Müşavir", "Hukuki Danışmanlık", "Sigorta", "Tercüme & Çeviri", "Emlak Danışmanlığı", "İş Kurma Danışmanlığı", "Vergi Danışmanlığı"], "hizmet"), "hizmet"),
+    node("Organizasyon & Etkinlik", leaves(["Düğün Organizasyon", "Nişan & Kına", "Doğum Günü", "Catering & İkram", "Fotoğraf & Video Çekimi", "Müzik & DJ", "Süsleme & Balon", "Davetiye & Matbaa", "Sahne & Ses Sistemi", "Palyaço & Animasyon", "Özel Şef & Aşçı"], "hizmet"), "hizmet"),
+    node("Profesyonel Hizmetler", leaves(["Danışmanlık", "Muhasebe & Mali Müşavir", "Hukuki Danışmanlık", "Sigorta", "Tercüme & Çeviri", "Emlak Danışmanlığı", "İş Kurma Danışmanlığı", "Vergi Danışmanlığı", "Harita & Kadastro"], "hizmet"), "hizmet"),
     node("Güvenlik & Sağlık", leaves(["Özel Güvenlik", "Kamera & Alarm Sistemi", "Sağlık & Hasta Bakımı", "Yaşlı Bakımı", "Fizyoterapi", "Diyetisyen", "Psikolog & Danışman", "Evde Sağlık"], "hizmet"), "hizmet"),
     // Eski KÖK "Dijital Ürünler & Hizmetler" → hizmet olduğu için Ustalar altına "Dijital Hizmetler" olarak taşındı (formKey korundu).
     node("Dijital Hizmetler", [
@@ -2316,7 +2345,7 @@ export const categoryTree: CategoryNode[] = [
     ], "hizmet"), "hizmet"),
     node("Çiftlik & Hayvancılık Ekipmanı", leaves([
       "Yemlik & Suluk (Çiftlik)", "Kuluçka Makinesi", "Süt Sağım Ekipmanı", "Kümes Malzemesi",
-      "Ahır Malzemesi", "Arıcılık Ekipmanı", "Kovan & Bal Ürünleri"
+      "Ahır Malzemesi", "Arıcılık Ekipmanı", "Kovan & Bal Ürünleri", "Yem & Saman"
     ], "petUrun"), "petUrun")
   ], "hayvan", IMG("1450778869180-41d0601e046e")),
 
@@ -2744,6 +2773,19 @@ const HINTS: Array<{ words: string[]; path: string[] }> = [
   { words: ["arsa", "tarla", "arazi"], path: ["Emlak", "Arsa / Arazi"] },
   { words: ["motosiklet", "motor"], path: ["Vasıta", "Motosiklet"] },
   { words: ["bisiklet"], path: ["İkinci El & Sıfır Alışveriş", "Spor & Outdoor", "Bisiklet"] },
+  { words: ["yikama dronu", "yıkama dronu", "temizlik dronu", "cephe yikama", "cephe yıkama"], path: ["İkinci El & Sıfır Alışveriş", "Elektronik", "Drone", "Temizlik & Yıkama Dronu"] },
+  { words: ["ilaclama dronu", "ilaçlama dronu", "tarim dronu", "tarım dronu", "zirai dron"], path: ["İkinci El & Sıfır Alışveriş", "Elektronik", "Drone", "Tarım & İlaçlama Dronu"] },
+  { words: ["drone", "dron", "dji", "fpv"], path: ["İkinci El & Sıfır Alışveriş", "Elektronik", "Drone"] },
+  { words: ["3d yazici", "3d yazıcı", "filament"], path: ["İkinci El & Sıfır Alışveriş", "Elektronik", "3D Yazıcı & Maker"] },
+  { words: ["barkod", "yazar kasa", "para sayma"], path: ["İkinci El & Sıfır Alışveriş", "Elektronik", "İş Yeri Elektroniği"] },
+  { words: ["soba", "somine", "şömine", "elektrikli isitici", "elektrikli ısıtıcı", "vantilator", "vantilatör"], path: ["İkinci El & Sıfır Alışveriş", "Ev & Yaşam", "Isıtma & Soğutma"] },
+  { words: ["perde", "nevresim", "battaniye", "yorgan", "kilim"], path: ["İkinci El & Sıfır Alışveriş", "Ev & Yaşam", "Ev Tekstili"] },
+  { words: ["avize", "abajur", "lambader"], path: ["İkinci El & Sıfır Alışveriş", "Ev & Yaşam", "Aydınlatma"] },
+  { words: ["dusakabin", "duşakabin", "klozet", "banyo dolabi", "banyo dolabı"], path: ["İkinci El & Sıfır Alışveriş", "Ev & Yaşam", "Banyo"] },
+  { words: ["olta", "balikci", "balıkçı"], path: ["İkinci El & Sıfır Alışveriş", "Spor & Outdoor", "Avcılık & Balıkçılık"] },
+  { words: ["bilardo", "langirt", "langırt", "dart"], path: ["İkinci El & Sıfır Alışveriş", "Spor & Outdoor", "Salon & Oyun Sporları"] },
+  { words: ["trambolin"], path: ["İkinci El & Sıfır Alışveriş", "Spor & Outdoor", "Trambolin & Oyun Parkı"] },
+  { words: ["tavla", "okey", "satranc", "satranç"], path: ["İkinci El & Sıfır Alışveriş", "Kitap & Hobi", "Oyun & Eğlence"] },
   { words: ["scooter", "elektrikli scooter", "hoverboard"], path: ["İkinci El & Sıfır Alışveriş", "Elektronik", "Elektrikli Ulaşım"] },
   { words: ["laptop", "bilgisayar", "notebook"], path: ["İkinci El & Sıfır Alışveriş", "Bilgisayar & Oyun", "Dizüstü Bilgisayar"] },
   { words: ["buzdolabi", "camasir makinesi", "beyaz esya"], path: ["İkinci El & Sıfır Alışveriş", "Beyaz Eşya"] },
