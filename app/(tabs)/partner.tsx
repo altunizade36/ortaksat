@@ -29,7 +29,8 @@ import { PartnerTier } from "@/components/partner-tier";
 import { QuickStart } from "@/components/quick-start";
 import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { Card, EmptyState, Metric, PrimaryButton, SectionTitle, StatusPill } from "@/components/ui";
-import { adDisclosureLine, commissionAmount, commissionText, effectiveCommissionAmount, listingShareTemplates, money, moneyIn, productUrl } from "@/lib/format";
+import { AgreementCard, DisputeNote } from "@/components/agreement-card";
+import { adDisclosureLine, commissionAmount, commissionText, listingShareTemplates, money, moneyIn, productUrl } from "@/lib/format";
 import { haptic } from "@/lib/haptics";
 import { loadClickCounts } from "@/lib/live-service";
 import { translateCopy, useLanguage } from "@/lib/i18n";
@@ -358,6 +359,17 @@ function PartnerScreenInner() {
           { text: translateCopy("Ayrıl", language), style: "destructive", onPress: () => leavePartnership(partnershipId) }
         ]
       );
+    },
+    // Onay bekleyen başvuruyu geri çekme (sunucu: leave_partnership → 'withdrawn').
+    withdraw: (partnershipId: string, title: string) => {
+      Alert.alert(
+        translateCopy("Başvuruyu geri çek", language),
+        `"${title}" ${translateCopy("ilanına yaptığın ortaklık başvurusunu geri çekmek istediğine emin misin? İstersen daha sonra yeniden başvurabilirsin.", language)}`,
+        [
+          { text: translateCopy("Vazgeç", language), style: "cancel" },
+          { text: translateCopy("Geri çek", language), style: "destructive", onPress: () => { void leavePartnership(partnershipId).then((ok) => { if (ok) showToast(translateCopy("Başvurun geri çekildi.", language)); }); } }
+        ]
+      );
     }
   };
   const renderPartnershipCard = (partnership: Partnership) => {
@@ -631,7 +643,7 @@ function PartnerScreenInner() {
                                 <Text style={{ color: colors.subtle, fontSize: 11.5, fontWeight: "700" }}>{translateCopy("Alıcı onayı bekleniyor", language)}</Text>
                               </View>
                             ) : null}
-                            {s.status === "disputed" && s.payoutNote ? <Text style={{ color: colors.accent, fontSize: 12, fontWeight: "700" }}>{s.payoutNote}</Text> : null}
+                            <DisputeNote sale={s} partnerId={currentUser.id} sellerId={l?.ownerId} currentUserId={currentUser.id} />
                             {canConfirm || canDispute ? (
                               <View style={{ flexDirection: "row", gap: 8 }}>
                                 {canConfirm ? <View style={{ flex: 1 }}><PrimaryButton tone="soft" onPress={() => updateSaleStatus(s.id, "paid")}>{s.status === "disputed" ? "Çözüldü · Aldım" : "Ödemeyi Aldım"}</PrimaryButton></View> : null}
@@ -988,6 +1000,7 @@ type PartnershipCardActions = {
   dispute: (saleId: string) => void;
   reapply: (listingId: string) => void;
   leave: (partnershipId: string, title: string) => void;
+  withdraw: (partnershipId: string, title: string) => void;
 };
 
 // Ortak ortaklık kartı — hem mobil liste hem masaüstü "Aktif/Bekleyen" sekmesinde
@@ -1006,15 +1019,14 @@ function PartnershipCard({ listing, partnership, listingLeads, listingSales, cli
 }) {
   const { language, t } = useLanguage();
   const url = productUrl(listing);
-  const sellerName = useStore().findUser(listing.ownerId)?.name;
+  const { currentUser, findUser } = useStore();
+  const sellerName = findUser(listing.ownerId)?.name;
   // Ortak paylaşımı: hazır metinlerin başında zorunlu reklam bildirimi ("#Reklam · Satıcı: …").
   const templates = listingShareTemplates(listing, url, undefined, adDisclosureLine(sellerName)); // düz ürün linki (referans/takip yok)
   const earned = listingSales.reduce((sum, sale) => sum + sale.commissionAmount, 0);
   const sellerPaidCount = listingSales.filter((sale) => sale.status === "seller_paid").length;
-  // Bu ortağın KİŞİSEL efektif komisyonu (override / kademeli / varsayılan) — bir satış, liste fiyatı.
+  // Kademeli oran ve kalan bonus için: bu ortağın bu ilandaki iptal olmayan satış sayısı.
   const priorSales = listingSales.filter((sale) => sale.status !== "cancelled").length;
-  const myCommission = effectiveCommissionAmount(listing, partnership, priorSales, listing.price, 1);
-  const hasPersonalRate = Boolean(partnership.commissionOverrideType) || (listing.commissionType === "rate" && !!listing.commissionTiers?.length);
   return (
     <Card>
       <View style={{ flexDirection: "row", gap: 10 }}>
@@ -1032,24 +1044,13 @@ function PartnershipCard({ listing, partnership, listingLeads, listingSales, cli
         />
       </View>
 
+      {/* TEK ANLAŞMA GÖRÜNÜMÜ: komisyon (anlaşılan + varsa sana özel artırım), bonus, iade süresi, ödeme vadesi,
+          anlaşmanın geçmişi ve durum — her durumda (bekleyen, aktif, reddedilen, biten) aynı kart. Satıcı da
+          kendi panelinde aynı kartı görür. */}
+      <AgreementCard listing={listing} partnership={partnership} viewer="partner" showProduct={false} priorSales={priorSales} embedded />
+
       {partnership.status === "active" ? (
         <>
-          <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 10, flexDirection: "row", gap: 8, paddingHorizontal: 12, paddingVertical: 9 }}>
-            <MaterialCommunityIcons name="cash-multiple" size={17} color={colors.primaryDark} />
-            <Text style={{ color: colors.primaryDark, flex: 1, fontSize: 12.5, fontWeight: "800" }}>
-              {translateCopy(hasPersonalRate ? "Sana özel komisyon" : "Bu satıştan komisyonun", language)}
-            </Text>
-            <Text style={{ color: colors.primaryDark, fontSize: 15, fontWeight: "900" }}>{moneyIn(myCommission, listing.currency)}</Text>
-          </View>
-          {/* Faz 3: ortağa kilitli-şartlar güvencesi. */}
-          {partnership.agreedAt ? (
-            <View style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderRadius: 8, flexDirection: "row", gap: 6, paddingHorizontal: 9, paddingVertical: 6 }}>
-              <MaterialCommunityIcons name="lock-check" size={13} color={colors.primaryDark} />
-              <Text style={{ color: colors.muted, flex: 1, fontSize: 11, fontWeight: "700" }}>
-                {translateCopy("Komisyon şartların kilitli — satıcı ilanı düzenlese de anlaştığın komisyon değişmez.", language)}
-              </Text>
-            </View>
-          ) : null}
           <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "700" }}>{translateCopy("Ürünü kendi yönteminle tanıt — istersen ürün sayfasını paylaş (referans/takip yok):", language)}</Text>
           <Text selectable style={{ color: colors.info, fontSize: 13, lineHeight: 19 }}>{url}</Text>
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
@@ -1092,6 +1093,10 @@ function PartnershipCard({ listing, partnership, listingLeads, listingSales, cli
         <View style={{ gap: 8 }}>
           <Text selectable style={{ color: colors.muted, fontSize: 14, lineHeight: 20 }}>{t("partnerApprovalPendingNote")}{partnership.note ? ` “${partnership.note}”` : ""}</Text>
           <PrimaryButton tone="secondary" icon="message-text-outline" onPress={() => actions.messageSeller(listing.id, listing.ownerId, listing.title)}>Satıcıya mesaj yaz</PrimaryButton>
+          <Pressable accessibilityRole="button" onPress={() => actions.withdraw(partnership.id, displayListingTitle(listing.title))} style={({ pressed }) => ({ alignItems: "center", flexDirection: "row", gap: 6, justifyContent: "center", opacity: pressed ? 0.6 : 1, paddingVertical: 6 })}>
+            <MaterialCommunityIcons name="undo-variant" size={15} color={colors.muted} />
+            <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Başvuruyu geri çek", language)}</Text>
+          </Pressable>
         </View>
       ) : (
         <View style={{ gap: 8 }}>
@@ -1182,7 +1187,9 @@ function PartnershipCard({ listing, partnership, listingLeads, listingSales, cli
           ) : sale.buyerConfirmToken ? (
             <StatusPill label={translateCopy("Alıcı onayı bekleniyor", language)} tone="warning" />
           ) : null}
-          {sale.payoutNote ? <Text selectable style={{ color: sale.status === "disputed" ? colors.accent : colors.muted, fontSize: 13, lineHeight: 19 }}>{sale.payoutNote}</Text> : null}
+          {/* Anlaşmazlıkta not = gerekçe; aynı metin iki kez yazılmasın → gerekçe kutusu gösterilir. */}
+          {sale.payoutNote && sale.status !== "disputed" ? <Text selectable style={{ color: colors.muted, fontSize: 13, lineHeight: 19 }}>{sale.payoutNote}</Text> : null}
+          <DisputeNote sale={sale} partnerId={partnership.partnerId} sellerId={listing.ownerId} currentUserId={currentUser.id} />
           {sale.status === "seller_paid" || sale.status === "disputed" ? <PrimaryButton tone="soft" onPress={() => actions.updateSaleStatus(sale.id, "paid")}>{sale.status === "disputed" ? "Çözüldü · Ödemeyi Aldım" : "Ödemeyi Aldım"}</PrimaryButton> : null}
           {sale.status !== "paid" && sale.status !== "cancelled" && sale.status !== "disputed" ? <PrimaryButton tone="secondary" onPress={() => actions.dispute(sale.id)}>Anlaşmazlık Bildir</PrimaryButton> : null}
           <ReviewPrompt sale={sale} canReviewSale={canReviewSale} createSaleReview={createSaleReview} />

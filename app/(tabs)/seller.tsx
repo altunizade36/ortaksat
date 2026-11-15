@@ -17,12 +17,13 @@ import { SaleReviewForm } from "@/components/reviews/sale-review-form";
 import { ReasonModal } from "@/components/reason-modal";
 import { RecordSaleModal } from "@/components/record-sale-modal";
 import { CommissionOverrideModal } from "@/components/commission-override-modal";
+import { AgreementCard, DisputeNote } from "@/components/agreement-card";
 import { ScreenSkeleton } from "@/components/screen-skeleton";
 import { useIsWideWeb, useMounted } from "@/lib/layout";
 import { QuickStart } from "@/components/quick-start";
 import { MiniBarChart } from "@/components/mini-bar-chart";
 import { Card, EmptyState, Metric, PrimaryButton, SectionTitle, StatusPill } from "@/components/ui";
-import { commissionAmount, effectiveCommissionAmount, money, moneyIn } from "@/lib/format";
+import { commissionAmount, commissionValueLabel, effectiveCommissionAmount, money, moneyIn, partnershipBonusFor, partnershipProposal, partnershipTerms } from "@/lib/format";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { haptic } from "@/lib/haptics";
 import { shareOrCopy } from "@/lib/share";
@@ -80,6 +81,7 @@ function SellerScreenInner() {
   const {
     approvePartnership,
     endPartnership,
+    unblockPartnership,
     canReviewSale,
     createSaleReview,
     createSaleFromLead,
@@ -121,7 +123,9 @@ function SellerScreenInner() {
   const isWideWeb = useIsWideWeb();
   const [rejectTargetId, setRejectTargetId] = useState<string | null>(null);
   const [saleTarget, setSaleTarget] = useState<{ partnershipId: string; listingId: string; partnerName: string; price: number; currency?: string; commissionType: "rate" | "fixed"; commissionValue: number; leadId?: string } | null>(null);
-  const [commissionTarget, setCommissionTarget] = useState<{ partnershipId: string; partnerName: string; currency?: string; defaultLabel: string; currentType?: "rate" | "fixed"; currentValue?: number } | null>(null);
+  const [commissionTarget, setCommissionTarget] = useState<{ partnershipId: string; partnerName: string; currency?: string; defaultLabel: string; currentType?: "rate" | "fixed"; currentValue?: number; floorType?: "rate" | "fixed"; floorValue?: number } | null>(null);
+  // Ortak satırında anlaşma kartı (şartlar + geçmiş) açık olan ortaklık.
+  const [agreementOpenId, setAgreementOpenId] = useState<string | null>(null);
   const [clickCounts, setClickCounts] = useState<Record<string, number>>({});
   // Grafik yalnız istemcide (new Date) render edilsin — SSG hydration uyuşmazlığı olmasın.
   const [mounted, setMounted] = useState(false);
@@ -305,6 +309,18 @@ function SellerScreenInner() {
         { text: t("cancel"), style: "cancel" },
         { text: translateCopy("Sonlandır", language), onPress: () => endPartnership(partnershipId, "cancelled") },
         { text: translateCopy("Engelle", language), style: "destructive", onPress: () => endPartnership(partnershipId, "blocked") }
+      ]
+    );
+  }
+
+  // Engeli kaldır: blocked → cancelled. Ortaklık yeniden başlamaz; ortak isterse yeniden başvurur.
+  function confirmUnblockPartnership(partnershipId: string, partnerName: string) {
+    Alert.alert(
+      translateCopy("Engeli kaldır", language),
+      `${partnerName} ${translateCopy("için engeli kaldırmak istiyor musun? Ortaklık kendiliğinden yeniden başlamaz; ortak isterse bu ilana yeniden başvurabilir.", language)}`,
+      [
+        { text: t("cancel"), style: "cancel" },
+        { text: translateCopy("Engeli kaldır", language), onPress: () => { void unblockPartnership(partnershipId); } }
       ]
     );
   }
@@ -725,6 +741,10 @@ function SellerScreenInner() {
             const listing = listings.find((item) => item.id === application.listingId);
             const partner = findUser(application.partnerId);
             const partnerTrust = partner ? calculateUserTrustScores({ leads, listings, partnerships, reports, reviews, sales, user: partner }).partner : undefined;
+            // Ortağın komisyon önerisi: yalnız ilan komisyonundan yüksekse ayrı bir kabul yolu olarak sunulur.
+            const proposal = listing ? partnershipProposal(listing, application) : null;
+            const proposalLabel = listing && proposal ? commissionValueLabel(proposal.type, proposal.value, listing.currency) : "";
+            const listingRateLabel = listing ? commissionValueLabel(application.agreedCommissionType ?? listing.commissionType, application.agreedCommissionValue ?? listing.commissionValue, listing.currency) : "";
             return (
               <View key={application.id} style={{ backgroundColor: colors.surfaceAlt, borderRadius: 8, gap: 8, padding: 12 }}>
                 <Text selectable style={{ color: colors.ink, fontSize: 15, fontWeight: "900" }}>
@@ -759,14 +779,28 @@ function SellerScreenInner() {
                   {partner?.verifiedIdentity ? <StatusPill label="Kimlik doğrulandı" tone="success" /> : null}
                   {listing?.minPartnerRating ? <StatusPill label={`Min. puan: ${listing.minPartnerRating}`} tone="warning" /> : null}
                 </View>
-                <View style={{ flexDirection: "row", gap: 8 }}>
-                  <View style={{ flex: 1 }}>
-                    <PrimaryButton tone="soft" onPress={() => { haptic.success(); approvePartnership(application.id); }}>Kabul Et</PrimaryButton>
+                {/* Kabul edersen geçerli olacak şartlar (ortağın önerisi varsa içinde gösterilir) — ortağın gördüğü kartla aynı. */}
+                {listing ? (
+                  <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 10, borderWidth: 1 }}>
+                    <AgreementCard listing={listing} partnership={application} viewer="seller" showProduct={false} embedded />
                   </View>
-                  <View style={{ flex: 1 }}>
+                ) : null}
+                {proposal ? (
+                  <>
+                    <PrimaryButton onPress={() => { haptic.success(); void approvePartnership(application.id, true); }}>{`${translateCopy("Öneriyle kabul et", language)} (${proposalLabel})`}</PrimaryButton>
+                    <PrimaryButton tone="soft" onPress={() => { haptic.success(); void approvePartnership(application.id); }}>{`${translateCopy("İlan oranıyla kabul et", language)} (${listingRateLabel})`}</PrimaryButton>
                     <PrimaryButton tone="secondary" onPress={() => confirmRejectPartnership(application.id)}>Reddet</PrimaryButton>
+                  </>
+                ) : (
+                  <View style={{ flexDirection: "row", gap: 8 }}>
+                    <View style={{ flex: 1, minWidth: 0 }}>
+                      <PrimaryButton tone="soft" onPress={() => { haptic.success(); void approvePartnership(application.id); }}>Kabul Et</PrimaryButton>
+                    </View>
+                    <View style={{ flex: 1, minWidth: 0 }}>
+                      <PrimaryButton tone="secondary" onPress={() => confirmRejectPartnership(application.id)}>Reddet</PrimaryButton>
+                    </View>
                   </View>
-                </View>
+                )}
                 <PrimaryButton
                   tone="secondary"
                   icon="message-text-outline"
@@ -1029,15 +1063,16 @@ function SellerScreenInner() {
                     // hariç — o zaten ortağın onayını bekliyor). Buton/tutar bu ödenebilir kümeden.
                     const pPayable = pSales.filter((s) => s.status === "return_pending" || s.status === "approved").reduce((sum, s) => sum + s.commissionAmount, 0);
                     const partnerName = partner?.name ?? translateCopy("Ortak", language);
+                    // Bu ortağa UYGULANAN komisyon: anlaşılan ile ortağa özel orandan yüksek olan (sunucuyla aynı kural).
+                    const pTerms = partnershipTerms(listing, p, pSales.filter((s) => s.status !== "cancelled").length);
+                    const agreementOpen = agreementOpenId === p.id;
                     return (
                       <View key={p.id} style={{ backgroundColor: colors.surfaceAlt, borderRadius: 8, gap: 8, padding: 10 }}>
                         <View style={{ alignItems: "center", flexDirection: "row", gap: 10 }}>
                           <View style={{ flex: 1, gap: 1, minWidth: 0 }}>
                             <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 14, fontWeight: "800" }}>{partnerName}</Text>
                             <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600" }}>★ {partner?.rating ?? 0} · {pLeads} {translateCopy("talep", language)} · {pSales.length} {translateCopy("satış", language)}</Text>
-                            {p.commissionOverrideType && p.commissionOverrideValue ? (
-                              <Text numberOfLines={1} style={{ color: colors.primaryDark, fontSize: 11, fontWeight: "900" }}>{translateCopy("Özel komisyon", language)}: {p.commissionOverrideType === "rate" ? `%${p.commissionOverrideValue}` : moneyIn(p.commissionOverrideValue, listing.currency)}</Text>
-                            ) : null}
+                            <Text numberOfLines={1} style={{ color: colors.primaryDark, fontSize: 11, fontWeight: "900" }}>{translateCopy("Komisyon", language)}: {commissionValueLabel(pTerms.type, pTerms.value, listing.currency)}{pTerms.overrideApplies ? ` · ${translateCopy("ortağa özel artırım", language)}` : ""}</Text>
                           </View>
                           {pOwed > 0 ? (
                             <View style={{ alignItems: "flex-end" }}>
@@ -1055,7 +1090,7 @@ function SellerScreenInner() {
                             <Text style={{ color: "#FFFFFF", fontSize: 12, fontWeight: "900" }}>{translateCopy(canSell ? categoryConversion(listing.category).sellerVerb : (listing.stockCount <= 0 ? "Stok yok" : "İlan pasif"), language)}</Text>
                           </Pressable>
                           <Pressable
-                            onPress={() => setCommissionTarget({ partnershipId: p.id, partnerName, currency: listing.currency, defaultLabel: (p.agreedCommissionType??listing.commissionType) === "rate" ? `%${p.agreedCommissionValue??listing.commissionValue}` : moneyIn(p.agreedCommissionValue??listing.commissionValue, listing.currency), currentType: p.commissionOverrideType, currentValue: p.commissionOverrideValue })}
+                            onPress={() => setCommissionTarget({ partnershipId: p.id, partnerName, currency: listing.currency, defaultLabel: commissionValueLabel(p.agreedCommissionType ?? listing.commissionType, p.agreedCommissionValue ?? listing.commissionValue, listing.currency), currentType: p.commissionOverrideType, currentValue: p.commissionOverrideValue, floorType: p.agreedCommissionType, floorValue: p.agreedCommissionValue })}
                             style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 8, borderWidth: 1, flexDirection: "row", gap: 5, justifyContent: "center", opacity: pressed ? 0.85 : 1, paddingHorizontal: 12, paddingVertical: 9 })}
                           >
                             <MaterialCommunityIcons name="cash-edit" size={15} color={colors.primaryDark} />
@@ -1084,7 +1119,52 @@ function SellerScreenInner() {
                             <MaterialCommunityIcons name="account-off-outline" size={15} color={colors.muted} />
                             <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "900" }}>{translateCopy("Sonlandır", language)}</Text>
                           </Pressable>
+                          <Pressable
+                            accessibilityRole="button"
+                            accessibilityState={{ expanded: agreementOpen }}
+                            onPress={() => setAgreementOpenId(agreementOpen ? null : p.id)}
+                            style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 8, borderWidth: 1, flexDirection: "row", gap: 5, justifyContent: "center", opacity: pressed ? 0.85 : 1, paddingHorizontal: 12, paddingVertical: 9 })}
+                          >
+                            <MaterialCommunityIcons name="file-sign" size={15} color={colors.primaryDark} />
+                            <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "900" }}>{translateCopy(agreementOpen ? "Anlaşmayı gizle" : "Anlaşma", language)}</Text>
+                          </Pressable>
                         </View>
+                        {/* TEK ANLAŞMA GÖRÜNÜMÜ: ortağın kendi panelinde gördüğü kartın aynısı (komisyon, bonus, iade, vade, geçmiş). */}
+                        {agreementOpen ? (
+                          <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 10, borderWidth: 1 }}>
+                            <AgreementCard listing={listing} partnership={p} viewer="seller" showProduct={false} priorSales={pSales.filter((s) => s.status !== "cancelled").length} embedded />
+                          </View>
+                        ) : null}
+                      </View>
+                    );
+                  })}
+                </>
+              );
+            })()}
+
+            {/* ENGELLENEN ORTAKLAR: engel kalkmadan ortak bu ilana yeniden başvuramaz. Eskiden engelin geri dönüşü yoktu. */}
+            {(() => {
+              const blockedList = listingPartnerships.filter((item) => item.status === "blocked");
+              if (blockedList.length === 0) return null;
+              return (
+                <>
+                  <SectionTitle title="Engellenen ortaklar" action={`${blockedList.length}`} />
+                  {blockedList.map((p) => {
+                    const partnerName = findUser(p.partnerId)?.name ?? translateCopy("Ortak", language);
+                    return (
+                      <View key={p.id} style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderRadius: 8, flexDirection: "row", gap: 10, padding: 10 }}>
+                        <View style={{ flex: 1, gap: 1, minWidth: 0 }}>
+                          <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 14, fontWeight: "800" }}>{partnerName}</Text>
+                          <Text numberOfLines={2} style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600" }}>{translateCopy("Engelli — bu ilana yeniden başvuramaz.", language)}{p.endedAt ? ` · ${p.endedAt}` : ""}</Text>
+                        </View>
+                        <Pressable
+                          accessibilityRole="button"
+                          onPress={() => confirmUnblockPartnership(p.id, partnerName)}
+                          style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 8, borderWidth: 1, flexDirection: "row", gap: 5, justifyContent: "center", opacity: pressed ? 0.85 : 1, paddingHorizontal: 12, paddingVertical: 9 })}
+                        >
+                          <MaterialCommunityIcons name="lock-open-variant-outline" size={15} color={colors.primaryDark} />
+                          <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "900" }}>{translateCopy("Engeli kaldır", language)}</Text>
+                        </Pressable>
                       </View>
                     );
                   })}
@@ -1105,11 +1185,13 @@ function SellerScreenInner() {
                   <Metric label="Teslim" value={sale.deliveryStatus === "delivered" ? translateCopy("Teslim", language) : sale.deliveryStatus === "cancelled" ? translateCopy("İptal", language) : translateCopy("Bekliyor", language)} />
                   <Metric label="İade sonu" value={sale.returnUntil ?? "-"} />
                 </View>
-                {sale.payoutNote ? (
-                  <Text selectable style={{ color: sale.status === "disputed" ? colors.accent : colors.muted, fontSize: 13, fontWeight: sale.status === "disputed" ? "800" : "400", lineHeight: 19 }}>
+                {/* Anlaşmazlıkta not = gerekçe; aynı metin iki kez yazılmasın → gerekçe kutusu gösterilir. */}
+                {sale.payoutNote && sale.status !== "disputed" ? (
+                  <Text selectable style={{ color: colors.muted, fontSize: 13, lineHeight: 19 }}>
                     {sale.payoutNote}
                   </Text>
                 ) : null}
+                <DisputeNote sale={sale} partnerId={partnerships.find((item) => item.id === sale.partnershipId)?.partnerId} sellerId={listing.ownerId} currentUserId={currentUser.id} />
                 {/* Faz 2: alıcı-taraflı satış doğrulaması. Alıcı hesabından ya da linkle onaylar. */}
                 {sale.buyerConfirmedAt || sale.buyerConfirmStatus === "confirmed" ? (
                   <View style={{ alignItems: "center", backgroundColor: colors.successSoft, borderRadius: 8, flexDirection: "row", gap: 6, paddingHorizontal: 10, paddingVertical: 8 }}>
@@ -1146,13 +1228,14 @@ function SellerScreenInner() {
                   </View>
                 ) : sale.status === "disputed" ? (
                   // Y1: Satıcı, anlaşmazlıktaki (borçlu) komisyonu TEK TARAFLI İPTAL EDEMEZ — ortağın
-                  // hakkı korunur. Çözüm ya ödeme ("Yeniden Ödedim") ya da yönetim değerlendirmesidir
-                  // (admin panelinde Çöz·Onayla / İptal). Sunucu (guard_commission_paid) da bunu zorlar.
+                  // hakkı korunur. Çözüm ya ödeme ("Yeniden Ödedim") ya da tarafların anlaşmasıdır; yönetime
+                  // bildirim gider (sunucu tetikleyicisi) ve taraflar çözemezse destek üzerinden incelenir.
+                  // Sunucu (guard_commission_paid) tek taraflı iptali de engeller.
                   <View style={{ gap: 8 }}>
                     <PrimaryButton tone="soft" onPress={() => confirmPaidSale(sale.id)}>Yeniden Ödedim</PrimaryButton>
                     <View style={{ alignItems: "center", backgroundColor: colors.warningSoft, borderRadius: 8, flexDirection: "row", gap: 6, justifyContent: "center", paddingHorizontal: 10, paddingVertical: 8 }}>
                       <MaterialCommunityIcons name="shield-account-outline" size={14} color={colors.warning} />
-                      <Text style={{ color: colors.warning, flex: 1, fontSize: 11.5, fontWeight: "800" }}>{translateCopy("Anlaşmazlık yönetim tarafından değerlendiriliyor. Ödemeyi yaptıysanız “Yeniden Ödedim” ile çözebilirsiniz.", language)}</Text>
+                      <Text style={{ color: colors.warning, flex: 1, fontSize: 11.5, fontWeight: "800" }}>{translateCopy("Yönetim bilgilendirildi; taraflar çözemezse destek üzerinden incelenir. Ödemeyi yaptıysan “Yeniden Ödedim” ile kapatabilirsin.", language)}</Text>
                     </View>
                   </View>
                 ) : sale.status === "seller_paid" ? (
@@ -1203,8 +1286,10 @@ function SellerScreenInner() {
         defaultLabel={commissionTarget?.defaultLabel ?? ""}
         currentType={commissionTarget?.currentType}
         currentValue={commissionTarget?.currentValue}
+        floorType={commissionTarget?.floorType}
+        floorValue={commissionTarget?.floorValue}
         onClose={() => setCommissionTarget(null)}
-        onSubmit={async(type,value)=>commissionTarget?await setPartnershipCommission(commissionTarget.partnershipId,type,value):false}
+        onSubmit={async(type,value,report)=>commissionTarget?await setPartnershipCommission(commissionTarget.partnershipId,type,value,report):false}
         onClear={async()=>commissionTarget?await setPartnershipCommission(commissionTarget.partnershipId):false}
       />
       <RecordSaleModal
@@ -1223,8 +1308,8 @@ function SellerScreenInner() {
           const pship = partnerships.find((x) => x.id === saleTarget.partnershipId);
           const prior = sales.filter((s) => s.partnershipId === saleTarget.partnershipId && s.status !== "cancelled").length;
           const base = effectiveCommissionAmount(l, pship, prior, amount, quantity);
-          const bonus = (l.bonusAmount ?? 0) > 0 && (l.bonusQuota ?? 0) > 0 && prior < (l.bonusQuota ?? 0) ? Math.round(l.bonusAmount ?? 0) : 0;
-          return base + bonus;
+          // Bonus anlaşmadan okunur (sunucu da öyle yapar); ilan sonradan değişse de önizleme = kaydedilen.
+          return base + partnershipBonusFor(l, pship, prior);
         }}
         onClose={() => setSaleTarget(null)}
         onSubmit={(amount, quantity) => {

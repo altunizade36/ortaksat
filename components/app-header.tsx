@@ -198,7 +198,8 @@ function DesktopActions() {
   const { language } = useLanguage();
   const { currentUser, isAuthenticated, messages, notifications } = useStore();
   const unreadMessages = messages.filter((m) => m.receiverId === currentUser.id && !m.read).length;
-  const unreadNotifications = notifications.filter((n) => n.userId === currentUser.id && !n.read).length;
+  // "Yeni mesaj" bildirimleri hariç: okunmamış mesajlar Mesajlar rozetinde zaten sayılıyor (çift sayım).
+  const unreadNotifications = notifications.filter((n) => n.userId === currentUser.id && !n.read && n.type !== "message").length;
 
   // Girişsizken belirgin "Giriş / Kayıt ol" butonu göster (kullanıcı giriş
   // noktasını kolayca bulsun). Girişliyken hesap ikonları + Hesabım menüsü.
@@ -273,7 +274,8 @@ function AccountMenu() {
   const { height: winHeight } = useWindowDimensions();
   const { isAuthenticated, currentUser, messages, notifications, offers, signOut } = useStore();
   const unreadMessages = messages.filter((m) => m.receiverId === currentUser.id && !m.read).length;
-  const unreadNotifications = notifications.filter((n) => n.userId === currentUser.id && !n.read).length;
+  // "Yeni mesaj" bildirimleri hariç: okunmamış mesajlar Mesajlar rozetinde zaten sayılıyor (çift sayım).
+  const unreadNotifications = notifications.filter((n) => n.userId === currentUser.id && !n.read && n.type !== "message").length;
   // Tekliflerim rozeti: satıcı karşı-teklif verdi, SIRA BENDE (alıcı) → aksiyon gerekli.
   const pendingOffers = offers.filter((o) => o.buyerId === currentUser.id && o.status === "countered").length;
   const hasUnread = unreadMessages + unreadNotifications + pendingOffers > 0;

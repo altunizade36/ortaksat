@@ -135,7 +135,16 @@ export type Partnership = {
   agreedAttributionWindowDays?: number;
   agreedReturnWindowDays?: number;
   agreedCommissionDueDays?: number;
+  // Bonus da anlaşmaya kilitlenir (ilk `agreedBonusQuota` satışta +`agreedBonusAmount`); satış kaydında
+  // sunucu buradan okur. Tanımsızsa (eski kayıt) ilandaki güncel değere düşülür.
+  agreedBonusAmount?: number;
+  agreedBonusQuota?: number;
   agreedAt?: string;
+  // Ortağın başvururken önerdiği komisyon (ilanın komisyon türüyle aynı birim). Yalnız onay bekleyen
+  // başvuruda anlamlıdır; satıcı "öneriyle kabul" ederse ortağa özel oran olarak yazılır.
+  proposedCommissionValue?: number;
+  // Ortaklığın bittiği gün (sonlandırma / ayrılma / ret / engel) — sunucu yazar.
+  endedAt?: string;
 };
 
 export type Lead = {
@@ -170,6 +179,10 @@ export type Sale = {
   sellerMarkedPaidAt?: string;
   partnerConfirmedPaidAt?: string;
   payoutNote?: string;
+  // Anlaşmazlık: gerekçe, açan taraf ve tarih açıldığı anda sunucuda kilitlenir (not alanı sonra değişse de kalır).
+  disputeReason?: string;
+  disputeOpenedBy?: string;
+  disputeOpenedAt?: string;
   // Alıcı-taraflı doğrulama (Faz 2): tokenlı onay linki. Alıcı hesabından ya da link ile onaylar.
   buyerConfirmToken?: string;
   buyerConfirmedAt?: string;

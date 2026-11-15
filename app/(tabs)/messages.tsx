@@ -1,4 +1,7 @@
-import { conversationGroup, isEmptyThread } from "@/lib/inbox-model";
+import { conversationGroup, conversationPartnership, isEmptyThread, isPartnershipConversation } from "@/lib/inbox-model";
+import { ConversationAgreementStrip } from "@/components/conversation-agreement-strip";
+import { scanMessageRisk } from "@/lib/message-risk";
+import { useSendBlockReason } from "@/lib/use-send-block-reason";
 import { ConversationListingStrip } from "@/components/conversation-listing-strip";
 import { ConversationOfferCard } from "@/components/conversation-offer-card";
 import { ConversationListingActions } from "@/components/conversation-listing-actions";
@@ -107,37 +110,8 @@ const sourceLabels: Record<Lead["source"], string> = {
   phone: "Telefon"
 };
 
-const MESSAGE_RISK_WORDS = [
-  "iban",
-  "havale",
-  "eft",
-  "kapora",
-  "kaparo",
-  "whatsapp",
-  "telegram",
-  "papara",
-  "kripto",
-  "site disi",
-  "site dışı",
-  "western union",
-  "hesap numarasi",
-  "hesap numarası",
-  "kart bilgisi",
-  "dolandirici",
-  "dolandırıcı"
-];
-
-function scanMessageRisk(text: string) {
-  const key = searchKey(text);
-  const matches = MESSAGE_RISK_WORDS.filter((word) => key.includes(searchKey(word)));
-  return {
-    hasRisk: matches.length > 0,
-    matches: Array.from(new Set(matches)).slice(0, 3)
-  };
-}
-
 function MessagesScreenInner() {
-  const { conversations, currentUser, findConversation, findListing, findUser, leads, markConversationRead, messages, partnerships, refreshUserData, sales, sendConversationMessage, retryMessage, isUserBlocked, blockUser, unblockUser } = useStore();
+  const { conversations, currentUser, findConversation, findListing, findUser, leads, markConversationRead, messages, partnerships, refreshUserData, sales, sendConversationMessage, retryMessage, isUserBlocked, blockUser, unblockUser, isSuspended } = useStore();
   const { refreshing, onRefresh } = useNativeRefresh(refreshUserData);
   // Sekme ön plana dönünce mesajları tazele (WS askıdayken kaçan yanıtları getirir).
   useForegroundRefresh(refreshUserData);
@@ -196,6 +170,9 @@ function MessagesScreenInner() {
     .filter((conversation) => conversation.participantIds.includes(currentUser.id) && (conversation.id === resolvedActiveId || !isEmptyThread(conversation, threadsWithMessages.has(conversation.id))))
     .sort((a, b) => b.lastMessageAt.localeCompare(a.lastMessageAt)), [conversations, currentUser.id, resolvedActiveId, threadsWithMessages]);
 
+  // Ortaklık sohbetleri partnerships DURUMUNDAN türetilir (conversations.partner_id açılışta donuyor,
+  // doğrulanmıyor): ilan sahibi olmayan katılımcının o ilanda aktif/bekleyen ortaklığı varsa.
+  const partnerConversationIds = useMemo(() => new Set(myConversations.filter((conversation) => isPartnershipConversation(conversation, partnerships)).map((conversation) => conversation.id)), [myConversations, partnerships]);
   const unreadMessages = useMemo(() => messages.filter((item) => item.receiverId === currentUser.id && !item.read), [messages, currentUser.id]);
   const tokens = useMemo(() => searchKey(query).split(" ").filter(Boolean), [query]);
 
@@ -214,8 +191,8 @@ function MessagesScreenInner() {
     const unreadCount = conversationMessages.filter((item) => item.receiverId === currentUser.id && !item.read).length;
     if (filter === "unread" && unreadCount === 0) return false;
     if (filter === "action" && !context.needsAction) return false;
-    if (filter === "sales" && conversation.partnerId) return false;
-    if (["buyers", "sellers", "partner"].includes(filter) && conversationGroup(conversation, currentUser.id) !== filter) return false;
+    if (filter === "sales" && partnerConversationIds.has(conversation.id)) return false;
+    if (["buyers", "sellers", "partner"].includes(filter) && conversationGroup(conversation, currentUser.id, partnerships) !== filter) return false;
     if (tokens.length === 0) return true;
 
     const haystack = searchKey(
@@ -233,7 +210,7 @@ function MessagesScreenInner() {
         .join(" ")
     );
     return tokens.every((token) => haystack.includes(token));
-  }).sort((a, b) => conversationPriority(b, currentUser.id, messages, ctxById.get(b.id)!) - conversationPriority(a, currentUser.id, messages, ctxById.get(a.id)!)), [myConversations, ctxById, messages, archivedIds, showArchived, filter, tokens, currentUser.id, findListing, findUser]);
+  }).sort((a, b) => conversationPriority(b, currentUser.id, messages, ctxById.get(b.id)!) - conversationPriority(a, currentUser.id, messages, ctxById.get(a.id)!)), [myConversations, ctxById, messages, archivedIds, showArchived, filter, tokens, currentUser.id, findListing, findUser, partnerships, partnerConversationIds]);
   const actionCount = myConversations.reduce((n, conversation) => n + (ctxById.get(conversation.id)!.needsAction ? 1 : 0), 0);
 
   // Keep the explicitly opened unread thread after its unread badge disappears.
@@ -261,6 +238,8 @@ function MessagesScreenInner() {
   const selectedOtherId = selectedConversation?.participantIds.find((id) => id !== currentUser.id);
   const selectedFailedCount = selectedId ? messages.reduce((n, m) => n + (m.conversationId === selectedId && m.status === "failed" ? 1 : 0), 0) : 0;
   const pairBlocked = usePairBlocked(selectedId ? currentUser.id : undefined, selectedOtherId, `${selectedId ?? ""}:${selectedFailedCount}:${selectedOtherId && isUserBlocked(selectedOtherId) ? 1 : 0}`);
+  // Sunucunun gönderimi reddetme sebebi (askıdaki hesap / saatlik yeni sohbet sınırı) — iletisi AYNEN gösterilir.
+  const sendBlockReason = useSendBlockReason({ meId: currentUser.id, conversationId: selectedId, sellerId: selectedConversation?.sellerId, failedCount: selectedFailedCount, suspended: isSuspended });
   useEffect(() => {
     deskNearBottomRef.current = true;
     deskScrollRef.current?.scrollToEnd({ animated: false });
@@ -291,7 +270,8 @@ function MessagesScreenInner() {
     };
     const sendDraft = () => {
       const text = draft.trim();
-      if (!activeConversation || !text || sendingDraftRef.current) return;
+      // Askıdaki hesap: sebep composer üstündeki bantta duruyor; taslağı silme, boşuna deneme.
+      if (!activeConversation || !text || sendingDraftRef.current || isSuspended) return;
       sendingDraftRef.current = true;
       setDraft("");
       // Reddedilirse (hız-limiti/askı/kapalı/engel) metni GERİ YÜKLE — mobil sohbette olduğu gibi
@@ -339,7 +319,10 @@ function MessagesScreenInner() {
       { key: "sellers", label: translateCopy("Satıcı", language), count: 0 },
       { key: "partner", label: translateCopy("Ortaklık", language), count: 0 }
     ];
-    const activeIsPartner = Boolean(activeConversation?.partnerId);
+    const activeIsPartner = Boolean(activeConversation && partnerConversationIds.has(activeConversation.id));
+    // Sağdaki "İlan bilgileri" paneli orta genişlikte (ya da kapatılınca) YOK: Teklif ver / Ortak ol
+    // eylemleri o panelde kaldığı için erişilemiyordu → panel görünmüyorken orta sütunda gösterilir.
+    const detailsPanelVisible = roomForContextPanel && showDetails;
     const activePhotoCount = activeListing ? listingPhotos(activeListing).length : 0;
     const activeListingNo = activeListing ? activeListing.id.replace(/[^0-9]/g, "").slice(-10) || activeListing.id : "";
     const draftRisk = scanMessageRisk(draft);
@@ -397,7 +380,7 @@ function MessagesScreenInner() {
                         <Text numberOfLines={1} style={{ color: colors.ink, flex: 1, fontSize: 13.5, fontWeight: "700" }}>{otherUser?.name ?? t("user")}</Text>
                         <Text style={{ color: colors.subtle, fontSize: 10.5, fontWeight: "700" }}>{last ? inboxTime(last.createdAt, language) : ""}</Text>
                       </View>
-                      <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 11.5, fontWeight: "700" }}>{conversation.partnerId ? translateCopy("Ortaklık · ", language) : ""}{listing ? displayListingTitle(listing.title) : t("listingConversation")}</Text>
+                      <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 11.5, fontWeight: "700" }}>{partnerConversationIds.has(conversation.id) ? translateCopy("Ortaklık · ", language) : ""}{listing ? displayListingTitle(listing.title) : t("listingConversation")}</Text>
                       <View style={{ alignItems: "center", flexDirection: "row", gap: 6 }}>
                         <Text numberOfLines={1} style={{ color: unread ? colors.ink : colors.muted, flex: 1, fontSize: 12, fontWeight: unread ? "800" : "500" }}>{last ? `${last.senderId === currentUser.id ? translateCopy("Sen: ", language) : ""}${messagePreview(last, language)}` : t("conversationStarted")}</Text>
                         {unread ? <View style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 999, height: 18, justifyContent: "center", minWidth: 18, paddingHorizontal: 5 }}><Text style={{ color: "#FFFFFF", fontSize: 10, fontWeight: "700" }}>{unread > 9 ? "9+" : unread}</Text></View> : null}
@@ -453,8 +436,20 @@ function MessagesScreenInner() {
                       <MaterialCommunityIcons name={activeBlocked ? "account-cancel" : "account-cancel-outline"} size={16} color={activeBlocked ? colors.accent : colors.muted} />
                     </Pressable>
                   ) : null}
+                  {/* Şikâyet — yalnız sağ paneldeki "Diğer işlemler"deydi; panel yokken (orta genişlik / kapalı) erişilemiyordu. */}
+                  {activeOtherId ? (
+                    <PressLink href={{ pathname: "/report", params: activeListing ? { listingId: activeListing.id, userId: activeOtherId } : { userId: activeOtherId } } as Href} accessibilityRole="button" accessibilityLabel={translateCopy("Şikayet et", language)} hitSlop={8} pressedOpacity={0.7} style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 999, borderWidth: 1, height: 34, justifyContent: "center", width: 34 }}>
+                      <MaterialCommunityIcons name="flag-outline" size={16} color={colors.muted} />
+                    </PressLink>
+                  ) : null}
                 </View> : null}
                 <ConversationListingStrip listing={activeListing} />
+                <ConversationAgreementStrip key={`agreement:${activeConversation.id}`} conversation={activeConversation} listing={activeListing} />
+                {!detailsPanelVisible && activeListing && activeListing.ownerId !== currentUser.id ? (
+                  <View testID="conversation-inline-actions" style={{ maxWidth: 440, paddingBottom: 8, paddingHorizontal: 10, width: "100%" }}>
+                    <ConversationListingActions key={`inline:${activeConversation.id}`} listing={activeListing} conversation={activeConversation} />
+                  </View>
+                ) : null}
 
                 <ScrollView ref={deskScrollRef} scrollEventThrottle={16} onScroll={(e) => { const { contentOffset, contentSize, layoutMeasurement } = e.nativeEvent; deskNearBottomRef.current = contentSize.height - (contentOffset.y + layoutMeasurement.height) < 120; }} onContentSizeChange={() => { if (deskNearBottomRef.current) deskScrollRef.current?.scrollToEnd({ animated: false }); }} showsVerticalScrollIndicator={false} style={{ backgroundColor: colors.background, flex: 1 }} contentContainerStyle={{ flexGrow: 1, justifyContent: activeMessages.length === 0 ? "center" : "flex-start", padding: 22 }}>
                   {activeMessages.length === 0 ? <EmptyState title={translateCopy("Henüz mesaj yok", language)} body={translateCopy("İlk mesajı yaz ve konuşmayı başlat.", language)} mascot="mobile" /> : null}
@@ -515,6 +510,12 @@ function MessagesScreenInner() {
                 {/* Temiz composer (WhatsApp/Sahibinden tarzı): ekle · yaz · gönder.
                     Hazır cevaplar ve etiket satırları kaldırıldı — mesaj alanı ferah. */}
                 <View style={{ backgroundColor: colors.surface, borderTopColor: colors.line, borderTopWidth: 1, gap: 8, paddingHorizontal: 16, paddingVertical: 12 }}>
+                  {sendBlockReason ? (
+                    <View testID="send-block-reason" accessibilityRole="alert" style={{ alignItems: "center", backgroundColor: colors.accentSoft, borderColor: colors.accent, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 8, paddingHorizontal: 10, paddingVertical: 8 }}>
+                      <MaterialCommunityIcons name="alert-circle-outline" size={16} color={colors.accent} />
+                      <Text style={{ color: colors.ink, flex: 1, fontSize: 11.5, fontWeight: "700", lineHeight: 16 }}>{sendBlockReason}</Text>
+                    </View>
+                  ) : null}
                   {draftRisk.hasRisk ? (
                     <View style={{ alignItems: "center", backgroundColor: colors.warningSoft, borderColor: colors.warning, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 8, paddingHorizontal: 10, paddingVertical: 8 }}>
                       <MaterialCommunityIcons name="shield-alert-outline" size={16} color={colors.warning} />
@@ -669,7 +670,7 @@ function MessagesScreenInner() {
         const unreadCount = conversationMessages.filter((item) => item.receiverId === currentUser.id && !item.read).length;
 
 
-        const isPartner = Boolean(conversation.partnerId);
+        const isPartner = partnerConversationIds.has(conversation.id);
 
         return (
           <Link key={conversation.id} href={{ pathname: "/chat/[id]", params: { id: conversation.id } }} asChild>
@@ -747,8 +748,8 @@ function buildConversationContext({
   const conversationMessages = messages.filter((item) => item.conversationId === conversation.id);
   const latestMessage = conversationMessages.slice().sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0];
   const otherId = conversation.participantIds.find((id) => id !== currentUserId);
-  const partnership =
-    (conversation.partnerId ? partnerships.find((item) => item.id === conversation.partnerId || item.partnerId === conversation.partnerId) : undefined) ??
+  // İlan sahibi olmayan katılımcının bu ilandaki ortaklığı (conversations.partner_id KULLANILMAZ; bkz. lib/inbox-model).
+  const partnership = conversationPartnership(conversation, partnerships) ??
     partnerships.find((item) => item.listingId === conversation.listingId && (item.partnerId === otherId || item.partnerId === currentUserId));
   const lead = partnership
     ? leads

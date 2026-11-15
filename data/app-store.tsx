@@ -31,7 +31,7 @@ import { registerFavoriteToggle, syncFavorites } from "@/lib/favorites-cache";
 import { haptic } from "@/lib/haptics";
 import { metaTrack } from "@/lib/meta-pixel";
 import { syncSavedForUser } from "@/lib/saved-searches";
-import { effectiveCommissionAmount, listingInviteCode, moneyIn, msgStamp } from "@/lib/format";
+import { effectiveCommissionAmount, listingInviteCode, moneyIn, msgStamp, partnershipBonusFor, partnershipProposal, partnershipTerms } from "@/lib/format";
 import { noteThreadActivity, noteThreadHasMessages } from "@/lib/inbox-model";
 import { scanTextLocal } from "@/lib/moderation";
 import {
@@ -77,6 +77,8 @@ import {
   updateListingInventoryLive,
   updatePartnershipStatus,
   leavePartnershipLive,
+  approvePartnershipLive,
+  setPartnershipStatusLive,
   setPartnershipCommissionLive,
   updateReportStatusLive,
   updateProfileLive,
@@ -112,7 +114,7 @@ import {
 import { rateLimit, rateLimitSync } from "@/lib/rate-limit";
 import { unregisterPush } from "@/lib/push";
 import { supabase, isSupabaseConfigured, readStoredAuthUser } from "@/lib/supabase";
-import { fetchListingsByIds, fetchPublicProfiles, fetchUserNotifications, loadAccountSnapshot, loadAdminSnapshot, loadBlogPosts, loadCategories, loadContentPages, loadMarketplacePage, loadMarketplaceSnapshot, loadOwnListings, loadPlatformSettings, loadSeoSettings, loadSuggestions, parseNotifMeta, type DbBlogPost, type DbContentPage, type DbSeoSetting, type ExtraCategory } from "@/lib/supabase-data";
+import { fetchListingsByIds, fetchPublicProfiles, fetchUserNotifications, loadAccountSnapshot, loadAdminSnapshot, loadBlogPosts, loadCategories, loadContentPages, loadMarketplacePage, loadMarketplaceSnapshot, loadOwnListings, loadPlatformSettings, loadSeoSettings, loadSuggestions, mapPartnershipRow, mapSaleRow, parseNotifMeta, type DbBlogPost, type DbContentPage, type DbSeoSetting, type ExtraCategory } from "@/lib/supabase-data";
 import { categoryTree as baseCategoryTree, setHiddenCategories as setHiddenCategoriesModule, type CategoryNode } from "@/lib/category-tree";
 import { displayText, repairTurkishText } from "@/lib/text";
 import { firstError, isValidEmail, validateSignIn, validateSignUp } from "@/lib/validation";
@@ -183,6 +185,8 @@ type PartnershipApplicationInput = {
   reachEstimate: number;
   note: string;
   inviteCode: string;
+  // Ortağın önerdiği komisyon (ilanın komisyon türüyle aynı birim). Yalnız onay bekleyen başvuruda saklanır.
+  proposedCommissionValue: number;
 };
 
 type SaleFromLeadInput = {
@@ -353,11 +357,16 @@ type AppStore = {
   createSaleFromLead: (leadId: string, input?: Partial<SaleFromLeadInput>) => Sale | undefined;
   recordSaleForPartner: (partnershipId: string, input?: Partial<SaleFromLeadInput> & { buyerName?: string }) => Sale | undefined;
   joinListing: (listingId: string, input?: Partial<PartnershipApplicationInput>, fallbackListing?: Listing) => Promise<Partnership | undefined>;
-  approvePartnership: (partnershipId: string) => Promise<boolean>;
+  // acceptProposal: ortağın önerdiği komisyon (ilan oranından yüksekse) ortağa özel oran olarak kabul edilir.
+  approvePartnership: (partnershipId: string, acceptProposal?: boolean) => Promise<boolean>;
   rejectPartnership: (partnershipId: string, reason?: string) => Promise<boolean>;
   endPartnership: (partnershipId: string, mode?: "blocked" | "cancelled") => Promise<boolean>;
+  // Aktif ortaklıktan ayrılır ya da onay bekleyen başvuruyu geri çeker.
   leavePartnership: (partnershipId: string) => Promise<boolean>;
-  setPartnershipCommission: (partnershipId: string, type?: "rate" | "fixed", value?: number) => Promise<boolean>;
+  // Satıcı engeli kaldırır (blocked → cancelled); ortak yeniden başvurabilir.
+  unblockPartnership: (partnershipId: string) => Promise<boolean>;
+  // onError: reddedilme nedeni (anlaşılanın altı, sunucu açıklaması) çağırana iletilir.
+  setPartnershipCommission: (partnershipId: string, type?: "rate" | "fixed", value?: number, onError?: (message: string) => void) => Promise<boolean>;
   toggleFavorite: (listingId: string) => void;
   setFavoriteCollection: (listingId: string, collection: string | null) => void;
   followedSellerIds: string[];
@@ -1120,22 +1129,10 @@ export function StoreProvider({ children }: PropsWithChildren) {
         { event: "*", schema: "public", table: "partnerships" },
         (payload) => {
           const row = payload.new as Record<string, any> | null;
-          if (!row) return;
-          const partnership: Partnership = {
-            id: row.id,
-            listingId: row.listing_id,
-            partnerId: row.partner_id,
-            refCode: row.ref_code,
-            status: row.status,
-            note: row.note,
-            shareChannel: row.share_channel ?? undefined,
-            audience: row.audience ?? undefined,
-            platformHandle: row.platform_handle ?? undefined,
-            reachEstimate: row.reach_estimate ?? undefined,
-            rejectionReason: row.rejection_reason ?? undefined,
-            approvedAt: row.approved_at?.slice(0, 10),
-            createdAt: row.created_at.slice(0, 10)
-          };
+          if (!row?.id) return;
+          // Hesap özetiyle AYNI eşleyici: özel komisyon, kilitli anlaşma şartları, öneri ve bitiş tarihi
+          // canlı güncellemede de korunur (eskiden düşüyor, kart ilanın güncel oranına dönüyordu).
+          const partnership = mapPartnershipRow(row);
           setPartnerships((items) => [partnership, ...items.filter((item) => item.id !== partnership.id)]);
         }
       )
@@ -1165,26 +1162,11 @@ export function StoreProvider({ children }: PropsWithChildren) {
         { event: "*", schema: "public", table: "commissions" },
         (payload) => {
           const row = payload.new as Record<string, any> | null;
-          if (!row) return;
-          const sale: Sale = {
-            id: row.id,
-            listingId: row.listing_id,
-            partnershipId: row.partnership_id,
-            leadId: row.lead_id ?? "",
-            amount: Number(row.sale_amount ?? row.amount ?? 0),
-            quantity: Number(row.quantity ?? 1),
-            commissionAmount: Number(row.amount ?? 0),
-            status: row.status,
-            buyerName: row.buyer_name ?? undefined,
-            deliveryStatus: row.delivery_status ?? undefined,
-            returnUntil: row.return_until?.slice(0, 10),
-            approvedAt: row.approved_at?.slice(0, 10),
-            paidAt: row.paid_at?.slice(0, 10),
-            sellerMarkedPaidAt: row.seller_marked_paid_at?.slice(0, 10),
-            partnerConfirmedPaidAt: row.partner_confirmed_paid_at?.slice(0, 10),
-            payoutNote: row.payout_note ?? undefined
-          };
-          setSales((items) => [sale, ...items.filter((item) => item.id !== sale.id)]);
+          if (!row?.id) return;
+          // Tek eşleyici: anlaşmazlık gerekçesi, alıcı onayı ve kayıt tarihi canlı güncellemede de gelir.
+          const sale = mapSaleRow(row);
+          // bonusApplied yalnız yerelde tutulur (sunucuda ayrı sütun yok) → eldeki değer korunur.
+          setSales((items) => { const prev = items.find((item) => item.id === sale.id); return [prev?.bonusApplied ? { ...sale, bonusApplied: prev.bonusApplied } : sale, ...items.filter((item) => item.id !== sale.id)]; });
         }
       )
       .on(
@@ -2289,13 +2271,16 @@ export function StoreProvider({ children }: PropsWithChildren) {
 
         const quantity = Math.max(1, Math.floor(input?.quantity ?? 1));
         const amount = Number.isFinite(input?.amount) && Number(input?.amount) > 0 ? Number(input?.amount) : listing.price * quantity;
-        const returnUntil = new Date(Date.now() + listing.returnWindowDays * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+        // İade süresi, ödeme vadesi ve bonus ANLAŞMADAN okunur (ortaklık kurulurken kilitlenen değerler) —
+        // sunucu (record_sale) da aynısını yapar; ilan sonradan değişse de ekrandaki kayıt sunucununkiyle aynıdır.
+        const terms = partnershipTerms(listing, partnership);
+        const returnUntil = terms.returnWindowDays > 0 ? new Date(Date.now() + terms.returnWindowDays * 24 * 60 * 60 * 1000).toISOString().slice(0, 10) : undefined;
         // Başlangıç bonusu: HER ORTAĞIN ilk `bonusQuota` satışına ek `bonusAmount` (satıcı
         // taahhüdü — reklamı yapılıyordu ama komisyona hiç eklenmiyordu, sahte vaattı). Bu
         // ortağın iptal-olmayan önceki satış sayısı kotanın altındaysa bu satışa bonus eklenir.
         const priorPartnerSales = sales.filter((s) => s.partnershipId === lead.partnershipId && s.status !== "cancelled").length;
-        const bonusApplied = (listing.bonusAmount ?? 0) > 0 && (listing.bonusQuota ?? 0) > 0 && priorPartnerSales < (listing.bonusQuota ?? 0) ? Math.round(listing.bonusAmount ?? 0) : 0;
-        // Efektif komisyon: per-ortak override > kademeli oran > ilan varsayılanı.
+        const bonusApplied = partnershipBonusFor(listing, partnership, priorPartnerSales);
+        // Efektif komisyon: anlaşılan (kademeli oran dahil) ile ortağa özel orandan YÜKSEK olan.
         const baseCommission = effectiveCommissionAmount(listing, partnership, priorPartnerSales, amount, quantity);
         const buyerConfirmToken = makeConfirmToken();
         const sale: Sale = {
@@ -2307,12 +2292,12 @@ export function StoreProvider({ children }: PropsWithChildren) {
           quantity,
           commissionAmount: baseCommission + bonusApplied,
           bonusApplied: bonusApplied || undefined,
-          status: listing.returnWindowDays > 0 ? "return_pending" : "approved",
+          status: terms.returnWindowDays > 0 ? "return_pending" : "approved",
           buyerName: lead.buyerName,
           deliveryStatus: input?.deliveryStatus ?? "confirmed",
           returnUntil,
-          approvedAt: listing.returnWindowDays > 0 ? undefined : today(),
-          payoutNote: `${listing.returnWindowDays} gün iade penceresi sonrası ${listing.commissionDueDays} gün içinde dış ödeme.`,
+          approvedAt: terms.returnWindowDays > 0 ? undefined : today(),
+          payoutNote: `${terms.returnWindowDays} gün iade penceresi sonrası ${terms.commissionDueDays} gün içinde dış ödeme.`,
           buyerConfirmToken,
           buyerConfirmStatus: "awaiting"
         };
@@ -2358,11 +2343,14 @@ export function StoreProvider({ children }: PropsWithChildren) {
 
         const quantity = Math.max(1, Math.floor(input?.quantity ?? 1));
         const amount = Number.isFinite(input?.amount) && Number(input?.amount) > 0 ? Number(input?.amount) : listing.price * quantity;
-        const returnUntil = new Date(Date.now() + listing.returnWindowDays * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+        // İade süresi, ödeme vadesi ve bonus ANLAŞMADAN okunur (ortaklık kurulurken kilitlenen değerler) —
+        // sunucu (record_sale) da aynısını yapar; ilan sonradan değişse de ekrandaki kayıt sunucununkiyle aynıdır.
+        const terms = partnershipTerms(listing, partnership);
+        const returnUntil = terms.returnWindowDays > 0 ? new Date(Date.now() + terms.returnWindowDays * 24 * 60 * 60 * 1000).toISOString().slice(0, 10) : undefined;
         // Başlangıç bonusu (ilk bonusQuota satış) — createSaleFromLead ile aynı mantık.
         const priorPartnerSales = sales.filter((s) => s.partnershipId === partnership.id && s.status !== "cancelled").length;
-        const bonusApplied = (listing.bonusAmount ?? 0) > 0 && (listing.bonusQuota ?? 0) > 0 && priorPartnerSales < (listing.bonusQuota ?? 0) ? Math.round(listing.bonusAmount ?? 0) : 0;
-        // Efektif komisyon: per-ortak override > kademeli oran > ilan varsayılanı.
+        const bonusApplied = partnershipBonusFor(listing, partnership, priorPartnerSales);
+        // Efektif komisyon: anlaşılan (kademeli oran dahil) ile ortağa özel orandan YÜKSEK olan.
         const baseCommission = effectiveCommissionAmount(listing, partnership, priorPartnerSales, amount, quantity);
         const sale: Sale = {
           id: newId("s", liveUser),
@@ -2372,12 +2360,12 @@ export function StoreProvider({ children }: PropsWithChildren) {
           quantity,
           commissionAmount: baseCommission + bonusApplied,
           bonusApplied: bonusApplied || undefined,
-          status: listing.returnWindowDays > 0 ? "return_pending" : "approved",
+          status: terms.returnWindowDays > 0 ? "return_pending" : "approved",
           buyerName: input?.buyerName?.trim() || "Doğrudan satış",
           deliveryStatus: input?.deliveryStatus ?? "confirmed",
           returnUntil,
-          approvedAt: listing.returnWindowDays > 0 ? undefined : today(),
-          payoutNote: `Satıcı tarafından eklendi (doğrudan satış). ${listing.returnWindowDays} gün iade penceresi sonrası ${listing.commissionDueDays} gün içinde dış ödeme.`,
+          approvedAt: terms.returnWindowDays > 0 ? undefined : today(),
+          payoutNote: `Satıcı tarafından eklendi (doğrudan satış). ${terms.returnWindowDays} gün iade penceresi sonrası ${terms.commissionDueDays} gün içinde dış ödeme.`,
           buyerConfirmToken: makeConfirmToken(),
           buyerConfirmStatus: "awaiting"
         };
@@ -2459,6 +2447,9 @@ export function StoreProvider({ children }: PropsWithChildren) {
           setAuthError(undefined);
           return existing;
         }
+        // Komisyon önerisi yalnız onay bekleyen başvuruda anlamlıdır (sunucu da öyle saklar).
+        const proposalInput = Number(input?.proposedCommissionValue);
+        const proposal = Number.isFinite(proposalInput) && proposalInput > 0 ? Math.round(proposalInput * 100) / 100 : undefined;
         if (existing && REOPENABLE.includes(existing.status)) {
           const reopenStatus = listing.partnershipMode === "open" || invited ? "active" : "pending";
           const reopened: Partnership = {
@@ -2470,7 +2461,12 @@ export function StoreProvider({ children }: PropsWithChildren) {
             audience: input?.audience?.trim() || existing.audience,
             platformHandle: input?.platformHandle?.trim() || existing.platformHandle,
             reachEstimate: Number.isFinite(input?.reachEstimate) ? Math.max(0, Number(input?.reachEstimate)) : existing.reachEstimate,
-            approvedAt: reopenStatus === "active" ? today() : existing.approvedAt
+            approvedAt: reopenStatus === "active" ? today() : existing.approvedAt,
+            // Yeniden açılışta sunucu özel oranı siler, şartları güncel ilandan yeniden kilitler.
+            commissionOverrideType: undefined,
+            commissionOverrideValue: undefined,
+            proposedCommissionValue: reopenStatus === "pending" ? proposal : undefined,
+            endedAt: undefined
           };
           if(liveUser&&!await partnerJoinLive(reopened,input?.inviteCode)){setAuthError("Başvuru kaydedilemedi. Kontenjanı ve bağlantını kontrol edip tekrar dene.");return undefined;}
           if(favoriteAccount.current!==currentUser.id)return undefined;
@@ -2501,7 +2497,8 @@ export function StoreProvider({ children }: PropsWithChildren) {
           platformHandle: input?.platformHandle?.trim() || "",
           reachEstimate: Number.isFinite(input?.reachEstimate) ? Math.max(0, Number(input?.reachEstimate)) : 0,
           approvedAt: status === "active" ? today() : undefined,
-          createdAt: today()
+          createdAt: today(),
+          proposedCommissionValue: status === "pending" ? proposal : undefined
         };
         const proposedId=partnership.id;
         if(liveUser&&!await partnerJoinLive(partnership,input?.inviteCode)){setAuthError("Ortaklık kaydedilemedi. Kontenjanı ve bağlantını kontrol edip tekrar dene.");return undefined;}
@@ -2520,15 +2517,32 @@ export function StoreProvider({ children }: PropsWithChildren) {
         return partnership;
         } finally {partnershipWrites.current.delete(writeKey);}
       },
-      async approvePartnership(partnershipId) {
+      async approvePartnership(partnershipId, acceptProposal = false) {
         const writeKey="decision:"+partnershipId;if(partnershipWrites.current.has(writeKey))return false;partnershipWrites.current.add(writeKey);
         try {
         const partnership = partnerships.find((item) => item.id === partnershipId);
         const listing = partnership ? listings.find((item) => item.id === partnership.listingId) : undefined;
         if (!partnership || !listing || (listing.ownerId !== currentUser.id && !staff) || partnership.status !== "pending") return false;
-        const updatedPartnership: Partnership = { ...partnership, status: "active", approvedAt: today() };
-        if(liveUser&&!await updatePartnershipStatus(updatedPartnership)){setSyncError("Başvuru onayı kaydedilemedi. Kontenjanı kontrol edip tekrar dene.");return false;}
-        if(favoriteAccount.current!==currentUser.id)return false;
+        // Onay SUNUCU işleviyle (approve_partnership): öneri kabul edilirse özel oranı sunucu yazar; kontenjan
+        // gibi kurallar orada denetlenir. Yerel kayıt, sunucunun yazdığı satırdan (özel oran dahil) güncellenir.
+        const proposal = acceptProposal ? partnershipProposal(listing, partnership) : null;
+        let updatedPartnership: Partnership = { ...partnership, status: "active", approvedAt: today(), rejectionReason: undefined, ...(proposal ? { commissionOverrideType: proposal.type, commissionOverrideValue: proposal.value } : {}) };
+        if (liveUser) {
+          const result = await approvePartnershipLive(partnershipId, acceptProposal);
+          if (!result.ok) { setSyncError(result.message); return false; }
+          if (favoriteAccount.current!==currentUser.id) return false;
+          // 'noop': başvuru artık beklemiyor (ortak geri çekti / başka cihazdan yanıtlandı) → sunucudaki durumu göster.
+          if (result.outcome === "noop") {
+            const current = result.partnership;
+            if (current) setPartnerships((items) => items.map((item) => (item.id === partnershipId ? current : item)));
+            setSyncError("Bu başvuru artık beklemiyor; güncel durumu gösteriliyor.");
+            return false;
+          }
+          if (result.partnership) updatedPartnership = result.partnership;
+          // Satır geri okunamadıysa: özel oran yalnız sunucu "öneriyle onaylandı" dediyse yerelde de yazılır.
+          else if (result.outcome === "approved") updatedPartnership = { ...partnership, status: "active", approvedAt: today(), rejectionReason: undefined };
+        }
+        setSyncError(null);
         setPartnerships((items) => items.map((item) => (item.id === partnershipId ? updatedPartnership : item)));
         setListings((items) =>
           items.map((listing) =>
@@ -2579,28 +2593,49 @@ export function StoreProvider({ children }: PropsWithChildren) {
       },
       async leavePartnership(partnershipId) {
         const partnership=partnerships.find(item=>item.id===partnershipId);
-        if(!isAuthenticated||!partnership||partnership.partnerId!==currentUser.id||partnership.status!=="active")return false;
+        // Aktif ortaklıktan ayrılma VE onay bekleyen başvuruyu geri çekme (sunucu: leave_partnership).
+        if(!isAuthenticated||!partnership||partnership.partnerId!==currentUser.id||(partnership.status!=="active"&&partnership.status!=="pending"))return false;
+        const wasPending=partnership.status==="pending",failText=wasPending?"Başvuru geri çekilemedi. Tekrar dene.":"Ortaklıktan ayrılınamadı. Tekrar dene.";
         const key="decision:"+partnershipId;if(partnershipWrites.current.has(key))return false;partnershipWrites.current.add(key);
         try{
-          if(liveUser&&!await leavePartnershipLive(partnershipId)){setSyncError("Ortaklıktan ayrılınamadı. Tekrar dene.");return false;}
+          if(liveUser&&!await leavePartnershipLive(partnershipId)){setSyncError(failText);return false;}
+          if(favoriteAccount.current!==currentUser.id)return false;
+          setSyncError(null);
+          setPartnerships(items=>items.map(p=>p.id===partnershipId?{...p,status:"cancelled",endedAt:today()}:p));
+          // Bekleyen başvuru aktif ortak sayılmıyordu → sayaç yalnız aktif ortaklıktan ayrılınca düşer.
+          if(!wasPending){
+            setListings(items=>items.map(l=>l.id===partnership.listingId?{...l,partnerCount:Math.max(0,l.partnerCount-1)}:l));
+            const listing=listings.find(l=>l.id===partnership.listingId);
+            if(listing)notify(listing.ownerId,"application","Ortak ayrıldı",`${currentUser.name}, ortaklıktan ayrıldı.`,{listingId:listing.id,partnershipId});
+          }
+          return true;
+        }catch{setSyncError(failText);return false;}finally{partnershipWrites.current.delete(key);}
+      },
+      // Satıcı engeli kaldırır: blocked → cancelled (sunucunun izin verdiği tek çıkış). Ortaklık yeniden
+      // kurulmaz; ortak isterse yeniden başvurur ve şartlar o günkü ilandan kilitlenir.
+      async unblockPartnership(partnershipId) {
+        const partnership=partnerships.find(item=>item.id===partnershipId),listing=partnership?listings.find(l=>l.id===partnership.listingId):undefined;
+        if(!isAuthenticated||!partnership||!listing||(listing.ownerId!==currentUser.id&&!staff)||partnership.status!=="blocked")return false;
+        const key="decision:"+partnershipId;if(partnershipWrites.current.has(key))return false;partnershipWrites.current.add(key);
+        try{
+          if(liveUser){const result=await setPartnershipStatusLive(partnershipId,"cancelled");if(!result.ok){setSyncError(result.message||"Engel kaldırılamadı. Tekrar dene.");return false;}}
           if(favoriteAccount.current!==currentUser.id)return false;
           setSyncError(null);
           setPartnerships(items=>items.map(p=>p.id===partnershipId?{...p,status:"cancelled"}:p));
-          setListings(items=>items.map(l=>l.id===partnership.listingId?{...l,partnerCount:Math.max(0,l.partnerCount-1)}:l));
-          const listing=listings.find(l=>l.id===partnership.listingId);
-          if(listing)notify(listing.ownerId,"application","Ortak ayrıldı",`${currentUser.name}, ortaklıktan ayrıldı.`,{listingId:listing.id,partnershipId});
           return true;
-        }catch{setSyncError("Ortaklıktan ayrılınamadı. Tekrar dene.");return false;}finally{partnershipWrites.current.delete(key);}
+        }catch{setSyncError("Engel kaldırılamadı. Tekrar dene.");return false;}finally{partnershipWrites.current.delete(key);}
       },
-      async setPartnershipCommission(partnershipId,type,value) {
+      async setPartnershipCommission(partnershipId,type,value,onError) {
         const partnership=partnerships.find(item=>item.id===partnershipId),listing=partnership?listings.find(l=>l.id===partnership.listingId):undefined;
         if(!isAuthenticated||!partnership||!listing||(listing.ownerId!==currentUser.id&&!staff))return false;
         const clear=type===undefined&&value===undefined;
         if(!clear&&(!type||!Number.isFinite(value)||Number(value)<=0||type==="rate"&&Number(value)>90))return false;
+        // Özel komisyon anlaşılanın ALTINA yazılamaz (aynı türdeyse) — sunucu da reddeder; nedeni burada söylenir.
+        if(!clear&&partnership.agreedCommissionType===type&&typeof partnership.agreedCommissionValue==="number"&&Number(value)<partnership.agreedCommissionValue){onError?.("Özel komisyon, anlaşılan komisyonun altında olamaz.");return false;}
         const key="decision:"+partnershipId;if(partnershipWrites.current.has(key))return false;partnershipWrites.current.add(key);
         const nextType=clear?undefined:type,nextValue=clear?undefined:Math.round(Number(value)*100)/100;
         try{
-          if(liveUser&&!await setPartnershipCommissionLive(partnershipId,nextType??null,nextValue??null)){setSyncError("Komisyon güncellenemedi. Tekrar dene.");return false;}
+          if(liveUser&&!await setPartnershipCommissionLive(partnershipId,nextType??null,nextValue??null,onError)){setSyncError("Komisyon güncellenemedi. Tekrar dene.");return false;}
           if(favoriteAccount.current!==currentUser.id)return false;
           setSyncError(null);
           setPartnerships(items=>items.map(p=>p.id===partnershipId?{...p,commissionOverrideType:nextType,commissionOverrideValue:nextValue}:p));
@@ -3066,6 +3101,10 @@ export function StoreProvider({ children }: PropsWithChildren) {
               sellerMarkedPaidAt: status === "seller_paid" ? today() : sale.sellerMarkedPaidAt,
               partnerConfirmedPaidAt: status === "paid" ? today() : sale.partnerConfirmedPaidAt,
               paidAt: status === "paid" ? today() : sale.paidAt,
+              // Anlaşmazlık gerekçesi açıldığı anda kilitlenir (sunucu da öyle yapar); sonraki adımlar ezmez.
+              disputeReason: status === "disputed" && sale.status !== "disputed" ? disputeText : sale.disputeReason,
+              disputeOpenedBy: status === "disputed" && sale.status !== "disputed" ? currentUser.id : sale.disputeOpenedBy,
+              disputeOpenedAt: status === "disputed" && sale.status !== "disputed" ? today() : sale.disputeOpenedAt,
               payoutNote:
                 status === "approved"
                   ? "İade penceresi kapandı, komisyon ödemeye hazır."

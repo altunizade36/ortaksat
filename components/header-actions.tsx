@@ -21,9 +21,11 @@ export function HeaderActions() {
   // Ayrı mesaj/bildirim ikonları KALDIRILMIŞTI (header sade + İlan Ver öne çıksın) ama hesap ikonu
   // EVRENSEL "benim hesabım" girişi → aktivite BURADA da görünmeli (hamburger'daki rozetin ikizi;
   // kullanıcı okunmamış mesajı tek bakışta görsün, geri gelsin). Anon'da 0 (filtre boş döner).
+  // "Yeni mesaj" bildirimleri bildirim sayısından DÜŞÜLÜR: okunmamış mesajlar zaten ayrıca sayılıyor,
+  // aynı mesaj rozette iki kez (mesaj + bildirimi) görünüyordu.
   const badgeTotal = isAuthenticated
     ? messages.filter((m) => m.receiverId === currentUser.id && !m.read).length
-      + notifications.filter((n) => n.userId === currentUser.id && !n.read).length
+      + notifications.filter((n) => n.userId === currentUser.id && !n.read && n.type !== "message").length
       + offers.filter((o) => o.buyerId === currentUser.id && o.status === "countered").length
     : 0;
   return (

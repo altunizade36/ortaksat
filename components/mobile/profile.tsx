@@ -20,7 +20,7 @@ import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { OptionSheet } from "@/components/option-sheet";
 import { useStore } from "@/lib/use-store";
 import { fetchListingsByIds } from "@/lib/supabase-data";
-import { effectiveCommissionAmount, moneyIn } from "@/lib/format";
+import { commissionValueLabel, effectiveCommissionAmount, moneyIn, partnershipProposal } from "@/lib/format";
 import { shareOrCopy } from "@/lib/share";
 import { showToast } from "@/lib/toast";
 import { Alert } from "@/lib/alert";
@@ -152,20 +152,27 @@ export function MobileProfile({
     if (result === "copied") showToast("Bağlantı kopyalandı.");
     if (result === "failed") showToast("Paylaşılamadı. Lütfen tekrar dene.");
   }
-  function changeRequest(p: Partnership, approve: boolean) {
+  // acceptProposal: ortağın önerdiği komisyon (ilan oranından yüksekse) ortağa özel oran olarak kabul edilir.
+  function changeRequest(p: Partnership, approve: boolean, acceptProposal = false) {
     Alert.alert(
       approve ? "Ortaklığı onayla" : "Talebi reddet",
       approve
-        ? "Bu kişi ilanına ortak olarak katılabilecek. Devam edilsin mi?"
+        ? acceptProposal
+          ? "Bu kişi ilanına ortak olacak ve önerdiği komisyon ona özel oran olarak kaydedilecek. Devam edilsin mi?"
+          : "Bu kişi ilanına ortak olarak katılabilecek. Devam edilsin mi?"
         : "Bu ortaklık talebi reddedilecek. Devam edilsin mi?",
       [
         { text: "Vazgeç", style: "cancel" },
         {
           text: approve ? "Onayla" : "Reddet",
-          onPress: () =>
-            approve
-              ? store.approvePartnership(p.id)
-              : store.rejectPartnership(p.id),
+          onPress: () => {
+            void (approve
+              ? store.approvePartnership(p.id, acceptProposal)
+              : store.rejectPartnership(p.id)
+            ).then((ok) => {
+              if (!ok) showToast("Talep güncellenemedi. Kontenjanı ve bağlantını kontrol et.");
+            });
+          },
         },
       ],
     );
@@ -729,7 +736,11 @@ export function MobileProfile({
               {heading("Ortaklık Talepleri", "requests")}
               {pending.slice(0, tab === "overview" ? 3 : limit).map((p) => {
                 const l = byId.get(p.listingId),
-                  person = store.findUser(p.partnerId);
+                  person = store.findUser(p.partnerId),
+                  // Ortağın komisyon önerisi: yalnız ilan komisyonundan yüksekse ayrıca sunulur.
+                  proposal = l ? partnershipProposal(l, p) : null,
+                  proposalLabel = l && proposal ? commissionValueLabel(proposal.type, proposal.value, l.currency) : "",
+                  listingRateLabel = l ? commissionValueLabel(p.agreedCommissionType ?? l.commissionType, p.agreedCommissionValue ?? l.commissionValue, l.currency) : "";
                 return (
                   <MobileCard
                     key={p.id}
@@ -772,12 +783,23 @@ export function MobileProfile({
                     >
                       {p.note || "İlanınıza ortak olmak istiyor."}
                     </Text>
+                    {!!proposal && (
+                      <Text style={{ color: mobile.darkTeal, fontSize: 12.5, fontWeight: "800" }}>
+                        Ortağın önerisi: {proposalLabel} (ilandaki komisyon {listingRateLabel})
+                      </Text>
+                    )}
+                    {!!proposal && (
+                      <MobileButton onPress={() => changeRequest(p, true, true)}>
+                        {`Öneriyle Kabul Et (${proposalLabel})`}
+                      </MobileButton>
+                    )}
                     <View style={ms.row}>
                       <MobileButton
+                        secondary={!!proposal}
                         onPress={() => changeRequest(p, true)}
-                        style={{ flex: 1 }}
+                        style={{ flex: proposal ? 2 : 1 }}
                       >
-                        Onayla
+                        {proposal ? `İlan Oranıyla Kabul Et (${listingRateLabel})` : "Kabul Et"}
                       </MobileButton>
                       <MobileButton
                         secondary

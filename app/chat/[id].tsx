@@ -2,6 +2,10 @@ import { UserAvatar } from "@/components/user-avatar";
 import { ConversationListingStrip } from "@/components/conversation-listing-strip";
 import { ConversationOfferCard } from "@/components/conversation-offer-card";
 import { ConversationListingActions } from "@/components/conversation-listing-actions";
+import { ConversationAgreementStrip } from "@/components/conversation-agreement-strip";
+import { isPartnershipConversation } from "@/lib/inbox-model";
+import { scanMessageRisk } from "@/lib/message-risk";
+import { useSendBlockReason } from "@/lib/use-send-block-reason";
 import { displayListingTitle } from "@/lib/listing-title";
 import { isMobileApp } from "@/lib/mobile-app";
 import { MobileConversation } from "@/components/mobile/messages";
@@ -36,30 +40,6 @@ import type { Message } from "@/lib/types";
 import { useForegroundRefresh } from "@/lib/use-foreground-refresh";
 import { useStore } from "@/lib/use-store";
 
-const CHAT_RISK_WORDS = [
-  "iban",
-  "havale",
-  "eft",
-  "kapora",
-  "kaparo",
-  "whatsapp",
-  "telegram",
-  "papara",
-  "kripto",
-  "site disi",
-  "site dışı",
-  "western union",
-  "hesap numarasi",
-  "hesap numarası",
-  "kart bilgisi"
-];
-
-function scanChatRisk(text: string) {
-  const key = searchKey(text);
-  const matches = CHAT_RISK_WORDS.filter((word) => key.includes(searchKey(word)));
-  return { hasRisk: matches.length > 0, matches: Array.from(new Set(matches)).slice(0, 3) };
-}
-
 export default function ChatScreen() {
   const params = useLocalSearchParams<{ id?: string }>();
   return isMobileApp ? <MobileConversation key={String(params.id || "")} id={String(params.id || "")} /> : <ChatScreenLegacy key={String(params.id || "")} />;
@@ -84,7 +64,7 @@ function ChatScreenInner() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { currentUser, accountLoaded, findConversation, findListing, findUser, markConversationRead, messages, refreshUserData, reportUser, sendConversationMessage, retryMessage, isUserBlocked, blockUser, unblockUser } = useStore();
+  const { currentUser, accountLoaded, findConversation, findListing, findUser, markConversationRead, messages, partnerships, refreshUserData, reportUser, sendConversationMessage, retryMessage, isUserBlocked, blockUser, unblockUser, isSuspended } = useStore();
   const [body, setBody] = useState("");
   const [attaching, setAttaching] = useState(false);
   const [showReplies, setShowReplies] = useState(false);
@@ -136,6 +116,10 @@ function ChatScreenInner() {
   // sunucuya sor; composer yerine net bant göster (yoksa her mesaj "gönderilemedi" döngüsü).
   const failedCount = messages.reduce((n, m) => n + (m.conversationId === (conversationId ?? id) && m.status === "failed" ? 1 : 0), 0);
   const blockedByOther = usePairBlocked(conversation ? currentUser.id : undefined, otherId, `${id}:${failedCount}:${blockedHere ? 1 : 0}`) && !blockedHere;
+  // Sunucunun gönderimi reddetme sebebi (askıdaki hesap / saatlik yeni sohbet sınırı) — iletisi AYNEN gösterilir.
+  const sendBlockReason = useSendBlockReason({ meId: currentUser.id, conversationId, sellerId: conversation?.sellerId, failedCount, suspended: isSuspended });
+  // Ortaklık sohbeti partnerships durumundan türetilir (conversations.partner_id açılışta donuyor, doğrulanmıyor).
+  const partnerChat = conversation ? isPartnershipConversation(conversation, partnerships, listing?.ownerId) : false;
   const conversationMessages = useMemo(() => {
     // messages dizisi yeni→eski (başa eklenir); aynı zaman damgasında yüksek index
     // = daha eski, bu yüzden önce gelir (eskiden yeniye doğru thread).
@@ -174,8 +158,8 @@ function ChatScreenInner() {
 
   const currentConversation = conversation;
   const quickReplies = buildQuickReplies(contextSeedForReplies(conversationMessages));
-  const conversationRisk = scanChatRisk([...conversationMessages.map((item) => item.body), body].filter(Boolean).join(" "));
-  const draftRisk = scanChatRisk(body);
+  const conversationRisk = scanMessageRisk([...conversationMessages.map((item) => item.body), body].filter(Boolean).join(" "));
+  const draftRisk = scanMessageRisk(body);
   const safeDealDraft = listing
     ? `Ödeme ve teslimat koşullarını OrtakSat mesaj kaydında netleştirelim. İlan: ${displayListingTitle(listing.title)} - Fiyat: ${moneyIn(listing.price, listing.currency)}.`
     : "Ödeme ve teslimat koşullarını OrtakSat mesaj kaydında netleştirelim.";
@@ -184,7 +168,8 @@ function ChatScreenInner() {
     const text = body.trim();
     // Metni önce yakala + kutuyu hemen temizle: hızlı çift Enter/tık (web keypress)
     // aynı mesajı iki kez göndermesin.
-    if (!text || sendingRef.current) return;
+    // Askıdaki hesap: sebep composer üstündeki bantta duruyor; taslağı silme, boşuna deneme.
+    if (!text || sendingRef.current || isSuspended) return;
     sendingRef.current = true;
     setBody("");
     // Reddedilirse (askıda/rate-limit/kapalı konuşma) metni GERİ YÜKLE → sessiz kayıp yok;
@@ -248,9 +233,9 @@ function ChatScreenInner() {
                 <Text numberOfLines={1} style={{ color: colors.primary, fontSize: 12, fontWeight: "800" }}>{translateCopy("yazıyor…", language)}</Text>
               ) : (
                 <View style={{ alignItems: "center", flexDirection: "row", gap: 4 }}>
-                  <MaterialCommunityIcons name={conversation?.partnerId ? "handshake-outline" : "tag-outline"} size={12} color={colors.muted} />
+                  <MaterialCommunityIcons name={partnerChat ? "handshake-outline" : "tag-outline"} size={12} color={colors.muted} />
                   <Text selectable numberOfLines={1} style={{ color: colors.muted, flex: 1, fontSize: 12, fontWeight: "700" }}>
-                    {conversation?.partnerId ? translateCopy("Ortak satış görüşmesi", language) : translateCopy("Satış görüşmesi", language)}
+                    {partnerChat ? translateCopy("Ortak satış görüşmesi", language) : translateCopy("Satış görüşmesi", language)}
                   </Text>
                 </View>
               )}
@@ -297,6 +282,7 @@ function ChatScreenInner() {
           ) : null}
         </View> : null}
         <ConversationListingStrip listing={listing} />
+        <ConversationAgreementStrip key={`agreement:${currentConversation.id}`} conversation={currentConversation} listing={listing} />
         {listing ? <View style={{ paddingHorizontal: 10, paddingBottom: 8 }}><ConversationListingActions key={currentConversation.id} conversation={currentConversation} listing={listing} /></View> : null}
         {conversationRisk.hasRisk ? (
           <View style={{ alignItems: "center", backgroundColor: colors.warningSoft, borderTopColor: colors.warning, borderTopWidth: 1, flexDirection: "row", gap: 7, paddingHorizontal: 12, paddingVertical: 6 }}>
@@ -354,6 +340,12 @@ function ChatScreenInner() {
       </View>
 
 
+      {sendBlockReason ? (
+        <View testID="send-block-reason" accessibilityRole="alert" style={{ alignItems: "center", backgroundColor: colors.accentSoft, borderTopColor: colors.accent, borderTopWidth: 1, flexDirection: "row", gap: 8, paddingHorizontal: 12, paddingVertical: 8 }}>
+          <MaterialCommunityIcons name="alert-circle-outline" size={16} color={colors.accent} />
+          <Text style={{ color: colors.ink, flex: 1, fontSize: 11.5, fontWeight: "700", lineHeight: 16 }}>{sendBlockReason}</Text>
+        </View>
+      ) : null}
       {draftRisk.hasRisk ? (
         <View style={{ alignItems: "center", backgroundColor: colors.warningSoft, borderTopColor: colors.warning, borderTopWidth: 1, flexDirection: "row", gap: 8, paddingHorizontal: 12, paddingVertical: 8 }}>
           <MaterialCommunityIcons name="shield-alert-outline" size={16} color={colors.warning} />

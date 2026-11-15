@@ -19,6 +19,8 @@ export function CommissionOverrideModal({
   defaultLabel,
   currentType,
   currentValue,
+  floorType,
+  floorValue,
   onClose,
   onSubmit,
   onClear
@@ -29,8 +31,12 @@ export function CommissionOverrideModal({
   defaultLabel: string;
   currentType?: "rate" | "fixed";
   currentValue?: number;
+  /** Anlaşılan komisyon: özel komisyon aynı türdeyse bunun ALTINA yazılamaz (sunucu da reddeder). */
+  floorType?: "rate" | "fixed";
+  floorValue?: number;
   onClose: () => void;
-  onSubmit: (type: "rate" | "fixed", value: number) => Promise<boolean>;
+  /** `report`: kaydın reddedilme nedeni (sunucunun açıklaması) pencerede gösterilir. */
+  onSubmit: (type: "rate" | "fixed", value: number, report: (message: string) => void) => Promise<boolean>;
   onClear: () => Promise<boolean>;
 }) {
   const { language } = useLanguage();
@@ -42,7 +48,9 @@ export function CommissionOverrideModal({
   const [busy,setBusy]=useState(false),[error,setError]=useState("");const lock=useRef(false);
   const parsed=type==="rate"?Number(value.replace(",",".")):parseTrPrice(value);
   function close(){if(!lock.current)onClose();}
-  async function save(clear=false){if(lock.current)return;if(!clear&&(!value.trim()||!/^[\d.,\s]+$/.test(value)||!Number.isFinite(parsed)||parsed<=0||type==="rate"&&parsed>90)){setError("Geçerli komisyon gir. Yüzde 0'dan büyük ve en fazla 90 olmalı.");return;}lock.current=true;setBusy(true);setError("");try{const ok=clear?await onClear():await onSubmit(type,parsed);if(ok)onClose();else setError("Komisyon kaydedilemedi. Tutar korunuyor; tekrar dene.");}catch{setError("Komisyon kaydedilemedi. Tutar korunuyor; tekrar dene.");}finally{lock.current=false;setBusy(false);}}
+  // Taban: özel komisyon, aynı türdeki anlaşılan komisyonun altında olamaz (satışta zaten yüksek olan uygulanır).
+  const belowFloor=floorType===type&&typeof floorValue==="number"&&Number.isFinite(parsed)&&parsed>0&&parsed<floorValue;
+  async function save(clear=false){if(lock.current)return;if(!clear&&(!value.trim()||!/^[\d.,\s]+$/.test(value)||!Number.isFinite(parsed)||parsed<=0||type==="rate"&&parsed>90)){setError("Geçerli komisyon gir. Yüzde 0'dan büyük ve en fazla 90 olmalı.");return;}if(!clear&&belowFloor){setError("Özel komisyon, anlaşılan komisyonun altında olamaz.");return;}lock.current=true;setBusy(true);setError("");let reason="";try{const ok=clear?await onClear():await onSubmit(type,parsed,(message)=>{reason=message;});if(ok)onClose();else setError(reason||"Komisyon kaydedilemedi. Tutar korunuyor; tekrar dene.");}catch{setError(reason||"Komisyon kaydedilemedi. Tutar korunuyor; tekrar dene.");}finally{lock.current=false;setBusy(false);}}
 
 
   return (
@@ -60,6 +68,9 @@ export function CommissionOverrideModal({
           </View>
           <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600", lineHeight: 18 }}>
             {partnerName} {translateCopy("için özel komisyon belirle. Kaldırınca kaydedilmiş anlaşma koşulları, eski kayıtta ilan varsayılanı uygulanır", language)} ({defaultLabel}).
+          </Text>
+          <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600", lineHeight: 17 }}>
+            {translateCopy("Özel komisyon yalnız artırım içindir: anlaşılan komisyonun altına yazılamaz, satışta ikisinden yüksek olan uygulanır. Değişiklik ortağa bildirilir.", language)}
           </Text>
           <View style={{ flexDirection: "row", gap: 8 }}>
             {(["rate", "fixed"] as const).map((k) => {
@@ -84,7 +95,7 @@ export function CommissionOverrideModal({
             />
             <Text style={{ color: colors.muted, fontSize: 15, fontWeight: "900" }}>{type === "rate" ? "%" : (currency === "USD" ? "$" : currency === "EUR" ? "€" : "₺")}</Text>
           </View>
-          {parsed > 0 ? (
+          {parsed > 0 && !belowFloor ? (
             <Text style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "800" }}>
               {translateCopy("Bu ortağa uygulanacak", language)}: {type === "rate" ? `%${parsed.toLocaleString("tr-TR")}` : moneyIn(parsed, currency)}
             </Text>

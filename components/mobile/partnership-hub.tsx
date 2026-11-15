@@ -27,7 +27,7 @@ import { fetchMobileCatalogue } from "@/lib/mobile-catalogue-service";
 import { fetchListingsByIds } from "@/lib/supabase-data";
 import { emptyMobileFilters } from "@/lib/mobile-filters";
 import { categoryByPrefix, categoryTrail } from "@/lib/mobile-catalog";
-import { adDisclosureLine, moneyIn } from "@/lib/format";
+import { adDisclosureLine, commissionValueLabel, moneyIn, partnershipProposal } from "@/lib/format";
 import { partnershipStatusLabels, saleStatusLabels } from "@/lib/status-labels";
 import { showToast } from "@/lib/toast";
 import { shareOrCopy } from "@/lib/share";
@@ -274,13 +274,14 @@ export function MobilePartnershipHub() {
     }
   }
 
-  async function decide(p: Partnership, approve: boolean) {
+  // acceptProposal: ortağın önerdiği komisyon (ilan oranından yüksekse) ortağa özel oran olarak kabul edilir.
+  async function decide(p: Partnership, approve: boolean, acceptProposal = false) {
     if (busy) return;
     setBusy(p.id);
     setError("");
     try {
       const ok = approve
-        ? await store.approvePartnership(p.id)
+        ? await store.approvePartnership(p.id, acceptProposal)
         : await store.rejectPartnership(p.id);
       if (!ok)
         setError(
@@ -291,6 +292,33 @@ export function MobilePartnershipHub() {
     } finally {
       setBusy(null);
     }
+  }
+  // Ortak, onay bekleyen başvurusunu geri çeker (sunucu: leave_partnership → 'withdrawn').
+  function withdraw(p: Partnership) {
+    Alert.alert(
+      "Başvuruyu Geri Çek",
+      "Bu ilana yaptığın ortaklık başvurusu geri çekilsin mi? İstersen daha sonra yeniden başvurabilirsin.",
+      [
+        { text: "Vazgeç", style: "cancel" },
+        {
+          text: "Geri Çek",
+          style: "destructive",
+          onPress: () => {
+            if (busy) return;
+            setBusy(p.id);
+            setError("");
+            void store
+              .leavePartnership(p.id)
+              .then((ok) => {
+                if (ok) showToast("Başvurun geri çekildi.");
+                else setError("Başvuru geri çekilemedi. Tekrar dene.");
+              })
+              .catch(() => setError("Başvuru geri çekilemedi. Tekrar dene."))
+              .finally(() => setBusy(null));
+          },
+        },
+      ],
+    );
   }
   // Karşı tarafla sohbet (ortak → satıcı, satıcı → ortak). Ortaklık detayındaki düğmeyle aynı davranış.
   function message(l: Listing | undefined, receiverId: string) {
@@ -1061,7 +1089,11 @@ export function MobilePartnershipHub() {
               person = store.findUser(
                 incomingRow ? p.partnerId : l?.ownerId || "",
               ),
-              commission = l ? potentialCommission(l, p) : null;
+              commission = l ? potentialCommission(l, p) : null,
+              // Ortağın komisyon önerisi: yalnız bekleyen başvuruda ve ilan komisyonundan yüksekse.
+              proposal = l ? partnershipProposal(l, p) : null,
+              proposalLabel = l && proposal ? commissionValueLabel(proposal.type, proposal.value, l.currency) : "",
+              listingRateLabel = l ? commissionValueLabel(p.agreedCommissionType ?? l.commissionType, p.agreedCommissionValue ?? l.commissionValue, l.currency) : "";
             return (
               <MobileCard key={p.id}>
                 <View style={ms.row}>
@@ -1101,6 +1133,18 @@ export function MobilePartnershipHub() {
                     </Text>
                   </Text>
                 )}
+                {!!proposal && (
+                  <View style={{ backgroundColor: mobile.tealSoft, borderRadius: 9, paddingHorizontal: 10, paddingVertical: 8, gap: 2 }}>
+                    <Text style={{ color: mobile.darkTeal, fontSize: 13, fontWeight: "800" }}>
+                      {incomingRow ? "Ortağın önerisi" : "Komisyon önerin"}: {proposalLabel}
+                    </Text>
+                    <Text style={ms.muted}>
+                      {incomingRow
+                        ? `İlandaki komisyon ${listingRateLabel}. Öneriyle kabul edersen bu oran ortağa özel olarak kaydedilir.`
+                        : `İlandaki komisyon ${listingRateLabel}. Satıcı öneriyle kabul ederse sana özel oran olur; etmezse ilandaki komisyon geçerlidir.`}
+                    </Text>
+                  </View>
+                )}
                 {!!p.note && (
                   <Text numberOfLines={6} style={ms.muted}>
                     “{p.note}”
@@ -1129,58 +1173,82 @@ export function MobilePartnershipHub() {
                   </View>
                 )}
                 {incomingRow && p.status === "pending" ? (
-                  <View style={ms.row}>
-                    <MobileButton
-                      secondary
-                      disabled={!!busy}
-                      style={{ flex: 1 }}
-                      onPress={() =>
-                        Alert.alert(
-                          "Talebi Reddet",
-                          "Ortaklık talebi reddedilsin mi?",
-                          [
-                            { text: "Vazgeç", style: "cancel" },
-                            {
-                              text: "Reddet",
-                              style: "destructive",
-                              onPress: () => void decide(p, false),
-                            },
-                          ],
-                        )
-                      }
-                    >
-                      Reddet
-                    </MobileButton>
-                    <MobileButton
-                      disabled={!!busy}
-                      style={{ flex: 1 }}
-                      onPress={() => void decide(p, true)}
-                    >
-                      {busy === p.id ? "Kaydediliyor…" : "Onayla"}
-                    </MobileButton>
-                  </View>
-                ) : (
-                  <View style={ms.row}>
-                    {!incomingRow && p.status === "pending" && l && (
+                  <>
+                    {/* Öneri ilan oranından yüksekse iki ayrı kabul yolu; öneri yoksa tek "Kabul Et". */}
+                    {!!proposal && (
                       <MobileButton
-                        secondary
-                        icon="chat-outline"
-                        style={{ flex: 1 }}
-                        onPress={() => message(l, l.ownerId)}
+                        disabled={!!busy}
+                        onPress={() => void decide(p, true, true)}
                       >
-                        Satıcıya Yaz
+                        {busy === p.id ? "Kaydediliyor…" : `Öneriyle Kabul Et (${proposalLabel})`}
                       </MobileButton>
                     )}
-                    <MobileButton
-                      secondary
-                      style={{ flex: 1 }}
-                      onPress={() =>
-                        router.push(`/partnership/${p.id}` as never)
-                      }
-                    >
-                      Detayı Gör
-                    </MobileButton>
-                  </View>
+                    <View style={ms.row}>
+                      <MobileButton
+                        secondary
+                        disabled={!!busy}
+                        style={{ flex: 1 }}
+                        onPress={() =>
+                          Alert.alert(
+                            "Talebi Reddet",
+                            "Ortaklık talebi reddedilsin mi?",
+                            [
+                              { text: "Vazgeç", style: "cancel" },
+                              {
+                                text: "Reddet",
+                                style: "destructive",
+                                onPress: () => void decide(p, false),
+                              },
+                            ],
+                          )
+                        }
+                      >
+                        Reddet
+                      </MobileButton>
+                      <MobileButton
+                        secondary={!!proposal}
+                        disabled={!!busy}
+                        style={{ flex: proposal ? 2 : 1 }}
+                        onPress={() => void decide(p, true)}
+                      >
+                        {busy === p.id ? "Kaydediliyor…" : proposal ? `İlan Oranıyla Kabul Et (${listingRateLabel})` : "Kabul Et"}
+                      </MobileButton>
+                    </View>
+                  </>
+                ) : (
+                  <>
+                    <View style={ms.row}>
+                      {!incomingRow && p.status === "pending" && l && (
+                        <MobileButton
+                          secondary
+                          icon="chat-outline"
+                          style={{ flex: 1 }}
+                          onPress={() => message(l, l.ownerId)}
+                        >
+                          Satıcıya Yaz
+                        </MobileButton>
+                      )}
+                      <MobileButton
+                        secondary
+                        style={{ flex: 1 }}
+                        onPress={() =>
+                          router.push(`/partnership/${p.id}` as never)
+                        }
+                      >
+                        Detayı Gör
+                      </MobileButton>
+                    </View>
+                    {!incomingRow && p.status === "pending" && (
+                      <MobileButton
+                        secondary
+                        icon="undo-variant"
+                        disabled={!!busy}
+                        onPress={() => withdraw(p)}
+                      >
+                        {busy === p.id ? "Kaydediliyor…" : "Başvuruyu Geri Çek"}
+                      </MobileButton>
+                    )}
+                  </>
                 )}
               </MobileCard>
             );

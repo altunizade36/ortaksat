@@ -135,6 +135,75 @@ function toNumber(value: number | string | null | undefined, fallback = 0) {
   return Number.isFinite(parsed) ? parsed : fallback;
 }
 
+const optNumber = (value: unknown) => (value === null || value === undefined ? undefined : toNumber(value as number | string));
+const day = (value: unknown) => (typeof value === "string" && value ? value.slice(0, 10) : undefined);
+
+/**
+ * partnerships satırı → Partnership. TEK eşleyici: hesap özeti ve canlı (realtime) güncelleme aynı
+ * işlevi kullanır. Eskiden canlı güncelleme kendi kısa eşlemesini yapıyor, özel komisyonu ve kilitli
+ * anlaşma şartlarını DÜŞÜRÜYORDU → satır değişince kart ilanın güncel oranına geri dönüyordu.
+ */
+export function mapPartnershipRow(row: Record<string, any>): Partnership {
+  return {
+    id: row.id,
+    listingId: row.listing_id,
+    partnerId: row.partner_id,
+    refCode: row.ref_code,
+    status: row.status,
+    note: row.note ?? "",
+    shareChannel: row.share_channel ?? undefined,
+    audience: row.audience ?? undefined,
+    platformHandle: row.platform_handle ?? undefined,
+    reachEstimate: toNumber(row.reach_estimate),
+    rejectionReason: row.rejection_reason ?? undefined,
+    approvedAt: day(row.approved_at),
+    createdAt: day(row.created_at) ?? "",
+    commissionOverrideType: row.commission_override_type ?? undefined,
+    commissionOverrideValue: optNumber(row.commission_override_value),
+    agreedCommissionType: row.agreed_commission_type ?? undefined,
+    agreedCommissionValue: optNumber(row.agreed_commission_value),
+    agreedCommissionTiers: row.agreed_commission_tiers ?? undefined,
+    agreedAttributionWindowDays: row.agreed_attribution_window_days ?? undefined,
+    agreedReturnWindowDays: row.agreed_return_window_days ?? undefined,
+    agreedCommissionDueDays: row.agreed_commission_due_days ?? undefined,
+    agreedBonusAmount: optNumber(row.agreed_bonus_amount),
+    agreedBonusQuota: optNumber(row.agreed_bonus_quota),
+    agreedAt: day(row.agreed_at),
+    proposedCommissionValue: optNumber(row.proposed_commission_value),
+    endedAt: day(row.ended_at)
+  };
+}
+
+/** commissions satırı → Sale. Hesap özeti ve canlı güncelleme için tek eşleyici. */
+export function mapSaleRow(row: Record<string, any>): Sale {
+  return {
+    id: row.id,
+    listingId: row.listing_id,
+    partnershipId: row.partnership_id,
+    leadId: row.lead_id ?? "",
+    amount: toNumber(row.sale_amount, toNumber(row.amount)),
+    quantity: toNumber(row.quantity, 1),
+    commissionAmount: toNumber(row.amount),
+    createdAt: day(row.created_at),
+    status: row.status,
+    buyerName: row.buyer_name ?? undefined,
+    deliveryStatus: row.delivery_status ?? undefined,
+    returnUntil: day(row.return_until),
+    approvedAt: day(row.approved_at),
+    paidAt: day(row.paid_at),
+    sellerMarkedPaidAt: day(row.seller_marked_paid_at),
+    partnerConfirmedPaidAt: day(row.partner_confirmed_paid_at),
+    payoutNote: row.payout_note ?? undefined,
+    disputeReason: typeof row.dispute_reason === "string" && row.dispute_reason.trim() ? row.dispute_reason : undefined,
+    disputeOpenedBy: row.dispute_opened_by ?? undefined,
+    disputeOpenedAt: day(row.dispute_opened_at),
+    buyerConfirmToken: row.buyer_confirm_token ?? undefined,
+    buyerConfirmedAt: day(row.buyer_confirmed_at),
+    buyerConfirmStatus: row.buyer_confirm_status ?? undefined,
+    buyerId: row.buyer_id ?? undefined
+  };
+}
+
 function initials(name: string) {
   return name
     .split(/\s+/)
@@ -712,30 +781,7 @@ export async function loadAccountSnapshot(userId: string): Promise<AccountSnapsh
 
   return {
     failed,
-    partnerships: (partnershipsResult.data ?? []).map((row) => ({
-      id: row.id,
-      listingId: row.listing_id,
-      partnerId: row.partner_id,
-      refCode: row.ref_code,
-      status: row.status,
-      note: row.note,
-      shareChannel: row.share_channel ?? undefined,
-      audience: row.audience ?? undefined,
-      platformHandle: row.platform_handle ?? undefined,
-      reachEstimate: toNumber(row.reach_estimate),
-      rejectionReason: row.rejection_reason ?? undefined,
-      approvedAt: row.approved_at?.slice(0, 10),
-      createdAt: row.created_at.slice(0, 10),
-      commissionOverrideType: row.commission_override_type ?? undefined,
-      commissionOverrideValue: row.commission_override_value != null ? toNumber(row.commission_override_value) : undefined,
-      agreedCommissionType: row.agreed_commission_type ?? undefined,
-      agreedCommissionValue: row.agreed_commission_value != null ? toNumber(row.agreed_commission_value) : undefined,
-      agreedCommissionTiers: row.agreed_commission_tiers ?? undefined,
-      agreedAttributionWindowDays: row.agreed_attribution_window_days ?? undefined,
-      agreedReturnWindowDays: row.agreed_return_window_days ?? undefined,
-      agreedCommissionDueDays: row.agreed_commission_due_days ?? undefined,
-      agreedAt: row.agreed_at?.slice(0, 10)
-    })),
+    partnerships: (partnershipsResult.data ?? []).map(mapPartnershipRow),
     leads: (leadsResult.data ?? []).map((row) => ({
       id: row.id,
       listingId: row.listing_id,
@@ -748,29 +794,7 @@ export async function loadAccountSnapshot(userId: string): Promise<AccountSnapsh
       status: row.status,
       createdAt: row.created_at.slice(0, 10)
     })),
-    sales: (commissionsResult.data ?? []).map((row) => ({
-      id: row.id,
-      listingId: row.listing_id,
-      partnershipId: row.partnership_id,
-      leadId: row.lead_id ?? "",
-      amount: toNumber(row.sale_amount, toNumber(row.amount)),
-      quantity: toNumber(row.quantity, 1),
-      commissionAmount: toNumber(row.amount),
-      createdAt: row.created_at ? String(row.created_at).slice(0, 10) : undefined,
-      status: row.status,
-      buyerName: row.buyer_name ?? undefined,
-      deliveryStatus: row.delivery_status ?? undefined,
-      returnUntil: row.return_until?.slice(0, 10),
-      approvedAt: row.approved_at?.slice(0, 10),
-      paidAt: row.paid_at?.slice(0, 10),
-      sellerMarkedPaidAt: row.seller_marked_paid_at?.slice(0, 10),
-      partnerConfirmedPaidAt: row.partner_confirmed_paid_at?.slice(0, 10),
-      payoutNote: row.payout_note ?? undefined,
-      buyerConfirmToken: row.buyer_confirm_token ?? undefined,
-      buyerConfirmedAt: row.buyer_confirmed_at?.slice(0, 10),
-      buyerConfirmStatus: row.buyer_confirm_status ?? undefined,
-      buyerId: row.buyer_id ?? undefined
-    })),
+    sales: (commissionsResult.data ?? []).map(mapSaleRow),
     orders: (ordersResult.data ?? []).map((row) => ({
       id: row.id,
       listingId: row.listing_id,

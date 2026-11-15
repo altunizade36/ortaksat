@@ -93,32 +93,113 @@ export function tierRate(tiers: Array<{ minSales: number; rate: number }> | unde
 }
 
 /**
- * Bir satış için EFEKTİF komisyon (öncelik sırası): 1) per-ortak override, 2) kademeli
- * (rate) oran (ortağın o ilandaki kümülatif satışına göre), 3) ilan varsayılanı.
+ * Bir satış için EFEKTİF komisyon — sunucudaki `compute_agreed_commission` ile AYNI kural:
+ *   taban = KİLİTLİ anlaşma (agreed_*; eski kayıtta canlı ilan), kademeli oran dahil;
+ *   satıcının ortağa özel oranı YALNIZ tabandan yüksekse uygulanır → greatest(anlaşılan, özel).
+ * Eskiden özel oran tabanın önüne geçiyordu: özel oran anlaşılandan düşükken ekranda düşük tutar
+ * görünüyor, sunucu ise yüksek olanı yazıyordu (görünen ≠ kaydedilen).
  */
-// Öncelik: satıcı per-ortak override > KİLİTLİ agreed snapshot (Faz 3) > canlı ilan.
-// Böylece satıcı ilanı sonradan düzenlese de MEVCUT ortağın komisyonu değişmez.
-// (Sunucu tarafı otorite: partnerships.agreed_* trigger ile ilandan kilitlenir; DB
-//  compute_agreed_commission fonksiyonu aynı mantığı sunucuda uygular.)
 export function effectiveCommissionAmount(listing: Listing, partnership: Partnership | undefined, priorSales: number, amount: number, quantity: number): number {
   const qty = Math.max(1, Math.floor(quantity || 1));
   const amt = Number.isFinite(amount) ? Math.max(0, amount) : 0; // NaN/negatif satış tutarı → 0
   // Sonuç ASLA NaN/negatif dönmesin (bozuk override/tier verisi para modelini kirletmesin).
   const safe = (n: number) => (Number.isFinite(n) ? Math.max(0, Math.round(n)) : 0);
-  if (partnership?.commissionOverrideType && typeof partnership.commissionOverrideValue === "number") {
-    return partnership.commissionOverrideType === "rate"
-      ? safe((amt * partnership.commissionOverrideValue) / 100)
-      : safe(partnership.commissionOverrideValue * qty);
-  }
+  let base: number;
   if (partnership?.agreedCommissionType && typeof partnership.agreedCommissionValue === "number") {
-    return partnership.agreedCommissionType === "rate"
+    base = partnership.agreedCommissionType === "rate"
       ? safe((amt * tierRate(partnership.agreedCommissionTiers, partnership.agreedCommissionValue, priorSales)) / 100)
       : safe(partnership.agreedCommissionValue * qty);
+  } else if (listing.commissionType === "rate") {
+    base = safe((amt * tierRate(listing.commissionTiers, listing.commissionValue, priorSales)) / 100);
+  } else {
+    base = safe(listing.commissionValue * qty);
   }
-  if (listing.commissionType === "rate") {
-    return safe((amt * tierRate(listing.commissionTiers, listing.commissionValue, priorSales)) / 100);
+  if (partnership?.commissionOverrideType && typeof partnership.commissionOverrideValue === "number") {
+    const override = partnership.commissionOverrideType === "rate"
+      ? safe((amt * partnership.commissionOverrideValue) / 100)
+      : safe(partnership.commissionOverrideValue * qty);
+    return Math.max(base, override);
   }
-  return safe(listing.commissionValue * qty);
+  return base;
+}
+
+/** "%12" ya da "₺1.500" — komisyon değerinin kısa gösterimi. */
+export function commissionValueLabel(type: Listing["commissionType"], value: number, currency?: string | null): string {
+  return type === "rate" ? `%${String(value).replace(".", ",")}` : moneyIn(value, currency);
+}
+
+export type PartnershipTerms = {
+  /** Anlaşılan (kilitli) komisyon; eski kayıtta ilanın güncel değeri. Kademeli oranda o anki kademe. */
+  agreedType: Listing["commissionType"];
+  agreedValue: number;
+  /** Anlaşma katılımda kilitlendi mi (false = eski kayıt, ilanın güncel şartları gösterilir). */
+  locked: boolean;
+  /** Satıcının bu ortağa özel komisyonu (varsa). */
+  overrideType?: Listing["commissionType"];
+  overrideValue?: number;
+  /** Özel komisyon, anlaşılandan yüksek olduğu için UYGULANIYOR mu (ilan fiyatı üzerinden karşılaştırılır). */
+  overrideApplies: boolean;
+  /** Uygulanan (gösterilecek) komisyon: anlaşılan ile özelden yüksek olan. */
+  type: Listing["commissionType"];
+  value: number;
+  /** İlan fiyatı × 1 adet için uygulanan komisyon tutarı. */
+  amount: number;
+  bonusAmount: number;
+  bonusQuota: number;
+  returnWindowDays: number;
+  commissionDueDays: number;
+};
+
+/**
+ * Bir ortaklığın GEÇERLİ şartları — tek kaynak. Bütün ekranlar (anlaşma kartı, ortak/satıcı panelleri,
+ * satış kaydı) komisyonu, bonusu, iade süresini ve ödeme vadesini buradan okur; sunucu da satışta
+ * aynı değerleri (kilitli anlaşma → yoksa ilan) kullanır.
+ */
+export function partnershipTerms(listing: Listing, partnership: Partnership | undefined, priorSales = 0): PartnershipTerms {
+  const locked = Boolean(partnership?.agreedCommissionType) && typeof partnership?.agreedCommissionValue === "number";
+  const agreedType = locked ? partnership!.agreedCommissionType! : listing.commissionType;
+  const rawValue = locked ? partnership!.agreedCommissionValue! : listing.commissionValue;
+  const agreedValue = agreedType === "rate" ? tierRate(locked ? partnership!.agreedCommissionTiers : listing.commissionTiers, rawValue, priorSales) : rawValue;
+  const hasOverride = Boolean(partnership?.commissionOverrideType) && typeof partnership?.commissionOverrideValue === "number";
+  const overrideType = hasOverride ? partnership!.commissionOverrideType : undefined;
+  const overrideValue = hasOverride ? partnership!.commissionOverrideValue : undefined;
+  const at = (type: Listing["commissionType"], value: number) => (type === "rate" ? (Math.max(0, listing.price) * value) / 100 : value);
+  const overrideApplies = hasOverride && (overrideType === agreedType ? overrideValue! > agreedValue : at(overrideType!, overrideValue!) > at(agreedType, agreedValue));
+  const num = (value: number | undefined, fallback: number | undefined) => { const n = value ?? fallback ?? 0; return Number.isFinite(n) ? Math.max(0, n) : 0; };
+  return {
+    agreedType,
+    agreedValue,
+    locked,
+    overrideType,
+    overrideValue,
+    overrideApplies,
+    type: overrideApplies ? overrideType! : agreedType,
+    value: overrideApplies ? overrideValue! : agreedValue,
+    amount: effectiveCommissionAmount(listing, partnership, priorSales, listing.price, 1),
+    bonusAmount: num(partnership?.agreedBonusAmount, listing.bonusAmount),
+    bonusQuota: num(partnership?.agreedBonusQuota, listing.bonusQuota),
+    returnWindowDays: num(partnership?.agreedReturnWindowDays, listing.returnWindowDays),
+    commissionDueDays: num(partnership?.agreedCommissionDueDays, listing.commissionDueDays)
+  };
+}
+
+/** Bu satışa eklenecek başlangıç bonusu: anlaşmadaki ilk `bonusQuota` satışta +`bonusAmount` (sunucuyla aynı kural). */
+export function partnershipBonusFor(listing: Listing, partnership: Partnership | undefined, priorSales: number): number {
+  const terms = partnershipTerms(listing, partnership, priorSales);
+  return terms.bonusAmount > 0 && terms.bonusQuota > 0 && priorSales < terms.bonusQuota ? Math.round(terms.bonusAmount) : 0;
+}
+
+/**
+ * Ortağın komisyon önerisi satıcıya ayrıca sunulmalı mı: yalnız onay bekleyen başvuruda ve öneri
+ * anlaşılan (ilan) komisyonundan YÜKSEKSE (sunucu daha düşük öneriyi uygulamaz; yüzde 90'ı aşamaz).
+ */
+export function partnershipProposal(listing: Listing, partnership: Partnership): { type: Listing["commissionType"]; value: number } | null {
+  const value = partnership.proposedCommissionValue;
+  if (partnership.status !== "pending" || typeof value !== "number" || !Number.isFinite(value) || value <= 0) return null;
+  const type = partnership.agreedCommissionType ?? listing.commissionType;
+  const base = partnership.agreedCommissionValue ?? listing.commissionValue;
+  if (value <= base || (type === "rate" && value > 90)) return null;
+  return { type, value };
 }
 
 /** Ortağın paylaşım linki. `channel` (whatsapp/instagram/tiktok/share) verilirse `&c=` ile

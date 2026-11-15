@@ -5,6 +5,7 @@ import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, Text, Tex
 import { colors } from "@/components/colors";
 import { MaterialCommunityIcons as Icon } from "@/components/icons";
 import { listingJoinAction, listingFlowPaths } from "@/lib/listing-actions";
+import { conversationPartnership } from "@/lib/inbox-model";
 import { parseTrPrice } from "@/lib/validation";
 import { moneyIn } from "@/lib/format";
 import { displayListingTitle } from "@/lib/listing-title";
@@ -19,16 +20,23 @@ export function ConversationListingActions({ listing, conversation }: { listing?
   const [open, setOpen] = useState(false), [amount,setAmount] = useState(""), [note,setNote] = useState(""), [error,setError] = useState(""), [busy,setBusy] = useState(false);
   const busyRef = useRef(false);
   if (!listing || listing.id !== conversation.listingId || !conversation.participantIds.includes(currentUser.id) || !conversation.participantIds.includes(listing.ownerId)) return null;
-  const membership = partnerships.find((p) => p.listingId === listing.id && p.partnerId === currentUser.id);
   const isOwner = listing.ownerId === currentUser.id;
+  // Sohbetin ortaklığı partnerships durumundan türetilir (conversations.partner_id açılışta donuyor,
+  // doğrulanmıyor). İlan sahibi olmayan katılımcı = bu ekranda eylem yapabilen kişi (ben).
+  const agreement = conversationPartnership(conversation, partnerships, listing.ownerId);
+  const membership = isOwner ? undefined : agreement;
+  const partnerChat = agreement?.status === "active" || agreement?.status === "pending";
   const blocked = isUserBlocked(listing.ownerId);
   const join = listingJoinAction({ listing, status: membership?.status, isOwner, sellerBlocked: blocked });
   const unavailable = !isSupabaseConfigured || listing.demo || listing.status !== "active" || listing.stockCount <= 0 || blocked || conversation.status !== "open";
-  const offerAllowed = !isOwner && listing.attributes?._formKey !== "arayan" && !conversation.partnerId;
-  const showJoin = !isOwner && (listing.partnershipMode !== "none" || Boolean(membership));
+  // Teklif kapısı: aktif/bekleyen ortaklık sohbetinde alıcı teklifi verilmez (ortak alıcı değildir).
+  const offerAllowed = !isOwner && listing.attributes?._formKey !== "arayan" && !partnerChat;
+  // Mevcut ortaklık/başvuru ("Ortaklığım" / "Talebim") sohbetteki anlaşma şeridinde gösterilir ve oradan
+  // açılır; burada yalnız YENİ başvuru (ya da neden başvurulamadığı) kalır — aynı düğme iki kez çıkmasın.
+  const showJoin = !isOwner && join.kind !== "view" && (listing.partnershipMode !== "none" || Boolean(membership));
   // Gösterilecek eylem yoksa (ör. ilan sahibi) boş satır + boş dolgu bırakma.
   if (!offerAllowed && !showJoin) return null;
-  const joinHref =join.kind === "view" && membership ? `/partnership/${membership.id}` : listingFlowPaths(listing.id).request;
+  const joinHref = listingFlowPaths(listing.id).request;
   const control = { minHeight: 38, borderRadius: 9, flexDirection: "row" as const, gap: 5, alignItems: "center" as const, justifyContent: "center" as const, paddingHorizontal: 10, borderWidth: 1, borderColor: colors.line, flex: 1 };
   async function submit() {
     if (!listing || busyRef.current || unavailable) return;

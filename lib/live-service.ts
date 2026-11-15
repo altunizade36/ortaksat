@@ -5,6 +5,7 @@ import { storageBody } from "@/lib/storage-body";
 import { manipulateAsync, SaveFormat } from "expo-image-manipulator";
 
 import { supabase } from "@/lib/supabase";
+import { mapPartnershipRow } from "@/lib/supabase-data";
 import type { CategorySuggestion, Conversation, Lead, Listing, ListingStatus, LocationSuggestion, Message, ModerationStatus, Notification, Offer, Partnership, Report, Review, Sale, SuggestionStatus, User } from "@/lib/types";
 
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -822,7 +823,10 @@ export async function partnerJoinLive(partnership: Partnership, inviteCode?: str
     p_share_channel: partnership.shareChannel ?? "",
     p_audience: partnership.audience ?? "",
     p_platform_handle: partnership.platformHandle ?? "",
-    p_reach: partnership.reachEstimate ?? 0
+    p_reach: partnership.reachEstimate ?? 0,
+    // Ortağın önerdiği komisyon (ilanın komisyon türüyle aynı birim). Sunucu yalnız onay bekleyen
+    // başvuruda saklar; açık/davetli katılımda yok sayar.
+    p_proposed_value: partnership.proposedCommissionValue ?? null
   });
   if (error) {
     console.warn("Supabase partner_join RPC failed", error);
@@ -835,10 +839,51 @@ export async function partnerJoinLive(partnership: Partnership, inviteCode?: str
   partnership.id=row.r_id;partnership.status=row.r_status;
   // The server snapshots the agreement. Read it back so the immediate detail view
   // uses the committed terms rather than the possibly stale catalogue values.
-  const {data:stored}=await supabase.from("partnerships").select("approved_at,created_at,ref_code,agreed_commission_type,agreed_commission_value,agreed_commission_tiers,agreed_attribution_window_days,agreed_return_window_days,agreed_commission_due_days,agreed_at").eq("id",row.r_id).maybeSingle();
-  if(stored){partnership.approvedAt=stored.approved_at||undefined;partnership.createdAt=stored.created_at||partnership.createdAt;partnership.refCode=stored.ref_code||partnership.refCode;partnership.agreedCommissionType=stored.agreed_commission_type||undefined;partnership.agreedCommissionValue=stored.agreed_commission_value==null?undefined:Number(stored.agreed_commission_value);partnership.agreedCommissionTiers=stored.agreed_commission_tiers||undefined;partnership.agreedAttributionWindowDays=stored.agreed_attribution_window_days??undefined;partnership.agreedReturnWindowDays=stored.agreed_return_window_days??undefined;partnership.agreedCommissionDueDays=stored.agreed_commission_due_days??undefined;partnership.agreedAt=stored.agreed_at||undefined;}
+  // Hesap özeti ve canlı güncellemeyle AYNI eşleyici (bonus kilidi, öneri, özel oran dahil): yeniden açılan
+  // başvuruda sunucu özel oranı siler ve şartları tazeler; yerel kayıt da öyle olmalı.
+  const stored=await fetchPartnershipLive(row.r_id);
+  if(stored)Object.assign(partnership,stored);
   else if(partnership.status!=="active")partnership.approvedAt=undefined;
   return true;
+}
+
+/** Sunucudaki ortaklık satırını (tek eşleyiciyle) okur; okunamazsa null. */
+export async function fetchPartnershipLive(partnershipId: string): Promise<Partnership | null> {
+  if (!supabase) return null;
+  const { data, error } = await supabase.from("partnerships").select("*").eq("id", partnershipId).maybeSingle();
+  if (error || !data) return null;
+  return mapPartnershipRow(data);
+}
+
+// Sunucunun kullanıcıya yönelik (Türkçe) açıklaması varsa onu, yoksa genel metni döndürür. İç hata
+// metinleri (İngilizce, teknik) kullanıcıya gösterilmez.
+function serverMessage(error: { message?: string } | null | undefined, fallback: string): string {
+  const text = (error?.message ?? "").trim();
+  return text && text.length <= 200 && /[çğıöşüÇĞİÖŞÜ]/.test(text) ? text : fallback;
+}
+
+export type ApprovePartnershipResult = { ok: true; outcome: "approved" | "approved_with_proposal" | "noop"; partnership: Partnership | null } | { ok: false; message: string };
+
+/**
+ * Satıcı başvuruyu onaylar (approve_partnership RPC). `acceptProposal` doğruysa ve ortağın önerisi ilan
+ * oranından yüksekse sunucu öneriyi ortağa özel oran olarak yazar. Kontenjan vb. sunucu kuralları hata
+ * fırlatabilir; açıklaması kullanıcıya gösterilmek üzere döner.
+ */
+export async function approvePartnershipLive(partnershipId: string, acceptProposal = false): Promise<ApprovePartnershipResult> {
+  const fallback = "Başvuru onayı kaydedilemedi. Kontenjanı kontrol edip tekrar dene.";
+  if (!supabase) return { ok: true, outcome: "approved", partnership: null };
+  const { data, error } = await supabase.rpc("approve_partnership", { p_id: partnershipId, p_accept_proposal: acceptProposal });
+  if (error) { console.warn("Supabase approve_partnership RPC failed", error); return { ok: false, message: serverMessage(error, fallback) }; }
+  if (data !== "approved" && data !== "approved_with_proposal" && data !== "noop") return { ok: false, message: fallback };
+  return { ok: true, outcome: data, partnership: await fetchPartnershipLive(partnershipId) };
+}
+
+// Yalnız durum değişikliği (ör. engeli kaldırma: blocked → cancelled). Öteki alanlara dokunmaz.
+export async function setPartnershipStatusLive(partnershipId: string, status: Partnership["status"]): Promise<{ ok: boolean; message?: string }> {
+  if (!supabase) return { ok: true };
+  const { data, error } = await supabase.from("partnerships").update({ status }).eq("id", partnershipId).select("id").maybeSingle();
+  if (error) { console.warn("Supabase partnership status update failed", error); return { ok: false, message: serverMessage(error, "") || undefined }; }
+  return { ok: !!data };
 }
 
 // Toplu ödeme kaydı: bir ortağın (ops. tek ilan) borçlu komisyonlarını tek işlemde
@@ -874,10 +919,11 @@ export async function loadPartnerLeaderboardLive(limit = 10): Promise<PublicLead
 }
 
 // Per-ortak komisyon override (satıcı = ilan sahibi; partnerships UPDATE RLS'i sahibe izinli).
-export async function setPartnershipCommissionLive(partnershipId: string, type: "rate" | "fixed" | null, value: number | null): Promise<boolean> {
+// `onError`: sunucunun açıklaması (ör. "Özel komisyon, anlaşılan komisyonun altında olamaz.") çağırana iletilir.
+export async function setPartnershipCommissionLive(partnershipId: string, type: "rate" | "fixed" | null, value: number | null, onError?: (message: string) => void): Promise<boolean> {
   if (!supabase) return true;
   const {data,error}=await supabase.from("partnerships").update({commission_override_type:type,commission_override_value:value}).eq("id",partnershipId).select("id").maybeSingle();
-  if(error){console.warn("Supabase commission override update failed",error);return false;}
+  if(error){console.warn("Supabase commission override update failed",error);const message=serverMessage(error,"");if(message)onError?.(message);return false;}
   return !!data;
 }
 
@@ -901,12 +947,13 @@ export async function updatePartnershipStatus(partnership: Partnership): Promise
 
 // Ortağın KENDİ ortaklığından ayrılması. RLS yalnız ilan-sahibine (satıcı) partnership
 // UPDATE izni verir; bu yüzden ortak-iptali SECURITY DEFINER `leave_partnership` RPC'den
-// yapılır (yalnız partner_id = auth.uid() ve status='active' iken cancelled'a çeker).
+// yapılır (yalnız partner_id = auth.uid() iken; aktif ortaklık → 'left', onay bekleyen başvuru →
+// 'withdrawn' olarak cancelled'a çekilir).
 export async function leavePartnershipLive(partnershipId: string): Promise<boolean> {
   if (!supabase) return true;
   const { data, error } = await supabase.rpc("leave_partnership", { p_id: partnershipId });
   if (error) { console.warn("leave partnership failed", error); return false; }
-  return data === "left";
+  return data === "left" || data === "withdrawn";
 }
 
 export async function insertLead(lead: Lead): Promise<boolean> {
@@ -1494,6 +1541,7 @@ export async function insertConversation(conversation: Conversation): Promise<st
     try { return await findExisting(); } catch { return null; }
   }
   console.warn("Supabase conversation insert failed", error);
+  noteSendBlock(conversation.id, error);
   return null;
 }
 
@@ -1502,6 +1550,18 @@ export async function insertMessage(message: Message): Promise<boolean> {
 }
 // insertMessage + Postgres hata kodu. P0001 = sunucu hız-limiti (trg_throttle_messages):
 // "bağlantı" sorunu DEĞİL → çağıran kullanıcıya doğru sebebi söyleyebilsin.
+// Sunucunun mesajlaşmayı AÇIK bir Türkçe iletiyle reddettiği son durum, sohbet bazında (askıdaki hesap,
+// saatlik yeni sohbet sınırı, geçersiz ek…). Arayüz bunu "Gönderilemedi" yerine aynen gösterir; böylece
+// kullanıcı neden gönderemediğini görür ve aynı duvara tekrar tekrar çarpmaz. Başarılı gönderimde silinir.
+const serverSendBlocks = new Map<string, string>();
+function noteSendBlock(conversationId: string, error: { code?: string; message?: string } | null) {
+  const text = (error?.message ?? "").trim();
+  if ((error?.code === "42501" || error?.code === "P0001") && /[çğıöşüÇĞİÖŞÜ]/.test(text)) serverSendBlocks.set(conversationId, text);
+}
+export function serverSendBlockReason(conversationId: string | undefined): string | null {
+  return conversationId ? serverSendBlocks.get(conversationId) ?? null : null;
+}
+
 export async function insertMessageResult(message: Message): Promise<{ ok: boolean; code?: string }> {
   if (!supabase) return { ok: true };
   const payload: Record<string, unknown> = {
@@ -1525,7 +1585,8 @@ export async function insertMessageResult(message: Message): Promise<{ ok: boole
   // Kimlik istemcide üretilen UUID olduğundan başka bir satırla çakışamaz → başarı say; yoksa
   // ulaşmış mesaj "Gönderilemedi"de takılır ve her "tekrar dene" yine 23505 alır.
   if (error?.code === "23505") return { ok: true };
-  if (error) { console.warn("Supabase message insert failed", error); return { ok: false, code: error.code }; }
+  if (error) { console.warn("Supabase message insert failed", error); noteSendBlock(message.conversationId, error); return { ok: false, code: error.code }; }
+  serverSendBlocks.delete(message.conversationId);
   return { ok: true };
 }
 

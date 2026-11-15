@@ -38,7 +38,7 @@ const STATUS_META: Record<SaleStatus, { label: string; tint: string; color: stri
 
 const TR_MONTHS = ["Oca", "Şub", "Mar", "Nis", "May", "Haz", "Tem", "Ağu", "Eyl", "Eki", "Kas", "Ara"];
 
-type Txn = { id: string; title: string; image?: string; date: string; sortAt: number; amount: number; commission: number; status: SaleStatus };
+type Txn = { id: string; title: string; image?: string; date: string; sortAt: number; amount: number; commission: number; status: SaleStatus; disputeReason?: string };
 
 function saleDate(s: { paidAt?: string; approvedAt?: string; createdAt?: string }) {
   const raw = s.paidAt ?? s.approvedAt ?? s.createdAt ?? "";
@@ -83,7 +83,7 @@ function EarningsScreenInner() {
   const txns: Txn[] = sourceSales
     .map((s) => {
       const listing = findListing(s.listingId);
-      return { id: s.id, title: listing ? displayListingTitle(listing.title) : translateCopy("İlan", language), image: listing?.image, date: s.paidAt ?? s.approvedAt ?? (s.createdAt ? s.createdAt.slice(0, 10) : "—"), sortAt: saleDate(s), amount: s.amount, commission: s.commissionAmount, status: s.status };
+      return { id: s.id, title: listing ? displayListingTitle(listing.title) : translateCopy("İlan", language), image: listing?.image, date: s.paidAt ?? s.approvedAt ?? (s.createdAt ? s.createdAt.slice(0, 10) : "—"), sortAt: saleDate(s), amount: s.amount, commission: s.commissionAmount, status: s.status, disputeReason: s.disputeReason };
     })
     .sort((a, b) => b.sortAt - a.sortAt);
 
@@ -281,6 +281,9 @@ function EarningsScreenInner() {
                         </View>
                       </View>
                     </View>
+                    {t.status === "disputed" && t.disputeReason ? (
+                      <Text style={{ color: colors.accent, fontSize: 12, fontWeight: "700", paddingBottom: 8, paddingHorizontal: 18 }}>{translateCopy("Anlaşmazlık gerekçesi", language)}: {t.disputeReason}</Text>
+                    ) : null}
                     {actionable ? (
                       <View style={{ flexDirection: "row", gap: 8, justifyContent: "flex-end", paddingBottom: 12, paddingHorizontal: 18 }}>
                         <Pressable onPress={() => updateSaleStatus(t.id, "paid")} style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 8, flexDirection: "row", gap: 5, paddingHorizontal: 12, paddingVertical: 7 }}>
@@ -437,6 +440,9 @@ function EarningsScreenInner() {
               </View>
             </View>
 
+            {t.status === "disputed" && t.disputeReason ? (
+              <Text style={{ color: colors.accent, fontSize: 12, fontWeight: "700", marginTop: 8 }}>{translateCopy("Anlaşmazlık gerekçesi", language)}: {t.disputeReason}</Text>
+            ) : null}
             {/* ÖDEME MUTABAKATI KAZANÇ SAYFASINDA DA (yalnız ORTAK görünümü): satıcı "ödedim"
                 dedikten sonra (seller_paid) ortağın "Ödemeyi Aldım" onayı komisyonu 'paid' yapar. */}
             {!isSeller && (t.status === "seller_paid" || t.status === "disputed") ? (
