@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <meta name="theme-color" content="#0645C9" />
+    <title>Erişim yalnızca Türkiye'den — OrtakSat</title>
+    <!--
+      TÜRKİYE DIŞI ERİŞİM UYARISI (2026-11-15). Vercel güvenlik duvarı, Türkiye dışından gelen sayfa isteklerini
+      buraya yönlendirir (kural: "Türkiye dışı erişim → uyarı sayfası"). Bu sayfa uygulamadan BAĞIMSIZDIR:
+      uygulama paketini yüklemez, dışarıdan yalnız logo görselini alır. Kuralın muaf tuttuğu adresler
+      (bu sayfa, yasal sayfalar, destek, statik dosyalar) bellekteki "geo-block" notunda yazılıdır.
+    -->
+    <style>
+      * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+      html, body { margin: 0; min-height: 100%; }
+      body {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        background: #F4F6F8; color: #0F172A;
+        display: flex; align-items: center; justify-content: center; min-height: 100vh; min-height: 100dvh; padding: 24px 16px;
+      }
+      .card {
+        background: #fff; border: 1px solid #E5E9EE; border-radius: 20px;
+        max-width: 440px; width: 100%; padding: 30px 24px 22px; text-align: center;
+        box-shadow: 0 12px 40px rgba(16,24,40,0.08);
+      }
+      .ring {
+        width: 72px; height: 72px; border-radius: 999px; margin: 0 auto 18px;
+        background: #E5F0FF; display: flex; align-items: center; justify-content: center;
+      }
+      h1 { font-size: 20px; line-height: 27px; font-weight: 900; margin: 0 0 10px; }
+      p { color: #475569; font-size: 14px; line-height: 21px; margin: 0 0 12px; font-weight: 500; }
+      ol { color: #475569; font-size: 14px; line-height: 21px; font-weight: 500; margin: 0 0 20px; padding: 14px 16px 14px 34px; text-align: left; background: #F4F7FC; border-radius: 12px; }
+      ol li + li { margin-top: 6px; }
+      .btn {
+        display: block; background: #0645C9; color: #fff; border: 0; border-radius: 12px;
+        font-size: 14px; font-weight: 800; padding: 13px 22px; width: 100%; min-height: 46px;
+        cursor: pointer; font-family: inherit; text-decoration: none;
+      }
+      .btn:active { opacity: .85; }
+      .links { margin: 16px 0 0; font-size: 13px; font-weight: 600; color: #64748B; }
+      .links a { color: #0645C9; text-decoration: none; font-weight: 700; padding: 6px 2px; display: inline-block; }
+      .en { border-top: 1px solid #E5E9EE; margin-top: 18px; padding-top: 14px; font-size: 12.5px; line-height: 19px; color: #64748B; margin-bottom: 0; }
+      .brand { margin-top: 16px; color: #94A3B8; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 6px; }
+      .brand img { width: 18px; height: 18px; display: block; }
+      @media (prefers-color-scheme: dark) {
+        body { background: #0B1220; color: #E5E9EE; }
+        .card { background: #131C2B; border-color: #24303F; }
+        p, ol { color: #A9B6C8; }
+        ol { background: #0F1A2C; }
+        .ring { background: #0F2347; }
+        .links { color: #94A3B8; }
+        .links a { color: #7FA8FF; }
+        .en { border-color: #24303F; color: #94A3B8; }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="card">
+      <div class="ring" aria-hidden="true">
+        <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#0645C9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10" /><path d="M2 12h20" />
+          <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+        </svg>
+      </div>
+      <h1>OrtakSat'a yalnızca Türkiye'den erişilebilir</h1>
+      <p>Bağlantın şu anda Türkiye dışından görünüyor. Güvenlik nedeniyle yurt dışı bağlantıları, VPN ve vekil sunucu üzerinden gelen erişimleri kabul etmiyoruz.</p>
+      <ol>
+        <li>VPN, vekil sunucu ya da "gizli aktarım" özelliği açıksa kapat.</li>
+        <li>Türkiye'deki bir internet bağlantısına geç.</li>
+        <li>Aşağıdaki düğmeyle yeniden dene.</li>
+      </ol>
+      <a class="btn" href="/">Yeniden dene</a>
+      <p class="links">Türkiye'desin ama bu sayfayı mı görüyorsun? <a href="mailto:destek@ortaksat.com">destek@ortaksat.com</a><br /><a href="/gizlilik-politikasi">Gizlilik Politikası</a> · <a href="/sozlesmeler">Sözleşmeler</a></p>
+      <p class="en" lang="en">OrtakSat is available only from Türkiye. Your connection appears to come from another country. If you are using a VPN or proxy, turn it off and try again.</p>
+      <div class="brand"><img src="/logo-mark.png" width="18" height="18" alt="" />OrtakSat</div>
+    </main>
+  </body>
+</html>
