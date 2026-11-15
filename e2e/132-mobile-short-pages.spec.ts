@@ -40,15 +40,16 @@ test("telefon genişliğinde kısa sayfalarda düğme ve kutular şişmez", asyn
       }
       return out;
     });
-    // Arama kutusu ile altındaki satır arasında dev boşluk kalmamalı (kapsayıcı şişmesi).
-    const gap = await page.evaluate(() => {
-      const inp = document.querySelector("input");
-      if (!inp) return 0;
-      let box: HTMLElement | null = inp as HTMLElement;
-      for (let k = 0; k < 3 && box?.parentElement; k++) box = box.parentElement;
-      return Math.round(box!.getBoundingClientRect().height);
-    });
-    if (gap > 160) problems.push(`${path}: arama kutusu kapsayıcısı ${gap}px`);
+    // Alıcı Bulma Merkezi: arama kutusu ile "N talep" satırı arasında dev boşluk kalmamalı (kutunun şişmesi).
+    if (path === "/alici-talepleri") {
+      const gap = await page.evaluate(() => {
+        const inp = document.querySelector('input[placeholder*="taleplerinde"]');
+        const count = Array.from(document.querySelectorAll("div")).find((d) => /^\d+ talep$/.test((d.textContent || "").trim()) && d.children.length === 0);
+        if (!inp || !count) return -1;
+        return Math.round(count.getBoundingClientRect().top - inp.getBoundingClientRect().bottom);
+      });
+      if (gap < 0 || gap > 80) problems.push(`${path}: arama kutusu ile sayaç arası ${gap}px`);
+    }
     await page.screenshot({ path: `e2e-artifacts/short-pages/${path.replace(/[^a-z]+/gi, "-")}.png` });
     for (const t of tall) problems.push(`${path}: ${t}`);
   }
