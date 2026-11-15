@@ -59,10 +59,13 @@ export function MobileScreen({ children, title, right, bottom, scroll = true, ba
   // KLAVYE: Android'de de "padding". Kenardan kenara düzende (Android 15+, SDK 58) sistem pencereyi klavye için
   // KÜÇÜLTMÜYOR; davranış verilmeyince alttaki giriş alanı klavyenin ALTINDA kalıyordu — sohbette yazılan metin
   // ve Gönder düğmesi görünmüyordu (2026-11-13, emülatörde görüldü). Giriş ekranı aynı nedenle zaten "padding".
+  // İÇERİK YÜKSEKLİĞİ: web'de içerik ekranı doldurur (alt bilgi en alta itilsin). Uygulamada alt bilgi yok ve
+  // doldurma, "flex: 1" taşıyan kutuları (MobileField, MobileSelect…) kısa sayfalarda dev boş alana çeviriyordu
+  // (Engellenen Kullanıcılar, Piyasa Fiyat Analizi, Alıcı Bulma Merkezi) → uygulamada içerik kendi boyunda kalır.
   return <KeyboardAvoidingView behavior={keyboardBehavior ?? (Platform.OS === "web" ? undefined : "padding")} style={ms.screen}>
     <Stack.Screen options={{ headerShown }} />
     {title ? <View style={{ paddingTop: insets.top, backgroundColor: mobile.canvas }}><MobileHeader title={title} right={right} back={back} onBack={onBack} /></View> : null}
-    {scroll ? <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} refreshControl={refreshControl} scrollEventThrottle={onEndReached ? 120 : undefined} onScroll={onEndReached ? (event) => { const n = event.nativeEvent; if (n.contentOffset.y + n.layoutMeasurement.height > n.contentSize.height - 600) onEndReached(); } : undefined} contentContainerStyle={[{ flexGrow: 1, width: "100%", maxWidth, alignSelf: "center", paddingHorizontal: 16, paddingBottom: 0, paddingTop: title ? 4 : insets.top }, contentStyle]}>{children}{footer ?? <CompactFooter />}</ScrollView> : <View style={[{ flex: 1, width: "100%", maxWidth, alignSelf: "center" }, contentStyle]}>{children}</View>}
+    {scroll ? <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} refreshControl={refreshControl} scrollEventThrottle={onEndReached ? 120 : undefined} onScroll={onEndReached ? (event) => { const n = event.nativeEvent; if (n.contentOffset.y + n.layoutMeasurement.height > n.contentSize.height - 600) onEndReached(); } : undefined} contentContainerStyle={[{ flexGrow: Platform.OS === "web" ? 1 : 0, width: "100%", maxWidth, alignSelf: "center", paddingHorizontal: 16, paddingBottom: 0, paddingTop: title ? 4 : insets.top }, contentStyle]}>{children}{footer ?? <CompactFooter />}</ScrollView> : <View style={[{ flex: 1, width: "100%", maxWidth, alignSelf: "center" }, contentStyle]}>{children}</View>}
     {bottom}
   </KeyboardAvoidingView>;
 }
