@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { ActivityIndicator, StyleSheet, View } from "react-native";
 import { useGlobalSearchParams, usePathname, useRootNavigationState, useRouter, useSegments } from "expo-router";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { isMobileApp } from "@/lib/mobile-app";
 import { useStore } from "@/lib/use-store";
 
@@ -34,6 +35,7 @@ export function goToTabRoute(router: ReturnType<typeof useRouter>, href: string,
 // Açılışta oturum kontrolü ağ yüzünden uzarsa (çevrimdışı + süresi dolmuş token → auth-js ~30sn
 // yeniden dener) tam-ekran bekleme katmanı en fazla bu kadar durur; sonra uygulama görünür olur.
 const AUTH_OVERLAY_MAX_WAIT_MS = 3000;
+const GUEST_KEY = "ortaksat.guest.v1";
 
 const AccessContext = createContext<{ skip: (to?: string) => void }>({ skip: () => {} });
 export const useMobileAccess = () => useContext(AccessContext);
@@ -41,6 +43,18 @@ export const useMobileAccess = () => useContext(AccessContext);
 export function MobileAccessProvider({ children }: { children: ReactNode }) {
   const { authReady, isAuthenticated } = useStore();
   const [guest, setGuest] = useState(false);
+  // MİSAFİR KİPİ HATIRLANIR: "Geç" diyen kullanıcıya her açılışta giriş duvarı gösterilmez (mağaza incelemesi de
+  // giriş zorlamasını sevmez). Bayrak okunana kadar yönlendirme bekler; çıkış yapınca silinir (bilinçli çıkış → giriş ekranı).
+  const [guestLoaded, setGuestLoaded] = useState(!isMobileApp);
+  useEffect(() => {
+    if (!isMobileApp) return;
+    let alive = true;
+    AsyncStorage.getItem(GUEST_KEY)
+      .then((value) => { if (alive && value === "1") setGuest(true); })
+      .catch(() => undefined)
+      .finally(() => { if (alive) setGuestLoaded(true); });
+    return () => { alive = false; };
+  }, []);
   const [overlayTimedOut, setOverlayTimedOut] = useState(false);
   const previousAuth = useRef(isAuthenticated);
   const path = usePathname();
@@ -60,10 +74,10 @@ export function MobileAccessProvider({ children }: { children: ReactNode }) {
   // Browsing permission lasts for this launch. Supabase alone persists authenticated sessions.
   const signedOut = previousAuth.current && !isAuthenticated;
   const publicAuthRoute = /^\/(auth|onay|guven-yonlendirme|guven-profili|kullanim-sartlari|gizlilik-politikasi|kvkk|legal|hesap-silme)(\/|$)/.test(path);
-  const redirect = isMobileApp && authReady && !isAuthenticated && !publicAuthRoute && (!guest || signedOut || requiresMobileAccount(path));
+  const redirect = isMobileApp && authReady && guestLoaded && !isAuthenticated && !publicAuthRoute && (!guest || signedOut || requiresMobileAccount(path));
   useEffect(() => {
     if (!authReady) return;
-    if (previousAuth.current && !isAuthenticated) setGuest(false);
+    if (previousAuth.current && !isAuthenticated) { setGuest(false); AsyncStorage.removeItem(GUEST_KEY).catch(() => undefined); }
     previousAuth.current = isAuthenticated;
   }, [authReady, isAuthenticated]);
   useEffect(() => {
@@ -80,12 +94,13 @@ export function MobileAccessProvider({ children }: { children: ReactNode }) {
   // ikinci bir (tabs) / ikinci bir ilan ekranı yığılmasın. Web'de davranış eskisiyle AYNI.
   const skip = (to?: string) => {
     setGuest(true);
+    if (isMobileApp) AsyncStorage.setItem(GUEST_KEY, "1").catch(() => undefined);
     const target = to ?? "/";
     if (isMobileApp && router.canDismiss()) router.dismissTo(target as never);
     else router.replace(target as never);
   };
   return <AccessContext.Provider value={{ skip }}>
     {children}
-    {isMobileApp && ((!authReady && !overlayTimedOut) || redirect) && <View accessibilityLabel="Oturum kontrol ediliyor" style={[StyleSheet.absoluteFill, { backgroundColor: "#F6F9FF", alignItems: "center", justifyContent: "center", zIndex: 9999 }]}><ActivityIndicator color="#0645C9" size="large" /></View>}
+    {isMobileApp && (((!authReady || !guestLoaded) && !overlayTimedOut) || redirect) && <View accessibilityLabel="Oturum kontrol ediliyor" style={[StyleSheet.absoluteFill, { backgroundColor: "#F6F9FF", alignItems: "center", justifyContent: "center", zIndex: 9999 }]}><ActivityIndicator color="#0645C9" size="large" /></View>}
   </AccessContext.Provider>;
 }

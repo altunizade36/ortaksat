@@ -13,6 +13,9 @@ Mağaza metinleri `docs/release/store-listing.md` dosyasında, görseller `store
 | Expo projesi | Kayıtlı: `@fatih3434/ortaksat-mobile` (kimlik `app.json` içinde) |
 | Paket adı / sürüm | `com.ortaksat.app` · 1.0.0 · hedef Android sürümü 36 |
 | Hesap silme (uygulama içi + web) | Çalışıyor; sunucu işlevleri ve gece görevi canlıda |
+| Misafir gezinme | "Geç" ile; seçim hatırlanır, her açılışta giriş zorlanmaz |
+| Mağaza ekran görüntüleri | Play telefon, iPhone 6,9", iPad 13" — gerçek uygulamadan |
+| Yasal bağlantılar uygulamada | Menü → Yasal ve Gizlilik |
 | Şikâyet / engelleme | İlan, sohbet, mağaza, ortak vitrini ve yorumlarda var |
 | Apple ile giriş | iOS'ta Google ile birlikte gösteriliyor |
 | Ödeme / uygulama içi satın alma | Yok (platform para almıyor) |
@@ -59,7 +62,6 @@ npx eas-cli submit --platform ios --profile production
 - Anlık bildirim anahtarı: ilk iOS derlemesinde Expo sorar, **Evet** de.
 - **Hesap silmede Apple belirtecinin iptali:** Apple, "Apple ile giriş" kullanan hesap silindiğinde girişin Apple tarafında da iptal edilmesini istiyor. Bunun için Apple hesabından bir anahtar (.p8) gerekiyor; hesap açılınca eklerim.
 - "E-postamı gizle" seçen kullanıcılara e-posta gidebilmesi için gönderen alan adını Apple hesabına kaydet.
-- iPad ekran görüntüleri (13 inç) zorunlu, çünkü uygulama tablet destekliyor. Henüz üretilmedi.
 
 ## 6. Uygulama bağlantıları
 
@@ -75,7 +77,9 @@ Paylaşılan ilan linkinin uygulamada açılması için iki değer gerekiyor; ba
 | Ad, kısa/uzun açıklama, anahtar kelimeler | `docs/release/store-listing.md` |
 | Play simgesi (512) | `store/graphics/play-simge-512.png` |
 | Play öne çıkan görseli (1024×500) | `store/graphics/play-one-cikan-gorsel-1024x500.png` |
-| Telefon ekran görüntüleri | `store/screenshots/play-telefon/`, `store/screenshots/ios-6.7/` |
+| Play telefon ekran görüntüleri (1080×1920) | `store/screenshots/play-telefon/` |
+| iPhone 6,9 inç (1320×2868) | `store/screenshots/ios-6.9/` |
+| iPad 13 inç (2064×2752) — Play tablete de uygun | `store/screenshots/ipad-13/` |
 | Gizlilik politikası | https://www.ortaksat.com/gizlilik-politikasi |
 | Kullanım şartları | https://www.ortaksat.com/kullanim-sartlari |
 | Destek | https://www.ortaksat.com/iletisim |
@@ -86,8 +90,8 @@ Veri güvenliği / gizlilik beyanı için `store-listing.md` bölüm 9'daki tabl
 
 ## 8. İnceleme ekibi için
 
-- **Test hesabı:** incelemeciler giriş gerektiren ekranları görmek ister. Gönderimden hemen önce bir inceleme hesabı açıp bilgilerini inceleme notuna yazmak gerekir; istediğinde hazırlarım.
-- **İnceleme notu (öneri):** "OrtakSat bir ilan ve ortak satış aracı platformudur. Uygulama içinde ödeme alınmaz; ödeme ve teslimat taraflar arasında gerçekleşir. Hesap silme: Menü → Hesap Ayarları → Hesabımı Sil."
+- **Test hesabı:** gönderimden hemen önce `python scripts/review-account.py olustur` çalıştır; e-posta `inceleme@ortaksat.com`, şifre yalnız ekrana yazılır. Bunları mağaza panelinin inceleme bilgilerine gir. İnceleme bitince `... sil`.
+- **İnceleme notu:** hazır metin `store-listing.md` bölüm 11'de.
 - **Türkiye dışı erişim:** site Türkiye dışına kapalıdır, ancak uygulama bundan etkilenmez; yasal sayfalar ve destek her ülkeden açılır.
 
 ## 9. Yayından hemen önce kaldırılacak deneme ayarları
