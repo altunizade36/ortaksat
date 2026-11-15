@@ -103,6 +103,7 @@ function Start-Warmup {
 $proc = Start-Server
 Start-Warmup
 $misses = 0
+$silent = 0
 $lastCpu = 0
 $warmReported = $false
 $graceUntil = (Get-Date).AddSeconds(120)   # ilk açılışta paketleme sürer; bu sürede yoklama sayılmaz
@@ -125,13 +126,16 @@ try {
     $cpu = Get-ServerCpu
     $busy = ($cpu - $lastCpu) -ge 1.5      # son 20 sn'de en az 1,5 sn işlemci kullandı → çalışıyor (paket hazırlıyor)
     $lastCpu = $cpu
-    if (Test-Server) { $misses = 0; continue }
+    if (Test-Server) { $misses = 0; $silent = 0; continue }
     if ((Get-Date) -lt $graceUntil) { continue }
-    if ($busy) { continue }
+    $silent += 1
+    # KİLİTLENME DERSİ (2026-11-15): sunucu %100 işlemciyle saatlerce asılı kaldı; "meşgul" sayıldığı için hiç yeniden
+    # başlatılmadı. Meşgul görünse de 10 dakikadır (30 yoklama) hiç yanıt vermiyorsa kilitlenmiştir.
+    if ($busy -and $silent -lt 30) { continue }
     $misses += 1
-    if ($misses -ge 5) {
+    if ($misses -ge 5 -or $silent -ge 30) {
       Write-Host ("[{0}] Sunucu yanıt vermiyor ve çalışmıyor, yeniden başlatılıyor. Telefonda uygulamayı kapatıp yeniden aç." -f (Stamp))
-      $proc = Start-Server; Start-Warmup; $warmReported = $false; $misses = 0; $lastCpu = 0; $graceUntil = (Get-Date).AddSeconds(120)
+      $proc = Start-Server; Start-Warmup; $warmReported = $false; $misses = 0; $silent = 0; $lastCpu = 0; $graceUntil = (Get-Date).AddSeconds(120)
     }
   }
 } finally {
