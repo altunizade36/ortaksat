@@ -17,6 +17,7 @@ import { MaterialCommunityIcons } from "@/components/icons";
 import * as ImagePicker from "expo-image-picker";
 import { Link, useLocalSearchParams, type Href } from "expo-router";
 import { chatStarters, takeChatDraft } from "@/lib/chat-starters";
+import { bubbleRadius } from "@/lib/chat-bubble";
 
 import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -487,7 +488,7 @@ function MessagesScreenInner() {
                           {/* Balon + "tekrar dene" DİKEY yığın: eskiden tekrar-dene balonun YANINDA (satırda)
                               duruyordu → uzun mesajda %78 balon + etiket satırı taşırıyordu. */}
                           <View style={{ alignItems: mine ? "flex-end" : "flex-start", flexShrink: 1, maxWidth: "78%", minWidth: 0 }}>
-                          <View style={{ backgroundColor: mine ? colors.primary : colors.surface, borderColor: mine ? colors.primary : colors.line, borderTopLeftRadius: 14, borderTopRightRadius: 14, borderBottomLeftRadius: mine ? 14 : 4, borderBottomRightRadius: mine ? 4 : 14, borderWidth: 1, maxWidth: "100%", overflow: "hidden", paddingHorizontal: m.attachmentType === "image" ? 4 : 13, paddingVertical: m.attachmentType === "image" ? 4 : 9 }}>
+                          <View style={{ backgroundColor: mine ? colors.primary : colors.surface, borderColor: mine ? colors.primary : colors.line, ...bubbleRadius(mine, grouped, lastOfGroup), borderWidth: 1, maxWidth: "100%", overflow: "hidden", paddingHorizontal: m.attachmentType === "image" ? 4 : 13, paddingVertical: m.attachmentType === "image" ? 4 : 9 }}>
                             {m.attachmentType === "image" && m.attachmentUrl ? (
                               <Pressable accessibilityRole="imagebutton" accessibilityLabel={translateCopy("Görseli büyüt", language)} onPress={() => m.attachmentUrl && setLightboxUri(m.attachmentUrl)}><SafeRemoteImage uri={m.attachmentUrl} accessibilityLabel={translateCopy("Sohbet görseli", language)} contentFit="cover" style={{ backgroundColor: colors.line, borderRadius: 10, height: 190, maxWidth: "100%", width: 240 }} /></Pressable>
                             ) : null}
@@ -732,6 +733,8 @@ function MessagesScreenInner() {
                 ) : null}
 
               </View>
+              {/* İlanın küçük görseli: aynı kişiyle birden çok ilan konuşulurken hangisi olduğu bir bakışta anlaşılır. */}
+              {listing?.image ? <SafeRemoteImage uri={listing.image} accessibilityLabel={displayListingTitle(listing.title)} contentFit="cover" style={{ backgroundColor: colors.line, borderRadius: 9, height: 46, width: 46 }} /> : null}
             </Pressable>
           </Link>
         );

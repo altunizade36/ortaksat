@@ -14,6 +14,7 @@ import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { chatStarters, takeChatDraft } from "@/lib/chat-starters";
+import { bubbleRadius } from "@/lib/chat-bubble";
 import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, Text, TextInput, View, type ScrollViewInstance } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -433,7 +434,7 @@ function ChatScreenInner() {
             (e as unknown as { preventDefault?: () => void }).preventDefault?.();
             send();
           }}
-          style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 12, borderWidth: 1, color: colors.ink, flex: 1, fontSize: Platform.OS === "web" ? 16 : 14, maxHeight: 120, minHeight: 44, minWidth: 0, paddingHorizontal: 16, paddingVertical: 11, ...(Platform.OS === "web" ? { height: composerHeight } : null) }}
+          style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 22, borderWidth: 1, color: colors.ink, flex: 1, fontSize: Platform.OS === "web" ? 16 : 14, maxHeight: 120, minHeight: 44, minWidth: 0, paddingHorizontal: 16, paddingVertical: 11, ...(Platform.OS === "web" ? { height: composerHeight } : null) }}
         />
         <Pressable accessibilityRole="button" accessibilityLabel={translateCopy("Gönder", language)} disabled={!body.trim()} onPress={send} style={({ pressed }) => ({ alignItems: "center", backgroundColor: body.trim() ? colors.primary : colors.line, borderRadius: 999, height: 44, justifyContent: "center", opacity: pressed ? 0.75 : 1, width: 44 })}>
           <MaterialCommunityIcons name="send" size={20} color="#FFFFFF" />
@@ -488,7 +489,7 @@ const MessageBubbles = memo(function MessageBubbles({ messages, currentUserId, l
               </View>
             ) : null}
             <View style={{ alignItems: mine ? "flex-end" : "flex-start" }}>
-              <View style={{ backgroundColor: mine ? colors.primary : colors.surface, borderColor: mine ? colors.primary : colors.line, borderTopLeftRadius: 14, borderTopRightRadius: 14, borderBottomLeftRadius: mine ? 14 : 4, borderBottomRightRadius: mine ? 4 : 14, borderWidth: 1, maxWidth: "82%", overflow: "hidden", paddingHorizontal: message.attachmentType === "image" ? 4 : 12, paddingVertical: message.attachmentType === "image" ? 4 : 8 }}>
+              <View style={{ backgroundColor: mine ? colors.primary : colors.surface, borderColor: mine ? colors.primary : colors.line, ...bubbleRadius(mine, grouped, lastOfGroup), borderWidth: 1, maxWidth: "82%", overflow: "hidden", paddingHorizontal: message.attachmentType === "image" ? 4 : 13, paddingVertical: message.attachmentType === "image" ? 4 : 8 }}>
                 {message.attachmentType === "image" && message.attachmentUrl ? (
                   <Pressable accessibilityRole="imagebutton" accessibilityLabel={translateCopy("Görseli büyüt", language)} onPress={() => message.attachmentUrl && onImagePress(message.attachmentUrl)}>
                     <SafeRemoteImage uri={message.attachmentUrl} accessibilityLabel={translateCopy("Sohbet görseli", language)} contentFit="cover" style={{ backgroundColor: colors.line, borderRadius: 10, height: 160, width: 190, maxWidth: "100%" }} />
