@@ -1908,14 +1908,14 @@ export const categoryTree: CategoryNode[] = [
       node("Cep Telefonu", brandModelNodes(PHONE_BRANDS, MODELS_BY_BRAND, "telefon"), "telefon"),
       leaf("Tuşlu Telefon", "telefon"),
       leaf("Akıllı Saat & Bileklik", "elektronik"),
-      ...leaves(["Kılıf & Kapak", "Ekran Koruyucu", "Şarj Aleti & Kablo", "Powerbank", "Kulaklık", "Telefon Tutucu & Stand", "Hafıza Kartı", "Telefon Yedek Parça"], "alisverisGenel")
+      ...leaves(["Kılıf & Kapak", "Ekran Koruyucu", "Şarj Aleti & Kablo", "Powerbank", "Kulaklık", "Telefon Tutucu & Stand", "Hafıza Kartı", "Telefon Yedek Parça", "Kablosuz Şarj Cihazı", "Gimbal & Selfie Çubuğu"], "alisverisGenel")
     ], "telefon"),
     node("Bilgisayar & Oyun", [
       node("Dizüstü Bilgisayar", brandModelNodes(COMPUTER_BRANDS, COMPUTER_MODELS, "bilgisayar"), "bilgisayar"),
       node("Masaüstü Bilgisayar", leaves(["Hazır Sistem", "Toplama Sistem", "All-in-One", "Mini PC", "İş İstasyonu"], "bilgisayar"), "bilgisayar"),
       node("Bilgisayar Bileşenleri", leaves(["Ekran Kartı", "İşlemci", "Anakart", "RAM", "SSD & HDD", "Güç Kaynağı", "Kasa", "CPU Soğutucu", "Ekran Kartı Yükseltici"], "elektronik"), "elektronik"),
-      node("Çevre Birimleri", leaves(["Monitör", "Klavye", "Mouse", "Kulaklık", "Webcam", "Mikrofon", "Yazıcı & Tarayıcı", "Modem & Network", "Harici Disk", "USB Bellek"], "elektronik"), "elektronik"),
-      node("Oyun & Konsol", leaves(["PlayStation 5", "PlayStation 4", "Xbox Series X/S", "Xbox One", "Nintendo Switch", "Konsol Oyunları", "Oyun Kolu", "VR Gözlük", "Oyuncu Koltuğu"], "elektronik"), "elektronik"),
+      node("Çevre Birimleri", leaves(["Monitör", "Klavye", "Mouse", "Kulaklık", "Webcam", "Mikrofon", "Yazıcı & Tarayıcı", "Modem & Network", "Harici Disk", "USB Bellek", "Grafik Tablet", "NAS & Ağ Depolama", "Oyuncu Ekipmanı (Klavye/Mouse Seti)"], "elektronik"), "elektronik"),
+      node("Oyun & Konsol", leaves(["PlayStation 5", "PlayStation 4", "Xbox Series X/S", "Xbox One", "Nintendo Switch", "Konsol Oyunları", "Oyun Kolu", "VR Gözlük", "Oyuncu Koltuğu", "El Konsolu", "Direksiyon Seti", "Retro Konsol"], "elektronik"), "elektronik"),
       leaf("Yazılım & Lisans", "dijitalHizmet")
     ], "bilgisayar"),
     node("Ev & Yaşam", [
@@ -1940,7 +1940,7 @@ export const categoryTree: CategoryNode[] = [
       node("Süpürge", leaves(["Robot Süpürge", "Dikey Süpürge", "Toz Torbalı", "Toz Torbasız", "Islak-Kuru", "Halı Yıkama"], "beyazEsya"), "beyazEsya"),
       ...leaves(["Derin Dondurucu", "Su Sebili", "Şofben & Termosifon", "Bulaşık Kurutma"], "beyazEsya")
     ], "beyazEsya"),
-    node("Mutfak", leaves(["Tencere & Tava", "Düdüklü Tencere", "Çaydanlık & Cezve", "Bıçak & Kesim Aletleri", "Sofra Takımı", "Bardak & Kupa", "Saklama Kabı", "Pişirme Kabı", "Fırın & Pasta Malzemesi", "Kahve & Çay Ekipmanı", "Mutfak Gereçleri", "Mutfak Düzenleme"], "alisverisGenel"), "alisverisGenel"),
+    node("Mutfak", leaves(["Tencere & Tava", "Düdüklü Tencere", "Çaydanlık & Cezve", "Bıçak & Kesim Aletleri", "Sofra Takımı", "Bardak & Kupa", "Saklama Kabı", "Pişirme Kabı", "Fırın & Pasta Malzemesi", "Kahve & Çay Ekipmanı", "Mutfak Gereçleri", "Mutfak Düzenleme", "Yemek Takımı", "Çay & Kahve Seti", "Termos & Matara"], "alisverisGenel"), "alisverisGenel"),
     node("Küçük Ev Aletleri", leaves(["Elektrikli Süpürge", "Robot Süpürge", "Dikey Süpürge", "Ütü & Ütü Sistemi", "Blender & Rondo", "El Blenderi", "Su Isıtıcı (Kettle)", "Airfryer & Fritöz", "Kahve Makinesi", "Çay Makinesi", "Tost & Izgara Makinesi", "Mikser & Çırpıcı", "Meyve/Sebze Sıkacağı", "Doğrayıcı", "Ekmek & Yoğurt Makinesi", "Semaver", "Nem Alma & Hava Temizleyici", "Saç Kurutma & Şekillendirme"], "beyazEsya"), "beyazEsya"),
     node("Moda", [
       node("Kadın Giyim", leaves(["Elbise", "Bluz", "Gömlek", "Pantolon", "Etek", "Şort", "Tulum", "Ceket", "Mont", "Kazak", "Sweatshirt", "Takım", "Abiye", "Gelinlik", "Pijama & Gecelik", "İç Giyim", "Mayo & Bikini", "Eşofman"], "moda"), "moda"),
@@ -1961,7 +1961,7 @@ export const categoryTree: CategoryNode[] = [
       node("Oto Koltuğu", leaves(["0-13 kg", "9-36 kg", "15-36 kg", "360° Dönebilen", "Yükseltici"], "bebek"), "bebek"),
       node("Beslenme", leaves(["Mama Sandalyesi", "Biberon & Emzik", "Mama Hazırlama", "Göğüs Pompası", "Termos & Saklama"], "bebek"), "bebek"),
       node("Bebek Odası", leaves(["Beşik", "Park Yatak", "Bebek Yatağı", "Alt Açma Ünitesi", "Bebek Odası Takımı", "Uyku & Tekstil"], "bebek"), "bebek"),
-      ...leaves(["Bebek Giyim", "Bebek Bakım & Bez", "Bebek Güvenliği", "Oyuncak", "Anne Ürünleri", "Hamile Giyim", "Bebek Ayakkabı"], "bebek")
+      ...leaves(["Bebek Giyim", "Bebek Bakım & Bez", "Bebek Güvenliği", "Oyuncak", "Anne Ürünleri", "Hamile Giyim", "Bebek Ayakkabı", "Bebek Telsizi & Kamera", "Oyun Halısı & Oyun Parkı", "Bebek Küveti & Banyo", "Yürüteç & Salıncak", "Sterilizatör & Mama Isıtıcı"], "bebek")
     ], "bebek"),
     node("Kozmetik & Kişisel Bakım", [
       node("Parfüm", brandModelNodes(PERFUME_BRANDS, {}, "kozmetik"), "kozmetik"),
@@ -2001,8 +2001,8 @@ export const categoryTree: CategoryNode[] = [
       node("Koleksiyon Ürünleri", leaves(["Kartpostal", "Rozet & Madalya", "Telefon Kartı", "Kibrit & Etiket", "Plak Koleksiyonu", "Oyuncak Koleksiyonu", "Figür & Aksiyon Figür", "Model Araba", "Askeri Malzeme", "Taş & Mineral", "İmza & Fotoğraf", "Saat Koleksiyonu"], "koleksiyon"), "koleksiyon")
     ], "koleksiyon"),
     node("Süpermarket & Gıda", leaves(["Temel Gıda", "Kahvaltılık", "Atıştırmalık & Şekerleme", "Bakliyat & Makarna", "Konserve & Hazır Yemek", "Kahve & Çay", "İçecek", "Su & Maden Suyu", "Süt & Süt Ürünleri", "Bebek Maması & Gıdası", "Organik & Glutensiz", "Baharat & Sos", "Zeytin & Zeytinyağı", "Bal & Reçel", "Kuruyemiş & Kurutulmuş Gıda", "Deterjan & Temizlik", "Kağıt Ürünleri", "Kişisel Temizlik & Hijyen", "Yöresel Ürünler", "Peynir & Şarküteri"], "alisverisGenel"), "alisverisGenel"),
-    node("Ofis & Kırtasiye", leaves(["Kırtasiye Malzemesi", "Defter & Bloknot", "Kalem & Yazı Gereçleri", "Ofis Mobilyası", "Yazıcı & Sarf Malzeme", "Dosyalama & Arşiv", "Sunum & Pano", "Hesap Makinesi", "Ofis Elektroniği", "Okul Malzemesi"], "alisverisGenel"), "alisverisGenel"),
-    node("Oyuncak", leaves(["Eğitici Oyuncak", "Peluş Oyuncak", "Yapı & Bloklar (Lego)", "Uzaktan Kumandalı", "Bebek & Figür", "Puzzle & Zeka Oyunları", "Kutu Oyunları", "Oyun Seti", "Araba & Araç Oyuncak", "Su & Kum Oyuncakları", "Elektronik Oyuncak", "Bebek Oyuncakları (0-3 yaş)"], "oyuncak"), "oyuncak"),
+    node("Ofis & Kırtasiye", leaves(["Kırtasiye Malzemesi", "Defter & Bloknot", "Kalem & Yazı Gereçleri", "Ofis Mobilyası", "Yazıcı & Sarf Malzeme", "Dosyalama & Arşiv", "Sunum & Pano", "Hesap Makinesi", "Ofis Elektroniği", "Okul Malzemesi", "Toplantı Masası", "Yazı Tahtası"], "alisverisGenel"), "alisverisGenel"),
+    node("Oyuncak", leaves(["Eğitici Oyuncak", "Peluş Oyuncak", "Yapı & Bloklar (Lego)", "Uzaktan Kumandalı", "Bebek & Figür", "Puzzle & Zeka Oyunları", "Kutu Oyunları", "Oyun Seti", "Araba & Araç Oyuncak", "Su & Kum Oyuncakları", "Elektronik Oyuncak", "Bebek Oyuncakları (0-3 yaş)", "Akülü Araba", "Oyun Evi & Çadır", "Çocuk Scooter & Üç Teker"], "oyuncak"), "oyuncak"),
     node("Dijital Ürünler", leaves(["Yazılım Lisansı", "Dijital Eğitim", "E-kitap", "Tasarım Dosyası", "Oyun Kodu", "Tema & Şablon", "Dijital Hesap", "Online Hizmet"], "dijitalHizmet"), "dijitalHizmet"),
     node("Evcil Hayvan Ürünleri", leaves(["Kedi Ürünleri", "Köpek Ürünleri", "Kuş Ürünleri", "Balık & Akvaryum", "Kemirgen Ürünleri", "Mama & Yem", "Kafes & Aksesuar", "Pet Bakım & Hijyen", "Tasma & Gezdirme", "Oyuncak & Kaşıma", "Kedi Kumu & Tuvalet", "Pet Taşıma Çantası"], "petUrun"), "petUrun"),
     // Eski KÖK "Yapı Market & Bahçe" → İkinci El altına taşındı (ana kategori konsolidasyonu).
@@ -2264,8 +2264,8 @@ export const categoryTree: CategoryNode[] = [
     node("Yabancı Dil", leaves(["İngilizce", "Almanca", "Fransızca", "İspanyolca", "İtalyanca", "Arapça", "Rusça", "Çince", "Japonca", "İşaret Dili"], "ders"), "ders"),
     node("Müzik & Sanat", leaves(["Piyano", "Gitar", "Keman", "Bağlama", "Şan & Vokal", "Resim & Çizim", "Bale & Dans", "Tiyatro & Drama", "Fotoğrafçılık", "Hat & Ebru"], "ders"), "ders"),
     node("Spor Dersleri", leaves(["Yüzme", "Tenis", "Fitness & PT", "Yoga & Pilates", "Basketbol", "Futbol", "Dövüş Sanatları", "Kayak", "Binicilik"], "ders"), "ders"),
-    node("Meslek & Yazılım", leaves(["Yazılım & Kodlama", "Web Tasarım", "Grafik Tasarım", "Dijital Pazarlama", "Muhasebe Eğitimi", "Bilgisayar Kullanımı", "Ofis Programları", "Yapay Zeka & Veri"], "ders"), "ders"),
-    node("Kişisel Gelişim & Diğer", leaves(["Direksiyon Dersi", "Diksiyon & Sunum", "Satranç", "Kişisel Gelişim", "Koçluk", "El Sanatları", "Aşçılık", "Kariyer Danışmanlığı"], "ders"), "ders"),
+    node("Meslek & Yazılım", leaves(["Yazılım & Kodlama", "Web Tasarım", "Grafik Tasarım", "Dijital Pazarlama", "Muhasebe Eğitimi", "Bilgisayar Kullanımı", "Ofis Programları", "Yapay Zeka & Veri", "Robotik Kodlama"], "ders"), "ders"),
+    node("Kişisel Gelişim & Diğer", leaves(["Direksiyon Dersi", "Diksiyon & Sunum", "Satranç", "Kişisel Gelişim", "Koçluk", "El Sanatları", "Aşçılık", "Kariyer Danışmanlığı", "Hızlı Okuma", "Okuma Yazma (Yetişkin)"], "ders"), "ders"),
     // Sahibinden "Özel Ders Verenler"deki "Özel Eğitim" (özel gereksinim) + "Çocuk Gelişimi" eksikti → tek dalda.
     node("Özel Eğitim & Çocuk Gelişimi", leaves(["Özel Eğitim (Genel)", "Disleksi Eğitimi", "Otizm & Özel Gereksinim", "Konuşma & Dil Terapisi", "İşitme / Görme Engelli Eğitimi", "Zihinsel Engelli Eğitimi", "Çocuk Gelişimi", "Okul Öncesi Gelişim", "Etüt & Ödev Desteği", "Dikkat & Zeka Geliştirme", "Rehberlik & Psikolojik Danışmanlık"], "ders"), "ders"),
     leaf("Online Eğitim", "ders")
@@ -2276,11 +2276,11 @@ export const categoryTree: CategoryNode[] = [
     node("Satış, Pazarlama & Perakende", leaves(["Satış Temsilcisi", "Saha Satış", "Mağaza Personeli", "Kasiyer", "Reyon Görevlisi", "Pazarlama Uzmanı", "Dijital Pazarlama", "Mağaza Müdürü"], "isIlani"), "isIlani"),
     node("Bilişim & Yazılım", leaves(["Yazılım Geliştirici", "Web Geliştirici", "Mobil Geliştirici", "Test Uzmanı", "DevOps & Sistem", "Veri Analisti", "Siber Güvenlik", "IT Destek"], "isIlani"), "isIlani"),
     node("Ofis & Yönetim", leaves(["Muhasebe & Finans", "İnsan Kaynakları", "Sekreter & Asistan", "Yönetici & Müdür", "Satın Alma", "Halkla İlişkiler", "Hukuk & Avukatlık", "Ofis Elemanı"], "isIlani"), "isIlani"),
-    node("Üretim, Lojistik & Sanayi", leaves(["Üretim İşçisi", "Kalite Kontrol", "Depo & Sevkiyat", "Forklift Operatörü", "Şoför", "Kurye & Motokurye", "Vinç/İş Makinesi Operatörü", "Teknik Bakım"], "isIlani"), "isIlani"),
+    node("Üretim, Lojistik & Sanayi", leaves(["Üretim İşçisi", "Kalite Kontrol", "Depo & Sevkiyat", "Forklift Operatörü", "Şoför", "Kurye & Motokurye", "Vinç/İş Makinesi Operatörü", "Teknik Bakım", "Kaynakçı", "Depo Elemanı"], "isIlani"), "isIlani"),
     node("Hizmet & Turizm", leaves(["Garson & Komi", "Aşçı & Mutfak", "Barista", "Resepsiyon", "Kat Görevlisi", "Animasyon", "Temizlik Personeli", "Güvenlik Görevlisi", "Çağrı Merkezi"], "isIlani"), "isIlani"),
     node("Güzellik & Bakım", leaves(["Kuaför & Berber", "Estetisyen", "Cilt Bakım Uzmanı", "Manikürist & Pedikürist", "Masör & Masöz", "Makyaj Artisti", "Kalıcı Makyaj Uzmanı", "Epilasyon Uzmanı", "Güzellik Merkezi Danışmanı", "Spa Terapisti"], "isIlani"), "isIlani"),
     node("Sağlık & Eğitim", leaves(["Doktor", "Hemşire", "Sağlık Teknikeri", "Fizyoterapist", "Öğretmen", "Öğretim Görevlisi", "Bakıcı & Refakatçi", "Eczane Personeli"], "isIlani"), "isIlani"),
-    node("İnşaat & Mühendislik", leaves(["İnşaat Mühendisi", "Mimar", "Makine Mühendisi", "Elektrik Mühendisi", "Usta & Kalfa", "Şantiye Şefi", "Teknik Ressam", "İş Güvenliği Uzmanı"], "isIlani"), "isIlani"),
+    node("İnşaat & Mühendislik", leaves(["İnşaat Mühendisi", "Mimar", "Makine Mühendisi", "Elektrik Mühendisi", "Usta & Kalfa", "Şantiye Şefi", "Teknik Ressam", "İş Güvenliği Uzmanı", "İnşaat İşçisi", "Elektrikçi & Tesisatçı"], "isIlani"), "isIlani"),
     // Sahibinden'de ayrı sektörler (Radyo/Sinema/TV + Tasarım & Yaratıcılık) bizde eksikti.
     node("Medya, Tasarım & Yaratıcılık", leaves(["Grafik Tasarımcı", "UI/UX Tasarımcı", "Video Editör & Kurgu", "Fotoğrafçı", "İçerik Üreticisi", "Sosyal Medya Uzmanı", "Radyo/TV Sunucu", "Kameraman", "Ses Teknisyeni", "Oyuncu & Figüran", "Yazar & Editör", "Seslendirme Sanatçısı", "Reklam & Kreatif"], "isIlani"), "isIlani"),
     // Sahibinden "Tarım & Hayvancılık" + "Tekstil & Konfeksiyon" sektörleri bizde eksikti.
