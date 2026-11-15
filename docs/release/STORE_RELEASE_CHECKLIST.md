@@ -60,7 +60,7 @@ npx eas-cli submit --platform ios --profile production
 ## 5. iOS'a özgü kalanlar (Apple hesabından sonra)
 
 - Anlık bildirim anahtarı: ilk iOS derlemesinde Expo sorar, **Evet** de.
-- **Hesap silmede Apple belirtecinin iptali:** Apple, "Apple ile giriş" kullanan hesap silindiğinde girişin Apple tarafında da iptal edilmesini istiyor. Bunun için Apple hesabından bir anahtar (.p8) gerekiyor; hesap açılınca eklerim.
+- **Hesap silmede Apple bağlantısının iptali (kod HAZIR, canlıda):** girişte alınan kod saklanır, silme talebinde Apple'da iptal edilir. Yalnız anahtar eksik: Apple Developer → Keys → yeni anahtar ("Sign in with Apple" işaretli) → `.p8` indir, sonra `python scripts/deploy-apple-token.py AuthKey_XXXX.p8 <EKİP_KİMLİĞİ>`. Anahtar yokken işlev sessizce atlar.
 - "E-postamı gizle" seçen kullanıcılara e-posta gidebilmesi için gönderen alan adını Apple hesabına kaydet.
 
 ## 6. Uygulama bağlantıları

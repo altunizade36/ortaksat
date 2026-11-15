@@ -1,3 +1,4 @@
+import { revokeAppleToken } from "@/lib/apple-token";
 import { useEffect, useRef, useState } from "react";
 import { Linking, Platform, Pressable, Text, TextInput, View } from "react-native";
 import { useRouter, type Href } from "expo-router";
@@ -104,6 +105,8 @@ export default function AccountDeletionScreen() {
       setDone(scheduledFor);
       setCheck((current) => ({ ...current, pending: true, scheduledFor }));
       setPassword(""); setConfirmText(""); setReason("");
+      // Apple ile giriş yapılmışsa bağlantı Apple tarafında iptal edilir (App Store 5.1.1(v)); oturum kapanmadan önce.
+      await revokeAppleToken();
       // Talep alındı: bu cihazdaki oturumu kapat. Kapanamazsa bekleyen-talep paneli (iptal / çıkış) görünür.
       try { await store.signOut(); } catch { showToast(t("Çıkış yapılamadı. Tekrar dene.")); }
     } catch {

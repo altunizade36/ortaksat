@@ -1,3 +1,4 @@
+import { storeAppleAuthorizationCode } from "@/lib/apple-token";
 import { validateListingTitle } from "@/lib/listing-title";
 import { clearOAuthConsent, prepareOAuthConsent, recordExplicitOAuthConsent } from "@/lib/oauth-consent";
 import { hasProfilePhoto } from "@/lib/profile-photo";
@@ -1736,6 +1737,8 @@ export function StoreProvider({ children }: PropsWithChildren) {
             // yer tutucudur ("OrtakSat Kullanıcısı"); kullanıcıya adını ekleyebileceği söylenir.
             showToast("Apple adını paylaşmadı. Adını Profil › Profili Düzenle bölümünden ekleyebilirsin.");
           }
+          // Hesap silinirken Apple bağlantısı iptal edilebilsin diye yetkilendirme kodu sunucuda belirtece çevrilir (beklenmez).
+          void storeAppleAuthorizationCode(credential.authorizationCode);
           setAuthError(undefined);
           return true;
         } catch (e) {
