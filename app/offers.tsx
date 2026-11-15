@@ -142,7 +142,8 @@ function OffersInner() {
           <Pressable
             accessibilityRole="button"
             onPress={() => {
-              const c = startConversation(o.listingId, o.sellerId, "Teklifim kabul edildi, teslimatı konuşalım.");
+              // Otomatik mesaj gönderilmez: sohbet boş açılır, mesajı kullanıcı yazar (bkz. lib/chat-starters.ts).
+              const c = startConversation(o.listingId, o.sellerId, "");
               if (c) router.push({ pathname: "/chat/[id]", params: { id: c.id } });
               else showToast(translateCopy("Mesaj başlatılamadı. İlanın veya hesabın durumunu kontrol et.", language), "info");
             }}

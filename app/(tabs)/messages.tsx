@@ -16,6 +16,7 @@ import { MobileMessages } from "@/components/mobile/messages";
 import { MaterialCommunityIcons } from "@/components/icons";
 import * as ImagePicker from "expo-image-picker";
 import { Link, useLocalSearchParams, type Href } from "expo-router";
+import { chatStarters, takeChatDraft } from "@/lib/chat-starters";
 
 import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -222,6 +223,16 @@ function MessagesScreenInner() {
   }, [isWideWeb, activeId, filter, query, showArchived, myConversations]);
   const selectedId = isWideWeb ? selectedConversation?.id : undefined;
   const draft = selectedId ? drafts[selectedId] ?? "" : "";
+  // YAZI KUTUSU BÜYÜMESİ (web): tarayıcıda çok satırlı kutu kendiliğinden uzamaz; iki satırdan uzun mesajda yalnız
+  // son satır görünüyordu. İçerik yüksekliği ölçülür (44–120 px); kutu boşalınca (gönderim sonrası) tek satıra döner.
+  const [composerHeight, setComposerHeight] = useState(44);
+  useEffect(() => { if (!draft) setComposerHeight(44); }, [draft, selectedId]);
+  // Bu sohbet için bekleyen taslak varsa (ör. "satışı bildir") yazı kutusuna konur — GÖNDERİLMEZ.
+  useEffect(() => {
+    if (!selectedId) return;
+    const pending = takeChatDraft(selectedId);
+    if (pending) setDrafts((previous) => (previous[selectedId] ? previous : { ...previous, [selectedId]: pending }));
+  }, [selectedId]);
   const setDraft = (value: string | ((previous: string) => string)) => {
     if (!selectedId) return;
     setDrafts((previous) => ({ ...previous, [selectedId]: typeof value === "function" ? value(previous[selectedId] ?? "") : value }));
@@ -522,6 +533,19 @@ function MessagesScreenInner() {
                       <Text style={{ color: colors.ink, flex: 1, fontSize: 11.5, fontWeight: "700", lineHeight: 16 }}>{translateCopy("Bu mesajda hassas ödeme veya site dışı iletişim ifadesi var. Görüşmeyi kayıtlı mesaj içinde net tutun.", language)}</Text>
                     </View>
                   ) : null}
+                  {/* BAŞLANGIÇ ÖNERİLERİ: sohbet boşken. Dokunmak yalnız yazı kutusunu doldurur; mesajı kullanıcı gönderir. */}
+                  {!activeBlocked && !activeBlockedByOther && !activeClosed && activeMessages.length === 0 && !draft.trim() ? (
+                    <View testID="chat-starters" style={{ gap: 7 }}>
+                      <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "700" }}>{translateCopy("Mesajını yaz ya da bir öneriye dokun; kutuya yazılır, göndermek sana kalır.", language)}</Text>
+                      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 7 }}>
+                        {chatStarters(activeConversation?.partnerId ? "partner" : activeListing && activeListing.ownerId === currentUser.id ? "seller" : "buyer").map((starter) => (
+                          <Pressable key={starter} accessibilityRole="button" accessibilityLabel={`${translateCopy("Kutuya yaz", language)}: ${translateCopy(starter, language)}`} onPress={() => setDraft(translateCopy(starter, language))} style={{ backgroundColor: colors.primarySoft, borderColor: colors.primary, borderRadius: 999, borderWidth: 1, justifyContent: "center", minHeight: 34, paddingHorizontal: 13 }}>
+                            <Text style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "800" }}>{translateCopy(starter, language)}</Text>
+                          </Pressable>
+                        ))}
+                      </View>
+                    </View>
+                  ) : null}
                   {activeBlocked || activeBlockedByOther || activeClosed ? (
                     <View style={{ alignItems: "center", backgroundColor: colors.accentSoft, borderColor: colors.accent, borderRadius: 12, borderWidth: 1, flexDirection: "row", gap: 10, paddingHorizontal: 14, paddingVertical: 12 }}>
                       {activeBlocked ? <MaterialCommunityIcons name="account-cancel" size={18} color={colors.accent} /> : <MaterialCommunityIcons name="lock-outline" size={18} color={colors.accent} />}
@@ -533,7 +557,7 @@ function MessagesScreenInner() {
                   ) : (
                   <View style={{ alignItems: "flex-end", flexDirection: "row", gap: 8 }}>
                     <Pressable accessibilityRole="button" hitSlop={8} accessibilityLabel={translateCopy("Görsel ekle", language)} onPress={() => void attachImage()} disabled={attaching} style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 999, borderWidth: 1, height: 44, justifyContent: "center", opacity: pressed ? 0.7 : 1, width: 44 })}><MaterialCommunityIcons name={attaching ? "loading" : "paperclip"} size={20} color={attaching ? colors.primary : colors.muted} /></Pressable>
-                    <TextInput testID="message-composer" maxLength={4000} value={draft} onChangeText={(text) => { setDraft(text); notifyTyping(); }} multiline numberOfLines={1} accessibilityLabel={translateCopy("Mesaj yaz…", language)} placeholder={translateCopy("Mesaj yaz…", language)} placeholderTextColor={colors.muted} onKeyPress={onComposerKeyPress} style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 22, borderWidth: 1, color: colors.ink, flex: 1, fontSize: 14, maxHeight: 120, minHeight: 44, minWidth: 0, paddingHorizontal: 16, paddingVertical: 12 }} />
+                    <TextInput testID="message-composer" maxLength={4000} value={draft} onChangeText={(text) => { setDraft(text); notifyTyping(); }} multiline numberOfLines={1} accessibilityLabel={translateCopy("Mesaj yaz…", language)} placeholder={translateCopy("Mesaj yaz…", language)} placeholderTextColor={colors.muted} onKeyPress={onComposerKeyPress} onContentSizeChange={(e) => setComposerHeight(Math.max(44, Math.min(120, Math.ceil(e.nativeEvent.contentSize.height) + 2)))} style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 22, borderWidth: 1, color: colors.ink, flex: 1, fontSize: 14, maxHeight: 120, minHeight: 44, minWidth: 0, paddingHorizontal: 16, paddingVertical: 12, height: composerHeight }} />
                     <Pressable accessibilityRole="button" hitSlop={8} accessibilityLabel={translateCopy("Mesajı gönder", language)} disabled={!draft.trim()} onPress={sendDraft} style={({ pressed }) => ({ alignItems: "center", backgroundColor: draft.trim() ? colors.primary : colors.line, borderRadius: 999, height: 44, justifyContent: "center", opacity: pressed ? 0.8 : 1, width: 44 })}><MaterialCommunityIcons name="send" size={19} color="#FFFFFF" /></Pressable>
                   </View>
                   )}

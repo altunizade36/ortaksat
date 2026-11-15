@@ -232,7 +232,8 @@ function StoreScreenLegacy() {
       Alert.alert(translateCopy("İletişim kurulamadı", language), translateCopy("Bu satıcının şu an aktif ilanı yok. İlan yayınlandığında mesaj gönderebilirsin.", language));
       return;
     }
-    const conversation = startConversation(firstListing.id, seller.id, `${seller.name} ${translateCopy("mağazasındaki ürünler için bilgi almak istiyorum.", language)}`);
+    // Otomatik mesaj gönderilmez: sohbet boş açılır, mesajı kullanıcı yazar (bkz. lib/chat-starters.ts).
+    const conversation = startConversation(firstListing.id, seller.id, "", firstListing);
     if (conversation) router.push({ pathname: "/chat/[id]", params: { id: conversation.id } });
     else Alert.alert(translateCopy("İletişim kurulamadı", language), translateCopy("Şu an konuşma başlatılamadı, lütfen tekrar dene.", language));
   }

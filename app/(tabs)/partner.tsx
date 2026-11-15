@@ -40,6 +40,7 @@ import { ScreenSkeleton } from "@/components/screen-skeleton";
 import { searchKey } from "@/lib/locale";
 import { displayText } from "@/lib/text";
 import type { Lead, LeadSource, LeadStatus, Listing, Partnership, PurchaseIntent, Sale, SaleStatus, User } from "@/lib/types";
+import { setChatDraft } from "@/lib/chat-starters";
 import { useStore } from "@/lib/use-store";
 import { saleStatusLabels } from "@/lib/status-labels";
 import { NativeAdvancedFrame } from "@/components/mobile/advanced-frame";
@@ -325,9 +326,10 @@ function PartnerScreenInner() {
     await openUrlSafe(`https://wa.me/?text=${text}`);
   }
 
-  function messageSeller(listingId: string, sellerId: string, title: string) {
-    const seller = findUser(sellerId);
-    const conversation = startConversation(listingId, sellerId, `${title} ortak satış süreci hakkında konuşmak istiyorum.${seller ? ` Satıcı: ${seller.name}.` : ""}`);
+  // (Üçüncü parametre — ilan başlığı — çağıranların imzası için duruyor; artık mesaja yazılmıyor.)
+  function messageSeller(listingId: string, sellerId: string, _title?: string) {
+    // Otomatik mesaj gönderilmez: sohbet boş açılır, mesajı kullanıcı yazar (bkz. lib/chat-starters.ts).
+    const conversation = startConversation(listingId, sellerId, "");
     if (conversation) router.push({ pathname: "/chat/[id]", params: { id: conversation.id } });
   }
 
@@ -335,8 +337,12 @@ function PartnerScreenInner() {
   // satışı satıcıya bildirip komisyonun başlatılmasını ister (karşılıklı anlaşma → güven döngüsü).
   function claimSale(listingId: string, sellerId: string, title: string) {
     const seller = findUser(sellerId);
-    const conversation = startConversation(listingId, sellerId, `Merhaba${seller ? ` ${seller.name}` : ""}, "${title}" ürününe bir müşteri getirdim ve satış gerçekleşti. Satışı sisteme ekleyip komisyonumu başlatır mısın? Alıcı ve tutar bilgisini paylaşabilirim.`);
-    if (conversation) router.push({ pathname: "/chat/[id]", params: { id: conversation.id } });
+    // Satış bildirimi metni GÖNDERİLMEZ; sohbetin yazı kutusuna taslak olarak konur, ortak okuyup düzenleyerek gönderir.
+    const conversation = startConversation(listingId, sellerId, "");
+    if (conversation) {
+      setChatDraft(conversation.id, `Merhaba${seller ? ` ${seller.name}` : ""}, "${title}" ürününe bir müşteri getirdim ve satış gerçekleşti. Satışı sisteme ekleyip komisyonumu başlatır mısın? Alıcı ve tutar bilgisini paylaşabilirim.`);
+      router.push({ pathname: "/chat/[id]", params: { id: conversation.id } });
+    }
   }
 
   // Ortaklık kartı aksiyonları (hem mobil hem masaüstü aynı kartı kullanır).

@@ -13,6 +13,7 @@ import { MaterialCommunityIcons } from "@/components/icons";
 import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { chatStarters, takeChatDraft } from "@/lib/chat-starters";
 import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, Text, TextInput, View, type ScrollViewInstance } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -66,6 +67,10 @@ function ChatScreenInner() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { currentUser, accountLoaded, findConversation, findListing, findUser, markConversationRead, messages, partnerships, refreshUserData, reportUser, sendConversationMessage, retryMessage, isUserBlocked, blockUser, unblockUser, isSuspended } = useStore();
   const [body, setBody] = useState("");
+  // YAZI KUTUSU BÜYÜMESİ (web): tarayıcıda çok satırlı kutu kendiliğinden uzamaz; iki satırdan uzun mesajda yalnız
+  // son satır görünüyordu. İçerik yüksekliği ölçülür (44–120 px); kutu boşalınca (gönderim sonrası) tek satıra döner.
+  const [composerHeight, setComposerHeight] = useState(44);
+  useEffect(() => { if (!body) setComposerHeight(44); }, [body]);
   const [attaching, setAttaching] = useState(false);
   const [showReplies, setShowReplies] = useState(false);
   const [showOptions, setShowOptions] = useState(false);
@@ -120,6 +125,11 @@ function ChatScreenInner() {
   const sendBlockReason = useSendBlockReason({ meId: currentUser.id, conversationId, sellerId: conversation?.sellerId, failedCount, suspended: isSuspended });
   // Ortaklık sohbeti partnerships durumundan türetilir (conversations.partner_id açılışta donuyor, doğrulanmıyor).
   const partnerChat = conversation ? isPartnershipConversation(conversation, partnerships, listing?.ownerId) : false;
+  // Bu sohbet için bekleyen taslak varsa (ör. "satışı bildir") yazı kutusuna konur — GÖNDERİLMEZ.
+  useEffect(() => {
+    const pending = takeChatDraft(conversation?.id);
+    if (pending) setBody((current) => current || pending);
+  }, [conversation?.id]);
   const conversationMessages = useMemo(() => {
     // messages dizisi yeni→eski (başa eklenir); aynı zaman damgasında yüksek index
     // = daha eski, bu yüzden önce gelir (eskiden yeniye doğru thread).
@@ -353,6 +363,20 @@ function ChatScreenInner() {
         </View>
       ) : null}
 
+      {/* BAŞLANGIÇ ÖNERİLERİ: sohbet boşken görünür. Dokunmak yalnız yazı kutusunu doldurur; mesajı kullanıcı gönderir. */}
+      {!blockedHere && !blockedByOther && currentConversation.status === "open" && conversationMessages.length === 0 && !body.trim() ? (
+        <View testID="chat-starters" style={{ backgroundColor: colors.surface, borderTopColor: colors.line, borderTopWidth: 1, gap: 6, paddingTop: 9 }}>
+          <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "700", paddingHorizontal: 12 }}>{translateCopy("Mesajını yaz ya da bir öneriye dokun; kutuya yazılır, göndermek sana kalır.", language)}</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={{ gap: 6, paddingHorizontal: 10, paddingBottom: 2 }}>
+            {chatStarters(partnerChat ? "partner" : listing && listing.ownerId === currentUser.id ? "seller" : "buyer").map((starter) => (
+              <Pressable key={starter} accessibilityRole="button" accessibilityLabel={`${translateCopy("Kutuya yaz", language)}: ${translateCopy(starter, language)}`} onPress={() => setBody(translateCopy(starter, language))} style={{ backgroundColor: colors.primarySoft, borderColor: colors.primary, borderRadius: 999, borderWidth: 1, justifyContent: "center", minHeight: 36, paddingHorizontal: 13 }}>
+                <Text style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "800" }}>{translateCopy(starter, language)}</Text>
+              </Pressable>
+            ))}
+          </ScrollView>
+        </View>
+      ) : null}
+
       {/* Hızlı yanıt önerileri — kutu boşken ve odak yokken. Odaklanınca gizlenir ki
           yazmaya başlayınca ekran "zıplamasın" (kayma tek seferde klavye açılışına biner). */}
       {!blockedHere && !blockedByOther && currentConversation.status === "open" && showReplies ? (
@@ -401,6 +425,7 @@ function ChatScreenInner() {
           onFocus={() => { setTimeout(() => scrollRef.current?.scrollToEnd({ animated: false }), 120); }}
           placeholder={translateCopy("Mesaj yaz…", language)}
           placeholderTextColor={colors.muted}
+          onContentSizeChange={(e) => { if (Platform.OS === "web") setComposerHeight(Math.max(44, Math.min(120, Math.ceil(e.nativeEvent.contentSize.height) + 2))); }}
           onKeyPress={(e) => {
             // IME bileşimi sürerken Enter adayı onaylar (göndermez); Shift+Enter ve dokunmatik
             // klavyede Enter yeni satırdır (telefonda gönderim düğmeyle).
@@ -408,7 +433,7 @@ function ChatScreenInner() {
             (e as unknown as { preventDefault?: () => void }).preventDefault?.();
             send();
           }}
-          style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 12, borderWidth: 1, color: colors.ink, flex: 1, fontSize: Platform.OS === "web" ? 16 : 14, maxHeight: 120, minHeight: 44, minWidth: 0, paddingHorizontal: 16, paddingVertical: 11 }}
+          style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 12, borderWidth: 1, color: colors.ink, flex: 1, fontSize: Platform.OS === "web" ? 16 : 14, maxHeight: 120, minHeight: 44, minWidth: 0, paddingHorizontal: 16, paddingVertical: 11, ...(Platform.OS === "web" ? { height: composerHeight } : null) }}
         />
         <Pressable accessibilityRole="button" accessibilityLabel={translateCopy("Gönder", language)} disabled={!body.trim()} onPress={send} style={({ pressed }) => ({ alignItems: "center", backgroundColor: body.trim() ? colors.primary : colors.line, borderRadius: 999, height: 44, justifyContent: "center", opacity: pressed ? 0.75 : 1, width: 44 })}>
           <MaterialCommunityIcons name="send" size={20} color="#FFFFFF" />

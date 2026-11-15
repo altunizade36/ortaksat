@@ -185,7 +185,8 @@ function SellerScreenInner() {
     [offers, currentUser.id]
   );
   function messageBuyer(listingId: string, buyerId: string) {
-    const c = startConversation(listingId, buyerId, "Teklifin hakkında konuşalım.");
+    // Otomatik mesaj gönderilmez: sohbet boş açılır, mesajı kullanıcı yazar (bkz. lib/chat-starters.ts).
+    const c = startConversation(listingId, buyerId, "");
     if (c) router.push({ pathname: "/chat/[id]", params: { id: c.id } });
   }
   // Son 14 gün gelen talep serisi (gerçek createdAt; istemci tarafında hesaplanır).

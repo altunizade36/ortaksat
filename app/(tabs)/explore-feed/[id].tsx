@@ -127,7 +127,8 @@ export default function ExploreFeedScreen() {
       router.push(`/listing/${listing.id}`);
       return;
     }
-    const conversation = startConversation(listing.id, owner.id, `${displayListingTitle(listing.title)} ${translateCopy("için bilgi almak istiyorum.", language)}`);
+    // Otomatik mesaj gönderilmez: sohbet boş açılır, mesajı kullanıcı yazar (bkz. lib/chat-starters.ts).
+    const conversation = startConversation(listing.id, owner.id, "", listing);
     if (conversation) router.push(`/chat/${conversation.id}`);
   }
 

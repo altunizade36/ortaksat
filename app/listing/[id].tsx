@@ -517,8 +517,9 @@ export default function ListingDetailScreen() {
         }
         showToast("Telefonla iletişim açılamadı. Uygulama içi mesajla devam ediliyor.");
       }
-      const fallbackMessage = `${currentTitle} ilanı için bilgi almak istiyorum. Fiyat, stok ve teslimat detayları güncel mi?`;
-      const conversation = startConversation(currentListing.id, currentListing.ownerId, message.trim() || fallbackMessage, currentListing);
+      // Kullanıcı ilan sayfasındaki kutuya bir şey yazdıysa O gönderilir; yazmadıysa sohbet BOŞ açılır.
+      // (Eskiden boş kutuyla basınca kullanıcı adına hazır bir cümle gönderiliyordu — bkz. lib/chat-starters.ts.)
+      const conversation = startConversation(currentListing.id, currentListing.ownerId, message.trim(), currentListing);
       if (conversation) { attributeReferralLead("web"); setMessage(""); router.push({ pathname: "/chat/[id]", params: { id: conversation.id } }); }
       else Alert.alert(translateCopy("Mesaj başlatılamadı", language), translateCopy("Şu an mesaj gönderilemedi. Lütfen tekrar dene.", language));
     } catch { showToast("İletişim bilgisi alınamadı. Tekrar dene; yazdığın mesaj korunuyor."); }
