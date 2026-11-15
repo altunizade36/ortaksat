@@ -19,7 +19,8 @@ export function PresenceHeartbeat() {
       if (cancelled || !supabase) return;
       try {
         const { data } = await supabase.auth.getSession();
-        if (data.session) await supabase.rpc("heartbeat");
+        // Ortam (web / ios / android) yalnız yönetim panelindeki "şu an içeride" listesinde gösterilir.
+        if (data.session) await supabase.rpc("heartbeat", { p_platform: Platform.OS });
       } catch {
         // sessizce yut — presence kritik değil
       }

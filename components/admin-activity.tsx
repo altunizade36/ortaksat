@@ -451,8 +451,8 @@ export function AdminActivity({ onData, onOverview, onMsgStats, onNavigate, ts }
 
       {/* KPI — kullanıcı & içerik */}
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
-        <KpiTile label="Şu an aktif" value={fmt(data.live_now)} live icon="access-point" sub="son 5 dakika" />
-        <KpiTile label="Bugün aktif" value={fmt(data.active_today)} icon="account-clock-outline" sub={yesterday ? `dün ${fmt(yesterday.active)}` : undefined} />
+        <KpiTile label="Şu an aktif" value={fmt(data.live_now)} live icon="access-point" sub="son 5 dakika · kim olduğunu gör" onPress={go("users")} />
+        <KpiTile label="Bugün aktif" value={fmt(data.active_today)} icon="account-clock-outline" sub={yesterday ? `dün ${fmt(yesterday.active)}` : undefined} onPress={go("users")} />
         <KpiTile label="Toplam kullanıcı" value={fmt(data.total_users)} icon="account-group" delta={cmp((d) => d.signups)} deltaLabel={`yeni kayıt · ${WEEK}`} sub={`+${fmt(data.new_7d)} son 7 gün · bugün +${fmt(data.new_today)}`} onPress={go("users")} />
         <KpiTile label="Aktif ilan" value={fmt(data.listings_active)} icon="storefront-outline" sub={`${fmt(data.listings_total)} toplam`} onPress={go("listings")} />
         <KpiTile label="Yeni ilan (7 gün)" value={fmt(data.listings_new_7d)} icon="file-plus-outline" delta={cmp((d) => d.listings)} deltaLabel={WEEK} sub={`bugün +${fmt(today?.listings ?? 0)}`} onPress={go("listings")} />

@@ -8,6 +8,7 @@ import { Alert } from "@/lib/alert";
 
 import { AdminActivity, RootCategoryCard, ServerTrendCard, TopSellersCard, useAdminTimeseries, type AdminAnalytics, type AdminMsgStats, type AdminTsState } from "@/components/admin-activity";
 import { ADMIN_CARD, ADMIN_INPUT, ActionButton, AdminWideCtx, NoData, Pager, usePager } from "@/components/admin-kit";
+import { MemberJoinedCell, MemberOverviewPanel, MemberSeenCell, isMemberOnline, memberDateTime, memberRelative, platformLabel, providerLabel, useMemberOverview } from "@/components/admin-members";
 import { AuthRequired } from "@/components/auth-gate";
 import { DonutChart, HBarChart, ResponsiveLineArea, money as fmtMoney } from "@/components/charts";
 import { colors } from "@/components/colors";
@@ -181,7 +182,9 @@ function AdminScreenInner() {
   const [notifyTarget, setNotifyTarget] = useState<{ id: string; name: string } | null>(null);
   const [notifyText, setNotifyText] = useState("");
   const [listingFilter, setListingFilter] = useState<"all" | "pending" | "active" | "rejected" | "paused" | "featured" | "risky">("all");
-  const [userFilter, setUserFilter] = useState<"all" | "active" | "suspended" | "seller" | "staff">("all");
+  const [userFilter, setUserFilter] = useState<"all" | "online" | "today" | "week" | "active" | "suspended" | "seller" | "staff">("all");
+  // Varsayılan: en yeni üye en üstte (istek: "en sondan ilke üyelik sıralaması").
+  const [userSort, setUserSort] = useState<"newest" | "oldest" | "seen" | "name">("newest");
   const [msgFilter, setMsgFilter] = useState<"all" | "risky">("all");
   const [commFilter, setCommFilter] = useState<"all" | "pending" | "approved" | "seller_paid" | "paid" | "cancelled" | "disputed">("all");
   const [detailUserId, setDetailUserId] = useState<string | null>(null);
@@ -226,16 +229,6 @@ function AdminScreenInner() {
   const uq = userQuery.trim().toLocaleLowerCase("tr-TR");
   const lq = listingQuery.trim().toLocaleLowerCase("tr-TR");
 
-  const liveUsers = users.filter((u) => u.status !== "deleted");
-  const deletedUserCount = users.length - liveUsers.length;
-  const userFiltered = liveUsers.filter((u) => {
-    if (userFilter === "active") return u.status !== "suspended";
-    if (userFilter === "suspended") return u.status === "suspended";
-    if (userFilter === "seller") return (u.listingCount ?? 0) > 0;
-    if (userFilter === "staff") return u.role === "admin" || u.role === "moderator" || u.role === "super_admin";
-    return true;
-  });
-  const shownUsers = uq ? userFiltered.filter((u) => u.name.toLocaleLowerCase("tr-TR").includes(uq) || (u.role ?? "").includes(uq) || (u.status ?? "").includes(uq)) : userFiltered;
 
   const riskyListings = useMemo(() => listings.filter((l) => computeListingRisk(l, listings, findUser(l.ownerId)).level === "high"), [listings, findUser]);
   const listingFiltered = listingFilter === "all" ? listings : listingFilter === "risky" ? riskyListings : listingFilter === "featured" ? listings.filter((l) => l.featured) : listingFilter === "pending" ? listings.filter((l) => l.status === "pending_review") : listings.filter((l) => l.status === listingFilter);
@@ -282,6 +275,34 @@ function AdminScreenInner() {
     return setCategorySuggestionStatus(id, "approved");
   }
   const [section, setSection] = useState<Section>("dashboard");
+
+  // ÜYELER — sunucudan canlı üye özeti (üyelik tarihi, son görülme, giriş yöntemi, üye sırası). Yalnız Kullanıcılar
+  // bölümü açıkken çekilir ve 30 sn'de bir yenilenir. Kullanıcı satırları (rol/durum işlemleri) mağazadaki `users`
+  // dizisinden gelmeye devam eder; sunucu bilgisi kimlikle eşlenir.
+  const members = useMemberOverview(section === "users");
+  const memberNow = members.data ? Date.parse(members.data.now) : Date.now();
+  const joinedAt = (u: { id: string; createdAt?: string }) => members.byId.get(u.id)?.created_at ?? u.createdAt ?? null;
+  const liveUsers = users.filter((u) => u.status !== "deleted");
+  const deletedUserCount = users.length - liveUsers.length;
+  const sinceMs = (iso: string | null | undefined) => { const v = iso ? Date.parse(iso) : NaN; return Number.isFinite(v) ? memberNow - v : Infinity; };
+  const userFiltered = liveUsers.filter((u) => {
+    if (userFilter === "online") return isMemberOnline(members.byId.get(u.id)?.last_seen_at, memberNow);
+    if (userFilter === "today") return sinceMs(joinedAt(u)) <= 24 * 3600 * 1000;
+    if (userFilter === "week") return sinceMs(joinedAt(u)) <= 7 * 24 * 3600 * 1000;
+    if (userFilter === "active") return u.status !== "suspended";
+    if (userFilter === "suspended") return u.status === "suspended";
+    if (userFilter === "seller") return (u.listingCount ?? 0) > 0 || (members.byId.get(u.id)?.listing_count ?? 0) > 0;
+    if (userFilter === "staff") return u.role === "admin" || u.role === "moderator" || u.role === "super_admin";
+    return true;
+  });
+  const userSearched = uq ? userFiltered.filter((u) => u.name.toLocaleLowerCase("tr-TR").includes(uq) || (u.role ?? "").includes(uq) || (u.status ?? "").includes(uq) || (members.byId.get(u.id)?.email ?? "").toLowerCase().includes(uq)) : userFiltered;
+  const timeOf = (iso: string | null | undefined) => { const v = iso ? Date.parse(iso) : NaN; return Number.isFinite(v) ? v : 0; };
+  const shownUsers = [...userSearched].sort((a, b) => {
+    if (userSort === "name") return a.name.localeCompare(b.name, "tr");
+    if (userSort === "seen") return timeOf(members.byId.get(b.id)?.last_seen_at) - timeOf(members.byId.get(a.id)?.last_seen_at);
+    const diff = timeOf(joinedAt(b)) - timeOf(joinedAt(a));
+    return userSort === "oldest" ? -diff : diff;
+  });
   // Sunucu zaman serisi (admin_timeseries): yalnız yetkili oturumda ve seriyi gösteren bölümlerde yoklanır.
   const ts = useAdminTimeseries(
     (currentUser.role === "admin" || currentUser.role === "moderator" || currentUser.role === "super_admin") && (section === "dashboard" || section === "stats")
@@ -422,7 +443,7 @@ function AdminScreenInner() {
   }, [listings]);
 
   // ---- Kayıt listeleri: arama + filtre + sayfalama (hook'lar erken-return'den ÖNCE) ----
-  const usersPg = usePager(shownUsers, PAGE_SIZE, `${userFilter}|${uq}`);
+  const usersPg = usePager(shownUsers, PAGE_SIZE, `${userFilter}|${userSort}|${uq}`);
   const listingsPg = usePager(shownListings, PAGE_SIZE, `${listingFilter}|${lq}`);
   const rq = reportQuery.trim().toLocaleLowerCase("tr-TR");
   const shownReports = reports
@@ -600,6 +621,9 @@ function AdminScreenInner() {
         ) : null}
 
         {section === "users" ? (
+          <MemberOverviewPanel state={members} nameOf={(id) => findUser(id)?.name} onOpenUser={(id) => { setUserFilter("all"); setUserQuery(""); setDetailUserId(id); }} />
+        ) : null}
+        {section === "users" ? (
           <Panel title="Hesap silme talepleri" sub={accountDeletions === null ? "Yükleniyor…" : `${accountDeletions.filter((d) => d.status === "open").length} bekliyor · ${accountDeletions.length} kayıt — talep açılınca hesap askıya alınır, 30 gün sonunda kalıcı silinir.`}>
             {accountDeletions === null ? <EmptyState title="Yükleniyor…" body="Hesap silme talepleri çekiliyor." /> : accountDeletionsFailed ? (
               <View style={{ alignItems: "flex-start", gap: 8 }}>
@@ -638,10 +662,13 @@ function AdminScreenInner() {
         ) : null}
         {section === "users" ? (
           <Panel title="Kullanıcılar" sub={`${analytics ? `${fmtN(analytics.total_users)} toplam kayıtlı (sunucu) · ` : overview ? `${fmtN(overview.users_total)} toplam kayıtlı (sunucu) · ` : ""}${shownUsers.length} yüklü${deletedUserCount ? ` · ${deletedUserCount} silinmiş (gizli)` : ""}${canManageUsers ? " · rol, durum, doğrulama" : ""}`}>
-            <AdminSearch value={userQuery} onChange={setUserQuery} placeholder="İsim, rol veya durum ara…" />
+            <AdminSearch value={userQuery} onChange={setUserQuery} placeholder="İsim, e-posta, rol veya durum ara…" />
             <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 8, justifyContent: "space-between" }}>
               <FilterChips value={userFilter} onChange={setUserFilter} options={[
                 { key: "all", label: "Tümü", count: liveUsers.length },
+                { key: "online", label: "Çevrim içi", count: members.data ? members.data.online_now : undefined },
+                { key: "today", label: "Son 24 saatte katılan" },
+                { key: "week", label: "Son 7 günde katılan", count: members.data ? members.data.joined_7d : undefined },
                 { key: "active", label: "Aktif" },
                 { key: "suspended", label: "Askıda", count: liveUsers.filter((u) => u.status === "suspended").length },
                 { key: "seller", label: "Satıcı" },
@@ -650,10 +677,19 @@ function AdminScreenInner() {
               {canManageUsers ? (
                 <ExportButton
                   filename={`kullanicilar-${userFilter}.csv`}
-                  headers={["Ad", "Telefon", "Rol", "Durum", "Puan", "Başarılı Satış", "Doğrulanmış Tel", "Doğrulanmış Kimlik"]}
-                  rows={shownUsers.map((u) => [u.name, u.phone ?? "", u.role ?? "user", u.status ?? "active", u.rating, u.successfulSales, u.verifiedPhone ? "Evet" : "Hayır", u.verifiedIdentity ? "Evet" : "Hayır"])}
+                  headers={["Üye No", "Ad", "E-posta", "Telefon", "Üyelik Tarihi", "Son Görülme", "Giriş Yöntemi", "Ortam", "İlan", "Rol", "Durum", "Puan", "Başarılı Satış", "Doğrulanmış Tel", "Doğrulanmış Kimlik"]}
+                  rows={shownUsers.map((u) => { const mi = members.byId.get(u.id); return [mi?.no ?? "", u.name, mi?.email ?? "", u.phone ?? "", memberDateTime(joinedAt(u)), mi?.last_seen_at ? memberDateTime(mi.last_seen_at) : "", providerLabel(mi?.provider), mi?.platform ? platformLabel(mi.platform) : "", mi?.listing_count ?? u.listingCount ?? 0, u.role ?? "user", u.status ?? "active", u.rating, u.successfulSales, u.verifiedPhone ? "Evet" : "Hayır", u.verifiedIdentity ? "Evet" : "Hayır"]; })}
                 />
               ) : null}
+            </View>
+            <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+              <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "800" }}>SIRALA</Text>
+              <FilterChips value={userSort} onChange={setUserSort} options={[
+                { key: "newest", label: "En yeni üye" },
+                { key: "oldest", label: "En eski üye" },
+                { key: "seen", label: "Son görülen" },
+                { key: "name", label: "Ada göre" }
+              ]} />
             </View>
             {detailUserId ? (() => {
               const du = users.find((x) => x.id === detailUserId);
@@ -671,6 +707,34 @@ function AdminScreenInner() {
                       <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600" }}>{du.phone || "telefon yok"} · {du.role ?? "user"} · {du.status ?? "active"} · ⭐ {du.rating}</Text>
                     </View>
                     <Pressable accessibilityRole="button" accessibilityLabel="Kapat" onPress={() => setDetailUserId(null)} style={{ alignItems: "center", height: 40, justifyContent: "center", width: 40 }}><MaterialCommunityIcons name="close-circle" size={22} color={colors.muted} /></Pressable>
+                  </View>
+                  {(() => {
+                    const mi = members.byId.get(du.id);
+                    const rows: Array<[string, string]> = [
+                      ["Üye no", mi ? `#${mi.no}` : "—"],
+                      ["E-posta", mi?.email || "—"],
+                      ["Üyelik", joinedAt(du) ? `${memberDateTime(joinedAt(du))} · ${memberRelative(joinedAt(du), memberNow)}` : "—"],
+                      ["Son görülme", mi?.last_seen_at ? (isMemberOnline(mi.last_seen_at, memberNow) ? "Şu an çevrim içi" : `${memberDateTime(mi.last_seen_at)} · ${memberRelative(mi.last_seen_at, memberNow)}`) : "hiç giriş yapmadı"],
+                      ["Son oturum açma", mi?.last_sign_in_at ? memberDateTime(mi.last_sign_in_at) : "—"],
+                      ["Giriş yöntemi", providerLabel(mi?.provider)],
+                      ["Son ortam", mi?.platform ? platformLabel(mi.platform) : "henüz kaydedilmedi"]
+                    ];
+                    return (
+                      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+                        {rows.map(([label, value]) => (
+                          <View key={label} style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 10, borderWidth: 1, flexBasis: 210, flexGrow: 1, gap: 2, minWidth: 0, paddingHorizontal: 10, paddingVertical: 7 }}>
+                            <Text style={{ color: colors.muted, fontSize: 10.5, fontWeight: "900", textTransform: "uppercase" }}>{label}</Text>
+                            <Text selectable numberOfLines={2} style={{ color: colors.ink, fontSize: 12.5, fontWeight: "700" }}>{value}</Text>
+                          </View>
+                        ))}
+                      </View>
+                    );
+                  })()}
+                  <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
+                    <PressLink href={{ pathname: "/store/[id]", params: { id: du.id } }} accessibilityLabel={`${du.name} mağazasını aç`} style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.primary, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 6, minHeight: 34, paddingHorizontal: 12 }}>
+                      <MaterialCommunityIcons name="storefront-outline" size={15} color={colors.primaryDark} />
+                      <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "900" }}>Mağazasını aç</Text>
+                    </PressLink>
                   </View>
                   <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
                     <MiniStat label="İlan" value={`${uListings.length}`} />
@@ -701,18 +765,20 @@ function AdminScreenInner() {
               );
             })() : null}
             {shownUsers.length === 0 ? <EmptyState icon="account-search-outline" title="Kullanıcı bulunamadı" body="Arama veya filtreye uyan kullanıcı yok." /> : null}
-            <Table head={["KULLANICI", "ROL", "DURUM", "DOĞRULAMA", "İŞLEM"]} cols={[1.8, 1.5, 1, 1.1, 2]}>
+            <Table head={["KULLANICI", "ÜYELİK", "SON GÖRÜLME", "ROL", "DURUM", "DOĞRULAMA", "İŞLEM"]} cols={USER_COLS}>
               {usersPg.slice.map((u) => {
                 const suspended = u.status === "suspended";
                 const isSelf = u.id === currentUser.id;
                 const roles: UserRole[] = ["user", "moderator", "admin"];
                 const roleName = (r: UserRole) => (r === "user" ? "Üye" : r === "moderator" ? "Moderatör" : "Admin");
                 return (
-                  <Row key={u.id} cols={[1.8, 1.5, 1, 1, 1.8]} cells={[
+                  <Row key={u.id} cols={USER_COLS} cells={[
                     <Pressable accessibilityRole="button" accessibilityLabel={`${u.name} detayını aç`} onPress={() => setDetailUserId(detailUserId === u.id ? null : u.id)} style={{ gap: 1, justifyContent: "center", minHeight: isWideWeb ? 0 : 40 }}>
-                      <Text numberOfLines={1} style={{ color: colors.primary, fontSize: 13, fontWeight: "800" }}>{u.name}{isSelf ? " (sen)" : ""}</Text>
-                      <Text numberOfLines={1} style={{ color: colors.subtle, fontSize: 11, fontWeight: "600" }}>Detay için dokun · ⭐ {u.rating}</Text>
+                      <Text numberOfLines={1} style={{ color: colors.primary, fontSize: 13, fontWeight: "800" }}>{members.byId.get(u.id) ? `#${members.byId.get(u.id)?.no} · ` : ""}{u.name}{isSelf ? " (sen)" : ""}</Text>
+                      <Text numberOfLines={1} style={{ color: colors.subtle, fontSize: 11, fontWeight: "600" }}>{members.byId.get(u.id)?.email || "Detay için dokun"} · {providerLabel(members.byId.get(u.id)?.provider)}</Text>
                     </Pressable>,
+                    <MemberJoinedCell iso={joinedAt(u)} nowMs={memberNow} />,
+                    <MemberSeenCell info={members.byId.get(u.id)} nowMs={memberNow} />,
                     canManageUsers && !isSelf ? (
                       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 5 }}>
                         {roles.map((r) => {
@@ -1553,6 +1619,9 @@ function AdminScreenInner() {
 }
 
 // Şikayet henüz işlem bekliyor mu (açık/incelemede).
+// Kullanıcılar tablosu sütun oranları (başlık ve satırlar aynı diziyi kullanır).
+const USER_COLS = [1.9, 1.1, 1.1, 1.35, 0.7, 0.8, 2.6];
+
 function isOpenReport(r: { status: string }) {
   return r.status === "open" || r.status === "reviewing";
 }
