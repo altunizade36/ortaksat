@@ -26,6 +26,8 @@ try{
   let data;
   if(['listing_public_cards','search_listings'].includes(table)){if(u.searchParams.has('id')&&u.searchParams.get('id').startsWith('in.')){contextReads++;data=rows.filter(row=>u.searchParams.get('id').includes(row.id));}else data=u.searchParams.has('id')?rows:rows.slice(0,1);}
   if(table==='mobile_catalogue_page')return route.fulfill({headers,json:{listings:rows.slice(0,1),total:1}});
+  // Sohbetin "ortaklık" sayılması artık gerçek ortaklık satırından türetilir (conversations.partner_id değil).
+  if(table==='partnerships')data=[{id:'a0000000-0000-4000-8000-000000000004',listing_id:ids[3],partner_id:me,ref_code:'REF4',status:'active',note:'',created_at:new Date().toISOString(),approved_at:new Date().toISOString(),agreed_commission_type:'fixed',agreed_commission_value:100,agreed_at:new Date().toISOString()}];
   if(table==='conversations')data=convs.map(c=>({...c,status:closed?'closed':'open'}));
   if(table==='messages'){if(req.method()!=='GET')return route.fulfill({headers,json:null});data=msgs;}
   if(table==='offers'){

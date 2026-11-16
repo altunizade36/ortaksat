@@ -58,6 +58,7 @@ import { getRecent, pushRecent, subscribeRecent } from "@/lib/recent";
 import { calculateUserTrustScores } from "@/lib/trust-score";
 import type { LeadSource, Listing, User } from "@/lib/types";
 import { useStore } from "@/lib/use-store";
+import { PartnershipApplyDialog } from "@/components/partnership-apply-dialog";
 
 export default function ListingDetailScreen() {
   const params = useLocalSearchParams<{ id: string; ref?: string; p?: string; "ortak-davet"?: string; apply?: string }>();
@@ -129,6 +130,8 @@ export default function ListingDetailScreen() {
   const [message, setMessage] = useState("");
   // TEKLİF: alıcının bu ilandaki AKTİF teklifi (geri çekilmiş/eski olanlar sayılmaz).
   const [offerOpen, setOfferOpen] = useState(false);
+  const [applyOpen, setApplyOpen] = useState(false);
+  const [applyBusy, setApplyBusy] = useState(false);
   const [offerAmount, setOfferAmount] = useState("");
   const [offerNote, setOfferNote] = useState("");
   const [offerErr, setOfferErr] = useState<string | null>(null);
@@ -446,11 +449,23 @@ export default function ListingDetailScreen() {
     trackListingEvent(currentListing.id, "partner_click");
     // Anonim kullanıcı: alert'te tıkanmak yerine girişe yönlendir (dönüşte bu ilana gelir).
     if (!isAuthenticated) { trackListingEvent(currentListing.id, "auth_wall"); router.push({ pathname: "/auth", params: { redirect: listingReturnPath } }); return; }
-    // FORM YOK: ortak ol'a basınca doğrudan başvuru gider (davetli/açık → anında aktif,
-    // onaylı → pending). Satıcı, satıcı panelinden kabul/ret eder. Ekstra bilgi istenmez.
-    const result = await joinListing(currentListing.id, {
-      inviteCode: validInvite ? (inviteParam ?? "") : ""
-    });
+    // Açık ilan ya da geçerli davet → katılım anında başlar, form yok. Satıcı onaylı ilanda kısa bir pencere
+    // açılır: isteğe bağlı komisyon önerisi + satıcıya not (ikisi de boş bırakılabilir).
+    if (currentListing.partnershipMode === "approval" && !validInvite) { setApplyOpen(true); return; }
+    await submitJoin({});
+  }
+
+  async function submitJoin(extra: { proposedCommissionValue?: number; note?: string }) {
+    setApplyBusy(true);
+    let result: Awaited<ReturnType<typeof joinListing>>;
+    try {
+      result = await joinListing(currentListing.id, {
+        inviteCode: validInvite ? (inviteParam ?? "") : "",
+        ...(extra.note ? { note: extra.note } : {}),
+        ...(extra.proposedCommissionValue ? { proposedCommissionValue: extra.proposedCommissionValue } : {})
+      });
+    } finally { setApplyBusy(false); }
+    setApplyOpen(false);
     if (!result) {
       haptic.warning();
       Alert.alert(translateCopy("İşlem yapılamadı", language), translateCopy(authError ?? "Kendi ilanına ortak olamazsın veya ilan aktif olmayabilir.", language));
@@ -838,7 +853,7 @@ export default function ListingDetailScreen() {
   ) : validInvite ? (
     <DetailNotice icon="ticket-confirmation-outline" tone="info" title={translateCopy("Satıcı seni davet etti — anında ortak olabilirsin.", language)} />
   ) : partnerable && currentListing.partnershipMode !== "open" && canJoinNow ? (
-    <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "500", lineHeight: 17 }}>{translateCopy("Başvurunu gönder; satıcı kabul ederse anında ortak olursun. Ekstra bilgi doldurmana gerek yok.", language)}</Text>
+    <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "500", lineHeight: 17 }}>{translateCopy("Başvurunu gönder; istersen komisyon önerebilirsin. Satıcı kabul ederse anında ortak olursun.", language)}</Text>
   ) : null;
 
   // ---- AKSİYONLAR: tek birincil CTA. Dar ekranda birincil düğmeler sabit alt çubuktadır. ----
@@ -1284,6 +1299,8 @@ export default function ListingDetailScreen() {
         </Pressable>
         </KeyboardAvoidingView>
       </Modal>
+
+      <PartnershipApplyDialog listing={currentListing} visible={applyOpen} busy={applyBusy} onClose={() => setApplyOpen(false)} onSubmit={(input) => void submitJoin(input)} />
 
       <Modal visible={reportOpen} transparent animationType="fade" onRequestClose={() => setReportOpen(false)}>
         {/* KAV + ScrollView: açıklama alanına odaklanınca klavye "Bildir" butonunu örtüyordu
