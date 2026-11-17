@@ -918,7 +918,7 @@ function ExploreScreenLegacy() {
             ilk kartı ekranın çok altına itiyordu. Artık tek satır: başlık + güven rozetleri. */}
         <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 14, flexDirection: "row", flexWrap: "wrap", gap: 16, paddingHorizontal: 18, paddingVertical: 12 }}>
           <View style={{ flex: 1, gap: 2, minWidth: 260 }}>
-            <Text style={{ color: colors.ink, fontSize: 19, fontWeight: "900" }}>{translateCopy("Komisyonlu ilanları keşfet, ortak ol, kazan", language)}</Text>
+            <Text accessibilityRole="header" {...({ role: "heading", "aria-level": 1 } as Record<string, unknown>)} style={{ color: colors.ink, fontSize: 19, fontWeight: "900" }}>{translateCopy("Komisyonlu ilanları keşfet, ortak ol, kazan", language)}</Text>
             <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "600" }}>{translateCopy("Kategorilere göz at, filtreleyin ve komisyonlu ilanlarla kolayca ortak olun.", language)}</Text>
           </View>
           <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 14 }}>
