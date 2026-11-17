@@ -69,7 +69,7 @@ export default function SosyalMedyaLandingPage() {
             <MaterialCommunityIcons name="cash-multiple" size={15} color="#FFFFFF" />
             <Text style={{ color: "#FFFFFF", fontSize: 12, fontWeight: "900" }}>{translateCopy("Sıfır sermaye · stok yok · para yatırma yok", language)}</Text>
           </View>
-          <Text style={{ color: "#FFFFFF", fontSize: isWideWeb ? 34 : 26, fontWeight: "900", lineHeight: isWideWeb ? 40 : 31 }}>{translateCopy("Sosyal medya hesabınla para kazan", language)}</Text>
+          <Text accessibilityRole="header" {...({ role: "heading", "aria-level": 1 } as Record<string, unknown>)} style={{ color: "#FFFFFF", fontSize: isWideWeb ? 34 : 26, fontWeight: "900", lineHeight: isWideWeb ? 40 : 31 }}>{translateCopy("Sosyal medya hesabınla para kazan", language)}</Text>
           <Text style={{ color: "rgba(255,255,255,0.9)", fontSize: 15, fontWeight: "600", lineHeight: 23, maxWidth: 640 }}>
             {translateCopy("Komisyonlu ürün seç, ortak ol; ürünü kendi yönteminle tanıt, sattığında komisyonunu al. Depo, kargo, para yatırma yok — bugün başla.", language)}
           </Text>

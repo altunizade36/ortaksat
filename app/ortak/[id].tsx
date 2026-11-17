@@ -123,7 +123,7 @@ function Inner() {
             </View>
             <View style={{ flex: 1, gap: 4, minWidth: 0 }}>
               <View style={{ alignItems: "center", flexDirection: "row", gap: 6 }}>
-                <Text numberOfLines={1} style={{ color: colors.ink, flexShrink: 1, fontSize: 20, fontWeight: "900" }}>{name}</Text>
+                <Text numberOfLines={1} accessibilityRole="header" {...({ role: "heading", "aria-level": 1 } as Record<string, unknown>)} style={{ color: colors.ink, flexShrink: 1, fontSize: 20, fontWeight: "900" }}>{name}</Text>
                 {verified ? <MaterialCommunityIcons name="check-decagram" size={18} color={colors.primary} /> : null}
               </View>
               <View style={{ alignItems: "center", flexDirection: "row", gap: 6 }}>

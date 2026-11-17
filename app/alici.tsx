@@ -67,7 +67,7 @@ export default function BuyerLandingPage() {
             <MaterialCommunityIcons name="shopping-outline" size={15} color="#FFFFFF" />
             <Text style={{ color: "#FFFFFF", fontSize: 12, fontWeight: "900" }}>{translateCopy("Alıcılar için", language)}</Text>
           </View>
-          <Text style={{ color: "#FFFFFF", fontSize: isWideWeb ? 34 : 26, fontWeight: "900", lineHeight: isWideWeb ? 40 : 31 }}>{translateCopy("Güvenle keşfet, doğrudan satıcıyla anlaş", language)}</Text>
+          <Text accessibilityRole="header" {...({ role: "heading", "aria-level": 1 } as Record<string, unknown>)} style={{ color: "#FFFFFF", fontSize: isWideWeb ? 34 : 26, fontWeight: "900", lineHeight: isWideWeb ? 40 : 31 }}>{translateCopy("Güvenle keşfet, doğrudan satıcıyla anlaş", language)}</Text>
           <Text style={{ color: "rgba(255,255,255,0.9)", fontSize: 15, fontWeight: "600", lineHeight: 23, maxWidth: 640 }}>
             {translateCopy("İlanları keşfet, doğrulanmış satıcılarla iletişime geç, ürünü görerek al. OrtakSat aracıdır; ödeme ve teslimatı satıcıyla kendi aranızda yaparsınız — komisyonu satıcı öder, sana ek ücret çıkmaz.", language)}
           </Text>

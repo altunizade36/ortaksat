@@ -64,7 +64,7 @@ function Inner() {
         <View style={{ gap: 6, marginBottom: 12 }}>
           <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
             <MaterialCommunityIcons name="bullhorn-variant" size={22} color={colors.primary} />
-            <Text style={{ color: colors.ink, fontSize: isWideWeb ? 24 : 20, fontWeight: "900" }}>{t("Ortak Aranıyor")}</Text>
+            <Text accessibilityRole="header" {...({ role: "heading", "aria-level": 1 } as Record<string, unknown>)} style={{ color: colors.ink, fontSize: isWideWeb ? 24 : 20, fontWeight: "900" }}>{t("Ortak Aranıyor")}</Text>
           </View>
           <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "600", lineHeight: 19 }}>
             {t("İlan oluşturmadan ortak çağrısı aç: hangi işe, hangi kategoride ortak arıyorsun yaz — deneyimli ortaklar başvursun. Ortaksan açık talepleri gör ve başvur.")}

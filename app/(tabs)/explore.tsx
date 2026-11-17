@@ -651,7 +651,8 @@ function ExploreScreenLegacy() {
   const openCount = activeListings.filter((listing) => listing.partnershipMode === "open").length;
   // Ortalama komisyon oranı (%) — ortağın "bu kategoride kazanç var mı" sinyali.
   const avgRate = useMemo(() => {
-    const rates = activeListings.map(commissionRatePct).filter((r) => r > 0);
+    // 90 üstü oran geçersiz giriştir (sunucu artık reddediyor; eski birkaç kayıt ortalamayı %50+'ya çekiyordu).
+    const rates = activeListings.map(commissionRatePct).filter((r) => r > 0 && r <= 90);
     return rates.length ? Math.round(rates.reduce((s, r) => s + r, 0) / rates.length) : 0;
   }, [activeListings]);
   // Sunucu toplamı gerçek toplamdır; yalnız sunucu üst sınırı aşılınca "100.000+" gösterilir.
@@ -1336,7 +1337,7 @@ function ExploreScreenLegacy() {
       <View style={{ gap: 7, paddingBottom: 8, paddingHorizontal: isWideWeb ? 0 : padding, paddingTop: isWideWeb ? 0 : 6 }}>
         <View style={{ alignItems: "center", flexDirection: "row", gap: 10 }}>
           <View style={{ flex: 1, minWidth: 0 }}>
-            <Text selectable numberOfLines={1} style={{ color: colors.ink, fontSize: isWideWeb ? 24 : 20, fontWeight: "900" }}>
+            <Text selectable numberOfLines={1} accessibilityRole="header" {...({ role: "heading", "aria-level": 1 } as Record<string, unknown>)} style={{ color: colors.ink, fontSize: isWideWeb ? 24 : 20, fontWeight: "900" }}>
               {queryText ? (language === "en" ? `Results for “${queryText}”` : `“${queryText}” için sonuçlar`) : t("explore")}
             </Text>
             {/* Alt metin mobilde 320px'de 4 satıra yayılıp başlığı şişiriyordu → 2 satır sınırı

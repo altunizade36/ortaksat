@@ -1124,7 +1124,7 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
         <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "800" }}>{translateCopy("Geri", language)}</Text>
       </Pressable>
       <View style={{ gap: 4 }}>
-        <Text style={{ color: colors.ink, fontSize: isWideWeb ? 24 : 21, fontWeight: "900" }}>{translateCopy("Yeni ilan oluştur", language)}</Text>
+        <Text accessibilityRole="header" {...({ role: "heading", "aria-level": 1 } as Record<string, unknown>)} style={{ color: colors.ink, fontSize: isWideWeb ? 24 : 21, fontWeight: "900" }}>{translateCopy("Yeni ilan oluştur", language)}</Text>
         {isWideWeb ? <Text style={{ color: colors.muted, fontSize: 13.5, fontWeight: "600" }}>{translateCopy("Fotoğraf ekle, detayları gir, yayınla.", language)}</Text> : null}
       </View>
 

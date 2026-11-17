@@ -131,7 +131,7 @@ function Inner() {
         <View style={{ gap: 6, marginBottom: 14 }}>
           <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
             <MaterialCommunityIcons name="account-star" size={22} color={colors.primary} />
-            <Text style={{ color: colors.ink, fontSize: isWideWeb ? 24 : 20, fontWeight: "900" }}>{t("Uzman Ortaklar")}</Text>
+            <Text accessibilityRole="header" {...({ role: "heading", "aria-level": 1 } as Record<string, unknown>)} style={{ color: colors.ink, fontSize: isWideWeb ? 24 : 20, fontWeight: "900" }}>{t("Uzman Ortaklar")}</Text>
           </View>
           <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "600", lineHeight: 19 }}>
             {t("Ürününü hangi kategoride satacak deneyimli bir ortak mı arıyorsun? Uzmanlığına ve satış performansına göre ortak bul, favorine ekle.")}

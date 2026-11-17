@@ -4,6 +4,7 @@ import { isMobileApp } from "@/lib/mobile-app";
 import { MobileDrawerProvider } from "@/components/mobile/drawer";
 import Head from "expo-router/head";
 import { Stack } from "expo-router/stack";
+import { usePathname } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import * as WebBrowser from "expo-web-browser";
@@ -31,7 +32,8 @@ import { GlobalSeo } from "@/components/global-seo";
 import { RouteErrorBoundary } from "@/components/error-boundary";
 import { StoreProvider } from "@/data/app-store";
 import { useMounted } from "@/lib/layout";
-import { LanguageProvider, useLanguage } from "@/lib/i18n";
+import { LanguageProvider, translateCopy, useLanguage } from "@/lib/i18n";
+import { routeTitle } from "@/lib/route-titles";
 import { useStore } from "@/lib/use-store";
 import { MobileAccessProvider } from "@/lib/mobile-access";
 
@@ -82,8 +84,12 @@ function IntroSplashHost({ appShown, onMountApp }: { appShown: boolean; onMountA
 }
 
 function RootStack({ onShown }: { onShown?: () => void }) {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const { marketplaceInitialLoading } = useStore();
+  // Kendi Head'i olmayan / giriş kapısında kalan sayfalar sekmede genel başlıkla kalmasın.
+  const pathname = usePathname();
+  const pageTitle = routeTitle(pathname);
+  const defaultTitle = pageTitle ? `${translateCopy(pageTitle, language)} | OrtakSat` : "OrtakSat — Ortak satış ve ilan platformu";
   // Uygulamanın ilk ekranı çizildi → açılış katmanı kapanabilir (bkz. RootLayout sıralaması).
   useEffect(() => { onShown?.(); }, [onShown]);
 
@@ -119,7 +125,7 @@ function RootStack({ onShown }: { onShown?: () => void }) {
       {/* Varsayılan <title>/description — sayfaların kendi Head'i (varsa) bunu ezer.
           Böylece hiçbir sayfa BOŞ başlıkla kalmaz (statik export SEO). */}
       <Head>
-        <title>OrtakSat — Ortak satış ve ilan platformu</title>
+        <title>{defaultTitle}</title>
         <meta name="description" content="OrtakSat: ürünlerini ortak sat, komisyon kazan. Emlak, vasıta, elektronik ve daha fazlası. Aracı platform — ödeme ve teslimat taraflar arasında gerçekleşir." />
       </Head>
       <GlobalSeo />

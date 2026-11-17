@@ -93,7 +93,7 @@ export default function EarningsCalculatorPage() {
             <MaterialCommunityIcons name="cash-multiple" size={15} color={colors.primaryDark} />
             <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "900" }}>{translateCopy("Sıfır sermaye · stok yok · para yatırma yok", language)}</Text>
           </View>
-          <Text style={{ color: colors.ink, fontSize: isWideWeb ? 30 : 25, fontWeight: "900", lineHeight: isWideWeb ? 36 : 30 }}>{translateCopy("Sosyal medyadan ayda ne kadar kazanabilirsin?", language)}</Text>
+          <Text accessibilityRole="header" {...({ role: "heading", "aria-level": 1 } as Record<string, unknown>)} style={{ color: colors.ink, fontSize: isWideWeb ? 30 : 25, fontWeight: "900", lineHeight: isWideWeb ? 36 : 30 }}>{translateCopy("Sosyal medyadan ayda ne kadar kazanabilirsin?", language)}</Text>
           <Text style={{ color: colors.muted, fontSize: 14.5, fontWeight: "600", lineHeight: 22, maxWidth: 640 }}>
             {translateCopy("OrtakSat'ta komisyonlu ürün seçip ortak olursun; ürünü kendi yönteminle tanıtır, sattığında komisyonunu alırsın. Aşağıdan tahmini kazancını hesapla.", language)}
           </Text>

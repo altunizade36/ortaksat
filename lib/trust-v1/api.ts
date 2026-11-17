@@ -26,12 +26,23 @@ export function trustError(error: unknown): string {
   return "İşlem tamamlanamadı. Bağlantını kontrol edip tekrar dene; form bilgilerin korunuyor.";
 }
 function client() { if (!supabase) throw new Error("Sunucu bağlantısı gerekli."); return supabase; }
-export async function trustCapabilities(): Promise<TrustCapabilities> {
-  const { data, error } = await client().rpc("trust_v1_capabilities");
-  if (error?.code === "PGRST202") return disabled; // Migration has deliberately not been installed in production.
-  if (error) throw error;
-  if (!data || typeof data.enabled !== "boolean" || data.paymentsEnabled !== false) throw new Error("Invalid trust capabilities");
-  return data;
+// Güven Sistemi v1 göçü canlıya bilerek kurulmadı. Sunucuda fonksiyon yokken her sayfa açılışı
+// 404 + konsol hatası üretiyordu → istek YALNIZ EXPO_PUBLIC_TRUST_V1=1 ile derlenen sürümde atılır
+// (göç kurulup açılacağı gün bu değişken eklenir; önizleme/deneme betikleri de bununla derlenmeli).
+// Sonuç oturum boyunca bir kez alınır; geçici hatada önbellek tutulmaz ki sonraki deneme yapılabilsin.
+let capsPromise: Promise<TrustCapabilities> | null = null;
+export function trustCapabilities(): Promise<TrustCapabilities> {
+  if (process.env.EXPO_PUBLIC_TRUST_V1 !== "1") return Promise.resolve(disabled);
+  if (capsPromise) return capsPromise;
+  capsPromise = (async () => {
+    const { data, error } = await client().rpc("trust_v1_capabilities");
+    if (error?.code === "PGRST202" || (error as { status?: number } | null)?.status === 404) return disabled; // Migration has deliberately not been installed in production.
+    if (error) throw error;
+    if (!data || typeof data.enabled !== "boolean" || data.paymentsEnabled !== false) throw new Error("Invalid trust capabilities");
+    return data as TrustCapabilities;
+  })();
+  capsPromise.catch(() => { capsPromise = null; });
+  return capsPromise;
 }
 export async function trustDashboard(transactionId?: string, cursor?: { at: string; id: string } | null): Promise<TrustDashboard> {
   const { data, error } = await client().rpc("trust_v1_dashboard", { p_transaction_id: transactionId || null, p_cursor_at: cursor?.at || null, p_cursor_id: cursor?.id || null });

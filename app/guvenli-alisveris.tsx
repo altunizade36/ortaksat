@@ -76,7 +76,7 @@ export default function SafeShoppingGuidePage() {
             <MaterialCommunityIcons name="shield-check" size={15} color={colors.primaryDark} />
             <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "900" }}>{translateCopy("Güven Merkezi", language)}</Text>
           </View>
-          <Text style={{ color: colors.ink, fontSize: isWideWeb ? 30 : 25, fontWeight: "900", lineHeight: isWideWeb ? 36 : 30 }}>{translateCopy("Güvenli Alışveriş Rehberi", language)}</Text>
+          <Text accessibilityRole="header" {...({ role: "heading", "aria-level": 1 } as Record<string, unknown>)} style={{ color: colors.ink, fontSize: isWideWeb ? 30 : 25, fontWeight: "900", lineHeight: isWideWeb ? 36 : 30 }}>{translateCopy("Güvenli Alışveriş Rehberi", language)}</Text>
           <Text style={{ color: colors.muted, fontSize: 14.5, fontWeight: "600", lineHeight: 22, maxWidth: 680 }}>
             {translateCopy("Birkaç basit adımla alım-satımını güvende tut. Dolandırıcılığın çoğu, ürünü görmeden ödeme yapmaktan ve platform dışına çıkmaktan kaynaklanır.", language)}
           </Text>

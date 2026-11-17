@@ -1,5 +1,6 @@
 import { MaterialCommunityIcons } from "@/components/icons";
 import { Link, Stack } from "expo-router";
+import Head from "expo-router/head";
 import { Pressable, ScrollView, Text, View } from "react-native";
 
 import { colors } from "@/components/colors";
@@ -10,6 +11,10 @@ export default function NotFoundScreen() {
   return (
     <>
       <Stack.Screen options={{ title: translateCopy("Sayfa bulunamadı", language) }} />
+      <Head>
+        <title>{`${translateCopy("Sayfa bulunamadı", language)} | OrtakSat`}</title>
+        <meta name="robots" content="noindex, follow" />
+      </Head>
       <ScrollView
         contentContainerStyle={{ alignItems: "center", backgroundColor: colors.background, flexGrow: 1, justifyContent: "center", padding: 24 }}
         style={{ backgroundColor: colors.background }}
@@ -18,7 +23,7 @@ export default function NotFoundScreen() {
           <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 999, height: 64, justifyContent: "center", width: 64 }}>
             <MaterialCommunityIcons name="compass-off-outline" size={32} color={colors.primaryDark} />
           </View>
-          <Text style={{ color: colors.ink, fontSize: 22, fontWeight: "900", textAlign: "center" }}>{translateCopy("404 — Sayfa bulunamadı", language)}</Text>
+          <Text accessibilityRole="header" {...({ role: "heading", "aria-level": 1 } as Record<string, unknown>)} style={{ color: colors.ink, fontSize: 22, fontWeight: "900", textAlign: "center" }}>{translateCopy("404 — Sayfa bulunamadı", language)}</Text>
           <Text style={{ color: colors.muted, fontSize: 13.5, fontWeight: "600", lineHeight: 20, textAlign: "center" }}>
             {translateCopy("Aradığın sayfa taşınmış veya hiç var olmamış olabilir. Aşağıdan keşfetmeye devam edebilirsin.", language)}
           </Text>
