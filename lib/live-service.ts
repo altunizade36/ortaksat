@@ -467,6 +467,25 @@ export async function fetchListingStatuses(ids: string[]): Promise<Record<string
   return out;
 }
 
+export type ListingQuota = { used: number; limit: number | null; remaining: number | null };
+
+/** Kullanıcının açık ilan hakkı (sunucu: my_listing_quota). limit null = sınırsız (yönetici). */
+export async function fetchMyListingQuota(): Promise<ListingQuota | null> {
+  if (!supabase) return null;
+  const { data, error } = await supabase.rpc("my_listing_quota");
+  if (error || !data || typeof data !== "object") return null;
+  const row = data as { used?: number; limit?: number | null; remaining?: number | null };
+  return { used: Number(row.used) || 0, limit: row.limit ?? null, remaining: row.remaining ?? null };
+}
+
+/** Yönetici: hesaba açık ilan hakkı tanır (max null → sınır kalkar). */
+export async function adminSetListingLimit(userId: string, max: number | null, note?: string): Promise<boolean> {
+  if (!supabase) return false;
+  const { error } = await supabase.rpc("admin_set_listing_limit", { p_user: userId, p_max: max, p_note: note ?? null });
+  if (error) console.warn("admin_set_listing_limit failed", error);
+  return !error;
+}
+
 /** insertListing + sunucunun ret nedeni (hız sınırı, yasaklı içerik, mükerrer harici kod...). */
 export async function insertListingResult(listing: Listing): Promise<{ ok: boolean; code?: string; message?: string }> {
   const titleCheck = validateListingTitle(listing.title);

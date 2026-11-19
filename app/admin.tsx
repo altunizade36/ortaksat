@@ -23,7 +23,7 @@ import { getDistrict, getProvince } from "@/lib/locations";
 import { computeListingRisk } from "@/lib/risk";
 import { fetchAdminAudit, type AuditEntry, type DbBlogPost, type DbContentPage, type DbSeoSetting, type ExtraCategory } from "@/lib/supabase-data";
 import { purgeDeletedAccountFiles } from "@/lib/account-purge";
-import { adminBroadcastLive, adminResolveAccountDeletionLive, fetchAdminAccountDeletionsLive, type AdminAccountDeletion, adminClosePartnerRequest, adminDeleteQuestion, adminModerateReview, adminSetPartnershipStatus, fetchAdminMessageStats, fetchAdminMessages, fetchAdminOverview, fetchAdminPartnerships, fetchAdminSiteRecords, type AdminMessageRow, type AdminOverview, type AdminPartnershipRow, type AdminSiteRecords } from "@/lib/live-service";
+import { adminBroadcastLive, adminResolveAccountDeletionLive, fetchAdminAccountDeletionsLive, type AdminAccountDeletion, adminClosePartnerRequest, adminDeleteQuestion, adminModerateReview, adminSetPartnershipStatus, fetchAdminMessageStats, fetchAdminMessages, fetchAdminOverview, fetchAdminPartnerships, fetchAdminSiteRecords, type AdminMessageRow, type AdminOverview, type AdminPartnershipRow, type AdminSiteRecords, adminSetListingLimit } from "@/lib/live-service";
 import { showToast } from "@/lib/toast";
 import type { SaleStatus, SuggestionStatus, UserRole } from "@/lib/types";
 import { useStore } from "@/lib/use-store";
@@ -243,6 +243,17 @@ function AdminScreenInner() {
   // DÜZELTİLDİ (hata): native dalda hiç GİRDİ ALINMADAN sabit "Yönetimden bilgilendirme."
   // gönderiliyordu — admin kendi yazdığını sanıyor, kullanıcıya genel metin gidiyordu.
   // Artık her iki platformda da gerçek bir metin kutusu (modal) açılır.
+  // İlan sınırı varsayılan YOK; yönetici yalnız aynı ilanı tekrar tekrar veren hesaba sınır koyar (N açık ilan + kategori başına 1).
+  function promptListingLimit(userId: string, name: string) {
+    if (typeof window === "undefined" || typeof window.prompt !== "function") return;
+    const raw = window.prompt(`${name} için açık ilan sınırı (boş bırak = sınırsız):`, "");
+    if (raw === null) return;
+    const trimmed = raw.trim();
+    const max = trimmed === "" ? null : Math.floor(Number(trimmed));
+    if (max !== null && (!Number.isFinite(max) || max < 0 || max > 100000)) { window.alert("0 ile 100000 arasında bir sayı gir."); return; }
+    void run(`lq:${userId}`, () => adminSetListingLimit(userId, max, "Yönetim paneli"), max === null ? "İlan sınırı kaldırıldı" : `İlan sınırı ${max} yapıldı (kategori başına 1)`, "İlan sınırı kaydedilemedi. Tekrar dene.");
+  }
+
   function promptNotify(userId: string, name: string) {
     setNotifyTarget({ id: userId, name });
     setNotifyText("");
@@ -827,6 +838,7 @@ function AdminScreenInner() {
                       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, justifyContent: isWideWeb ? "flex-end" : "flex-start" }}>
                         <ActionButton tone={suspended ? "success" : "warning"} icon={suspended ? "account-check-outline" : "account-cancel-outline"} label={suspended ? "Aktifleştir" : "Askıya al"} busy={busy[`ust:${u.id}`]} onPress={() => confirmAction(`${u.name} ${suspended ? "yeniden aktifleştirilsin" : "askıya alınsın"} mı?${suspended ? "" : " Kullanıcı işlem yapamaz."}`, () => void run(`ust:${u.id}`, () => setUserStatus(u.id, suspended ? "active" : "suspended"), suspended ? "Kullanıcı aktifleştirildi" : "Kullanıcı askıya alındı"), suspended ? "Aktifleştir" : "Askıya al")} />
                         <ActionButton tone="soft" icon="bell-plus-outline" label="Bildirim" onPress={() => promptNotify(u.id, u.name)} />
+                        <ActionButton tone="soft" icon="playlist-plus" label="İlan sınırı" busy={busy[`lq:${u.id}`]} onPress={() => promptListingLimit(u.id, u.name)} />
                         <ActionButton tone="danger" icon="trash-can-outline" label="Sil" busy={busy[`ust:${u.id}`]} onPress={() => confirmAction(`${u.name} hesabı silinsin mi? Kullanıcı erişimi kapatılır.`, () => void run(`ust:${u.id}`, () => setUserStatus(u.id, "deleted"), "Hesap silindi"), "Hesabı sil")} />
                       </View>
                     ) : <Text style={{ color: colors.subtle, fontSize: 11, fontWeight: "600" }}>—</Text>

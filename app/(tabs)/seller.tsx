@@ -1,4 +1,5 @@
 import { ListingStrengthCard } from "@/components/listing-strength";
+import { ListingQuotaBar, useListingQuota } from "@/components/listing-limit";
 import { HorizontalScroll } from "@/components/horizontal-scroll";
 import { listingCategoryTrail } from "@/lib/mobile-catalog";
 import { CompactFooter } from "@/components/compact-footer";
@@ -110,6 +111,7 @@ function SellerScreenInner() {
     offers,
     sellerRespondOffer
   } = useStore();
+  const { quota: listingQuota } = useListingQuota();
   const { refreshing, onRefresh } = useNativeRefresh(() => Promise.all([refreshMarketplace(), refreshUserData()]));
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<SellerFilter>("all");
@@ -405,6 +407,8 @@ function SellerScreenInner() {
             </PrimaryButton>
           </View>
         </View>
+        {/* İlan sınırı (yalnız sınır tanımlı hesaplarda görünür). */}
+        <ListingQuotaBar quota={listingQuota} />
         {/* Mağaza sırası: ilanların mağazada görüneceği sıra (uygulamadaki İlanlarım › Mağaza Sırası ile aynı sayfa). */}
         <Pressable onPress={() => router.push("/magaza-sirasi")} accessibilityRole="button" style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 8, opacity: pressed ? 0.8 : 1, paddingHorizontal: 14, paddingVertical: 11 })}>
           <MaterialCommunityIcons name="swap-vertical" size={17} color={colors.primaryDark} />

@@ -1,4 +1,5 @@
 import { MaterialCommunityIcons } from "@/components/icons";
+import { ListingQuotaBar, useListingQuota } from "@/components/listing-limit";
 import * as Clipboard from "expo-clipboard";
 import * as ImagePicker from "expo-image-picker";
 import Head from "expo-router/head";
@@ -242,6 +243,7 @@ function BulkUploadInner() {
   const { language } = useLanguage();
   const router = useRouter();
   const { createListing, currentUser, categoryTree } = useStore();
+  const { quota: listingQuota } = useListingQuota();
   const [csv, setCsv] = useState("");
   const [rows, setRows] = useState<ParsedRow[] | null>(null);
   const [commissionAll, setCommissionAll] = useState(""); // toplu komisyon override (%)
@@ -827,6 +829,11 @@ function BulkUploadInner() {
           <Text style={{ color: colors.muted, fontSize: 14, fontWeight: "600" }}>{translateCopy("Yüzlerce ürünü tek tek girmek yerine CSV dosyasıyla ya da e-ticaret sitenin ürün XML'iyle yükle. Kategori ve il otomatik eşlenir, komisyonu toplu belirlersin. İlanlar hemen yayınlanır; yalnız otomatik taramaya takılanlar incelemeye alınır.", language)}</Text>
         </View>
 
+        {/* Ücretsiz ilan hakkı: sınırı aşan satırlar sunucuda reddedilir; firmalar /kurumsal'dan ek hak ister. */}
+        <ListingQuotaBar quota={listingQuota} />
+        {listingQuota && listingQuota.limit != null ? (
+          <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600", lineHeight: 18 }}>{translateCopy("Toplu yüklemede de ücretsiz ilan hakkı geçerlidir. Daha fazla ürün yükleyecek firmalar Kurumsal sayfasından ek ilan hakkı isteyebilir.", language)}</Text>
+        ) : null}
         {/* KAYITLI XML BAĞLANTILARI — otomatik eşitleme (fiyat/stok, içerik, yeni ürünler). */}
         <FeedManager ownerId={currentUser.id} categoryTree={categoryTree} onChanged={() => void loadSkus()} />
 

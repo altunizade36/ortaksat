@@ -8,6 +8,7 @@ import { ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, View } f
 import { AuthRequired } from "@/components/auth-gate";
 import { colors } from "@/components/colors";
 import { DesktopCreateFlow } from "@/components/desktop-create-flow";
+import { ListingLimitGate, useListingQuota } from "@/components/listing-limit";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { useIsWideWeb } from "@/lib/layout";
 import { useStore } from "@/lib/use-store";
@@ -28,6 +29,8 @@ export default function CreateListingScreen() {
   // yolunda create sayfasını çökertebiliyordu). Mount'a kadar nötr iskelet göster.
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
+  // İlan sınırı (yalnız sınır tanımlı hesaplar, sunucuda zorlanır): dolduysa formu açmadan söyle.
+  const { quota } = useListingQuota();
   if (!mounted) {
     return (
       <View style={{ alignItems: "center", backgroundColor: colors.background, flex: 1, justifyContent: "center", minHeight: 320, paddingVertical: 60 }}>
@@ -43,6 +46,7 @@ export default function CreateListingScreen() {
   if (isAuthenticated && platformSettings.requireEmailVerification && !emailVerified) {
     return <AuthRequired title={translateCopy("E-posta doğrulaması gerekli", language)} body={translateCopy("İlan verebilmek için e-posta adresini doğrulaman gerekiyor. Kayıt sırasında gönderilen doğrulama bağlantısına tıkla, ardından tekrar giriş yap.", language)} icon="email-alert-outline" />;
   }
+  if (isAuthenticated && quota && quota.limit != null && quota.used >= quota.limit) return <ListingLimitGate quota={quota} />;
   if (isMobileApp) return <DesktopCreateFlow initialIntent={initialIntent} />;
   return (
     <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={{ flex: 1 }}>

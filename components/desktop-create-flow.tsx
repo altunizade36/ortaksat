@@ -975,7 +975,10 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
       // görünmediğini anlamıyordu (sessiz kayıp).
       console.warn("İlan yayınlanamadı", e);
       setError(
-        (e as Error)?.message?.includes("Network")
+        // Sunucu kuralı reddi (ilan sınırı, aynı ilan tekrar, hız sınırı, yasaklı içerik): nedeni aynen göster.
+        (e as { code?: string })?.code === "P0001" && (e as Error).message
+          ? translateCopy((e as Error).message, language)
+          : (e as Error)?.message?.includes("Network")
           ? translateCopy("Bağlantı koptu. İlanın taslakta duruyor — internetin gelince tekrar dene.", language)
           : translateCopy("İlan yayınlanamadı. Taslağın korundu, tekrar deneyebilirsin.", language)
       );

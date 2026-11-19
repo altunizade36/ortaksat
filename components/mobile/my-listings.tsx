@@ -1,4 +1,5 @@
 import { ListingStrengthCard } from "@/components/listing-strength";
+import { ListingQuotaBar, useListingQuota } from "@/components/listing-limit";
 import { HorizontalScroll } from "@/components/horizontal-scroll";
 import { displayListingTitle } from "@/lib/listing-title";
 import { useCallback, useState } from "react";
@@ -38,6 +39,7 @@ export function MobileMyListings() {
   const [limit,setLimit] = useState(20), [busy,setBusy] = useState<string | null>(null);
   const [draft,setDraft] = useState<Awaited<ReturnType<typeof localDraftSummary>>>(null);
   const [draftError,setDraftError] = useState(false);
+  const { quota: listingQuota } = useListingQuota();
   const readDraft = useCallback(() => { let alive = true; localDraftSummary(store.currentUser.id).then(d => {if(alive){setDraft(d);setDraftError(false);}}).catch(()=>{if(alive)setDraftError(true);}); return () => {alive=false;}; },[store.currentUser.id]);
   useFocusEffect(readDraft);
   useForegroundRefresh(store.refreshUserData);
@@ -59,6 +61,7 @@ export function MobileMyListings() {
 
   return <MobileScreen title="İlanlarım" right={<View style={ms.row}><IconButton name="magnify" label="İlanlarımda ara" onPress={()=>setSearch(v=>!v)}/><MobileChip label="İlan Ver" icon="plus" selected onPress={()=>router.push("/create")}/></View>}>
     {search&&<MobileField placeholder="İlanlarında ara" value={query} onChange={v=>{setQuery(v);setLimit(20);}}/>}
+    <View style={{marginTop:8}}><ListingQuotaBar quota={listingQuota}/></View>
     <View style={[ms.row,{marginTop:8}]}>
       <MobileButton secondary icon="storefront-outline" style={{flex:1}} onPress={()=>router.push(`/store/${store.currentUser.id}` as never)}>Mağazamı Gör</MobileButton>
       <MobileButton secondary icon="swap-vertical" style={{flex:1}} disabled={activeMine.length<2} onPress={()=>router.push("/magaza-sirasi" as never)}>Mağaza Sırası</MobileButton>
