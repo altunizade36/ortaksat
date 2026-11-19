@@ -12,6 +12,7 @@ import { MobileCreateFlow } from "@/components/mobile/create-flow";
 import { MobileScreen, MobileButton, MobileCard } from "@/components/mobile/ui";
 import { showToast } from "@/lib/toast";
 import { MaterialCommunityIcons } from "@/components/icons";
+import { useListingQuota } from "@/components/listing-limit";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Clipboard from "expo-clipboard";
 import * as ImagePicker from "expo-image-picker";
@@ -234,6 +235,11 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
   const formKey = categoryComplete ? resolveFormKey(path) : "";
   const schema = formKey ? getFormSchema(formKey) : undefined;
   const leafLabel = categoryComplete && selectedCategory ? selectedCategory.label : "";
+  // İlan sınırı tanımlı hesap (aynı ilanı tekrar tekrar verenler): bu kategoride zaten açık ilanı varsa
+  // formu doldurtmadan söyle. Sunucu da aynı kuralı zorlar (trg_listing_open_limit).
+  const { quota: listingQuota } = useListingQuota();
+  const listingCategory = leafLabel || path[0]?.label || "";
+  const categoryBlocked = !!(categoryComplete && listingCategory && listingQuota?.perCategory != null && listingQuota.fullCategories.includes(listingCategory));
   // Yolun HERHANGİ bir düğümü "Diğer" ise → kategori listemizde eksik demektir.
   // (Eskiden yalnız path[0]==="Diğer" bakılıyordu; artık "Diğer" her dalda olduğu için
   //  "Emlak › Konut › Diğer" gibi seçimler de havuza düşmeliydi ama düşmüyordu.)
@@ -719,6 +725,7 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
 
   async function publish(asDraft = false) {
     if (publishOperation.current) return;
+    if (categoryBlocked) { setError(translateCopy("Bu kategoride zaten ilanınız var. Aynı kategoride yeni ilan veremezsiniz; mevcut ilanınızı düzenleyebilirsiniz.", language)); return; }
     // Fotoğraf seçici kilidi yayını SESSİZCE yutmasın. Web'de dosya seçici açıkken sayfaya tıklanamaz; buraya
     // gelindiyse seçici kapanmıştır ve kilit bayattır ("cancel" olayı göndermeyen tarayıcı) → bırak, devam et.
     // Native'de seçim gerçekten sürüyor olabilir → nedenini söyle.
@@ -1294,13 +1301,22 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
                 if (nextCategory && !nextCategory.children?.length) setStep(1);
               }}
             />
+            {categoryBlocked ? (
+              <View accessibilityRole="alert" style={{ alignItems: "flex-start", backgroundColor: colors.primarySoft, borderColor: colors.primary, borderRadius: 12, borderWidth: 1, flexDirection: "row", gap: 10, padding: 12 }}>
+                <MaterialCommunityIcons name="alert-circle-outline" size={20} color={colors.primaryDark} />
+                <View style={{ flex: 1, gap: 4, minWidth: 0 }}>
+                  <Text style={{ color: colors.ink, fontSize: 13.5, fontWeight: "900" }}>{translateCopy("Bu kategoride zaten ilanınız var", language)}</Text>
+                  <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600", lineHeight: 18 }}>{translateCopy("Aynı kategoride yeni ilan veremezsiniz; mevcut ilanınızı düzenleyebilirsiniz. Başka bir kategori seçerek devam edebilirsiniz.", language)}</Text>
+                </View>
+              </View>
+            ) : null}
             {path.length && !categoryComplete ? (
               <Text style={{ color: colors.goldInk, fontSize: 12.5, fontWeight: "700", lineHeight: 18 }}>{translateCopy("İlan detaylarına geçmek için bir alt kategori daha seç.", language)}</Text>
             ) : null}
           </View>
 
         {/* Kart: İlan detayları (dinamik şema formu) */}
-        {schema ? (() => {
+        {schema && !categoryBlocked ? (() => {
           // Sahibinden tarzı gruplama: alanları rolüne göre bölümlere ayır (şema
           // değişmeden). Başlık → Özellikler → Donanım (multiselect) → Fiyat → Açıklama.
           const titleFieldRaw = schema.fields.find((f) => f.key === "title");

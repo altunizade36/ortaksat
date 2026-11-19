@@ -467,15 +467,21 @@ export async function fetchListingStatuses(ids: string[]): Promise<Record<string
   return out;
 }
 
-export type ListingQuota = { used: number; limit: number | null; remaining: number | null };
+export type ListingQuota = { used: number; limit: number | null; remaining: number | null; perCategory: number | null; fullCategories: string[] };
 
 /** Kullanıcının açık ilan hakkı (sunucu: my_listing_quota). limit null = sınırsız (yönetici). */
 export async function fetchMyListingQuota(): Promise<ListingQuota | null> {
   if (!supabase) return null;
   const { data, error } = await supabase.rpc("my_listing_quota");
   if (error || !data || typeof data !== "object") return null;
-  const row = data as { used?: number; limit?: number | null; remaining?: number | null };
-  return { used: Number(row.used) || 0, limit: row.limit ?? null, remaining: row.remaining ?? null };
+  const row = data as { used?: number; limit?: number | null; remaining?: number | null; per_category?: number | null; full_categories?: unknown };
+  return {
+    used: Number(row.used) || 0,
+    limit: row.limit ?? null,
+    remaining: row.remaining ?? null,
+    perCategory: row.per_category ?? null,
+    fullCategories: Array.isArray(row.full_categories) ? row.full_categories.filter((c): c is string => typeof c === "string") : [],
+  };
 }
 
 /** Yönetici: hesaba açık ilan hakkı tanır (max null → sınır kalkar). */
