@@ -44,11 +44,18 @@ const KNOWN_SMALL = new Set([
   "Togg", "Lucid", "Fisker", "Jaecoo", "Skywell", "Omoda",  // otomobil: gerçek lineup 2-5 model
   "Yuki", "Motolux", "Falcon", "Bimota"          // moto: niş marka, bilinen modelleri bu kadar
 ]);
+// YALNIZ MARKA olarak bırakılan markalar (2026-11-20): seri/model adı güvenilir biçimde bilinmiyor; uydurmak yasak.
+// Bunlar "eksik" değil, marka düzeyinde tamdır (ilan verirken model serbest metin).
+const BRAND_ONLY = new Set([
+  "Axen", "Sunny", "Onvo", "Telefunken", "Hi-Level", "Nordmende", "Dijitsu", "Awox", "JVC", "Sharp", "Botech", // TV
+  "Hometech", "Omix",                                                                                          // bilgisayar / telefon
+  "Kanuni", "Sherco", "Jawa", "Ural", "Mash"                                                                   // motosiklet
+]);
 const coverage = {};
 for (const [name, brands, models, minModels] of brandModelChecks) {
   if (!Array.isArray(brands) || !models) { add("HATA", "veri", `${name}: marka/model verisi yüklenemedi`); continue; }
   const real = brands.filter((b) => b && b !== "Diğer");
-  const noModel = real.filter((b) => !models[b] || models[b].length === 0);
+  const noModel = real.filter((b) => (!models[b] || models[b].length === 0) && !BRAND_ONLY.has(b));
   const thin = real.filter((b) => models[b] && models[b].length > 0 && models[b].length < minModels && !KNOWN_SMALL.has(b));
   coverage[name] = { total: real.length, withModels: real.length - noModel.length, noModel, thin };
   if (noModel.length) add("EKSİK", `${name} model`, `${noModel.length}/${real.length} markanın MODELİ YOK: ${noModel.join(", ")}`);
