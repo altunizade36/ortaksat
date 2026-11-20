@@ -16622,7 +16622,8 @@
    ],
    "add": [
     "Kaya Kamyonu (Dumper)",
-    "Mini Damper"
+    "Mini Damper",
+    "Yatay Yönlü Sondaj (HDD)"
    ]
   },
   {
@@ -19116,7 +19117,12 @@
     "Gould İspinozu",
     "Konur Papağanı",
     "Kakariki",
-    "Rozella Papağanı"
+    "Rozella Papağanı",
+    "Ara Papağanı",
+    "Eklektus Papağanı",
+    "Senegal Papağanı",
+    "Lori Papağanı",
+    "Diamond Güvercini"
    ]
   },
   {
@@ -19512,7 +19518,10 @@
     "Bıldırcın"
    ],
    "add": [
-    "Japon Bıldırcını"
+    "Japon Bıldırcını",
+    "Teksas Bıldırcını",
+    "Firavun Bıldırcını",
+    "Çin Bıldırcını (Boyalı)"
    ]
   },
   {
@@ -19552,7 +19561,9 @@
     "Teleskop (Black Moor)",
     "Shubunkin",
     "Comet",
-    "Aslan Başlı (Lionhead)"
+    "Aslan Başlı (Lionhead)",
+    "Pearlscale (İnci Pul)",
+    "Bubble Eye (Kabarcık Göz)"
    ]
   },
   {
@@ -19609,7 +19620,12 @@
     "Neon Tetra",
     "Kardinal Tetra",
     "Kırmızı Burun Tetra",
-    "Siyah Tetra"
+    "Siyah Tetra",
+    "Ember Tetra",
+    "Penguen Tetra",
+    "Kongo Tetra",
+    "Limon Tetra",
+    "Glowlight Tetra"
    ]
   },
   {
@@ -28181,6 +28197,2639 @@
     "Bayram Sepeti",
     "Yılbaşı Sepeti",
     "Kişisel Bakım Sepeti"
+   ]
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "İş Makineleri",
+    "Yatay Yönlü Sondaj (HDD)"
+   ],
+   "brands": {
+    "Vermeer": [],
+    "Ditch Witch": [],
+    "XCMG": [],
+    "Herrenknecht": []
+   }
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "İş Makineleri",
+    "Yol Süpürme Aracı"
+   ],
+   "brands": {
+    "Johnston": [],
+    "Dulevo": [],
+    "Bucher": [],
+    "Ravo": [],
+    "Aebi Schmidt": [],
+    "Hako": []
+   }
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "İş Makineleri",
+    "Vidanjör"
+   ],
+   "add": [
+    "Kamyon Üstü Vidanjör",
+    "Römork Tipi Vidanjör",
+    "Kombine Kanal Temizleme Aracı"
+   ]
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "İş Makineleri",
+    "Kanal Açma Makinesi"
+   ],
+   "brands": {
+    "Ditch Witch": [],
+    "Vermeer": [],
+    "Tesmec": []
+   }
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "İş Makineleri",
+    "Mini Ekskavatör",
+    "Doosan"
+   ],
+   "add": [
+    "DX27z",
+    "DX35z"
+   ]
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "Tarım Makineleri",
+    "Römork (Tarım)"
+   ],
+   "add": [
+    "Tek Dingilli Römork",
+    "Çift Dingilli Römork",
+    "Damperli Römork",
+    "Hayvan Taşıma Römorku",
+    "Su Tankı Römorku",
+    "Balya Taşıma Römorku"
+   ]
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "Tarım Makineleri",
+    "Hasat Makinesi"
+   ],
+   "add": [
+    "Patates Hasat Makinesi",
+    "Pancar Hasat Makinesi",
+    "Pamuk Toplama Makinesi",
+    "Fındık Toplama Makinesi",
+    "Zeytin Silkeleme Makinesi",
+    "Ceviz Silkeleme Makinesi",
+    "Soğan Hasat Makinesi",
+    "Çay Hasat Makinesi"
+   ]
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "Tarım Makineleri",
+    "Su Pompası (Tarım)"
+   ],
+   "add": [
+    "Dalgıç Pompa",
+    "Motopomp",
+    "Kuyruk Milli Pompa",
+    "Santrifüj Pompa",
+    "Güneş Enerjili Sulama Pompası"
+   ]
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "Tarım Makineleri",
+    "Damla Sulama Sistemi"
+   ],
+   "add": [
+    "Damla Sulama Borusu (Lateral)",
+    "Damlatıcı",
+    "Sulama Filtresi",
+    "Gübre Tankı (Fertigasyon)",
+    "Sulama Otomasyonu & Vana"
+   ]
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "Tarım Makineleri",
+    "Sera Ekipmanı"
+   ],
+   "add": [
+    "Sera Naylonu",
+    "Sera Isıtıcı",
+    "Sera Konstrüksiyonu",
+    "Gölgelik File",
+    "Fide Viyolü",
+    "Hidroponik Sistem"
+   ]
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "Tarım Makineleri",
+    "Traktör Ataşmanı"
+   ],
+   "add": [
+    "Çayır Biçme Makinesi",
+    "Ot Tırmığı",
+    "Sap Parçalama Makinesi",
+    "Toprak Burgusu",
+    "Dal Öğütme Makinesi",
+    "Ön Yükleyici (Kepçe)",
+    "Kar Küreme Ataşmanı",
+    "Tesviye Küreği",
+    "Palet Çatalı"
+   ]
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "Tarım Makineleri",
+    "Saman & Yem Kırma Makinesi"
+   ],
+   "add": [
+    "Saman Kıyma Makinesi",
+    "Yem Kırma Makinesi",
+    "Arpa Ezme Makinesi",
+    "Pelet Yem Makinesi"
+   ]
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "Sanayi Makineleri"
+   ],
+   "add": [
+    "Boru Bükme Makinesi",
+    "Sac Silindir (Bükme) Makinesi",
+    "Endüstriyel Robot",
+    "Boya Kabini & Fırını",
+    "Kumlama Makinesi",
+    "Erozyon Makinesi (Tel & Dalma)"
+   ]
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "Sanayi Makineleri",
+    "Endüstriyel Robot"
+   ],
+   "brands": {
+    "Fanuc": [],
+    "ABB": [],
+    "KUKA": [],
+    "Yaskawa": [],
+    "Kawasaki": [],
+    "Universal Robots": []
+   }
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "Sanayi Makineleri",
+    "Erozyon Makinesi (Tel & Dalma)"
+   ],
+   "brands": {
+    "Sodick": [],
+    "GF Machining Solutions": [],
+    "Mitsubishi Electric": [],
+    "Fanuc": []
+   }
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "Sanayi Makineleri",
+    "Su Jeti"
+   ],
+   "brands": {
+    "Flow": [],
+    "OMAX": []
+   }
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "Sanayi Makineleri",
+    "Torna Tezgahı"
+   ],
+   "brands": {
+    "Knuth": [],
+    "Optimum": [],
+    "Weiler": [],
+    "TOS": []
+   }
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "Sanayi Makineleri",
+    "Freze Tezgahı"
+   ],
+   "brands": {
+    "Knuth": [],
+    "Optimum": [],
+    "Deckel": [],
+    "TOS": [],
+    "Bridgeport": []
+   }
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "Sanayi Makineleri",
+    "Matkap Tezgahı"
+   ],
+   "add": [
+    "Sütunlu Matkap",
+    "Radyal Matkap",
+    "Masa Tipi Matkap"
+   ]
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "Sanayi Makineleri",
+    "Taşlama Tezgahı"
+   ],
+   "add": [
+    "Yüzey Taşlama",
+    "Silindirik Taşlama",
+    "Puntasız Taşlama",
+    "Takım Bileme Tezgahı"
+   ]
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "Sanayi Makineleri",
+    "Testere Tezgahı"
+   ],
+   "add": [
+    "Şerit Testere",
+    "Daire Testere (Metal)",
+    "Kollu Testere"
+   ],
+   "brands": {
+    "Kesmak": [],
+    "Behringer": [],
+    "Kasto": []
+   }
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "Sanayi Makineleri",
+    "Hidrolik Pres"
+   ],
+   "add": [
+    "H Tipi Hidrolik Pres",
+    "C Tipi Hidrolik Pres",
+    "Derin Çekme Presi",
+    "Atölye Presi"
+   ]
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "Sanayi Makineleri",
+    "Eksantrik Pres"
+   ],
+   "brands": {
+    "Schuler": [],
+    "Bruderer": [],
+    "Aida": []
+   }
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "Sanayi Makineleri",
+    "Kaynak Makinesi (Argon)"
+   ],
+   "brands": {
+    "Magmaweld": [],
+    "Gedik Kaynak": [],
+    "Askaynak": [],
+    "Lincoln Electric": [],
+    "ESAB": [],
+    "Fronius": [],
+    "Kemppi": [],
+    "Miller": []
+   }
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "Sanayi Makineleri",
+    "Punta Kaynak"
+   ],
+   "add": [
+    "Sabit (Masa Tipi) Punta",
+    "Askı Tipi Punta (Pens)",
+    "Kapasitif Punta"
+   ]
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "Sanayi Makineleri",
+    "Ekstrüder"
+   ],
+   "add": [
+    "Boru Ekstrüzyon Hattı",
+    "Profil Ekstrüzyon Hattı",
+    "Film Şişirme Makinesi",
+    "Geri Dönüşüm Granül Hattı",
+    "Plastik Kırma Makinesi",
+    "Şişe Şişirme Makinesi"
+   ]
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "Sanayi Makineleri",
+    "Paketleme Makinesi"
+   ],
+   "add": [
+    "Dikey Paketleme Makinesi",
+    "Yatay (Flow Pack) Paketleme",
+    "Vakum Paketleme Makinesi",
+    "Shrink Tünel Makinesi",
+    "Koli Bantlama Makinesi",
+    "Blister Makinesi"
+   ]
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "Sanayi Makineleri",
+    "Dolum Makinesi"
+   ],
+   "add": [
+    "Sıvı Dolum Makinesi",
+    "Toz Dolum Makinesi",
+    "Krem & Macun Dolum Makinesi",
+    "Granül Dolum Makinesi",
+    "Kapak Kapatma Makinesi",
+    "Su Dolum Hattı"
+   ]
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "Sanayi Makineleri",
+    "Etiketleme Makinesi"
+   ],
+   "add": [
+    "Otomatik Etiketleme Makinesi",
+    "Yarı Otomatik Etiketleme",
+    "Sleeve Etiket Makinesi",
+    "Tarih Kodlama (Inkjet) Makinesi"
+   ]
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "Sanayi Makineleri",
+    "Serigrafi Makinesi"
+   ],
+   "add": [
+    "Karusel Serigrafi Makinesi",
+    "Düz Serigrafi Makinesi",
+    "Tampon Baskı Makinesi",
+    "Transfer Pres Makinesi"
+   ]
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "Sanayi Makineleri",
+    "Gıda Üretim Makinesi"
+   ],
+   "add": [
+    "Hamur Yoğurma Makinesi",
+    "Hamur Açma Makinesi",
+    "Ekmek Fırını (Taş & Döner)",
+    "Simit Makinesi",
+    "Lavaş & Yufka Makinesi",
+    "Kıyma Makinesi (Sanayi)",
+    "Çikolata Makinesi",
+    "Dondurma Makinesi",
+    "Peynir Kazanı & Süt İşleme",
+    "Kuruyemiş Kavurma Makinesi",
+    "Zeytinyağı Sıkma Makinesi",
+    "Meyve Suyu & Salça Makinesi",
+    "Lokum & Şekerleme Makinesi",
+    "Köfte Makinesi"
+   ]
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "Sanayi Makineleri",
+    "Değirmen Makinesi"
+   ],
+   "add": [
+    "Un Değirmeni (Valsli)",
+    "Taş Değirmen",
+    "Baharat Değirmeni",
+    "Bulgur Makinesi",
+    "Endüstriyel Kahve Değirmeni"
+   ]
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "Sanayi Makineleri",
+    "Tekstil Makinesi"
+   ],
+   "add": [
+    "Yuvarlak Örgü Makinesi",
+    "Triko (Düz Örme) Makinesi",
+    "Dokuma Tezgahı",
+    "Kumaş Kesim Makinesi",
+    "Pastal Serim Makinesi",
+    "Ütü Masası & Buhar Kazanı",
+    "Boyahane Makinesi",
+    "Ram Makinesi",
+    "Çorap Makinesi",
+    "Kumaş Kontrol Makinesi",
+    "İplik Makinesi"
+   ]
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "Sanayi Makineleri",
+    "Tekstil Makinesi",
+    "Yuvarlak Örgü Makinesi"
+   ],
+   "brands": {
+    "Mayer & Cie": [],
+    "Terrot": [],
+    "Pailung": [],
+    "Fukuhara": []
+   }
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "Sanayi Makineleri",
+    "Tekstil Makinesi",
+    "Triko (Düz Örme) Makinesi"
+   ],
+   "brands": {
+    "Stoll": [],
+    "Shima Seiki": []
+   }
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "Sanayi Makineleri",
+    "Tekstil Makinesi",
+    "Dokuma Tezgahı"
+   ],
+   "brands": {
+    "Picanol": [],
+    "Dornier": [],
+    "Tsudakoma": [],
+    "Toyota": []
+   }
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "Sanayi Makineleri",
+    "Tekstil Makinesi",
+    "Kumaş Kesim Makinesi"
+   ],
+   "brands": {
+    "Eastman": [],
+    "Lectra": [],
+    "Gerber": []
+   }
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "Sanayi Makineleri",
+    "Tekstil Makinesi",
+    "Çorap Makinesi"
+   ],
+   "brands": {
+    "Lonati": [],
+    "Santoni": []
+   }
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "Sanayi Makineleri",
+    "Konveyör Sistemi"
+   ],
+   "add": [
+    "Bantlı Konveyör",
+    "Rulolu Konveyör",
+    "Zincirli Konveyör",
+    "Helezon (Vidalı) Konveyör",
+    "Kovalı Elevatör",
+    "Modüler Bant Konveyör"
+   ]
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "Sanayi Makineleri",
+    "Mermer & Taş İşleme Makinesi"
+   ],
+   "add": [
+    "Köprü Kesme Makinesi",
+    "Blok Kesme Makinesi",
+    "Silim & Cila Makinesi",
+    "Kenar İşleme (Pah) Makinesi",
+    "Mermer CNC"
+   ]
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "Sanayi Makineleri",
+    "Cam İşleme Makinesi"
+   ],
+   "add": [
+    "Cam Kesme Masası",
+    "Cam Rodaj Makinesi",
+    "Isıcam Hattı",
+    "Temper Fırını",
+    "Cam Kumlama Makinesi",
+    "Cam Delme Makinesi"
+   ]
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "Sanayi Makineleri",
+    "Deri & Ayakkabı Makinesi"
+   ],
+   "add": [
+    "Saya Dikiş Makinesi",
+    "Kesim Presi (Ayakkabı)",
+    "Taban Enjeksiyon Makinesi",
+    "Deri Tıraş Makinesi",
+    "Deri Ütü Presi",
+    "Kenar İnceltme (Rafa) Makinesi"
+   ]
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "Sanayi Makineleri",
+    "Kağıt & Karton Makinesi"
+   ],
+   "add": [
+    "Oluklu Mukavva Hattı",
+    "Kutu Yapıştırma Makinesi",
+    "Kağıt Kesim Giyotini",
+    "Selefon (Laminasyon) Makinesi",
+    "Peçete & Tuvalet Kağıdı Makinesi",
+    "Kağıt Bardak Makinesi",
+    "Kraft Torba Makinesi"
+   ]
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "Sanayi Makineleri",
+    "Döküm Makinesi"
+   ],
+   "add": [
+    "İndüksiyon Ocağı",
+    "Basınçlı Döküm Makinesi",
+    "Kum Hazırlama & Kalıplama",
+    "Hassas Döküm Ekipmanı"
+   ]
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "Elektrik & Enerji",
+    "Hibrit İnvertör"
+   ],
+   "brands": {
+    "Deye": [],
+    "Growatt": [],
+    "Huawei": [],
+    "GoodWe": [],
+    "Solis": [],
+    "Sungrow": [],
+    "Luxpower": []
+   }
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "Elektrik & Enerji",
+    "Şarj Regülatörü"
+   ],
+   "add": [
+    "MPPT Şarj Regülatörü",
+    "PWM Şarj Regülatörü"
+   ],
+   "brands": {
+    "Victron Energy": [],
+    "EPEver": []
+   }
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "Elektrik & Enerji",
+    "Akü (Lityum)"
+   ],
+   "brands": {
+    "Pylontech": [],
+    "BYD": [],
+    "Dyness": [],
+    "Deye": [],
+    "Huawei": []
+   }
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "Elektrik & Enerji",
+    "Kabinli Jeneratör"
+   ],
+   "brands": {
+    "Aksa": [],
+    "Teksan": [],
+    "Emsa": [],
+    "Genpower": [],
+    "Cummins": [],
+    "Perkins": [],
+    "FG Wilson": [],
+    "Himoinsa": []
+   }
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "Elektrik & Enerji",
+    "Trafo"
+   ],
+   "add": [
+    "Yağlı Tip Trafo",
+    "Kuru Tip Trafo",
+    "Gerilim Regülatörü"
+   ]
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "Elektrik & Enerji",
+    "Pano & Şalt Malzemesi"
+   ],
+   "add": [
+    "Dağıtım Panosu",
+    "Kompanzasyon Panosu",
+    "Otomatik Transfer Panosu (ATS)",
+    "Kontaktör & Röle",
+    "Şalter & Kesici",
+    "Sigorta & Kaçak Akım Rölesi"
+   ]
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "Elektrik & Enerji",
+    "Kablo & Elektrik Malzemesi"
+   ],
+   "add": [
+    "Enerji Kablosu",
+    "Kontrol Kablosu",
+    "Topraklama Malzemesi"
+   ],
+   "brands": {
+    "Prysmian": [],
+    "Nexans": [],
+    "Hes Kablo": [],
+    "Öznur Kablo": [],
+    "Erse Kablo": []
+   }
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "Elektrik & Enerji",
+    "Endüstriyel Aydınlatma"
+   ],
+   "add": [
+    "LED Projektör",
+    "Yüksek Tavan (High Bay) Armatür",
+    "Sokak Aydınlatma Armatürü",
+    "Etanj Armatür",
+    "Ex-Proof Aydınlatma"
+   ]
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "Elektrik & Enerji",
+    "Elektrik Motoru"
+   ],
+   "add": [
+    "Trifaze Motor",
+    "Monofaze Motor",
+    "Redüktörlü Motor",
+    "Servo Motor",
+    "Step Motor",
+    "Motor Sürücü (Frekans İnvertörü)"
+   ],
+   "brands": {
+    "Gamak": [],
+    "Volt": [],
+    "WAT Motor": [],
+    "Siemens": [],
+    "ABB": []
+   }
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "Elektrik & Enerji",
+    "Rüzgâr Türbini"
+   ],
+   "add": [
+    "Ev Tipi Rüzgâr Türbini",
+    "Ticari Rüzgâr Türbini"
+   ]
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "Elektrik & Enerji",
+    "Akaryakıt Ürünleri & Tank"
+   ],
+   "add": [
+    "Akaryakıt Tankı",
+    "Akaryakıt Pompası (Dispenser)",
+    "Yakıt Transfer Pompası"
+   ]
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "İnşaat Malzemeleri & Ekipman",
+    "İskele Sistemi"
+   ],
+   "add": [
+    "Cephe İskelesi",
+    "Mobil İskele",
+    "Tavan (Taşıyıcı) İskelesi",
+    "Flanşlı Sistem İskele",
+    "İskele Dikmesi"
+   ]
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "İnşaat Malzemeleri & Ekipman",
+    "Kalıp Sistemi"
+   ],
+   "add": [
+    "Tünel Kalıp",
+    "Tırmanır Kalıp",
+    "Perde Kalıp",
+    "Kolon Kalıbı",
+    "Döşeme (Tabla) Kalıp",
+    "Kalıp Kontrplağı (Plywood)"
+   ],
+   "brands": {
+    "Doka": [],
+    "Peri": [],
+    "Ulma": [],
+    "Mesa": []
+   }
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "İnşaat Malzemeleri & Ekipman",
+    "Beton Mikseri"
+   ],
+   "add": [
+    "Elektrikli Beton Karıştırıcı",
+    "Dizel & Benzinli Beton Mikseri",
+    "Kendinden Yüklemeli Beton Mikseri"
+   ],
+   "brands": {
+    "Fiori": [],
+    "Carmix": []
+   }
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "İnşaat Malzemeleri & Ekipman",
+    "Beton Santrali"
+   ],
+   "add": [
+    "Mobil Beton Santrali",
+    "Sabit Beton Santrali"
+   ],
+   "brands": {
+    "Elkon": [],
+    "MEKA": [],
+    "Fabo": [],
+    "Liebherr": []
+   }
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "İnşaat Malzemeleri & Ekipman",
+    "Perdah Makinesi"
+   ],
+   "add": [
+    "Tek Pervaneli Perdah",
+    "Çift Pervaneli (Binicili) Perdah"
+   ]
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "İnşaat Malzemeleri & Ekipman",
+    "Su Pompası (İnşaat)"
+   ],
+   "add": [
+    "Drenaj Dalgıç Pompası",
+    "Motopomp (Benzinli)",
+    "Çamur Pompası"
+   ]
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "Depolama & Lojistik Ekipman",
+    "Raf Sistemi"
+   ],
+   "add": [
+    "Ağır Yük (Paletli) Raf",
+    "Hafif Yük Çelik Raf",
+    "Kantilever (Konsol) Raf",
+    "Drive-In Raf",
+    "Mezanin Kat",
+    "Kayar Arşiv Rafı"
+   ]
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "Depolama & Lojistik Ekipman",
+    "Palet"
+   ],
+   "add": [
+    "Ahşap Palet",
+    "Plastik Palet",
+    "Euro Palet",
+    "Metal Palet",
+    "Palet Kasası (Box)"
+   ]
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "Depolama & Lojistik Ekipman",
+    "Konteyner"
+   ],
+   "add": [
+    "20 Feet Konteyner",
+    "40 Feet Konteyner",
+    "40 Feet HC Konteyner",
+    "Frigorifik (Reefer) Konteyner",
+    "Open Top Konteyner"
+   ]
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "Depolama & Lojistik Ekipman",
+    "Soğuk Hava Deposu"
+   ],
+   "add": [
+    "Prefabrik Soğuk Oda",
+    "Soğutma Grubu (Monoblok & Split)",
+    "Soğuk Oda Paneli",
+    "Şok Dondurucu"
+   ]
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "Depolama & Lojistik Ekipman",
+    "Terazi & Baskül"
+   ],
+   "add": [
+    "Kamyon Kantarı",
+    "Platform Baskül",
+    "Hassas Terazi",
+    "Etiketli Market Terazisi",
+    "Vinç Kantarı",
+    "Hayvan Baskülü"
+   ]
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "Depolama & Lojistik Ekipman",
+    "El Arabası & Taşıma Aracı"
+   ],
+   "add": [
+    "Platform Arabası",
+    "Çuval Arabası (Hamal)",
+    "Şantiye El Arabası",
+    "Merdiven Çıkan Araba"
+   ]
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "Depolama & Lojistik Ekipman",
+    "Streç Makinesi"
+   ],
+   "add": [
+    "Palet Streç Sarma Makinesi",
+    "Yatay Streç Sarma Makinesi"
+   ]
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "Medikal & Laboratuvar",
+    "Medikal Ekipman"
+   ],
+   "add": [
+    "Hasta Monitörü",
+    "Ultrason Cihazı",
+    "Defibrilatör",
+    "Ameliyat Masası",
+    "Ameliyat Lambası",
+    "Anestezi Cihazı",
+    "Röntgen Cihazı",
+    "Muayene Masası",
+    "İnfüzyon Pompası",
+    "Ventilatör (Yoğun Bakım)",
+    "Estetik & Lazer Cihazı"
+   ]
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "Medikal & Laboratuvar",
+    "Medikal Ekipman",
+    "Ultrason Cihazı"
+   ],
+   "brands": {
+    "GE HealthCare": [],
+    "Philips": [],
+    "Siemens Healthineers": [],
+    "Mindray": [],
+    "Samsung Medison": [],
+    "Esaote": [],
+    "Canon Medical": []
+   }
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "Medikal & Laboratuvar",
+    "Medikal Ekipman",
+    "Hasta Monitörü"
+   ],
+   "brands": {
+    "Mindray": [],
+    "Philips": [],
+    "GE HealthCare": [],
+    "Nihon Kohden": [],
+    "Dräger": []
+   }
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "Medikal & Laboratuvar",
+    "Laboratuvar Ekipmanı"
+   ],
+   "add": [
+    "Manyetik Karıştırıcı",
+    "Otomatik Pipet",
+    "Su Banyosu",
+    "Çeker Ocak",
+    "pH Metre",
+    "Hassas Terazi (Laboratuvar)",
+    "İnkübatör",
+    "Distile Su Cihazı"
+   ]
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "Medikal & Laboratuvar",
+    "Mikroskop"
+   ],
+   "add": [
+    "Biyolojik Mikroskop",
+    "Stereo Mikroskop",
+    "Metalurji Mikroskobu",
+    "Dijital Mikroskop"
+   ],
+   "brands": {
+    "Olympus": [],
+    "Nikon": [],
+    "Zeiss": [],
+    "Leica": []
+   }
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "Medikal & Laboratuvar",
+    "Santrifüj"
+   ],
+   "brands": {
+    "Hettich": [],
+    "Eppendorf": [],
+    "Thermo Fisher Scientific": [],
+    "Nüve": []
+   }
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "Medikal & Laboratuvar",
+    "Otoklav"
+   ],
+   "brands": {
+    "Nüve": [],
+    "Melag": [],
+    "W&H": [],
+    "Tuttnauer": []
+   }
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "Medikal & Laboratuvar",
+    "Etüv"
+   ],
+   "brands": {
+    "Nüve": [],
+    "Memmert": [],
+    "Binder": []
+   }
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "Medikal & Laboratuvar",
+    "Analiz Cihazı"
+   ],
+   "add": [
+    "Spektrofotometre",
+    "Hematoloji Analizörü",
+    "Biyokimya Analizörü",
+    "Nem Tayin Cihazı",
+    "Kromatografi (HPLC & GC)",
+    "Viskozimetre"
+   ]
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "Medikal & Laboratuvar",
+    "Steril Kabin"
+   ],
+   "add": [
+    "Biyogüvenlik Kabini",
+    "Laminar Akış Kabini",
+    "PCR Kabini"
+   ]
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "Yedek Parça & Servis",
+    "İş Makinesi Yedek Parçası"
+   ],
+   "add": [
+    "Motor Parçası",
+    "Şanzıman & Diferansiyel",
+    "Kova & Tırnak",
+    "Kabin & Cam",
+    "Elektrik & Beyin",
+    "İş Makinesi Lastiği",
+    "Pim & Burç"
+   ]
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "Yedek Parça & Servis",
+    "Ataşman"
+   ],
+   "add": [
+    "Kova (Kepçe)",
+    "Ripper",
+    "Hızlı Bağlantı (Quick Coupler)",
+    "Burgu (Auger)",
+    "Kepçe Çatalı",
+    "Kıskaç (Grapple)",
+    "Beton Kırma Makası (Pulverizer)"
+   ]
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "Yedek Parça & Servis",
+    "Yürüyüş Paleti & Zincir"
+   ],
+   "add": [
+    "Çelik Palet",
+    "Lastik Palet",
+    "Palet Makarası & Yürüyüş Takımı",
+    "Zincir Dişlisi (Sproket)"
+   ]
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "Yedek Parça & Servis",
+    "Hidrolik Hortum & Pompa"
+   ],
+   "add": [
+    "Hidrolik Hortum",
+    "Hidrolik Pompa",
+    "Hidrolik Motor",
+    "Hidrolik Valf",
+    "Hidrolik Silindir"
+   ]
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "Yedek Parça & Servis",
+    "Filtre & Yağ"
+   ],
+   "add": [
+    "Yağ Filtresi",
+    "Yakıt Filtresi",
+    "Hava Filtresi",
+    "Hidrolik Filtre",
+    "Motor Yağı",
+    "Hidrolik Yağı",
+    "Gres Yağı"
+   ]
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "Endüstriyel Ürünler",
+    "Endüstriyel Mutfak"
+   ],
+   "add": [
+    "Endüstriyel Fırın",
+    "Kombi Fırın",
+    "Pizza Fırını",
+    "Lahmacun & Pide Fırını",
+    "Endüstriyel Bulaşık Makinesi",
+    "Endüstriyel Ocak & Izgara",
+    "Endüstriyel Fritöz",
+    "Döner Makinesi",
+    "Benmari",
+    "Endüstriyel Buzdolabı",
+    "Buz Makinesi",
+    "Pasta & Şarküteri Teşhir Dolabı",
+    "Çay Ocağı & Semaver",
+    "Endüstriyel Tost Makinesi",
+    "Endüstriyel Kahve Makinesi",
+    "Patates Soyma Makinesi",
+    "Sebze Doğrama Makinesi",
+    "Paslanmaz Tezgah & Eviye",
+    "Endüstriyel Davlumbaz"
+   ]
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "Endüstriyel Ürünler",
+    "Endüstriyel Mutfak",
+    "Kombi Fırın"
+   ],
+   "brands": {
+    "Rational": [
+     "iCombi Pro",
+     "iCombi Classic",
+     "SelfCookingCenter"
+    ],
+    "Unox": [],
+    "Electrolux Professional": [],
+    "Öztiryakiler": []
+   }
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "Endüstriyel Ürünler",
+    "Endüstriyel Mutfak",
+    "Endüstriyel Bulaşık Makinesi"
+   ],
+   "brands": {
+    "Winterhalter": [],
+    "Hobart": [],
+    "Meiko": [],
+    "Electrolux Professional": [],
+    "Öztiryakiler": []
+   }
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "Endüstriyel Ürünler",
+    "Endüstriyel Mutfak",
+    "Endüstriyel Fırın"
+   ],
+   "brands": {
+    "Öztiryakiler": [],
+    "Empero": [],
+    "İnoksan": [],
+    "Remta": [],
+    "Unox": []
+   }
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "Endüstriyel Ürünler",
+    "Endüstriyel Mutfak",
+    "Endüstriyel Kahve Makinesi"
+   ],
+   "brands": {
+    "La Marzocco": [],
+    "Nuova Simonelli": [],
+    "La Cimbali": [],
+    "Rancilio": [],
+    "Faema": [],
+    "Victoria Arduino": [],
+    "Wega": []
+   }
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "Endüstriyel Ürünler",
+    "Endüstriyel Mobilya"
+   ],
+   "add": [
+    "Kafe & Restoran Mobilyası",
+    "Otel Mobilyası",
+    "Okul Sırası & Mobilyası",
+    "Çelik Dolap & Soyunma Dolabı",
+    "Atölye Tezgahı",
+    "Bekleme Koltuğu"
+   ]
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "Endüstriyel Ürünler",
+    "Endüstriyel Temizlik"
+   ],
+   "add": [
+    "Zemin Yıkama Makinesi",
+    "Akülü Süpürme Makinesi",
+    "Sanayi Tipi Süpürge",
+    "Buharlı Temizlik Makinesi"
+   ]
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "Endüstriyel Ürünler",
+    "Endüstriyel Temizlik",
+    "Zemin Yıkama Makinesi"
+   ],
+   "brands": {
+    "Kärcher": [],
+    "Nilfisk": [],
+    "Tennant": [],
+    "Comac": [],
+    "Fimap": [],
+    "Hako": []
+   }
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "Endüstriyel Ürünler",
+    "Endüstriyel Hırdavat"
+   ],
+   "add": [
+    "Bağlantı Elemanı (Cıvata & Somun)",
+    "Kesici Takım",
+    "Ölçü Aletleri (Kumpas & Mikrometre)",
+    "Zincir & Halat",
+    "Kaynak Sarf Malzemesi",
+    "Zımpara & Aşındırıcı",
+    "Pnömatik Ekipman"
+   ]
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "Endüstriyel Ürünler",
+    "Raf & Ürün Teşhir"
+   ],
+   "add": [
+    "Market Rafı",
+    "Gondol Raf",
+    "Teşhir Standı",
+    "Kasa Bankosu",
+    "Konfeksiyon Askılığı",
+    "Pegboard Duvar Paneli"
+   ]
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "Endüstriyel Ürünler",
+    "Çadır, Tente & Kepenk"
+   ],
+   "add": [
+    "Endüstriyel Depo Çadırı",
+    "Mafsallı & Kasetli Tente",
+    "Otomatik Kepenk",
+    "Pergole Tente",
+    "Branda",
+    "Kafe Şemsiyesi"
+   ]
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "Endüstriyel Ürünler",
+    "Konteyner & Kabin"
+   ],
+   "add": [
+    "Güvenlik Kulübesi",
+    "Portatif WC Kabini",
+    "Büfe & Kiosk"
+   ]
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "Endüstriyel Ürünler",
+    "Basınçlı Kaplar & Tanklar"
+   ],
+   "add": [
+    "Hava Tankı",
+    "Paslanmaz Tank",
+    "Polietilen Su Tankı",
+    "Genleşme Tankı",
+    "LPG Tankı",
+    "IBC Tank"
+   ]
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "Endüstriyel Ürünler",
+    "Vinç & Kaldırma Ekipmanı"
+   ],
+   "add": [
+    "Elektrikli Caraskal",
+    "Manuel Zincirli Vinç",
+    "Köprülü (Gezer) Vinç",
+    "Pergel Vinç",
+    "Mini Vinç (Çatı)",
+    "Sapan & Kaldırma Halatı",
+    "Vakumlu Kaldırıcı"
+   ]
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "Endüstriyel Ürünler",
+    "Soğutma & İklimlendirme"
+   ],
+   "add": [
+    "Chiller",
+    "Soğutma Kulesi",
+    "Klima Santrali",
+    "VRF Klima Sistemi",
+    "Evaporatif Soğutucu",
+    "Endüstriyel Fan & Aspiratör",
+    "Kondenser Ünitesi"
+   ]
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "Endüstriyel Ürünler",
+    "Rulman, Kayış & Güç Aktarım"
+   ],
+   "add": [
+    "Rulman",
+    "V Kayışı",
+    "Redüktör",
+    "Zincir & Dişli",
+    "Kaplin"
+   ]
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "Endüstriyel Ürünler",
+    "Rulman, Kayış & Güç Aktarım",
+    "Rulman"
+   ],
+   "brands": {
+    "SKF": [],
+    "FAG": [],
+    "NSK": [],
+    "Timken": [],
+    "ORS": []
+   }
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "Endüstriyel Ürünler",
+    "Rulman, Kayış & Güç Aktarım",
+    "Redüktör"
+   ],
+   "brands": {
+    "Yılmaz Redüktör": [],
+    "SEW-Eurodrive": [],
+    "Nord": []
+   }
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "Endüstriyel Ürünler",
+    "Kazan & Brülör"
+   ],
+   "add": [
+    "Buhar Kazanı",
+    "Sıcak Su Kazanı",
+    "Kızgın Yağ Kazanı",
+    "Katı Yakıtlı Kazan",
+    "Doğalgaz Brülörü",
+    "Motorin Brülörü"
+   ]
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "Endüstriyel Ürünler",
+    "Kazan & Brülör",
+    "Doğalgaz Brülörü"
+   ],
+   "brands": {
+    "Riello": [],
+    "Baltur": [],
+    "Weishaupt": [],
+    "Ecoflam": [],
+    "Elco": []
+   }
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "Endüstriyel Ürünler",
+    "Koli & Ambalaj Malzemesi"
+   ],
+   "add": [
+    "Koli (Oluklu Mukavva)",
+    "Streç Film",
+    "Koli Bandı",
+    "Balonlu Naylon",
+    "Poşet & Torba",
+    "Big Bag (Jumbo Torba)",
+    "Çember & Çember Makinesi"
+   ]
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "Endüstriyel Ürünler",
+    "Mağaza Mankeni & Vitrin"
+   ],
+   "add": [
+    "Kadın Manken",
+    "Erkek Manken",
+    "Çocuk Manken",
+    "Büst & Yarım Manken",
+    "Vitrin Dolabı"
+   ]
+  },
+  {
+   "path": [
+    "Ustalar & Hizmetler",
+    "Ev Tadilat & Dekorasyon",
+    "Boya & Badana"
+   ],
+   "add": [
+    "İç Cephe Boya",
+    "Dış Cephe Boya",
+    "Dekoratif Boya",
+    "Kapı & Mobilya Boyama"
+   ]
+  },
+  {
+   "path": [
+    "Ustalar & Hizmetler",
+    "Ev Tadilat & Dekorasyon",
+    "Parke & Zemin"
+   ],
+   "add": [
+    "Laminat Parke Döşeme",
+    "Masif Parke Döşeme",
+    "Parke Silme & Cilalama",
+    "PVC & Vinil Zemin"
+   ]
+  },
+  {
+   "path": [
+    "Ustalar & Hizmetler",
+    "Ev Tadilat & Dekorasyon",
+    "Kapı, Pencere & Cam Balkon"
+   ],
+   "add": [
+    "PVC Pencere",
+    "Alüminyum Doğrama",
+    "Cam Balkon",
+    "Çelik Kapı",
+    "Amerikan Panel Kapı",
+    "Isıcam Değişimi"
+   ]
+  },
+  {
+   "path": [
+    "Ustalar & Hizmetler",
+    "Ev Tadilat & Dekorasyon",
+    "Mutfak & Dolap"
+   ],
+   "add": [
+    "Mutfak Dolabı Yapımı",
+    "Gardırop & Vestiyer",
+    "Banyo Dolabı",
+    "Dolap Kapağı Değişimi"
+   ]
+  },
+  {
+   "path": [
+    "Ustalar & Hizmetler",
+    "Tesisat & Teknik",
+    "Kombi Servisi"
+   ],
+   "brands": {
+    "Vaillant": [],
+    "Demirdöküm": [],
+    "Baymak": [],
+    "ECA": [],
+    "Bosch": [],
+    "Buderus": [],
+    "Viessmann": [],
+    "Ariston": [],
+    "Immergas": [],
+    "Protherm": [],
+    "Airfel": [],
+    "Ferroli": [],
+    "Alarko": []
+   }
+  },
+  {
+   "path": [
+    "Ustalar & Hizmetler",
+    "Tesisat & Teknik",
+    "Elektrikçi"
+   ],
+   "add": [
+    "Elektrik Arıza",
+    "Bina Elektrik Tesisatı",
+    "Aydınlatma Montajı",
+    "Sigorta & Pano Değişimi"
+   ]
+  },
+  {
+   "path": [
+    "Ustalar & Hizmetler",
+    "Tesisat & Teknik",
+    "Su Tesisatçısı"
+   ],
+   "add": [
+    "Musluk & Batarya Değişimi",
+    "Sıhhi Tesisat Yenileme",
+    "Klozet & Rezervuar Tamiri",
+    "Termosifon & Şofben Montajı"
+   ]
+  },
+  {
+   "path": [
+    "Ustalar & Hizmetler",
+    "Tesisat & Teknik",
+    "Klima Montaj & Bakım"
+   ],
+   "add": [
+    "Klima Montajı",
+    "Klima Bakım & Temizlik",
+    "Klima Gaz Dolumu",
+    "Klima Söküm & Taşıma",
+    "VRF & Merkezi Klima Servisi"
+   ]
+  },
+  {
+   "path": [
+    "Ustalar & Hizmetler",
+    "Tesisat & Teknik",
+    "Tıkanıklık Açma"
+   ],
+   "add": [
+    "Lavabo & Gider Açma",
+    "Klozet Tıkanıklığı",
+    "Kanalizasyon Açma (Robotlu)"
+   ]
+  },
+  {
+   "path": [
+    "Ustalar & Hizmetler",
+    "Teknik Servis & Tamir",
+    "Telefon Tamiri"
+   ],
+   "add": [
+    "Ekran Değişimi",
+    "Batarya Değişimi",
+    "Şarj Soketi Tamiri",
+    "Anakart Tamiri",
+    "Kasa & Arka Cam Değişimi",
+    "Kamera Değişimi"
+   ]
+  },
+  {
+   "path": [
+    "Ustalar & Hizmetler",
+    "Teknik Servis & Tamir",
+    "Bilgisayar Teknik Servis"
+   ],
+   "add": [
+    "Laptop Ekran Değişimi",
+    "Format & Yazılım Kurulumu",
+    "Anakart Tamiri (Bilgisayar)",
+    "Klavye Değişimi",
+    "Fan Temizliği & Termal Macun",
+    "Virüs Temizleme"
+   ]
+  },
+  {
+   "path": [
+    "Ustalar & Hizmetler",
+    "Teknik Servis & Tamir",
+    "Beyaz Eşya Servisi"
+   ],
+   "add": [
+    "Buzdolabı Servisi",
+    "Çamaşır Makinesi Servisi",
+    "Bulaşık Makinesi Servisi",
+    "Fırın & Ocak Servisi",
+    "Kurutma Makinesi Servisi"
+   ]
+  },
+  {
+   "path": [
+    "Ustalar & Hizmetler",
+    "Teknik Servis & Tamir",
+    "TV & Elektronik Tamiri"
+   ],
+   "add": [
+    "TV Panel & Ekran Tamiri",
+    "TV Anakart Tamiri",
+    "TV Duvar Montajı"
+   ]
+  },
+  {
+   "path": [
+    "Ustalar & Hizmetler",
+    "Teknik Servis & Tamir",
+    "Anahtarcı & Çilingir"
+   ],
+   "add": [
+    "Kapı Açma",
+    "Kilit & Barel Değişimi",
+    "Kasa Açma"
+   ]
+  },
+  {
+   "path": [
+    "Ustalar & Hizmetler",
+    "Araç Servis & Bakım",
+    "Oto Tamir & Servis"
+   ],
+   "add": [
+    "Periyodik Bakım",
+    "Motor Tamiri",
+    "Fren Tamiri",
+    "Triger Değişimi",
+    "Debriyaj Tamiri",
+    "Süspansiyon Tamiri",
+    "Arıza Tespit (Diagnostik)"
+   ]
+  },
+  {
+   "path": [
+    "Ustalar & Hizmetler",
+    "Temizlik & Bakım",
+    "İlaçlama & Haşere"
+   ],
+   "add": [
+    "Hamamböceği İlaçlama",
+    "Tahtakurusu İlaçlama",
+    "Fare & Kemirgen Mücadelesi",
+    "Pire İlaçlama",
+    "Sivrisinek İlaçlama",
+    "Akrep & Böcek İlaçlama"
+   ]
+  },
+  {
+   "path": [
+    "Ustalar & Hizmetler",
+    "Temizlik & Bakım",
+    "Halı & Koltuk Yıkama"
+   ],
+   "add": [
+    "Halı Yıkama",
+    "Koltuk Yıkama",
+    "Araç Koltuk Yıkama"
+   ]
+  },
+  {
+   "path": [
+    "Ustalar & Hizmetler",
+    "Temizlik & Bakım",
+    "Ev Temizliği"
+   ],
+   "add": [
+    "Günlük Ev Temizliği",
+    "Detaylı Ev Temizliği",
+    "Taşınma Temizliği"
+   ]
+  },
+  {
+   "path": [
+    "Ustalar & Hizmetler",
+    "Güzellik & Kişisel Bakım",
+    "Kuaför & Berber"
+   ],
+   "add": [
+    "Erkek Berber",
+    "Kadın Kuaför",
+    "Çocuk Kuaförü"
+   ]
+  },
+  {
+   "path": [
+    "Ustalar & Hizmetler",
+    "Güzellik & Kişisel Bakım",
+    "Masaj & Spa"
+   ],
+   "add": [
+    "Klasik Masaj",
+    "Thai Masajı",
+    "Spor & Medikal Masaj",
+    "Hamam & Kese Köpük"
+   ]
+  },
+  {
+   "path": [
+    "Ustalar & Hizmetler",
+    "Güzellik & Kişisel Bakım",
+    "Dövme & Piercing"
+   ],
+   "add": [
+    "Dövme",
+    "Piercing",
+    "Dövme Silme (Lazer)"
+   ]
+  },
+  {
+   "path": [
+    "Ustalar & Hizmetler",
+    "Organizasyon & Etkinlik",
+    "Fotoğraf & Video Çekimi"
+   ],
+   "add": [
+    "Düğün Fotoğrafçısı",
+    "Düğün Klibi",
+    "Nişan & Kına Çekimi",
+    "Save the Date Çekimi"
+   ]
+  },
+  {
+   "path": [
+    "Ustalar & Hizmetler",
+    "Profesyonel Hizmetler",
+    "Hukuki Danışmanlık"
+   ],
+   "add": [
+    "Boşanma & Aile Hukuku",
+    "Ceza Hukuku",
+    "İş Hukuku",
+    "Gayrimenkul & Kira Hukuku",
+    "Miras Hukuku",
+    "Ticaret & Şirketler Hukuku",
+    "İcra & Alacak Takibi",
+    "Trafik Kazası & Tazminat"
+   ]
+  },
+  {
+   "path": [
+    "Ustalar & Hizmetler",
+    "Güvenlik & Sağlık",
+    "Psikolog & Danışman"
+   ],
+   "add": [
+    "Bireysel Terapi",
+    "Çift & Aile Terapisi",
+    "Çocuk & Ergen Psikoloğu",
+    "Online Terapi"
+   ]
+  },
+  {
+   "path": [
+    "Ustalar & Hizmetler",
+    "Güvenlik & Sağlık",
+    "Diyetisyen"
+   ],
+   "add": [
+    "Kilo Verme Diyeti",
+    "Sporcu Beslenmesi",
+    "Online Diyetisyen"
+   ]
+  },
+  {
+   "path": [
+    "Ustalar & Hizmetler",
+    "Güvenlik & Sağlık",
+    "Fizyoterapi"
+   ],
+   "add": [
+    "Evde Fizik Tedavi",
+    "Spor Yaralanmaları",
+    "Manuel Terapi"
+   ]
+  },
+  {
+   "path": [
+    "Ustalar & Hizmetler",
+    "Güvenlik & Sağlık",
+    "Kamera & Alarm Sistemi"
+   ],
+   "add": [
+    "Güvenlik Kamerası Kurulumu",
+    "Alarm Sistemi Kurulumu",
+    "Kartlı Geçiş & PDKS"
+   ]
+  },
+  {
+   "path": [
+    "Özel Ders & Eğitim",
+    "Akademik Dersler",
+    "Matematik"
+   ],
+   "add": [
+    "İlkokul Matematik",
+    "Ortaokul Matematik (LGS)",
+    "Lise Matematik (TYT-AYT)",
+    "Üniversite Matematiği",
+    "KPSS & ALES Matematik"
+   ]
+  },
+  {
+   "path": [
+    "Özel Ders & Eğitim",
+    "Akademik Dersler",
+    "Fizik"
+   ],
+   "add": [
+    "Lise Fizik (TYT-AYT)",
+    "Üniversite Fizik"
+   ]
+  },
+  {
+   "path": [
+    "Özel Ders & Eğitim",
+    "Akademik Dersler",
+    "Kimya"
+   ],
+   "add": [
+    "Lise Kimya (TYT-AYT)",
+    "Üniversite Kimya"
+   ]
+  },
+  {
+   "path": [
+    "Özel Ders & Eğitim",
+    "Akademik Dersler",
+    "Biyoloji"
+   ],
+   "add": [
+    "Lise Biyoloji (TYT-AYT)",
+    "Üniversite Biyoloji"
+   ]
+  },
+  {
+   "path": [
+    "Özel Ders & Eğitim",
+    "Akademik Dersler",
+    "Üniversite Dersleri"
+   ],
+   "add": [
+    "Mühendislik Dersleri",
+    "Tıp & Sağlık Bilimleri Dersleri",
+    "İşletme & İktisat Dersleri"
+   ]
+  },
+  {
+   "path": [
+    "Özel Ders & Eğitim",
+    "Yabancı Dil",
+    "İngilizce"
+   ],
+   "add": [
+    "Genel İngilizce",
+    "İngilizce Konuşma Pratiği",
+    "İş İngilizcesi",
+    "Çocuklar İçin İngilizce",
+    "Okul İngilizcesi",
+    "YDT (YKS Dil)"
+   ]
+  },
+  {
+   "path": [
+    "Özel Ders & Eğitim",
+    "Yabancı Dil",
+    "Almanca"
+   ],
+   "add": [
+    "Genel Almanca",
+    "A1 Almanca (Aile Birleşimi)",
+    "Goethe & telc Sınav Hazırlık",
+    "Almanca Konuşma Pratiği",
+    "Çocuklar İçin Almanca"
+   ]
+  },
+  {
+   "path": [
+    "Özel Ders & Eğitim",
+    "Yabancı Dil",
+    "Arapça"
+   ],
+   "add": [
+    "Genel Arapça",
+    "Kuran Arapçası",
+    "Konuşma Arapçası"
+   ]
+  },
+  {
+   "path": [
+    "Özel Ders & Eğitim",
+    "Yabancı Dil",
+    "Fransızca"
+   ],
+   "add": [
+    "Genel Fransızca",
+    "DELF & DALF Hazırlık"
+   ]
+  },
+  {
+   "path": [
+    "Özel Ders & Eğitim",
+    "Müzik & Sanat",
+    "Gitar"
+   ],
+   "add": [
+    "Klasik Gitar",
+    "Akustik Gitar",
+    "Elektro Gitar",
+    "Bas Gitar"
+   ]
+  },
+  {
+   "path": [
+    "Özel Ders & Eğitim",
+    "Müzik & Sanat",
+    "Piyano"
+   ],
+   "add": [
+    "Klasik Piyano",
+    "Pop & Caz Piyano",
+    "Çocuklar İçin Piyano"
+   ]
+  },
+  {
+   "path": [
+    "Özel Ders & Eğitim",
+    "Müzik & Sanat",
+    "Bağlama"
+   ],
+   "add": [
+    "Kısa Sap Bağlama",
+    "Uzun Sap Bağlama"
+   ]
+  },
+  {
+   "path": [
+    "Özel Ders & Eğitim",
+    "Müzik & Sanat",
+    "Resim & Çizim"
+   ],
+   "add": [
+    "Karakalem",
+    "Yağlı Boya",
+    "Suluboya",
+    "Akrilik",
+    "Dijital Çizim"
+   ]
+  },
+  {
+   "path": [
+    "Özel Ders & Eğitim",
+    "Müzik & Sanat",
+    "Bale & Dans"
+   ],
+   "add": [
+    "Bale",
+    "Latin Dansları (Salsa & Bachata)",
+    "Tango",
+    "Halk Oyunları",
+    "Modern Dans & Hip Hop",
+    "Düğün Dansı",
+    "Oryantal Dans",
+    "Zumba"
+   ]
+  },
+  {
+   "path": [
+    "Özel Ders & Eğitim",
+    "Spor Dersleri",
+    "Yüzme"
+   ],
+   "add": [
+    "Bebek Yüzme",
+    "Çocuk Yüzme",
+    "Yetişkin Yüzme",
+    "Lisanslı Yüzücü Antrenmanı"
+   ]
+  },
+  {
+   "path": [
+    "Özel Ders & Eğitim",
+    "Spor Dersleri",
+    "Fitness & PT"
+   ],
+   "add": [
+    "Kişisel Antrenör (PT)",
+    "Online PT",
+    "Fonksiyonel Antrenman",
+    "CrossFit"
+   ]
+  },
+  {
+   "path": [
+    "Özel Ders & Eğitim",
+    "Spor Dersleri",
+    "Yoga & Pilates"
+   ],
+   "add": [
+    "Yoga",
+    "Reformer Pilates",
+    "Mat Pilates",
+    "Hamile Yogası"
+   ]
+  },
+  {
+   "path": [
+    "Özel Ders & Eğitim",
+    "Spor Dersleri",
+    "Futbol"
+   ],
+   "add": [
+    "Çocuk Futbol Okulu",
+    "Kaleci Antrenmanı"
+   ]
+  },
+  {
+   "path": [
+    "Özel Ders & Eğitim",
+    "Meslek & Yazılım",
+    "Yazılım & Kodlama"
+   ],
+   "add": [
+    "Python",
+    "Java",
+    "JavaScript",
+    "C# & .NET",
+    "C & C++",
+    "Mobil Uygulama Geliştirme",
+    "Çocuklar İçin Kodlama (Scratch)"
+   ]
+  },
+  {
+   "path": [
+    "Özel Ders & Eğitim",
+    "Meslek & Yazılım",
+    "Ofis Programları"
+   ],
+   "add": [
+    "Excel",
+    "Word",
+    "PowerPoint"
+   ]
+  },
+  {
+   "path": [
+    "Özel Ders & Eğitim",
+    "Meslek & Yazılım",
+    "Grafik Tasarım"
+   ],
+   "add": [
+    "Photoshop",
+    "Illustrator",
+    "InDesign"
+   ]
+  },
+  {
+   "path": [
+    "Özel Ders & Eğitim",
+    "Kişisel Gelişim & Diğer",
+    "Direksiyon Dersi"
+   ],
+   "add": [
+    "Manuel Vites Direksiyon",
+    "Otomatik Vites Direksiyon",
+    "Direksiyon Sınavı Hazırlık",
+    "Ehliyetliye Pratik (Tazeleme)"
+   ]
+  },
+  {
+   "path": [
+    "Özel Ders & Eğitim",
+    "Kişisel Gelişim & Diğer",
+    "Kuran-ı Kerim"
+   ],
+   "add": [
+    "Elif-Ba (Kuran Öğrenme)",
+    "Tecvid",
+    "Hafızlık"
+   ]
+  },
+  {
+   "path": [
+    "İş İlanları",
+    "Üretim, Lojistik & Sanayi",
+    "Şoför"
+   ],
+   "add": [
+    "Kamyon Şoförü",
+    "Otobüs Şoförü",
+    "Özel Şoför"
+   ]
+  },
+  {
+   "path": [
+    "Hayvanlar Alemi",
+    "Büyükbaş Hayvanlar",
+    "Buzağı"
+   ],
+   "add": [
+    "Holstein (Siyah Alaca)",
+    "Simental",
+    "Montofon (Esmer)",
+    "Jersey",
+    "Angus",
+    "Şarole",
+    "Limuzin",
+    "Hereford",
+    "Yerli Kara",
+    "Boz Irk",
+    "Doğu Anadolu Kırmızısı",
+    "Güney Anadolu Kırmızısı",
+    "Zavot",
+    "Melez Sığır"
+   ]
+  },
+  {
+   "path": [
+    "Hayvanlar Alemi",
+    "Büyükbaş Hayvanlar",
+    "Dana"
+   ],
+   "add": [
+    "Holstein (Siyah Alaca)",
+    "Simental",
+    "Montofon (Esmer)",
+    "Jersey",
+    "Angus",
+    "Şarole",
+    "Limuzin",
+    "Hereford",
+    "Yerli Kara",
+    "Boz Irk",
+    "Doğu Anadolu Kırmızısı",
+    "Güney Anadolu Kırmızısı",
+    "Zavot",
+    "Melez Sığır"
+   ]
+  },
+  {
+   "path": [
+    "Hayvanlar Alemi",
+    "Küçükbaş Hayvanlar",
+    "Kuzu"
+   ],
+   "add": [
+    "Merinos",
+    "Kıvırcık",
+    "Akkaraman",
+    "Morkaraman",
+    "İvesi",
+    "Sakız",
+    "Karayaka",
+    "Romanov",
+    "Assaf",
+    "Melez Koyun"
+   ]
+  },
+  {
+   "path": [
+    "Hayvanlar Alemi",
+    "Küçükbaş Hayvanlar",
+    "Oğlak"
+   ],
+   "add": [
+    "Saanen",
+    "Kıl Keçisi",
+    "Malta Keçisi",
+    "Kilis Keçisi",
+    "Şam Keçisi (Damascus)",
+    "Honamlı",
+    "Boer",
+    "Alpin",
+    "Melez Keçi"
+   ]
+  },
+  {
+   "path": [
+    "Hayvanlar Alemi",
+    "Kümes Hayvanları",
+    "Tavus Kuşu"
+   ],
+   "add": [
+    "Hint (Mavi) Tavus Kuşu",
+    "Yeşil Tavus Kuşu",
+    "Beyaz Tavus Kuşu"
+   ]
+  },
+  {
+   "path": [
+    "Hayvanlar Alemi",
+    "Sahiplendirme",
+    "Kuş",
+    "Kanarya"
+   ],
+   "add": [
+    "Gloster",
+    "Yorkshire",
+    "Border",
+    "Fife",
+    "Lizard",
+    "Norwich",
+    "Malinois (Waterslager)",
+    "Timbrado",
+    "Hollanda Kanaryası (Frill)"
+   ]
+  },
+  {
+   "path": [
+    "Hayvanlar Alemi",
+    "Sahiplendirme",
+    "Kuş",
+    "Muhabbet Kuşu"
+   ],
+   "add": [
+    "İngiliz Muhabbet Kuşu (Show)",
+    "Yerli Muhabbet Kuşu"
+   ]
+  },
+  {
+   "path": [
+    "Hayvanlar Alemi",
+    "Sahiplendirme",
+    "Kemirgen & Küçük Dost",
+    "Gine Domuzu"
+   ],
+   "add": [
+    "Abyssinian",
+    "Peruvian",
+    "Teddy",
+    "Amerikan (Kısa Tüylü)"
+   ]
+  },
+  {
+   "path": [
+    "Hayvanlar Alemi",
+    "Sahiplendirme",
+    "Sürüngen & Egzotik",
+    "Gecko"
+   ],
+   "add": [
+    "Leopar Gecko",
+    "Crested Gecko"
+   ]
+  },
+  {
+   "path": [
+    "Hayvanlar Alemi",
+    "Akvaryum & Deniz Canlıları",
+    "Melek Balığı"
+   ],
+   "add": [
+    "Altum Melek",
+    "Zebra Melek",
+    "Siyah Melek",
+    "Altın Melek",
+    "Marble Melek",
+    "Koi Melek"
+   ]
+  },
+  {
+   "path": [
+    "Hayvanlar Alemi",
+    "Akvaryum & Deniz Canlıları",
+    "Gurami & Labirentli Balık"
+   ],
+   "add": [
+    "Mavi Gurami",
+    "İnci Gurami",
+    "Öpücük Balığı (Kissing Gurami)",
+    "Bal Gurami",
+    "Cüce Gurami",
+    "Cennet Balığı (Paradise)"
+   ]
+  },
+  {
+   "path": [
+    "Hayvanlar Alemi",
+    "Akvaryum & Deniz Canlıları",
+    "Sazan & Koi"
+   ],
+   "add": [
+    "Koi",
+    "Kelebek Koi (Butterfly)",
+    "Ayna Sazanı"
+   ]
+  },
+  {
+   "path": [
+    "Hayvanlar Alemi",
+    "Akvaryum & Deniz Canlıları",
+    "Karides & Salyangoz"
+   ],
+   "add": [
+    "Red Cherry Karides",
+    "Amano Karides",
+    "Crystal Red Karides",
+    "Blue Dream Karides",
+    "Elma Salyangozu",
+    "Neritina Salyangozu",
+    "Ramshorn Salyangoz",
+    "Akvaryum Kereviti"
+   ]
+  },
+  {
+   "path": [
+    "Hayvanlar Alemi",
+    "Akvaryum & Deniz Canlıları",
+    "Deniz Balığı & Mercan"
+   ],
+   "add": [
+    "Palyaço Balığı",
+    "Cerrah Balığı (Tang)",
+    "Damsel",
+    "Goby",
+    "Yumuşak Mercan",
+    "Sert Mercan (SPS & LPS)",
+    "Canlı Kaya"
+   ]
+  },
+  {
+   "path": [
+    "Hayvanlar Alemi",
+    "Akvaryum & Deniz Canlıları",
+    "Anemon & Deniz Canlısı"
+   ],
+   "add": [
+    "Anemon",
+    "Deniz Yıldızı",
+    "Temizlikçi Karides",
+    "Hermit Yengeç"
+   ]
+  },
+  {
+   "path": [
+    "Hayvanlar Alemi",
+    "Akvaryum & Deniz Canlıları",
+    "Barbus"
+   ],
+   "add": [
+    "Sumatra Barbus",
+    "Altın Barbus",
+    "Kiraz Barbus",
+    "Denison Barbus"
+   ]
+  },
+  {
+   "path": [
+    "Hayvanlar Alemi",
+    "Akvaryum & Deniz Canlıları",
+    "Rasbora"
+   ],
+   "add": [
+    "Harlequin Rasbora",
+    "Galaxy Rasbora",
+    "Chili Rasbora"
+   ]
+  },
+  {
+   "path": [
+    "Hayvanlar Alemi",
+    "Akvaryum & Deniz Canlıları",
+    "Botia"
+   ],
+   "add": [
+    "Palyaço Botia",
+    "Yo-Yo Botia",
+    "Kuhli"
+   ]
+  },
+  {
+   "path": [
+    "Arayanlar / Talep İlanları"
+   ],
+   "add": [
+    "Sanayi & Makine Talebi"
+   ]
+  },
+  {
+   "path": [
+    "Arayanlar / Talep İlanları",
+    "Sanayi & Makine Talebi"
+   ],
+   "add": [
+    "Sanayi Makinesi Arıyorum",
+    "Tarım Makinesi Arıyorum",
+    "Jeneratör Arıyorum",
+    "Forklift Arıyorum",
+    "Güneş Enerjisi Sistemi Arıyorum",
+    "Endüstriyel Mutfak Ekipmanı Arıyorum"
+   ]
+  },
+  {
+   "path": [
+    "Arayanlar / Talep İlanları",
+    "Emlak Talebi"
+   ],
+   "add": [
+    "Bina Arıyorum",
+    "Otel & Turistik Tesis Arıyorum",
+    "Bahçe & Bağ Arıyorum",
+    "Günlük Kiralık Ev Arıyorum",
+    "Fabrika & Atölye Arıyorum",
+    "Prefabrik / Tiny House Arıyorum",
+    "Kiralık Oda Arıyorum",
+    "Devren İş Yeri Arıyorum"
+   ]
+  },
+  {
+   "path": [
+    "Arayanlar / Talep İlanları",
+    "Vasıta Talebi"
+   ],
+   "add": [
+    "Kamyon & Çekici Arıyorum",
+    "Minibüs & Otobüs Arıyorum",
+    "Elektrikli Araç Arıyorum",
+    "ATV & UTV Arıyorum",
+    "Jet Ski & Deniz Aracı Arıyorum"
+   ]
+  },
+  {
+   "path": [
+    "Arayanlar / Talep İlanları",
+    "Elektronik Talebi"
+   ],
+   "add": [
+    "Akıllı Saat Arıyorum",
+    "Kulaklık & Ses Sistemi Arıyorum",
+    "Drone Arıyorum",
+    "Bilgisayar Parçası Arıyorum"
+   ]
+  },
+  {
+   "path": [
+    "Arayanlar / Talep İlanları",
+    "Ev & Yaşam Talebi"
+   ],
+   "add": [
+    "Giyim & Ayakkabı Arıyorum",
+    "Saat & Takı Arıyorum",
+    "Kitap Arıyorum",
+    "Bisiklet Arıyorum",
+    "Bahçe & Yapı Malzemesi Arıyorum",
+    "Oyuncak Arıyorum"
+   ]
+  },
+  {
+   "path": [
+    "Arayanlar / Talep İlanları",
+    "Hizmet & Usta Talebi"
+   ],
+   "add": [
+    "Elektrikçi Arıyorum",
+    "Tesisatçı Arıyorum",
+    "Boyacı Arıyorum",
+    "Oto Tamircisi Arıyorum",
+    "Fotoğrafçı Arıyorum",
+    "Mimar & Mühendis Arıyorum",
+    "Avukat & Mali Müşavir Arıyorum"
+   ]
+  },
+  {
+   "path": [
+    "Arayanlar / Talep İlanları",
+    "Özel Ders & Bakıcı Talebi"
+   ],
+   "add": [
+    "Sınav Hazırlık Öğretmeni Arıyorum",
+    "Yabancı Dil Öğretmeni Arıyorum",
+    "Müzik Öğretmeni Arıyorum",
+    "Spor Hocası / PT Arıyorum",
+    "Ev Yardımcısı Arıyorum",
+    "Evcil Hayvan Bakıcısı Arıyorum",
+    "Bahçıvan Arıyorum"
+   ]
+  },
+  {
+   "path": [
+    "Arayanlar / Talep İlanları",
+    "İş & Eleman Talebi"
+   ],
+   "add": [
+    "Yarı Zamanlı İş Arıyorum",
+    "Uzaktan İş Arıyorum",
+    "Usta & Kalfa Arıyorum"
+   ]
+  },
+  {
+   "path": [
+    "Arayanlar / Talep İlanları",
+    "Hayvan & Diğer Talep"
+   ],
+   "add": [
+    "Kümes Hayvanı Arıyorum",
+    "Kuş Arıyorum",
+    "Akvaryum Balığı Arıyorum",
+    "Arı & Arı Kolonisi Arıyorum",
+    "Pet Ürünü Arıyorum",
+    "Yem & Saman Arıyorum"
    ]
   },
   {
