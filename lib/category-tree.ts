@@ -3046,6 +3046,7 @@ const HINTS: Array<{ words: string[]; path: string[] }> = [
   { words: ["tas duvar", "taş duvar", "dogal tas", "doğal taş", "tas kaplama", "taş kaplama"], path: ["Ustalar & Hizmetler", "Ev Tadilat & Dekorasyon", "Doğal Taş & Taş Duvar"] },
   { words: ["akilli saat", "akıllı saat", "smart watch", "smartwatch", "apple watch", "galaxy watch", "huawei watch", "garmin"], path: ["İkinci El & Sıfır Alışveriş", "Elektronik", "Giyilebilir Teknoloji", "Akıllı Saat"] },
   { words: ["robot supurge", "robot süpürge", "dikey supurge", "dikey süpürge", "roborock", "dyson"], path: ["İkinci El & Sıfır Alışveriş", "Küçük Ev Aletleri"] },
+  { words: ["kombi", "kombi peteği"], path: ["İkinci El & Sıfır Alışveriş", "Beyaz Eşya", "Kombi & Isıtma"] },
   { words: ["gonye", "gönye", "gönye kesme"], path: ["İkinci El & Sıfır Alışveriş", "Bahçe & Yapı Market", "Elektrikli El Aletleri", "Gönye Kesme Makinesi"] },
   { words: ["suv arac", "suv araç", "pickup", "arazi araci", "arazi aracı", "4x4 arac", "4x4 araç"], path: ["Vasıta", "Arazi, SUV & Pickup"] },
   { words: ["kamyon", "cekici", "çekici", "tir cekici", "tır çekici", "dorse"], path: ["Vasıta", "Ağır Vasıta"] },
@@ -3141,38 +3142,91 @@ function hintMatches(queryKey: string, hintWord: string) {
   return fuzzyLabelMatch(queryKey, wk);
 }
 
-/** Search the tree for matching leaf/branch paths. */
+/** Search the tree for matching leaf/branch paths — en iyi eşleşme önce (puanlı sıralama). */
+// 2026-11-20: eskiden sonuçlar ağaçta bulunma sırasıyla dönüyordu; 22 bin düğümde bulanık eşleşmeler tam
+// eşleşmenin önüne geçiyordu ("kangal" → Mangal, "lego" → Murciélago, "iphone 15 pro max" → iPhone 17).
+// Puan: tam eşleşme 100 > çok kelimede tüm kelimeler yolda 95 > ipucu (tam kelime) 90 > baştan 85 > kelime başı 75
+// > kelime içi 35 > ipucu (kısmi) 30 > bulanık 25. Eşit puanda sığ düğüm önce.
+type NodeKey = { k: string; words: string[] };
+const NODE_KEYS = new WeakMap<CategoryNode, NodeKey>();
+const nodeKey = (n: CategoryNode): NodeKey => {
+  let v = NODE_KEYS.get(n);
+  if (!v) { const k = key(n.label); v = { k, words: k.split(" ").filter(Boolean) }; NODE_KEYS.set(n, v); }
+  return v;
+};
 export function suggestCategories(query: string, limit = 8): SuggestHit[] {
   const k = key(query);
   if (!k) return [];
-  const hits: SuggestHit[] = [];
-  const seen = new Set<string>();
+  const tokens = k.split(" ").filter(Boolean);
+  const qWords = new Set(tokens);
+  const best = new Map<string, { hit: SuggestHit; score: number; depth: number; order: number }>();
+  let order = 0;
 
-  const pushPath = (path: CategoryNode[]) => {
+  // "Arıyorum" niyeti yoksa talep ilanları kökü geriye düşer (satılık ürün arayan önce ürünü görsün).
+  const seeking = tokens.some((t) => t === "ariyorum" || t === "araniyor" || t === "talep" || t === "aliyorum" || t === "alinir");
+  const consider = (path: CategoryNode[], score: number) => {
     if (!path.length) return;
+    if (!seeking && path[0].label === "Arayanlar / Talep İlanları") score -= 20;
     const formKey = resolveFormKey(path);
-    // Tekrarı GİDER: aynı yaprak etiketi + aynı form (aynı "şey") birden çok dalda
-    // olsa da tek öneri göster (iPhone hem Elektronik hem Telefon & Aksesuar altında
-    // görünüyordu). Farklı form → farklı anlam (Basketbol ekipman vs. ders) → korunur.
-    const leaf = path[path.length - 1];
-    const id = `${key(leaf.label)}|${formKey}`;
-    if (seen.has(id)) return;
-    seen.add(id);
-    hits.push({ path, labels: path.map((p) => p.label), formKey, image: path.find((p) => p.image)?.image });
+    // Tekrarı GİDER: aynı yaprak etiketi + aynı form (aynı "şey") birden çok dalda olsa da tek öneri
+    // (en yüksek puanlısı) gösterilir. Farklı form → farklı anlam (Basketbol ekipman vs. ders) → korunur.
+    const leafNode = path[path.length - 1];
+    const id = `${nodeKey(leafNode).k}|${formKey}`;
+    const prev = best.get(id);
+    if (prev && (prev.score > score || (prev.score === score && prev.depth <= path.length))) return;
+    best.set(id, {
+      hit: { path, labels: path.map((p) => p.label), formKey, image: path.find((p) => p.image)?.image },
+      score, depth: path.length, order: prev?.order ?? order++
+    });
   };
 
   for (const hint of HINTS) {
-    if (hint.words.some((w) => hintMatches(k, w))) pushPath(pathByLabels(hint.path));
+    let s = 0;
+    for (const w of hint.words) {
+      const wk = key(w);
+      const whole = wk.includes(" ") ? ` ${k} `.includes(` ${wk} `) : qWords.has(wk);
+      if (whole) { s = 90; break; } // elle tanımlı niyet ipucu, tam kelimede baştan eşleşmenin önünde
+      if (!s && hintMatches(k, w)) s = 30;
+    }
+    if (s) consider(pathByLabels(hint.path), s);
   }
 
-  const walk = (nodes: CategoryNode[], trail: CategoryNode[]) => {
+  const multi = tokens.length > 1;
+  const covers = (words: string[], t: string) => words.some((w) => w === t || (t.length >= 2 && w.startsWith(t)));
+  const walk = (nodes: CategoryNode[], trail: CategoryNode[], trailWords: string[]) => {
     for (const n of nodes) {
+      const { k: lk, words } = nodeKey(n);
+      let score = 0;
+      if (lk === k) score = 100;
+      else if (multi && tokens.some((t) => covers(words, t)) && tokens.every((t) => covers(words, t) || covers(trailWords, t))) score = 95;
+      else if (lk.startsWith(k)) score = 85;
+      else if (` ${lk}`.includes(` ${k}`)) score = 75;
+      else if (k.length >= 3 && lk.includes(k)) score = 35;
+      else if (fuzzyLabelMatch(k, lk)) score = 25;
       const path = [...trail, n];
-      if (fuzzyLabelMatch(k, key(n.label))) pushPath(path);
-      if (n.children) walk(n.children, path);
+      if (score) consider(path, score);
+      if (n.children) walk(n.children, path, multi ? trailWords.concat(words) : trailWords);
     }
   };
-  walk(categoryTree, []);
+  walk(categoryTree, [], []);
 
-  return hits.slice(0, limit);
+  // Çok kelimede hiçbir yol tüm kelimeleri taşımıyorsa ("bmw 320": 320 ağaçta yok) kelime kelime öner.
+  if (!best.size && multi) {
+    const out: SuggestHit[] = [];
+    const ids = new Set<string>();
+    for (const t of [...tokens].sort((x, y) => Number(/[a-z]/.test(y)) - Number(/[a-z]/.test(x)) || y.length - x.length)) {
+      if (t.length < 2) continue;
+      for (const h of suggestCategories(t, limit)) {
+        const id = h.labels.join(">");
+        if (!ids.has(id)) { ids.add(id); out.push(h); }
+      }
+      if (out.length >= limit) break;
+    }
+    return out.slice(0, limit);
+  }
+
+  return [...best.values()]
+    .sort((x, y) => y.score - x.score || x.depth - y.depth || x.order - y.order)
+    .slice(0, limit)
+    .map((v) => v.hit);
 }
