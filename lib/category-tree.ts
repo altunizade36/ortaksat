@@ -28,16 +28,41 @@ function trLower(value: string): string {
   return out;
 }
 // Aynı etiketler binlerce kez geçer ("Diğer Model", marka adları, parça grupları) → sonuç önbelleklenir.
+// 2026-11-20: tek geçişli döngü — eski split/map/join + iki regex zinciri Hermes'te (Android) 28 bin düğümde
+// açılışa ~170 ms ekliyordu. Çıktı eskisiyle BİREBİR aynı (tüm etiketlerde karşılaştırılarak doğrulandı):
+// küçült → TR_MAP (ç→c, &→ve, +→-plus-) → [a-z0-9] dışı ardışık karakterler tek "-" → baş/son "-" kırp.
 const SLUG_CACHE = new Map<string, string>();
+// Türkçe/aksanlı harf → ASCII kod (slug için). Liste dışı ASCII-dışı karakter ayırıcı ("-") sayılır.
+const SLUG_FOLD: Record<string, number> = {
+  "ç": 99, "Ç": 99, "ğ": 103, "Ğ": 103, "ı": 105, "İ": 105, "ö": 111, "Ö": 111, "ş": 115, "Ş": 115,
+  "ü": 117, "Ü": 117, "â": 97, "Â": 97, "î": 105, "Î": 105, "û": 117, "Û": 117
+};
+const PLUS_CODES = [45, 112, 108, 117, 115, 45]; // "-plus-"
 function sl(value: string) {
   const hit = SLUG_CACHE.get(value);
   if (hit !== undefined) return hit;
-  const out = trLower(value)
-    .split("")
-    .map((ch) => TR_MAP[ch] ?? ch)
-    .join("")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
+  const codes: number[] = [];
+  let dash = false;
+  const push = (c: number) => {
+    if ((c >= 97 && c <= 122) || (c >= 48 && c <= 57)) {
+      if (dash && codes.length) codes.push(45);
+      dash = false;
+      codes.push(c);
+    } else dash = true;
+  };
+  for (let i = 0; i < value.length; i++) {
+    let c = value.charCodeAt(i);
+    if (c < 128) {
+      if (c >= 65 && c <= 90) c += 32;
+      if (c === 38) { push(118); push(101); continue; } // & → ve
+      if (c === 43) { for (const p of PLUS_CODES) push(p); continue; } // + → -plus-
+      push(c);
+      continue;
+    }
+    const f = SLUG_FOLD[value[i]];
+    push(f ?? 45);
+  }
+  const out = String.fromCharCode.apply(null, codes);
   SLUG_CACHE.set(value, out);
   return out;
 }
@@ -2671,7 +2696,8 @@ function ensureDigerEverywhere(nodes: CategoryNode[], inheritedFormKey?: string)
     const kids = n.children;
     if (!kids || kids.length === 0) continue;
     ensureDigerEverywhere(kids, fk);
-    const hasDiger = kids.some((c) => /^di[ğg]er/i.test(c.label.trim()));
+    // Ön kontrol (ilk harf D/d) — her çocukta trim + regex çalıştırmak açılışı yavaşlatıyordu.
+    const hasDiger = kids.some((c) => { const ch = c.label.charCodeAt(0); return (ch === 68 || ch === 100 || ch === 32) && /^di[ğg]er/i.test(c.label.trim()); });
     if (!hasDiger) {
       kids.push({ key: `diger-${n.slug}`, label: "Diğer", slug: `diger-${n.slug}`, formKey: fk, ...(n._x ? { _x: true } : {}) });
     }
@@ -2736,28 +2762,30 @@ ensureDigerEverywhere(categoryTree);
 function uniquifySlugs(roots: CategoryNode[]): void {
   // İki geçiş: önce asıl ağaç (adresleri yıllardır aynı), sonra genişletme verisinden gelen düğümler (_x).
   // Böylece yeni eklenen bir marka/model, aynı adlı eski bir kategorinin çıplak adresini ASLA çalmaz.
+  // Performans: genişlik-öncelikli sıra paralel dizilerle (düğüm/ebeveyn) tutulur, nesne ayrılmaz.
   const used = new Set<string>();
-  type Q = { node: CategoryNode; parent?: CategoryNode };
+  const order: CategoryNode[] = [];
+  const parentOf: (CategoryNode | undefined)[] = [];
+  for (const n of roots) { order.push(n); parentOf.push(undefined); }
+  for (let i = 0; i < order.length; i++) {
+    const kids = order[i].children;
+    if (kids) for (const c of kids) { order.push(c); parentOf.push(order[i]); }
+  }
   for (const pass of [false, true]) {
-    let frontier: Q[] = roots.map((n) => ({ node: n }));
-    while (frontier.length) {
-      const next: Q[] = [];
-      for (const { node: n, parent } of frontier) {
-        if (!!n._x === pass) {
-          if (used.has(n.slug)) {
-            const base = parent ? `${parent.slug}-${n.slug}` : n.slug;
-            let cand = base;
-            let i = 2;
-            while (used.has(cand)) cand = `${base}-${i++}`;
-            n.slug = cand;
-            n.key = cand;
-          }
-          used.add(n.slug);
-        }
-        if (pass && n._x) delete n._x;
-        for (const c of n.children ?? []) next.push({ node: c, parent: n });
+    for (let i = 0; i < order.length; i++) {
+      const n = order[i];
+      if (!!n._x !== pass) continue;
+      if (used.has(n.slug)) {
+        const p = parentOf[i];
+        const base = p ? `${p.slug}-${n.slug}` : n.slug;
+        let cand = base;
+        let j = 2;
+        while (used.has(cand)) cand = `${base}-${j++}`;
+        n.slug = cand;
+        n.key = cand;
       }
-      frontier = next;
+      used.add(n.slug);
+      if (pass) delete n._x;
     }
   }
 }
@@ -2767,14 +2795,20 @@ uniquifySlugs(categoryTree);
 // salt etiketse mükerrer <title> üretir (ör. "Diğer" 489 dalda; paylaşılan markalar
 // Otomobil+Motosiklet+Ticari). Kategori sayfası bu etiketlerde EBEVEYN bağlamı ekler
 // ("Satılık İş Yeri", "Otomobil BMW", "Diğer Konut") → benzersiz + arama-uyumlu title/H1.
-export const AMBIGUOUS_LABELS: Set<string> = (() => {
-  const count = new Map<string, number>();
-  const walk = (ns: CategoryNode[]) => { for (const n of ns) { count.set(n.label, (count.get(n.label) ?? 0) + 1); if (n.children) walk(n.children); } };
-  walk(categoryTree);
-  const set = new Set<string>();
-  for (const [label, c] of count) if (c > 1) set.add(label);
-  return set;
-})();
+// Tembel: yalnız kategori sayfası başlığında gerekir; açılışta 28 bin düğümü saymak Android'de ~25 ms+ ekliyordu.
+let ambiguousCache: Set<string> | null = null;
+export const AMBIGUOUS_LABELS: { has(label: string): boolean } = {
+  has(label: string) {
+    if (!ambiguousCache) {
+      const count = new Map<string, number>();
+      const walk = (ns: CategoryNode[]) => { for (const n of ns) { count.set(n.label, (count.get(n.label) ?? 0) + 1); if (n.children) walk(n.children); } };
+      walk(categoryTree);
+      ambiguousCache = new Set<string>();
+      for (const [l, c] of count) if (c > 1) ambiguousCache.add(l);
+    }
+    return ambiguousCache.has(label);
+  }
+};
 
 
 // ---- lookups & helpers ---------------------------------------------------
@@ -3034,8 +3068,22 @@ export function deriveFieldsFromPath(path: CategoryNode[], schema: FormSchema): 
 export type SuggestHit = { path: CategoryNode[]; labels: string[]; formKey: string; image?: string };
 
 const TR_S: Record<string, string> = { "ç": "c", "ğ": "g", "ı": "i", "ö": "o", "ş": "s", "ü": "u", "â": "a" };
+// Tek geçiş (eski split/map/join + 2 regex ile birebir aynı çıktı): küçült → TR_S → [a-z0-9] dışı ardışık
+// karakterler tek boşluk → kırp. Hermes'te ilk aramada 28 bin etiket anahtarı ~4 kat hızlı üretilir.
 function key(value: string) {
-  return trLower(value).split("").map((c) => TR_S[c] ?? c).join("").replace(/[^a-z0-9\s]+/g, " ").replace(/\s+/g, " ").trim();
+  const lower = trLower(value);
+  let out = "";
+  let gap = false;
+  for (let i = 0; i < lower.length; i++) {
+    const ch = TR_S[lower[i]] ?? lower[i];
+    const c = ch.charCodeAt(0);
+    if ((c >= 97 && c <= 122) || (c >= 48 && c <= 57)) {
+      if (gap && out.length) out += " ";
+      gap = false;
+      out += ch;
+    } else gap = true;
+  }
+  return out;
 }
 
 // Manual hints so common product words land on the right path even if the word
@@ -3154,6 +3202,24 @@ const nodeKey = (n: CategoryNode): NodeKey => {
   if (!v) { const k = key(n.label); v = { k, words: k.split(" ").filter(Boolean) }; NODE_KEYS.set(n, v); }
   return v;
 };
+// İlk aramada 28 bin etiket anahtarını birden üretmek telefonda ~1 sn takılma yapıyordu → uygulama açıldıktan
+// birkaç saniye sonra küçük parçalar halinde (her parça arasında ana iş parçacığına söz hakkı vererek) önceden
+// hazırlanır. Yalnız tarayıcı/uygulama ortamında çalışır; statik derlemede (Node) zamanlayıcı kurulmaz.
+function warmSuggestKeys(): void {
+  const stack: CategoryNode[] = [...categoryTree];
+  const step = () => {
+    let budget = 1500;
+    while (stack.length && budget-- > 0) {
+      const n = stack.pop()!;
+      nodeKey(n);
+      if (n.children) for (const c of n.children) stack.push(c);
+    }
+    if (stack.length) setTimeout(step, 16);
+  };
+  setTimeout(step, 4000);
+}
+if (typeof requestAnimationFrame === "function" && typeof setTimeout === "function") warmSuggestKeys();
+
 export function suggestCategories(query: string, limit = 8): SuggestHit[] {
   const k = key(query);
   if (!k) return [];
@@ -3193,7 +3259,29 @@ export function suggestCategories(query: string, limit = 8): SuggestHit[] {
 
   const multi = tokens.length > 1;
   const covers = (words: string[], t: string) => words.some((w) => w === t || (t.length >= 2 && w.startsWith(t)));
-  const walk = (nodes: CategoryNode[], trail: CategoryNode[], trailWords: string[]) => {
+  // Hızlı bulanık eşleşme (eski fuzzyLabelMatch ile aynı kural): uzun sorgu kelimesi (≥4) için yalnız İLK HARFİ
+  // tutan ve uzunluğu yakın etiket kelimelerinde düzenleme mesafesi hesaplanır; sorgu bir kez bölünür.
+  const longQ = tokens.filter((t) => t.length >= 4);
+  const shortQ = tokens.filter((t) => t.length >= 2 && t.length < 4);
+  const needed = tokens.length === 1 ? 1 : Math.min(2, tokens.length);
+  const fuzzy = (lk: string, words: string[]) => {
+    if (lk.length >= 4 && k.includes(lk)) return true;
+    if (!longQ.length) return false;
+    let hits = 0;
+    for (const qw of longQ) {
+      const max = qw.length >= 7 ? 2 : 1;
+      for (const lw of words) {
+        if (lw.length < 4 || lw.charCodeAt(0) !== qw.charCodeAt(0) || Math.abs(lw.length - qw.length) > max) continue;
+        if (editDistanceWithin(qw, lw, max)) { hits++; break; }
+      }
+    }
+    for (const qw of shortQ) if (words.includes(qw)) hits++;
+    return hits >= needed;
+  };
+  // Yol dizisi yalnız eşleşen düğümde kopyalanır (eskiden her düğümde yeni dizi → 28 bin ayırma/sorgu).
+  const trail: CategoryNode[] = [];
+  const trailWords: string[] = [];
+  const walk = (nodes: CategoryNode[]) => {
     for (const n of nodes) {
       const { k: lk, words } = nodeKey(n);
       let score = 0;
@@ -3202,13 +3290,19 @@ export function suggestCategories(query: string, limit = 8): SuggestHit[] {
       else if (lk.startsWith(k)) score = 85;
       else if (` ${lk}`.includes(` ${k}`)) score = 75;
       else if (k.length >= 3 && lk.includes(k)) score = 35;
-      else if (fuzzyLabelMatch(k, lk)) score = 25;
-      const path = [...trail, n];
-      if (score) consider(path, score);
-      if (n.children) walk(n.children, path, multi ? trailWords.concat(words) : trailWords);
+      else if (fuzzy(lk, words)) score = 25;
+      trail.push(n);
+      if (score) consider(trail.slice(), score);
+      if (n.children) {
+        const before = trailWords.length;
+        if (multi) for (const w of words) trailWords.push(w);
+        walk(n.children);
+        trailWords.length = before;
+      }
+      trail.pop();
     }
   };
-  walk(categoryTree, [], []);
+  walk(categoryTree);
 
   // Çok kelimede hiçbir yol tüm kelimeleri taşımıyorsa ("bmw 320": 320 ağaçta yok) kelime kelime öner.
   if (!best.size && multi) {
