@@ -30,8 +30,10 @@ if (a < 0 || b < 0) throw new Error("işaretli blok bulunamadı");
 const block = [
   BEGIN,
   "// OTOMATİK ÜRETİLDİ — elle düzenleme; data/category-expansions.json'u düzenleyip betiği çalıştır.",
-  `const CONSTANT_ADDITIONS: Record<string, string[] | Record<string, string[]>> = ${JSON.stringify(data.constants ?? {})};`,
-  `const CATEGORY_EXPANSIONS: Array<{ path: string[]; add?: string[]; brands?: Record<string, string[]> }> = ${JSON.stringify(data.expansions ?? [])};`,
+  // JSON.parse(metin): dev nesne literali TypeScript'te "union type too complex" (TS2590) hatası veriyordu;
+  // ayrıca Hermes/V8'de JSON.parse büyük veriyi literal değerlendirmesinden hızlı açar.
+  `const CONSTANT_ADDITIONS: Record<string, string[] | Record<string, string[]>> = JSON.parse(${JSON.stringify(JSON.stringify(data.constants ?? {}))});`,
+  `const CATEGORY_EXPANSIONS: Array<{ path: string[]; add?: string[]; brands?: Record<string, string[]> }> = JSON.parse(${JSON.stringify(JSON.stringify(data.expansions ?? []))});`,
   ""
 ].join("\n");
 const out = src.slice(0, a) + block + src.slice(b);

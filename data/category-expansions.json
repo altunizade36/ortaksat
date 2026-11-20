@@ -328,12 +328,34 @@
     "GM 20",
     "GM 10",
     "GM 9 Pro",
-    "GM 8"
+    "GM 8",
+    "GM 26 One",
+    "GM 26 Pro",
+    "GM 26",
+    "GM 23 SE",
+    "GM 22S",
+    "Era 30",
+    "Era 30 Pro",
+    "Era 50",
+    "GM Phoenix 5G",
+    "GM 5",
+    "GM 5 Plus",
+    "GM 6",
+    "GM 8 Go",
+    "GM 9 Play"
    ],
    "Reeder": [
     "S19 Max",
     "S19 Max Pro S",
-    "P13 Blue"
+    "P13 Blue",
+    "P13",
+    "P13 Blue Plus",
+    "S19 Max Pro S Edge",
+    "S23 SE",
+    "S23 Pro Max",
+    "S71",
+    "S919",
+    "S919 SE"
    ],
    "Infinix": [
     "Note 50 Pro",
@@ -398,7 +420,28 @@
     "VIA X20",
     "VIA F20",
     "VIA A4",
-    "VIA E3"
+    "VIA E3",
+    "VIA X45",
+    "VIA M45",
+    "VIA M40",
+    "VIA M35",
+    "VIA A40",
+    "VIA X40",
+    "VIA X30 Plus",
+    "VIA E30",
+    "VIA E4",
+    "VIA P3",
+    "VIA S",
+    "VIA M30 Plus",
+    "VIA G4",
+    "VIA A3",
+    "VIA F3",
+    "VIA L30",
+    "VIA L40",
+    "VIA S30",
+    "VIA S40",
+    "VIA S48",
+    "VIA F30 Plus"
    ],
    "TCL": [
     "TCL 50 SE",
@@ -953,6 +996,18 @@
    ],
    "Daihatsu": [
     "Applause"
+   ],
+   "Omix": [
+    "O1 Icon",
+    "O1 Neo",
+    "O1 Next 5G",
+    "X3",
+    "X4",
+    "X5",
+    "X6",
+    "X7",
+    "X400",
+    "X700"
    ]
   },
   "COMPUTER_BRANDS": [
@@ -1223,6 +1278,18 @@
    "Vestel": [
     "Android TV",
     "Google TV"
+   ],
+   "Axen": [
+    "Perla Serisi",
+    "Milan Serisi"
+   ],
+   "Sunny": [
+    "Perla Serisi",
+    "Milan Serisi",
+    "Sunny Plus"
+   ],
+   "Sharp": [
+    "Aquos"
    ]
   },
   "WHITE_GOODS_BRANDS": [
@@ -2070,7 +2137,9 @@
     "GTS 300i",
     "Wolf",
     "Jet 4",
-    "Mio"
+    "Mio",
+    "NH X 125",
+    "X-Pro 125"
    ],
    "Kymco": [
     "AK 550",
@@ -2132,10 +2201,18 @@
     "300DS",
     "500DS",
     "300 Rally",
-    "500AC"
+    "500AC",
+    "SR1",
+    "RR525",
+    "R125"
    ],
    "QJ Motor": [
-    "SRT 800"
+    "SRT 800",
+    "SRT 700",
+    "SRT 800 X",
+    "SVT 650X",
+    "LTM 125",
+    "SRK 125"
    ],
    "Keeway": [
     "Cityblade"
@@ -2181,6 +2258,174 @@
    "Benda": [
     "Napoleon",
     "Darkflag"
+   ],
+   "Mondial": [
+    "Lavinia",
+    "Lavinia Pro",
+    "Skuty",
+    "Fuzion",
+    "Strada",
+    "Loyal",
+    "Fury 110i",
+    "ZNU",
+    "Cross X-Treme Maxx",
+    "Wing",
+    "Vulture",
+    "UAG",
+    "Exon",
+    "Turismo",
+    "Lungo",
+    "Virago",
+    "Rio",
+    "Road Boy"
+   ],
+   "Kuba": [
+    "Çita 50 RX",
+    "Çita 50R",
+    "Bluebird 50",
+    "Ege",
+    "Superlight 125",
+    "KB50-9",
+    "TK-03",
+    "Race 125",
+    "CR230",
+    "XRS50",
+    "GTR50",
+    "CG 50",
+    "VN50",
+    "SJ50",
+    "Azure 50",
+    "Master MT 50"
+   ],
+   "RKS": [
+    "Freccia 150",
+    "RT250",
+    "Parmida 50",
+    "Bitter 125",
+    "NewCity 50",
+    "K-Light 250",
+    "Rosa 50",
+    "Newlight 125",
+    "Sniper 50",
+    "Spontini 125",
+    "SRK 125-R",
+    "SRK 250",
+    "SRK 550 RS",
+    "NR200",
+    "Azure 50",
+    "GTR 50",
+    "DES125",
+    "Neon 125",
+    "Icon 50",
+    "RK125-S",
+    "Vieste 249",
+    "VPS 125",
+    "Lince 125",
+    "Velloce 150",
+    "Easy Pro 50",
+    "Rodos 50",
+    "Reale 125",
+    "R250",
+    "RZ250S"
+   ],
+   "Arora": [
+    "Sonic 125",
+    "Beatrix 150",
+    "HTX Pro 50",
+    "AR125",
+    "Hector Pro 450",
+    "Hunter 300",
+    "Smart 50",
+    "CK250",
+    "Fırtına 50",
+    "Cappuccino 50",
+    "Cappuccino 125",
+    "Malibu Pro 125",
+    "Max Pro 125",
+    "Max Pro 150",
+    "Max Pro 250",
+    "Max Jet 125",
+    "Boss 50",
+    "Ninja 200",
+    "CR250",
+    "Leader 50",
+    "AR 06",
+    "AR250",
+    "Jaguar 125",
+    "Anka 300",
+    "Shark 125",
+    "Quantum 50",
+    "Mojito 50",
+    "Freedom 50",
+    "Safari Pro",
+    "MT 125"
+   ],
+   "Yuki": [
+    "Hammer",
+    "Casper Pro",
+    "Aydos",
+    "Bellini",
+    "Gusto",
+    "Gentle",
+    "Venom",
+    "Victor",
+    "Chico",
+    "Scrambler"
+   ],
+   "Motolux": [
+    "Cappadocia",
+    "Cortado",
+    "Nirvana Pro",
+    "MCX",
+    "Macchiato",
+    "Vintage",
+    "Rossi FX 50",
+    "MW46",
+    "CEO 110",
+    "Drift"
+   ],
+   "Falcon": [
+    "Rio 277",
+    "Max 125i",
+    "Freedom 277",
+    "New Comfort 185",
+    "Mexico 150",
+    "FR-177",
+    "Turtle 50",
+    "Cmax 155",
+    "Retro 50i",
+    "Martini 50",
+    "Attack 100",
+    "New Soft 50",
+    "Guppi 110",
+    "Mocco 50X"
+   ],
+   "Kanuni": [
+    "Seha 125",
+    "Seha 150",
+    "Seha 250",
+    "Mati 125",
+    "Reha 250",
+    "Resa 125",
+    "Windy 125",
+    "Elite 100",
+    "Tiger 250",
+    "GT 170",
+    "BS 125",
+    "Trodon 50"
+   ],
+   "Zontes": [
+    "350R",
+    "350X",
+    "350V",
+    "350E",
+    "350D",
+    "368G",
+    "368D",
+    "368E",
+    "703RR",
+    "125M",
+    "200C"
    ]
   },
   "COMMERCIAL_BRANDS": [
@@ -2670,7 +2915,9 @@
    ],
    "add": [
     "Honor Pad",
-    "OnePlus Pad"
+    "OnePlus Pad",
+    "Tablet Kalemi",
+    "Tablet Klavyesi"
    ]
   },
   {
@@ -4680,7 +4927,16 @@
     ],
     "AirTies": [],
     "Cisco": []
-   }
+   },
+   "add": [
+    "Network Switch",
+    "Mesh Wi-Fi Sistemi",
+    "Access Point",
+    "Menzil Genişletici (Repeater)",
+    "Wi-Fi Adaptörü",
+    "Rack Kabin",
+    "Ağ Kablosu & Patch Panel"
+   ]
   },
   {
    "path": [
@@ -6000,7 +6256,11 @@
     "Elektrikli Izgara & Barbekü",
     "Kıyma Makinesi",
     "Buz Makinesi",
-    "Yumurta Pişirici"
+    "Yumurta Pişirici",
+    "Buharlı Düzleştirici (Steamer)",
+    "Cam Silme Robotu",
+    "Gıda Kurutma Makinesi",
+    "Dilimleme Makinesi"
    ]
   },
   {
@@ -7646,7 +7906,8 @@
    ],
    "add": [
     "Yolluk & Paspas",
-    "Koltuk Örtüsü & Şal"
+    "Koltuk Örtüsü & Şal",
+    "Çeyiz Seti"
    ]
   },
   {
@@ -7689,7 +7950,8 @@
     "Isıtma & Soğutma"
    ],
    "add": [
-    "Tüplü Soba"
+    "Tüplü Soba",
+    "Elektrikli Battaniye"
    ]
   },
   {
@@ -11141,7 +11403,8 @@
     "Evrak İmha Makinesi",
     "Spiral Cilt Makinesi",
     "Etiket Makinesi",
-    "Telefon Santrali"
+    "Telefon Santrali",
+    "Kağıt Kesme Makinesi (Giyotin)"
    ]
   },
   {
@@ -12767,7 +13030,20 @@
    ],
    "brands": {
     "Chicco": [],
-    "Kraft": [],
+    "Kraft": [
+     "Slide",
+     "Juno",
+     "Kenya",
+     "Tokyo",
+     "Crab",
+     "Alexa",
+     "Dakar",
+     "Beta",
+     "Crown",
+     "Drive",
+     "Parle",
+     "Viva"
+    ],
     "Joie": [],
     "Cybex": [
      "Priam",
@@ -12780,8 +13056,27 @@
      "Cameleon",
      "Dragonfly"
     ],
-    "Prego": [],
-    "Baby2Go": [],
+    "Prego": [
+     "Canyon",
+     "Evoque",
+     "Lyon",
+     "Arteon",
+     "Toronto Plus",
+     "Mios",
+     "Mios Premium",
+     "Concorde",
+     "Range Pro",
+     "Stein",
+     "Maybach",
+     "Covi Plus",
+     "Quattro Vip"
+    ],
+    "Baby2Go": [
+     "Next",
+     "Toyger",
+     "Caromio",
+     "Motti"
+    ],
     "Maxi-Cosi": [],
     "Peg Perego": [],
     "Stokke": [
@@ -12792,9 +13087,31 @@
     "Mamas & Papas": [],
     "Inglesina": [],
     "Graco": [],
-    "Kanz": [],
-    "Sunny Baby": [],
-    "Baby Care": [],
+    "Kanz": [
+     "Okie Dokie",
+     "Echo",
+     "N-Go",
+     "Explorer Autofold",
+     "D-Go 2",
+     "X-Go Ultimate",
+     "V-Go 2",
+     "Easygo",
+     "Thunder",
+     "Journey",
+     "Xflip Autofold",
+     "Snap"
+    ],
+    "Sunny Baby": [
+     "Airmax",
+     "Calibra"
+    ],
+    "Baby Care": [
+     "Zeta",
+     "Bambi",
+     "Safari Pro",
+     "Safari Cross",
+     "Colorado"
+    ],
     "Comfymax": []
    }
   },
@@ -12820,7 +13137,15 @@
      "Bee"
     ],
     "Prego": [],
-    "Baby2Go": [],
+    "Baby2Go": [
+     "Rabbit",
+     "Daisy",
+     "Beagle",
+     "Calico",
+     "Violet",
+     "Ivy",
+     "Parma"
+    ],
     "Maxi-Cosi": [],
     "Peg Perego": [],
     "Stokke": [
@@ -12828,8 +13153,13 @@
      "Trailz"
     ],
     "Graco": [],
-    "Kanz": [],
-    "Sunny Baby": [],
+    "Kanz": [
+     "A-Go",
+     "Bold Autofold"
+    ],
+    "Sunny Baby": [
+     "Polo"
+    ],
     "Baby Care": [],
     "Comfymax": []
    }
@@ -12849,12 +13179,22 @@
      "Gazelle S"
     ],
     "Chicco": [],
-    "Kraft": [],
+    "Kraft": [
+     "Duplo"
+    ],
     "Joie": [],
-    "Baby2Go": [],
-    "Prego": [],
+    "Baby2Go": [
+     "Avangarde"
+    ],
+    "Prego": [
+     "Ibiza Pro",
+     "Ibiza Plus"
+    ],
     "Peg Perego": [],
-    "Phil & Teds": []
+    "Phil & Teds": [],
+    "Sunny Baby": [
+     "Sweety"
+    ]
    }
   },
   {
@@ -12889,12 +13229,16 @@
     "Maxi-Cosi": [],
     "Kraft": [],
     "Prego": [],
-    "Baby2Go": [],
+    "Baby2Go": [
+     "İris"
+    ],
     "Graco": [],
     "Peg Perego": [],
     "Kanz": [],
     "Sunny Baby": [],
-    "Baby Care": [],
+    "Baby Care": [
+     "Combo Maxi Pro"
+    ],
     "Comfymax": []
    }
   },
@@ -12947,8 +13291,14 @@
      "Baby-Safe"
     ],
     "Chicco": [],
-    "Kraft": [],
-    "Prego": [],
+    "Kraft": [
+     "Armor Plus",
+     "Rima Fix"
+    ],
+    "Prego": [
+     "Zenofix",
+     "Aria"
+    ],
     "Baby2Go": [],
     "Graco": [],
     "Comfymax": []
@@ -12969,8 +13319,12 @@
     "Joie": [],
     "Chicco": [],
     "Maxi-Cosi": [],
-    "Kraft": [],
-    "Prego": [],
+    "Kraft": [
+     "Techno Signal"
+    ],
+    "Prego": [
+     "Cosmofix"
+    ],
     "Baby2Go": [],
     "Comfymax": [],
     "Graco": []
@@ -12998,8 +13352,14 @@
      "RodiFix"
     ],
     "Chicco": [],
-    "Kraft": [],
-    "Prego": [],
+    "Kraft": [
+     "Henna Fix"
+    ],
+    "Prego": [
+     "Hera",
+     "Melfix",
+     "Riofix"
+    ],
     "Baby2Go": [],
     "Comfymax": [],
     "Graco": []
@@ -13025,9 +13385,19 @@
     ],
     "Maxi-Cosi": [],
     "Chicco": [],
-    "Kraft": [],
-    "Prego": [],
-    "Baby2Go": [],
+    "Kraft": [
+     "Safe Spin Plus",
+     "Spin Signal Plus",
+     "Spin"
+    ],
+    "Prego": [
+     "Profix Pro Signal",
+     "Odinfix",
+     "Omegafix"
+    ],
+    "Baby2Go": [
+     "Space Fix"
+    ],
     "Comfymax": []
    }
   },
@@ -13154,7 +13524,8 @@
     "Islak Mendil",
     "Bebek Şampuanı & Bakım Yağı",
     "Pişik Kremi",
-    "Alt Değiştirme Örtüsü"
+    "Alt Değiştirme Örtüsü",
+    "Lazımlık & Tuvalet Eğitimi"
    ]
   },
   {
@@ -13509,7 +13880,8 @@
     "Duş Jeli",
     "Vücut Peelingi",
     "El & Ayak Kremi",
-    "Vücut Yağı"
+    "Vücut Yağı",
+    "Ağda & Tüy Dökücü"
    ]
   },
   {
@@ -13537,13 +13909,66 @@
      "Magma",
      "Methanol"
     ],
-    "Salcano": [],
-    "Kron": [],
-    "Carraro": [],
-    "Ümit": [],
-    "Corelli": [],
-    "Bisan": [],
-    "Mosso": [],
+    "Salcano": [
+     "NG 650",
+     "NG 750",
+     "NG Team 200",
+     "Astro",
+     "Lion",
+     "Hector",
+     "Excel"
+    ],
+    "Kron": [
+     "XC 75",
+     "XC 100",
+     "XC 150",
+     "XC 300",
+     "XC 1000",
+     "El Nino",
+     "Rebel"
+    ],
+    "Carraro": [
+     "Force 420",
+     "Force 750",
+     "Force 950",
+     "CRX 711",
+     "CRX 721",
+     "CRX 918",
+     "CRX 921",
+     "Daytona 920",
+     "Speed 262"
+    ],
+    "Ümit": [
+     "Explorer",
+     "Solaris",
+     "Stallion",
+     "Colorado",
+     "Pegretta",
+     "Motion"
+    ],
+    "Corelli": [
+     "Via",
+     "Felix",
+     "Leone",
+     "Jump Up",
+     "Snoop",
+     "Zoi"
+    ],
+    "Bisan": [
+     "MTX 7050",
+     "MTX 7100",
+     "MTX 7300",
+     "MTX 7400",
+     "MTX 7500",
+     "MTS 4600",
+     "Atlas",
+     "Leon"
+    ],
+    "Mosso": [
+     "Wildfire",
+     "Raceline",
+     "Black Edition"
+    ],
     "Trek": [
      "Marlin",
      "X-Caliber",
@@ -13736,10 +14161,30 @@
      "RC 520"
     ],
     "Van Rysel": [],
-    "Salcano": [],
-    "Kron": [],
-    "Carraro": [],
-    "Corelli": []
+    "Salcano": [
+     "XRS001",
+     "XRS033",
+     "XRS044"
+    ],
+    "Kron": [
+     "RC 1000"
+    ],
+    "Carraro": [
+     "Fire",
+     "CR-Race",
+     "Race 062",
+     "Miglia"
+    ],
+    "Corelli": [
+     "Sprint",
+     "Lupo",
+     "Boolva"
+    ],
+    "Bisan": [
+     "RX 9500",
+     "Reload",
+     "Unique"
+    ]
    }
   },
   {
@@ -13787,7 +14232,12 @@
      "GRVL 120"
     ],
     "Salcano": [],
-    "Kron": []
+    "Kron": [],
+    "Carraro": [
+     "Gravel G0",
+     "Gravel G2",
+     "Gravel G6 Pro"
+    ]
    }
   },
   {
@@ -13798,13 +14248,50 @@
     "Şehir Bisikleti"
    ],
    "brands": {
-    "Salcano": [],
-    "Kron": [],
-    "Carraro": [],
-    "Ümit": [],
-    "Corelli": [],
-    "Bisan": [],
-    "Mosso": [],
+    "Salcano": [
+     "Sarajevo",
+     "City Life",
+     "Flyer"
+    ],
+    "Kron": [
+     "Tetra",
+     "TX 100",
+     "TX 150",
+     "TX 500"
+    ],
+    "Carraro": [
+     "CR-T Trip",
+     "CR-T Trail",
+     "Sportive",
+     "Active",
+     "Juliet",
+     "Jasmine",
+     "Elite"
+    ],
+    "Ümit": [
+     "Ventura",
+     "Montana",
+     "Alanya"
+    ],
+    "Corelli": [
+     "Trivor",
+     "Squab",
+     "Glowie"
+    ],
+    "Bisan": [
+     "TRX 8100",
+     "TRX 8500",
+     "TRX 8600",
+     "CTX 6300",
+     "CTX 6400",
+     "Paradise",
+     "Lotus",
+     "Guida",
+     "Hardy"
+    ],
+    "Mosso": [
+     "Legarda"
+    ],
     "Bianchi": [],
     "Giant": [
      "Escape"
@@ -13865,13 +14352,55 @@
      "Neuron:ON"
     ],
     "Haibike": [],
-    "Salcano": [],
-    "Kron": [],
-    "Carraro": [],
+    "Salcano": [
+     "Cappadocia",
+     "Marina",
+     "Caballo",
+     "Serenity"
+    ],
+    "Kron": [
+     "Zuma",
+     "Makalu",
+     "Agartha",
+     "Naica",
+     "Zeon",
+     "Discovery",
+     "Loop",
+     "E-Urban"
+    ],
+    "Carraro": [
+     "Kifuka",
+     "Vector",
+     "E-Flow",
+     "E-Power",
+     "E-Sportive",
+     "Epack",
+     "Elife",
+     "E-Go",
+     "Ecomfort",
+     "E-Time",
+     "Duty"
+    ],
     "Ümit": [],
-    "RKS": [],
+    "RKS": [
+     "RS3 Pro",
+     "RS3 Pro X",
+     "RS3 Pro Max",
+     "BN5 Pro",
+     "Lesso Pro",
+     "RD8 Premium",
+     "Skyjet Nitro Pro",
+     "RSI-X",
+     "NC20 Premium",
+     "MX55 Pro",
+     "XS35",
+     "T7"
+    ],
     "Volta": [],
-    "Bianchi": []
+    "Bianchi": [],
+    "Mosso": [
+     "E-Lupra"
+    ]
    }
   },
   {
@@ -13882,12 +14411,38 @@
     "Çocuk Bisikleti"
    ],
    "brands": {
-    "Salcano": [],
-    "Kron": [],
+    "Salcano": [
+     "Cherry",
+     "Daisy",
+     "Muki",
+     "Attack",
+     "Lion"
+    ],
+    "Kron": [
+     "XC 50",
+     "Bobcat"
+    ],
     "Carraro": [],
-    "Ümit": [],
-    "Corelli": [],
-    "Bisan": [],
+    "Ümit": [
+     "Alpina",
+     "Stitch",
+     "Trend-Y",
+     "Arcus",
+     "Crosser",
+     "Princess",
+     "Rock",
+     "Motion"
+    ],
+    "Corelli": [
+     "Formula",
+     "Lovely",
+     "Raptor",
+     "Rave-Up"
+    ],
+    "Bisan": [
+     "Limit",
+     "KDS 2750"
+    ],
     "Btwin": [],
     "Woom": [],
     "Puky": [],
@@ -13931,11 +14486,27 @@
     "Btwin": [
      "Tilt"
     ],
-    "Carraro": [],
-    "Kron": [],
+    "Carraro": [
+     "Flexi"
+    ],
+    "Kron": [
+     "FD 750",
+     "FD 3000"
+    ],
     "Salcano": [],
-    "Ümit": [],
-    "Corelli": []
+    "Ümit": [
+     "Picolo",
+     "Cunda"
+    ],
+    "Corelli": [
+     "Just"
+    ],
+    "Bisan": [
+     "Twin"
+    ],
+    "Mosso": [
+     "Marine"
+    ]
    }
   },
   {
@@ -16165,7 +16736,8 @@
     "Alet & Tamir Seti",
     "Market & Kasa Seti",
     "Makyaj & Güzellik Seti",
-    "Oyuncak Bebek Evi"
+    "Oyuncak Bebek Evi",
+    "Sihirbazlık Seti"
    ]
   },
   {
@@ -16440,7 +17012,8 @@
     "Evcil Hayvan Ürünleri"
    ],
    "add": [
-    "Otomatik Mamalık & Su Pınarı"
+    "Otomatik Mamalık & Su Pınarı",
+    "Sürüngen & Terraryum Ürünleri"
    ]
   },
   {
@@ -16623,7 +17196,18 @@
    "add": [
     "Kaya Kamyonu (Dumper)",
     "Mini Damper",
-    "Yatay Yönlü Sondaj (HDD)"
+    "Yatay Yönlü Sondaj (HDD)",
+    "Paletli Yükleyici",
+    "Forklift (LPG / Benzinli)",
+    "Reach Truck",
+    "Örümcek Platform",
+    "Vinç (Paletli)",
+    "Malzeme Elleçleme Makinesi",
+    "Asfalt Plenti",
+    "Asfalt Distribütörü",
+    "Arazöz (Su Tankeri)",
+    "Boru Döşeyici (Pipelayer)",
+    "İş Makinesi Kiralama"
    ]
   },
   {
@@ -16810,7 +17394,8 @@
      "SH240",
      "SH300",
      "SH350"
-    ]
+    ],
+    "Zoomlion": []
    }
   },
   {
@@ -17225,7 +17810,12 @@
     ],
     "SDLG": [],
     "Kawasaki": [],
-    "SANY": []
+    "SANY": [],
+    "Hitachi": [
+     "ZW180",
+     "ZW220",
+     "ZW310"
+    ]
    }
   },
   {
@@ -17430,7 +18020,8 @@
      "750M",
      "850M",
      "1150M"
-    ]
+    ],
+    "SANY": []
    }
   },
   {
@@ -17905,7 +18496,9 @@
     "Baoli": [],
     "TCM": [],
     "Clark": [],
-    "Nissan": []
+    "Nissan": [],
+    "Kalmar": [],
+    "Manitou": []
    }
   },
   {
@@ -17953,7 +18546,11 @@
     "Heli": [],
     "Hangcha": [],
     "EP": [],
-    "Hyundai": []
+    "Hyundai": [],
+    "Komatsu": [],
+    "Clark": [],
+    "Doosan": [],
+    "Baoli": []
    }
   },
   {
@@ -18244,7 +18841,9 @@
      "HD785"
     ],
     "Terex": [],
-    "Doosan": []
+    "Doosan": [],
+    "Hitachi": [],
+    "BelAZ": []
    }
   },
   {
@@ -20461,7 +21060,11 @@
     "Nexen": [],
     "Linglong": [],
     "Laufenn": [],
-    "Matador": []
+    "Matador": [],
+    "Vredestein": [],
+    "Firestone": [],
+    "Uniroyal": [],
+    "Sailun": []
    }
   },
   {
@@ -20525,7 +21128,12 @@
     "Barum": [],
     "Falken": [],
     "Toyo": [],
-    "Yokohama": []
+    "Yokohama": [],
+    "Vredestein": [],
+    "Firestone": [],
+    "Nexen": [],
+    "Laufenn": [],
+    "Matador": []
    }
   },
   {
@@ -20580,7 +21188,10 @@
     "Starmaxx": [],
     "Kleber": [],
     "Toyo": [],
-    "Yokohama": []
+    "Yokohama": [],
+    "Vredestein": [],
+    "Nexen": [],
+    "Laufenn": []
    }
   },
   {
@@ -20623,7 +21234,10 @@
     "Alutec": [],
     "MAK": [],
     "CMS": [],
-    "Rays": []
+    "Rays": [],
+    "Rota": [],
+    "Work": [],
+    "Advan Racing": []
    }
   },
   {
@@ -20819,7 +21433,11 @@
     "MT Helmets": [],
     "X-Lite": [],
     "Bell": [],
-    "Caberg": []
+    "Caberg": [],
+    "KYT": [],
+    "Airoh": [],
+    "Nexx": [],
+    "Givi": []
    }
   },
   {
@@ -20837,8 +21455,23 @@
     "Held": [],
     "Macna": [],
     "Klim": [],
-    "Richa": []
-   }
+    "Richa": [],
+    "Furygan": [],
+    "Ixon": [],
+    "TCX": [],
+    "Sidi": [],
+    "Forma": []
+   },
+   "add": [
+    "Motosiklet Montu",
+    "Motosiklet Pantolonu",
+    "Motosiklet Eldiveni",
+    "Motosiklet Botu",
+    "Motosiklet Yağmurluğu",
+    "Vücut Koruma (Zırh)",
+    "Deri Tulum",
+    "Airbag Yelek"
+   ]
   },
   {
    "path": [
@@ -20923,7 +21556,10 @@
     ],
     "Anlas": [],
     "Mitas": [],
-    "Heidenau": []
+    "Heidenau": [],
+    "Kenda": [],
+    "Maxxis": [],
+    "IRC": []
    }
   },
   {
@@ -20967,7 +21603,10 @@
     ],
     "Anlas": [],
     "Mitas": [],
-    "Heidenau": []
+    "Heidenau": [],
+    "Kenda": [],
+    "Maxxis": [],
+    "IRC": []
    }
   },
   {
@@ -21055,7 +21694,11 @@
     "Askam": [
      "Fargo",
      "Desoto"
-    ]
+    ],
+    "Dodge": [],
+    "Fargo": [],
+    "Desoto": [],
+    "Magirus": []
    }
   },
   {
@@ -21167,6 +21810,15 @@
     ],
     "Otokar": [
      "Atlas"
+    ],
+    "Volkswagen": [
+     "Crafter"
+    ],
+    "Peugeot": [
+     "Boxer"
+    ],
+    "Citroën": [
+     "Jumper"
     ]
    }
   },
@@ -21238,7 +21890,13 @@
     "Scania": [
      "Touring",
      "Citywide"
-    ]
+    ],
+    "Volvo": [
+     "9700",
+     "9900"
+    ],
+    "Van Hool": [],
+    "Akia": []
    }
   },
   {
@@ -21267,7 +21925,9 @@
      "e-ATAK"
     ],
     "Mercedes-Benz": [],
-    "BMC": []
+    "BMC": [],
+    "Iveco": [],
+    "Akia": []
    }
   },
   {
@@ -21624,7 +22284,10 @@
      "KFX 450R"
     ],
     "Kayo": [],
-    "Kuba": []
+    "Kuba": [],
+    "Arctic Cat": [],
+    "Hisun": [],
+    "Access": []
    }
   },
   {
@@ -21677,6 +22340,15 @@
      "Mule",
      "Teryx",
      "Teryx KRX 1000"
+    ],
+    "Arctic Cat": [],
+    "Hisun": [],
+    "Kubota": [
+     "RTV-X900",
+     "RTV-X1100C"
+    ],
+    "John Deere": [
+     "Gator"
     ]
    }
   },
@@ -21854,7 +22526,11 @@
     "Sessa": [],
     "Ranieri": [],
     "Saver": [],
-    "Marinello": []
+    "Marinello": [],
+    "Regal": [],
+    "Chaparral": [],
+    "Rinker": [],
+    "Glastron": []
    }
   },
   {
@@ -21906,7 +22582,9 @@
     "Joker Boat": [],
     "Bombard": [],
     "Honwave": [],
-    "Mercury": []
+    "Mercury": [],
+    "Capelli": [],
+    "Ribeye": []
    }
   },
   {
@@ -22134,6 +22812,16 @@
     "Tecnam": [],
     "Beechcraft": [
      "Bonanza"
+    ],
+    "Pilatus": [
+     "PC-12"
+    ],
+    "Daher": [
+     "TBM 940",
+     "TBM 960"
+    ],
+    "Mooney": [
+     "M20"
     ]
    }
   },
@@ -22162,6 +22850,9 @@
     "Cessna": [
      "310",
      "340"
+    ],
+    "Vulcanair": [
+     "P68"
     ]
    }
   },
@@ -22195,6 +22886,12 @@
     ],
     "Guimbal": [
      "Cabri G2"
+    ],
+    "Sikorsky": [
+     "S-76"
+    ],
+    "MD Helicopters": [
+     "MD 500"
     ]
    }
   },
@@ -22234,6 +22931,9 @@
     "LG": [
      "InstaView",
      "Door-in-Door"
+    ],
+    "Vestel": [
+     "Retro"
     ]
    }
   },
@@ -22324,6 +23024,11 @@
     "Miele": [
      "G 5000",
      "G 7000"
+    ],
+    "Arçelik": [
+     "Diamond Serisi",
+     "Prestige Serisi",
+     "Star Serisi"
     ]
    }
   },
@@ -22571,7 +23276,9 @@
    "add": [
     "MP3 & Müzik Çalar",
     "CD Çalar",
-    "Kasetçalar & Teyp"
+    "Kasetçalar & Teyp",
+    "Hoparlör (Kule & Raf Tipi)",
+    "Kulaklık Amfisi & DAC"
    ]
   },
   {
@@ -22603,7 +23310,14 @@
     "Foto & Kamera"
    ],
    "add": [
-    "Flaş"
+    "Flaş",
+    "Kamera Çantası",
+    "Kamera Bataryası & Şarj",
+    "Kamera Monitörü & Kayıt Cihazı",
+    "Kamera Rig & Kafes",
+    "Fotoğraf Filmi",
+    "Objektif Adaptörü",
+    "Fotoğraf Fonu & Arka Plan"
    ]
   },
   {
@@ -22915,7 +23629,11 @@
     "Bilgisayar Bileşenleri"
    ],
    "add": [
-    "Kasa Fanı"
+    "Kasa Fanı",
+    "Optik Sürücü (DVD-RW)",
+    "Dahili Ses Kartı",
+    "Capture & Yayın Kartı",
+    "Termal Macun"
    ]
   },
   {
@@ -22944,7 +23662,12 @@
     "Bilgisayar Hoparlörü",
     "USB Hub & Dock",
     "Mouse Pad",
-    "Laptop Soğutucu"
+    "Laptop Soğutucu",
+    "Monitör Kolu & Standı",
+    "KVM Switch",
+    "Kablo & Dönüştürücü",
+    "Kart Okuyucu",
+    "Stream Deck & Yayın Kontrolcüsü"
    ]
   },
   {
@@ -25708,7 +26431,9 @@
     "Joie": [],
     "Chicco": [],
     "Graco": [],
-    "Kraft": [],
+    "Kraft": [
+     "Lord Fix Plus"
+    ],
     "Comfymax": []
    }
   },
@@ -28292,7 +29017,9 @@
     "Zeytin Silkeleme Makinesi",
     "Ceviz Silkeleme Makinesi",
     "Soğan Hasat Makinesi",
-    "Çay Hasat Makinesi"
+    "Çay Hasat Makinesi",
+    "Fındık Harman Makinesi",
+    "Mısır Koçan Toplama Makinesi"
    ]
   },
   {
@@ -28380,7 +29107,18 @@
     "Endüstriyel Robot",
     "Boya Kabini & Fırını",
     "Kumlama Makinesi",
-    "Erozyon Makinesi (Tel & Dalma)"
+    "Erozyon Makinesi (Tel & Dalma)",
+    "Kaynak Makinesi (Elektrot)",
+    "Lazer Kaynak Makinesi",
+    "Lazer Markalama Makinesi",
+    "Geri Dönüşüm Makinesi",
+    "Kuyumculuk Makinesi",
+    "Isıl İşlem Fırını",
+    "Endüstriyel Su Arıtma Sistemi",
+    "Hidrolik Ünite",
+    "Endüstriyel Karıştırıcı & Mikser",
+    "Vakum Form Makinesi",
+    "Plastik & Metal Kalıp"
    ]
   },
   {
@@ -30995,7 +31733,9 @@
     "Cam Motoru & Düğmesi",
     "Silecek Motoru",
     "Gösterge Paneli",
-    "Korna"
+    "Korna",
+    "Kontak Anahtarı & Kumanda",
+    "Far Beyni & Xenon Balastı"
    ]
   },
   {
@@ -31020,7 +31760,9 @@
     "Cam Motoru & Düğmesi",
     "Silecek Motoru",
     "Gösterge Paneli",
-    "Korna"
+    "Korna",
+    "Kontak Anahtarı & Kumanda",
+    "Far Beyni & Xenon Balastı"
    ]
   },
   {
@@ -31240,7 +31982,10 @@
     "Panjur",
     "Marşpiyel",
     "Kapı Kolu",
-    "Davlumbaz"
+    "Davlumbaz",
+    "Ön Panel",
+    "Tampon Demiri",
+    "Sunroof & Açılır Tavan"
    ]
   },
   {
@@ -31263,7 +32008,10 @@
     "Panjur",
     "Marşpiyel",
     "Kapı Kolu",
-    "Davlumbaz"
+    "Davlumbaz",
+    "Ön Panel",
+    "Tampon Demiri",
+    "Sunroof & Açılır Tavan"
    ]
   },
   {
@@ -31304,7 +32052,8 @@
     "Diferansiyel",
     "Rulman",
     "Motor & Şanzıman Takozu",
-    "Kayış & Gergi"
+    "Kayış & Gergi",
+    "Transfer Kutusu (4x4)"
    ]
   },
   {
@@ -31489,7 +32238,8 @@
     "Direksiyon Kutusu",
     "Hidrolik Direksiyon Pompası",
     "Porya Rulmanı",
-    "Burç & Takoz"
+    "Burç & Takoz",
+    "Havalı Süspansiyon (Körük & Kompresör)"
    ]
   },
   {
@@ -31511,7 +32261,8 @@
     "Direksiyon Kutusu",
     "Hidrolik Direksiyon Pompası",
     "Porya Rulmanı",
-    "Burç & Takoz"
+    "Burç & Takoz",
+    "Havalı Süspansiyon (Körük & Kompresör)"
    ]
   },
   {
@@ -32968,7 +33719,13 @@
     "Yan Çanta",
     "Depo Çantası",
     "Çanta Taşıyıcı (Kayıt)"
-   ]
+   ],
+   "brands": {
+    "Givi": [],
+    "Kappa": [],
+    "SHAD": [],
+    "SW-Motech": []
+   }
   },
   {
    "path": [
@@ -33190,6 +33947,2124 @@
     "Minder & Döşeme",
     "Tekne Buzdolabı",
     "Ocak & Mutfak"
+   ]
+  },
+  {
+   "path": [
+    "İkinci El & Sıfır Alışveriş",
+    "Bilgisayar & Oyun"
+   ],
+   "add": [
+    "Sunucu (Server)",
+    "Laptop Yedek Parça"
+   ]
+  },
+  {
+   "path": [
+    "İkinci El & Sıfır Alışveriş",
+    "Bilgisayar & Oyun",
+    "Sunucu (Server)"
+   ],
+   "brands": {
+    "Dell": [
+     "PowerEdge R740",
+     "PowerEdge R750",
+     "PowerEdge R640",
+     "PowerEdge R650",
+     "PowerEdge T440"
+    ],
+    "HPE": [
+     "ProLiant DL380",
+     "ProLiant DL360",
+     "ProLiant ML350",
+     "ProLiant MicroServer"
+    ],
+    "Lenovo": [
+     "ThinkSystem SR650",
+     "ThinkSystem SR630",
+     "ThinkSystem ST550"
+    ],
+    "Fujitsu": [
+     "PRIMERGY RX2540",
+     "PRIMERGY TX1330"
+    ],
+    "Supermicro": []
+   }
+  },
+  {
+   "path": [
+    "İkinci El & Sıfır Alışveriş",
+    "Bilgisayar & Oyun",
+    "Laptop Yedek Parça"
+   ],
+   "add": [
+    "Laptop Adaptörü",
+    "Laptop Bataryası",
+    "Laptop Ekranı",
+    "Laptop Klavyesi",
+    "Laptop Fanı",
+    "Menteşe & Kasa",
+    "Laptop Standı"
+   ]
+  },
+  {
+   "path": [
+    "İkinci El & Sıfır Alışveriş",
+    "Bilgisayar & Oyun",
+    "Bilgisayar Bileşenleri",
+    "Optik Sürücü (DVD-RW)"
+   ],
+   "brands": {
+    "LG": [],
+    "Asus": []
+   }
+  },
+  {
+   "path": [
+    "İkinci El & Sıfır Alışveriş",
+    "Bilgisayar & Oyun",
+    "Bilgisayar Bileşenleri",
+    "Dahili Ses Kartı"
+   ],
+   "brands": {
+    "Creative": [
+     "Sound Blaster AE-5 Plus",
+     "Sound BlasterX G6"
+    ],
+    "Asus": [
+     "Xonar AE"
+    ]
+   }
+  },
+  {
+   "path": [
+    "İkinci El & Sıfır Alışveriş",
+    "Bilgisayar & Oyun",
+    "Bilgisayar Bileşenleri",
+    "Capture & Yayın Kartı"
+   ],
+   "brands": {
+    "Elgato": [
+     "HD60 X",
+     "4K60 Pro",
+     "Cam Link 4K"
+    ],
+    "AVerMedia": [
+     "Live Gamer Mini",
+     "Live Gamer Portable 2 Plus"
+    ]
+   }
+  },
+  {
+   "path": [
+    "İkinci El & Sıfır Alışveriş",
+    "Bilgisayar & Oyun",
+    "Bilgisayar Bileşenleri",
+    "Termal Macun"
+   ],
+   "brands": {
+    "Arctic": [
+     "MX-4",
+     "MX-6"
+    ],
+    "Noctua": [
+     "NT-H1",
+     "NT-H2"
+    ],
+    "Thermal Grizzly": [
+     "Kryonaut"
+    ],
+    "Cooler Master": []
+   }
+  },
+  {
+   "path": [
+    "İkinci El & Sıfır Alışveriş",
+    "Bilgisayar & Oyun",
+    "Çevre Birimleri",
+    "Monitör Kolu & Standı"
+   ],
+   "brands": {
+    "North Bayou": [],
+    "Ergotron": [],
+    "Ugreen": []
+   }
+  },
+  {
+   "path": [
+    "İkinci El & Sıfır Alışveriş",
+    "Bilgisayar & Oyun",
+    "Çevre Birimleri",
+    "KVM Switch"
+   ],
+   "brands": {
+    "Aten": [],
+    "Ugreen": []
+   }
+  },
+  {
+   "path": [
+    "İkinci El & Sıfır Alışveriş",
+    "Bilgisayar & Oyun",
+    "Çevre Birimleri",
+    "Kablo & Dönüştürücü"
+   ],
+   "brands": {
+    "Ugreen": [],
+    "Baseus": [],
+    "Vention": [],
+    "Belkin": []
+   }
+  },
+  {
+   "path": [
+    "İkinci El & Sıfır Alışveriş",
+    "Bilgisayar & Oyun",
+    "Çevre Birimleri",
+    "Kart Okuyucu"
+   ],
+   "brands": {
+    "Ugreen": [],
+    "SanDisk": [],
+    "Lexar": []
+   }
+  },
+  {
+   "path": [
+    "İkinci El & Sıfır Alışveriş",
+    "Bilgisayar & Oyun",
+    "Çevre Birimleri",
+    "Stream Deck & Yayın Kontrolcüsü"
+   ],
+   "brands": {
+    "Elgato": [
+     "Stream Deck",
+     "Stream Deck Mini",
+     "Stream Deck +",
+     "Stream Deck XL"
+    ],
+    "Loupedeck": [
+     "Live S"
+    ]
+   }
+  },
+  {
+   "path": [
+    "İkinci El & Sıfır Alışveriş",
+    "Bilgisayar & Oyun",
+    "Oyun & Konsol"
+   ],
+   "add": [
+    "Konsol Aksesuarı",
+    "Uçuş Simülatörü & Joystick",
+    "Simülatör Kokpiti"
+   ]
+  },
+  {
+   "path": [
+    "İkinci El & Sıfır Alışveriş",
+    "Bilgisayar & Oyun",
+    "Oyun & Konsol",
+    "Konsol Aksesuarı"
+   ],
+   "add": [
+    "Şarj İstasyonu",
+    "Konsol Kılıfı & Çantası",
+    "Konsol Standı & Soğutucu",
+    "Konsol Kulaklığı"
+   ]
+  },
+  {
+   "path": [
+    "İkinci El & Sıfır Alışveriş",
+    "Bilgisayar & Oyun",
+    "Oyun & Konsol",
+    "Uçuş Simülatörü & Joystick"
+   ],
+   "brands": {
+    "Thrustmaster": [
+     "T.Flight HOTAS 4",
+     "T.16000M",
+     "HOTAS Warthog"
+    ],
+    "Logitech": [
+     "X56 HOTAS",
+     "Extreme 3D Pro"
+    ],
+    "Turtle Beach": [
+     "VelocityOne Flight"
+    ]
+   }
+  },
+  {
+   "path": [
+    "İkinci El & Sıfır Alışveriş",
+    "Bilgisayar & Oyun",
+    "Oyun & Konsol",
+    "Simülatör Kokpiti"
+   ],
+   "brands": {
+    "Playseat": [
+     "Challenge",
+     "Evolution",
+     "Trophy"
+    ],
+    "Next Level Racing": [
+     "GTLite",
+     "F-GT"
+    ]
+   }
+  },
+  {
+   "path": [
+    "İkinci El & Sıfır Alışveriş",
+    "Elektronik"
+   ],
+   "add": [
+    "TV Aksesuarları",
+    "DVD & Blu-ray Oynatıcı",
+    "Osiloskop",
+    "Termal Kamera"
+   ]
+  },
+  {
+   "path": [
+    "İkinci El & Sıfır Alışveriş",
+    "Elektronik",
+    "TV Aksesuarları"
+   ],
+   "add": [
+    "TV Askı Aparatı",
+    "Kumanda",
+    "İç Mekan Anteni",
+    "TV Yedek Parça (Panel & Kart)"
+   ]
+  },
+  {
+   "path": [
+    "İkinci El & Sıfır Alışveriş",
+    "Elektronik",
+    "DVD & Blu-ray Oynatıcı"
+   ],
+   "brands": {
+    "Sony": [],
+    "Samsung": [],
+    "LG": [],
+    "Panasonic": [],
+    "Philips": [],
+    "Pioneer": []
+   }
+  },
+  {
+   "path": [
+    "İkinci El & Sıfır Alışveriş",
+    "Elektronik",
+    "Osiloskop"
+   ],
+   "brands": {
+    "Rigol": [
+     "DS1054Z"
+    ],
+    "Siglent": [
+     "SDS1104X-E"
+    ],
+    "Hantek": [],
+    "Owon": [],
+    "Tektronix": [],
+    "Keysight": []
+   }
+  },
+  {
+   "path": [
+    "İkinci El & Sıfır Alışveriş",
+    "Elektronik",
+    "Termal Kamera"
+   ],
+   "brands": {
+    "FLIR": [
+     "ONE Pro",
+     "C5"
+    ],
+    "Hikmicro": [
+     "Pocket2",
+     "B20"
+    ],
+    "Seek Thermal": [],
+    "Testo": [],
+    "Uni-T": []
+   }
+  },
+  {
+   "path": [
+    "İkinci El & Sıfır Alışveriş",
+    "Elektronik",
+    "Teknik Elektronik"
+   ],
+   "add": [
+    "Amatör Telsiz"
+   ]
+  },
+  {
+   "path": [
+    "İkinci El & Sıfır Alışveriş",
+    "Elektronik",
+    "Teknik Elektronik",
+    "Amatör Telsiz"
+   ],
+   "brands": {
+    "Yaesu": [
+     "FT-991A",
+     "FT-891",
+     "FT-60R"
+    ],
+    "Icom": [
+     "IC-7300",
+     "IC-705"
+    ],
+    "Kenwood": [
+     "TH-D74"
+    ],
+    "Baofeng": [
+     "UV-5R",
+     "UV-82"
+    ]
+   }
+  },
+  {
+   "path": [
+    "İkinci El & Sıfır Alışveriş",
+    "Elektronik",
+    "Ses & Kulaklık",
+    "Hoparlör (Kule & Raf Tipi)"
+   ],
+   "brands": {
+    "Bowers & Wilkins": [
+     "606 S3",
+     "607 S3",
+     "603 S3",
+     "702 S3"
+    ],
+    "KEF": [
+     "LS50 Meta",
+     "LSX II",
+     "Q150",
+     "Q350"
+    ],
+    "Klipsch": [
+     "RP-600M",
+     "R-51M",
+     "The Fives"
+    ],
+    "Polk Audio": [
+     "Signature Elite ES20",
+     "Monitor XT20"
+    ],
+    "Dali": [
+     "Oberon 1",
+     "Oberon 5",
+     "Spektor 2"
+    ],
+    "Wharfedale": [
+     "Diamond 12.1",
+     "Linton"
+    ],
+    "Q Acoustics": [
+     "3020i",
+     "5020"
+    ],
+    "Edifier": [
+     "R1280T",
+     "R1700BT"
+    ],
+    "Jamo": [],
+    "Yamaha": [],
+    "Focal": [],
+    "Magnat": [],
+    "Elac": []
+   }
+  },
+  {
+   "path": [
+    "İkinci El & Sıfır Alışveriş",
+    "Elektronik",
+    "Ses & Kulaklık",
+    "Kulaklık Amfisi & DAC"
+   ],
+   "brands": {
+    "FiiO": [
+     "K7",
+     "K11",
+     "BTR5",
+     "BTR7"
+    ],
+    "Topping": [
+     "DX3 Pro+",
+     "E30 II"
+    ],
+    "iFi": [
+     "Zen DAC",
+     "hip-dac"
+    ],
+    "Schiit": [
+     "Magni",
+     "Modi"
+    ],
+    "AudioQuest": [
+     "DragonFly Red",
+     "DragonFly Cobalt"
+    ]
+   }
+  },
+  {
+   "path": [
+    "İkinci El & Sıfır Alışveriş",
+    "Elektronik",
+    "Foto & Kamera",
+    "Kamera Çantası"
+   ],
+   "brands": {
+    "Lowepro": [
+     "ProTactic",
+     "Flipside"
+    ],
+    "Peak Design": [
+     "Everyday Backpack",
+     "Everyday Sling"
+    ],
+    "Think Tank": [],
+    "Manfrotto": [],
+    "Vanguard": [],
+    "K&F Concept": []
+   }
+  },
+  {
+   "path": [
+    "İkinci El & Sıfır Alışveriş",
+    "Elektronik",
+    "Foto & Kamera",
+    "Kamera Bataryası & Şarj"
+   ],
+   "brands": {
+    "Canon": [],
+    "Nikon": [],
+    "Sony": [],
+    "Fujifilm": [],
+    "Patona": []
+   }
+  },
+  {
+   "path": [
+    "İkinci El & Sıfır Alışveriş",
+    "Elektronik",
+    "Foto & Kamera",
+    "Kamera Monitörü & Kayıt Cihazı"
+   ],
+   "brands": {
+    "Atomos": [
+     "Ninja V",
+     "Ninja V+",
+     "Ninja Ultra",
+     "Shinobi",
+     "Shogun"
+    ],
+    "Feelworld": [],
+    "Blackmagic": [
+     "Video Assist"
+    ],
+    "SmallHD": []
+   }
+  },
+  {
+   "path": [
+    "İkinci El & Sıfır Alışveriş",
+    "Elektronik",
+    "Foto & Kamera",
+    "Kamera Rig & Kafes"
+   ],
+   "brands": {
+    "SmallRig": [],
+    "Tilta": [],
+    "Ulanzi": []
+   }
+  },
+  {
+   "path": [
+    "İkinci El & Sıfır Alışveriş",
+    "Elektronik",
+    "Foto & Kamera",
+    "Fotoğraf Filmi"
+   ],
+   "brands": {
+    "Kodak": [
+     "Portra 400",
+     "Gold 200",
+     "Ektar 100",
+     "Tri-X 400",
+     "UltraMax 400",
+     "ColorPlus 200"
+    ],
+    "Fujifilm": [
+     "Velvia 50",
+     "Provia 100F",
+     "Superia X-TRA 400"
+    ],
+    "Ilford": [
+     "HP5 Plus",
+     "FP4 Plus",
+     "Delta 3200",
+     "XP2 Super"
+    ],
+    "Lomography": [
+     "Color Negative 400",
+     "LomoChrome Purple"
+    ]
+   }
+  },
+  {
+   "path": [
+    "İkinci El & Sıfır Alışveriş",
+    "Elektronik",
+    "Foto & Kamera",
+    "Objektif Adaptörü"
+   ],
+   "brands": {
+    "Viltrox": [],
+    "Metabones": [],
+    "Fringer": [],
+    "Commlite": [],
+    "K&F Concept": []
+   }
+  },
+  {
+   "path": [
+    "İkinci El & Sıfır Alışveriş",
+    "Elektronik",
+    "Network & Modem",
+    "Network Switch"
+   ],
+   "brands": {
+    "TP-Link": [],
+    "Cisco": [],
+    "Ubiquiti": [],
+    "MikroTik": [],
+    "Zyxel": [],
+    "D-Link": [],
+    "Netgear": [],
+    "Huawei": []
+   }
+  },
+  {
+   "path": [
+    "İkinci El & Sıfır Alışveriş",
+    "Elektronik",
+    "Network & Modem",
+    "Mesh Wi-Fi Sistemi"
+   ],
+   "brands": {
+    "TP-Link": [
+     "Deco X50",
+     "Deco X20",
+     "Deco M5",
+     "Deco BE65"
+    ],
+    "Asus": [
+     "ZenWiFi XT8",
+     "ZenWiFi XD4"
+    ],
+    "Xiaomi": [
+     "Mesh System AX3000"
+    ],
+    "Netgear": [
+     "Orbi"
+    ],
+    "Tenda": []
+   }
+  },
+  {
+   "path": [
+    "İkinci El & Sıfır Alışveriş",
+    "Elektronik",
+    "Network & Modem",
+    "Access Point"
+   ],
+   "brands": {
+    "Ubiquiti": [
+     "UniFi U6 Lite",
+     "UniFi U6 Pro",
+     "UniFi U7 Pro"
+    ],
+    "TP-Link": [],
+    "MikroTik": [],
+    "Cisco": [],
+    "Ruckus": [],
+    "Aruba": []
+   }
+  },
+  {
+   "path": [
+    "İkinci El & Sıfır Alışveriş",
+    "Elektronik",
+    "Network & Modem",
+    "Menzil Genişletici (Repeater)"
+   ],
+   "brands": {
+    "TP-Link": [],
+    "Xiaomi": [],
+    "Tenda": [],
+    "D-Link": [],
+    "Asus": []
+   }
+  },
+  {
+   "path": [
+    "İkinci El & Sıfır Alışveriş",
+    "Elektronik",
+    "Network & Modem",
+    "Wi-Fi Adaptörü"
+   ],
+   "brands": {
+    "TP-Link": [],
+    "Asus": [],
+    "Tenda": [],
+    "Intel": []
+   }
+  },
+  {
+   "path": [
+    "İkinci El & Sıfır Alışveriş",
+    "Elektronik",
+    "Tablet",
+    "Tablet Kalemi"
+   ],
+   "brands": {
+    "Apple": [
+     "Apple Pencil Pro",
+     "Apple Pencil (USB-C)",
+     "Apple Pencil (2. nesil)",
+     "Apple Pencil (1. nesil)"
+    ],
+    "Samsung": [
+     "S Pen Pro",
+     "S Pen Creator Edition"
+    ],
+    "Huawei": [
+     "M-Pencil"
+    ],
+    "Xiaomi": [
+     "Smart Pen"
+    ],
+    "Logitech": [
+     "Crayon"
+    ]
+   }
+  },
+  {
+   "path": [
+    "İkinci El & Sıfır Alışveriş",
+    "Elektronik",
+    "Tablet",
+    "Tablet Klavyesi"
+   ],
+   "brands": {
+    "Apple": [
+     "Magic Keyboard",
+     "Magic Keyboard Folio",
+     "Smart Keyboard Folio"
+    ],
+    "Logitech": [
+     "Combo Touch",
+     "Slim Folio"
+    ],
+    "Samsung": [
+     "Book Cover Keyboard"
+    ]
+   }
+  },
+  {
+   "path": [
+    "İkinci El & Sıfır Alışveriş",
+    "Telefon & Aksesuar"
+   ],
+   "add": [
+    "Akıllı Takip Cihazı",
+    "FM Transmitter & Araç Kiti"
+   ]
+  },
+  {
+   "path": [
+    "İkinci El & Sıfır Alışveriş",
+    "Telefon & Aksesuar",
+    "Akıllı Takip Cihazı"
+   ],
+   "brands": {
+    "Apple": [
+     "AirTag"
+    ],
+    "Samsung": [
+     "Galaxy SmartTag2"
+    ],
+    "Tile": [
+     "Mate",
+     "Pro"
+    ],
+    "Ugreen": [
+     "FineTrack"
+    ]
+   }
+  },
+  {
+   "path": [
+    "İkinci El & Sıfır Alışveriş",
+    "Telefon & Aksesuar",
+    "FM Transmitter & Araç Kiti"
+   ],
+   "brands": {
+    "Baseus": [],
+    "Ttec": [],
+    "Ugreen": []
+   }
+  },
+  {
+   "path": [
+    "İkinci El & Sıfır Alışveriş",
+    "Ev & Yaşam",
+    "Isıtma & Soğutma",
+    "Elektrikli Battaniye"
+   ],
+   "brands": {
+    "Beurer": [],
+    "Medisana": []
+   }
+  },
+  {
+   "path": [
+    "İkinci El & Sıfır Alışveriş",
+    "Ev & Yaşam",
+    "Banyo"
+   ],
+   "add": [
+    "Havlupan",
+    "Banyo Aynası"
+   ]
+  },
+  {
+   "path": [
+    "İkinci El & Sıfır Alışveriş",
+    "Ev & Yaşam",
+    "Ev Tekstili",
+    "Çeyiz Seti"
+   ],
+   "brands": {
+    "English Home": [],
+    "Madame Coco": [],
+    "Taç": [],
+    "Özdilek": [],
+    "Karaca Home": []
+   }
+  },
+  {
+   "path": [
+    "İkinci El & Sıfır Alışveriş",
+    "Küçük Ev Aletleri",
+    "Buharlı Düzleştirici (Steamer)"
+   ],
+   "brands": {
+    "Philips": [],
+    "Tefal": [],
+    "Rowenta": []
+   }
+  },
+  {
+   "path": [
+    "İkinci El & Sıfır Alışveriş",
+    "Küçük Ev Aletleri",
+    "Cam Silme Robotu"
+   ],
+   "brands": {
+    "Ecovacs": [
+     "Winbot W1 Pro",
+     "Winbot W2 Omni"
+    ],
+    "Hobot": [
+     "Hobot 2S",
+     "Hobot 388"
+    ]
+   }
+  },
+  {
+   "path": [
+    "İkinci El & Sıfır Alışveriş",
+    "Moda",
+    "Çanta"
+   ],
+   "add": [
+    "Erkek Çanta",
+    "Spor Çantası",
+    "Seyahat Çantası",
+    "Makyaj Çantası",
+    "Kartlık"
+   ]
+  },
+  {
+   "path": [
+    "İkinci El & Sıfır Alışveriş",
+    "Moda",
+    "Çanta",
+    "Erkek Çanta"
+   ],
+   "add": [
+    "Evrak Çantası",
+    "Postacı Çantası",
+    "Portföy & El Çantası"
+   ]
+  },
+  {
+   "path": [
+    "İkinci El & Sıfır Alışveriş",
+    "Moda",
+    "Çanta",
+    "Spor Çantası"
+   ],
+   "brands": {
+    "Nike": [],
+    "Adidas": [],
+    "Puma": [],
+    "Under Armour": []
+   }
+  },
+  {
+   "path": [
+    "İkinci El & Sıfır Alışveriş",
+    "Moda",
+    "Takı & Mücevher"
+   ],
+   "add": [
+    "Broş",
+    "Halhal",
+    "Kol Düğmesi & Kravat İğnesi",
+    "Takı Seti",
+    "Piercing Takı",
+    "Erkek Takı",
+    "Takı Kutusu"
+   ]
+  },
+  {
+   "path": [
+    "İkinci El & Sıfır Alışveriş",
+    "Moda",
+    "Takı & Mücevher",
+    "Erkek Takı"
+   ],
+   "add": [
+    "Erkek Bileklik",
+    "Erkek Kolye",
+    "Erkek Yüzük"
+   ]
+  },
+  {
+   "path": [
+    "İkinci El & Sıfır Alışveriş",
+    "Moda",
+    "Takı & Mücevher",
+    "Bilezik",
+    "Charm Bileklik"
+   ],
+   "brands": {
+    "Pandora": [],
+    "Thomas Sabo": []
+   }
+  },
+  {
+   "path": [
+    "İkinci El & Sıfır Alışveriş",
+    "Anne & Bebek",
+    "Bebek Arabası & Taşıma"
+   ],
+   "add": [
+    "Bebek Arabası Aksesuarı"
+   ]
+  },
+  {
+   "path": [
+    "İkinci El & Sıfır Alışveriş",
+    "Anne & Bebek",
+    "Beslenme"
+   ],
+   "add": [
+    "Diş Kaşıyıcı"
+   ]
+  },
+  {
+   "path": [
+    "İkinci El & Sıfır Alışveriş",
+    "Spor & Outdoor",
+    "Fitness & Kondisyon"
+   ],
+   "add": [
+    "Barfiks & Dips İstasyonu",
+    "Atlama İpi",
+    "Step Tahtası",
+    "Karın Kası Aleti (Ab Roller)",
+    "Fitness Eldiveni & Kemer"
+   ]
+  },
+  {
+   "path": [
+    "İkinci El & Sıfır Alışveriş",
+    "Kitap & Hobi",
+    "Hobi & El Sanatları"
+   ],
+   "add": [
+    "Epoksi & Reçine Sanatı"
+   ]
+  },
+  {
+   "path": [
+    "İkinci El & Sıfır Alışveriş",
+    "Evcil Hayvan Ürünleri",
+    "Sürüngen & Terraryum Ürünleri"
+   ],
+   "add": [
+    "Terraryum",
+    "Isıtıcı & UVB Lamba",
+    "Terraryum Altlığı & Substrat"
+   ],
+   "brands": {
+    "Exo Terra": [],
+    "Zoo Med": []
+   }
+  },
+  {
+   "path": [
+    "İkinci El & Sıfır Alışveriş",
+    "Bahçe & Yapı Market",
+    "Güvenlik & İş Güvenliği"
+   ],
+   "add": [
+    "Görüntülü Diafon",
+    "DVR & NVR Kayıt Cihazı",
+    "Kartlı Geçiş & PDKS"
+   ]
+  },
+  {
+   "path": [
+    "İkinci El & Sıfır Alışveriş",
+    "Bahçe & Yapı Market",
+    "Güvenlik & İş Güvenliği",
+    "Görüntülü Diafon"
+   ],
+   "brands": {
+    "Kocom": [],
+    "Commax": [],
+    "Hikvision": [],
+    "Dahua": [],
+    "Netelsan": [],
+    "Audio": []
+   }
+  },
+  {
+   "path": [
+    "İkinci El & Sıfır Alışveriş",
+    "Bahçe & Yapı Market",
+    "Güvenlik & İş Güvenliği",
+    "DVR & NVR Kayıt Cihazı"
+   ],
+   "brands": {
+    "Hikvision": [],
+    "Dahua": [],
+    "Uniview": [],
+    "Reolink": []
+   }
+  },
+  {
+   "path": [
+    "İkinci El & Sıfır Alışveriş",
+    "Bahçe & Yapı Market",
+    "Güvenlik & İş Güvenliği",
+    "Kartlı Geçiş & PDKS"
+   ],
+   "brands": {
+    "ZKTeco": [],
+    "Hikvision": [],
+    "Perkotek": []
+   }
+  },
+  {
+   "path": [
+    "İkinci El & Sıfır Alışveriş",
+    "Bahçe & Yapı Market",
+    "Bahçe & Peyzaj"
+   ],
+   "add": [
+    "Kar Küreme Makinesi"
+   ]
+  },
+  {
+   "path": [
+    "İkinci El & Sıfır Alışveriş",
+    "Bahçe & Yapı Market",
+    "Bahçe & Peyzaj",
+    "Kar Küreme Makinesi"
+   ],
+   "brands": {
+    "Honda": [],
+    "Stiga": [],
+    "Husqvarna": [],
+    "Einhell": []
+   }
+  },
+  {
+   "path": [
+    "İkinci El & Sıfır Alışveriş",
+    "Bahçe & Yapı Market",
+    "Tesisat & Su"
+   ],
+   "add": [
+    "Eviye (Evye)"
+   ]
+  },
+  {
+   "path": [
+    "İkinci El & Sıfır Alışveriş",
+    "Bahçe & Yapı Market",
+    "Tesisat & Su",
+    "Eviye (Evye)"
+   ],
+   "brands": {
+    "Franke": [],
+    "Blanco": [],
+    "Teka": [],
+    "Elleci": [],
+    "Schock": []
+   }
+  },
+  {
+   "path": [
+    "Vasıta",
+    "Ağır Vasıta"
+   ],
+   "add": [
+    "Dorse (Kuru Yük / Kapaklı)",
+    "Dorse (Tekstil)",
+    "Dorse (Oto Taşıyıcı)",
+    "Dorse (Hareketli Taban)",
+    "Dorse (Özel Amaçlı)",
+    "Çöp Kamyonu",
+    "Tanker Kamyon (Akaryakıt & Su)",
+    "Frigorifik Kamyon",
+    "İtfaiye Aracı",
+    "Kar Küreme Aracı"
+   ]
+  },
+  {
+   "path": [
+    "Vasıta",
+    "Ağır Vasıta",
+    "Dorse (Kuru Yük / Kapaklı)"
+   ],
+   "brands": {
+    "Tırsan": [],
+    "Kässbohrer": [],
+    "Schmitz Cargobull": [],
+    "Krone": [],
+    "Kögel": [],
+    "Wielton": [],
+    "Özgül": [],
+    "Nursan": [],
+    "Serin": [],
+    "Koluman": []
+   }
+  },
+  {
+   "path": [
+    "Vasıta",
+    "Ağır Vasıta",
+    "Dorse (Tekstil)"
+   ],
+   "brands": {
+    "Tırsan": [],
+    "Kässbohrer": [],
+    "Krone": [],
+    "Schmitz Cargobull": [],
+    "Özgül": []
+   }
+  },
+  {
+   "path": [
+    "Vasıta",
+    "Ağır Vasıta",
+    "Dorse (Oto Taşıyıcı)"
+   ],
+   "brands": {
+    "Lohr": [],
+    "Rolfo": [],
+    "Kässbohrer": []
+   }
+  },
+  {
+   "path": [
+    "Vasıta",
+    "Ağır Vasıta",
+    "Dorse (Hareketli Taban)"
+   ],
+   "brands": {
+    "Knapen": [],
+    "Kraker": [],
+    "Tırsan": []
+   }
+  },
+  {
+   "path": [
+    "Vasıta",
+    "Ağır Vasıta",
+    "Dorse (Platform / Açık Kasa)"
+   ],
+   "brands": {
+    "Tırsan": [],
+    "Kässbohrer": [],
+    "Schmitz Cargobull": [],
+    "Krone": [],
+    "Özgül": [],
+    "Serin": [],
+    "Nursan": []
+   }
+  },
+  {
+   "path": [
+    "Vasıta",
+    "Ağır Vasıta",
+    "Dorse (Konteyner Taşıyıcı)"
+   ],
+   "brands": {
+    "Tırsan": [],
+    "Kässbohrer": [],
+    "Schmitz Cargobull": [],
+    "Krone": [],
+    "Özgül": [],
+    "Serin": []
+   }
+  },
+  {
+   "path": [
+    "Vasıta",
+    "Ağır Vasıta",
+    "Oto Kurtarıcı & Taşıyıcı"
+   ],
+   "add": [
+    "Tekli Araç Kurtarıcı",
+    "Çoklu Araç Taşıyıcı",
+    "Kayar Kasa Kurtarıcı",
+    "Ahtapot (Vinçli) Kurtarıcı",
+    "Ağır Vasıta Kurtarıcı"
+   ]
+  },
+  {
+   "path": [
+    "Vasıta",
+    "Ağır Vasıta",
+    "Karoser & Üst Yapı"
+   ],
+   "add": [
+    "Damperli Kasa",
+    "Açık Kasa",
+    "Kapalı Kasa (Kutu)",
+    "Frigorifik Kasa",
+    "Tenteli Kasa",
+    "Çöp Toplama Üst Yapısı",
+    "Vidanjör Üst Yapısı",
+    "Tanker Üst Yapısı",
+    "Kamyon Üstü Vinç",
+    "Hidrolik Damper Sistemi"
+   ]
+  },
+  {
+   "path": [
+    "Vasıta",
+    "Ağır Vasıta",
+    "Karoser & Üst Yapı",
+    "Kamyon Üstü Vinç"
+   ],
+   "brands": {
+    "HIAB": [],
+    "Palfinger": [],
+    "Fassi": [],
+    "Ferrari": [],
+    "Effer": []
+   }
+  },
+  {
+   "path": [
+    "Vasıta",
+    "Ağır Vasıta",
+    "Römork (Ticari)"
+   ],
+   "add": [
+    "Kamyon Römorku",
+    "Hafif Ticari Römork",
+    "Oto Taşıma Römorku",
+    "Platform Römork",
+    "Frigorifik Römork",
+    "Motosiklet Taşıma Römorku",
+    "Seyyar Büfe Römorku (Food Truck)",
+    "At Taşıma Römorku"
+   ]
+  },
+  {
+   "path": [
+    "Vasıta",
+    "Minivan & Panelvan"
+   ],
+   "add": [
+    "Ambulans"
+   ]
+  },
+  {
+   "path": [
+    "Vasıta",
+    "Engelli Plakalı Araçlar"
+   ],
+   "add": [
+    "Engelli SUV & Arazi Aracı",
+    "Engelli Minivan & Panelvan"
+   ]
+  },
+  {
+   "path": [
+    "Vasıta",
+    "Deniz Araçları"
+   ],
+   "add": [
+    "Ticari Tekne",
+    "Sandal",
+    "Su Bisikleti (Pedalo)"
+   ]
+  },
+  {
+   "path": [
+    "Vasıta",
+    "Deniz Araçları",
+    "Ticari Tekne"
+   ],
+   "add": [
+    "Gezi & Tur Teknesi",
+    "Yolcu Teknesi",
+    "Trol & Gırgır Teknesi",
+    "Dalış Teknesi",
+    "İş Botu",
+    "Römorkör"
+   ]
+  },
+  {
+   "path": [
+    "Vasıta",
+    "Hava Araçları",
+    "Jet"
+   ],
+   "brands": {
+    "Embraer": [
+     "Phenom 100",
+     "Phenom 300",
+     "Legacy 500"
+    ],
+    "Bombardier": [
+     "Challenger 350",
+     "Global 6000",
+     "Learjet 75"
+    ],
+    "Gulfstream": [
+     "G280",
+     "G450",
+     "G550",
+     "G650"
+    ],
+    "Dassault": [
+     "Falcon 2000",
+     "Falcon 900",
+     "Falcon 7X"
+    ],
+    "Cessna": [
+     "Citation Mustang",
+     "Citation CJ3",
+     "Citation XLS",
+     "Citation Latitude"
+    ],
+    "Honda Aircraft": [
+     "HondaJet"
+    ]
+   }
+  },
+  {
+   "path": [
+    "Vasıta",
+    "Hava Araçları",
+    "Planör"
+   ],
+   "brands": {
+    "Schempp-Hirth": [
+     "Discus",
+     "Ventus"
+    ],
+    "Alexander Schleicher": [
+     "ASK 21",
+     "ASW 28"
+    ],
+    "DG Flugzeugbau": [
+     "DG-1000"
+    ]
+   }
+  },
+  {
+   "path": [
+    "Vasıta",
+    "Hava Araçları",
+    "Microlight / Ultralight"
+   ],
+   "brands": {
+    "Pipistrel": [
+     "Virus SW",
+     "Alpha Trainer"
+    ],
+    "Comco Ikarus": [
+     "C42"
+    ],
+    "Flight Design": [
+     "CTLS"
+    ]
+   }
+  },
+  {
+   "path": [
+    "Vasıta",
+    "Hava Araçları",
+    "Paramotor"
+   ],
+   "brands": {
+    "Parajet": [],
+    "Fly Products": [],
+    "Miniplane": []
+   }
+  },
+  {
+   "path": [
+    "Vasıta",
+    "Hava Araçları",
+    "Yamaç Paraşütü"
+   ],
+   "brands": {
+    "Ozone": [],
+    "Advance": [],
+    "Gin Gliders": [],
+    "Nova": [],
+    "Skywalk": [],
+    "Niviuk": []
+   }
+  },
+  {
+   "path": [
+    "Vasıta",
+    "Hava Araçları",
+    "Balon"
+   ],
+   "brands": {
+    "Cameron Balloons": [],
+    "Ultramagic": [],
+    "Kubicek Balloons": []
+   }
+  },
+  {
+   "path": [
+    "Vasıta",
+    "Hava Araçları",
+    "Profesyonel Drone"
+   ],
+   "brands": {
+    "DJI": [
+     "Matrice 350 RTK",
+     "Matrice 30T",
+     "Mavic 3 Enterprise",
+     "Inspire 3"
+    ],
+    "Autel Robotics": [
+     "EVO II Pro"
+    ]
+   }
+  },
+  {
+   "path": [
+    "Yedek Parça, Aksesuar, Donanım & Tuning",
+    "Otomotiv Ekipmanları",
+    "Yedek Parça",
+    "Otomobil & Arazi Aracı"
+   ],
+   "add": [
+    "İç Döşeme",
+    "Airbag & Emniyet Sistemleri"
+   ]
+  },
+  {
+   "path": [
+    "Yedek Parça, Aksesuar, Donanım & Tuning",
+    "Otomotiv Ekipmanları",
+    "Yedek Parça",
+    "Otomobil & Arazi Aracı",
+    "İç Döşeme"
+   ],
+   "add": [
+    "Koltuk",
+    "Kapı Döşemesi",
+    "Torpido & Gösterge Konsolu",
+    "Orta Konsol",
+    "Tavan Döşemesi",
+    "Direksiyon Simidi",
+    "Bagaj Döşemesi & Pandizot"
+   ]
+  },
+  {
+   "path": [
+    "Yedek Parça, Aksesuar, Donanım & Tuning",
+    "Otomotiv Ekipmanları",
+    "Yedek Parça",
+    "Otomobil & Arazi Aracı",
+    "Airbag & Emniyet Sistemleri"
+   ],
+   "add": [
+    "Hava Yastığı (Airbag)",
+    "Airbag Beyni",
+    "Emniyet Kemeri",
+    "Direksiyon Spiral Kablosu"
+   ]
+  },
+  {
+   "path": [
+    "Yedek Parça, Aksesuar, Donanım & Tuning",
+    "Otomotiv Ekipmanları",
+    "Yedek Parça",
+    "Minivan & Panelvan"
+   ],
+   "add": [
+    "İç Döşeme",
+    "Airbag & Emniyet Sistemleri"
+   ]
+  },
+  {
+   "path": [
+    "Yedek Parça, Aksesuar, Donanım & Tuning",
+    "Otomotiv Ekipmanları",
+    "Yedek Parça",
+    "Minivan & Panelvan",
+    "İç Döşeme"
+   ],
+   "add": [
+    "Koltuk",
+    "Kapı Döşemesi",
+    "Torpido & Gösterge Konsolu",
+    "Orta Konsol",
+    "Tavan Döşemesi",
+    "Direksiyon Simidi",
+    "Bagaj Döşemesi & Pandizot"
+   ]
+  },
+  {
+   "path": [
+    "Yedek Parça, Aksesuar, Donanım & Tuning",
+    "Otomotiv Ekipmanları",
+    "Yedek Parça",
+    "Minivan & Panelvan",
+    "Airbag & Emniyet Sistemleri"
+   ],
+   "add": [
+    "Hava Yastığı (Airbag)",
+    "Airbag Beyni",
+    "Emniyet Kemeri",
+    "Direksiyon Spiral Kablosu"
+   ]
+  },
+  {
+   "path": [
+    "Yedek Parça, Aksesuar, Donanım & Tuning",
+    "Otomotiv Ekipmanları",
+    "Yedek Parça",
+    "Ticari Araçlar",
+    "Minibüs & Otobüs"
+   ],
+   "add": [
+    "Kabin & İç Döşeme"
+   ]
+  },
+  {
+   "path": [
+    "Yedek Parça, Aksesuar, Donanım & Tuning",
+    "Otomotiv Ekipmanları",
+    "Yedek Parça",
+    "Ticari Araçlar",
+    "Minibüs & Otobüs",
+    "Kabin & İç Döşeme"
+   ],
+   "add": [
+    "Yolcu Koltuğu",
+    "Şoför Koltuğu",
+    "Kapı Mekanizması",
+    "Tavan Kapağı (Havalandırma)",
+    "Yan Cam & Cam Lastiği"
+   ]
+  },
+  {
+   "path": [
+    "Yedek Parça, Aksesuar, Donanım & Tuning",
+    "Otomotiv Ekipmanları",
+    "Yedek Parça",
+    "Ticari Araçlar",
+    "Kamyon & Çekici"
+   ],
+   "add": [
+    "Kabin & İç Döşeme"
+   ]
+  },
+  {
+   "path": [
+    "Yedek Parça, Aksesuar, Donanım & Tuning",
+    "Otomotiv Ekipmanları",
+    "Yedek Parça",
+    "Ticari Araçlar",
+    "Kamyon & Çekici",
+    "Kabin & İç Döşeme"
+   ],
+   "add": [
+    "Kabin (Komple)",
+    "Şoför Koltuğu",
+    "Kabin Süspansiyonu",
+    "Kabin Yatağı",
+    "Ön Cam"
+   ]
+  },
+  {
+   "path": [
+    "Yedek Parça, Aksesuar, Donanım & Tuning",
+    "Otomotiv Ekipmanları",
+    "Aksesuar & Tuning",
+    "Otomobil & Arazi Aracı"
+   ],
+   "add": [
+    "Off-Road Ekipmanı"
+   ]
+  },
+  {
+   "path": [
+    "Yedek Parça, Aksesuar, Donanım & Tuning",
+    "Otomotiv Ekipmanları",
+    "Aksesuar & Tuning",
+    "Otomobil & Arazi Aracı",
+    "Off-Road Ekipmanı"
+   ],
+   "add": [
+    "Vinç (Winch)",
+    "Şnorkel",
+    "Off-Road Tampon",
+    "Kurtarma Rampası (Sand Track)",
+    "Tavan Çadırı",
+    "Off-Road LED Bar",
+    "Yükseltme Kiti (Lift Kit)",
+    "Hi-Lift Kriko"
+   ]
+  },
+  {
+   "path": [
+    "Yedek Parça, Aksesuar, Donanım & Tuning",
+    "Otomotiv Ekipmanları",
+    "Aksesuar & Tuning",
+    "Otomobil & Arazi Aracı",
+    "Off-Road Ekipmanı",
+    "Vinç (Winch)"
+   ],
+   "brands": {
+    "Warn": [],
+    "Superwinch": [],
+    "Runva": []
+   }
+  },
+  {
+   "path": [
+    "Yedek Parça, Aksesuar, Donanım & Tuning",
+    "Otomotiv Ekipmanları",
+    "Aksesuar & Tuning"
+   ],
+   "add": [
+    "ATV & UTV"
+   ]
+  },
+  {
+   "path": [
+    "Yedek Parça, Aksesuar, Donanım & Tuning",
+    "Otomotiv Ekipmanları",
+    "Aksesuar & Tuning",
+    "ATV & UTV"
+   ],
+   "add": [
+    "ATV Vinci (Winch)",
+    "Kar Küreme Bıçağı",
+    "ATV Bagaj Kutusu",
+    "Koruma & Tampon",
+    "ATV Römorku",
+    "UTV Ön Cam & Tavan"
+   ]
+  },
+  {
+   "path": [
+    "Yedek Parça, Aksesuar, Donanım & Tuning",
+    "Otomotiv Ekipmanları",
+    "Jant & Lastik",
+    "Off-Road Lastik (A/T & M/T)"
+   ],
+   "brands": {
+    "BFGoodrich": [],
+    "General Tire": [],
+    "Maxxis": [],
+    "Cooper": [],
+    "Toyo": [],
+    "Yokohama": []
+   }
+  },
+  {
+   "path": [
+    "Yedek Parça, Aksesuar, Donanım & Tuning",
+    "Otomotiv Ekipmanları",
+    "Jant & Lastik",
+    "Kamyon & Otobüs Lastiği"
+   ],
+   "brands": {
+    "Michelin": [],
+    "Bridgestone": [],
+    "Continental": [],
+    "Goodyear": [],
+    "Petlas": [],
+    "Lassa": [],
+    "Hankook": []
+   }
+  },
+  {
+   "path": [
+    "Yedek Parça, Aksesuar, Donanım & Tuning",
+    "Otomotiv Ekipmanları",
+    "Jant & Lastik",
+    "Hafif Ticari Lastik"
+   ],
+   "brands": {
+    "Michelin": [],
+    "Continental": [],
+    "Bridgestone": [],
+    "Goodyear": [],
+    "Lassa": [],
+    "Petlas": []
+   }
+  },
+  {
+   "path": [
+    "Yedek Parça, Aksesuar, Donanım & Tuning"
+   ],
+   "add": [
+    "Hava Aracı Ekipmanları"
+   ]
+  },
+  {
+   "path": [
+    "Yedek Parça, Aksesuar, Donanım & Tuning",
+    "Hava Aracı Ekipmanları"
+   ],
+   "add": [
+    "Pilot Kulaklığı (Headset)",
+    "Avionik & Telsiz",
+    "Uçak Yedek Parçası",
+    "Helikopter Yedek Parçası",
+    "Yamaç Paraşütü & Paramotor Ekipmanı",
+    "Pilot Ekipmanı"
+   ]
+  },
+  {
+   "path": [
+    "Yedek Parça, Aksesuar, Donanım & Tuning",
+    "Hava Aracı Ekipmanları",
+    "Pilot Kulaklığı (Headset)"
+   ],
+   "brands": {
+    "Bose": [
+     "A20",
+     "A30"
+    ],
+    "Lightspeed": [
+     "Zulu 3",
+     "Delta Zulu"
+    ],
+    "David Clark": [
+     "H10-13.4"
+    ]
+   }
+  },
+  {
+   "path": [
+    "Yedek Parça, Aksesuar, Donanım & Tuning",
+    "Hava Aracı Ekipmanları",
+    "Avionik & Telsiz"
+   ],
+   "brands": {
+    "Garmin": [],
+    "Bendix/King": [],
+    "Avidyne": [],
+    "Dynon": [],
+    "Icom": []
+   }
+  },
+  {
+   "path": [
+    "Yedek Parça, Aksesuar, Donanım & Tuning",
+    "Hava Aracı Ekipmanları",
+    "Yamaç Paraşütü & Paramotor Ekipmanı"
+   ],
+   "add": [
+    "Oturak (Harness)",
+    "Yedek Paraşüt",
+    "Vario & Uçuş Aleti",
+    "Paramotor Motoru",
+    "Uçuş Kaskı"
+   ]
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "İş Makineleri",
+    "Paletli Yükleyici"
+   ],
+   "brands": {
+    "Caterpillar": [
+     "953",
+     "963",
+     "973"
+    ],
+    "Liebherr": [],
+    "Komatsu": []
+   }
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "İş Makineleri",
+    "Forklift (LPG / Benzinli)"
+   ],
+   "brands": {
+    "Toyota": [],
+    "Linde": [],
+    "Hyster": [],
+    "Yale": [],
+    "Hyundai": [],
+    "Doosan": [],
+    "Heli": [],
+    "Hangcha": [],
+    "Mitsubishi": [],
+    "Nissan": [],
+    "TCM": [],
+    "Clark": [],
+    "Still": [],
+    "Jungheinrich": [],
+    "Komatsu": []
+   }
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "İş Makineleri",
+    "Reach Truck"
+   ],
+   "brands": {
+    "Jungheinrich": [
+     "ETV"
+    ],
+    "Still": [
+     "FM-X"
+    ],
+    "Toyota": [
+     "BT Reflex"
+    ],
+    "Crown": [
+     "ESR"
+    ],
+    "Linde": [
+     "R14"
+    ]
+   }
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "İş Makineleri",
+    "Örümcek Platform"
+   ],
+   "brands": {
+    "Hinowa": [],
+    "Platform Basket": [],
+    "Teupen": [],
+    "CMC": [],
+    "Oil&Steel": []
+   }
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "İş Makineleri",
+    "Vinç (Paletli)"
+   ],
+   "brands": {
+    "Liebherr": [],
+    "Kobelco": [],
+    "SANY": [],
+    "XCMG": [],
+    "Manitowoc": [],
+    "Zoomlion": []
+   }
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "İş Makineleri",
+    "Malzeme Elleçleme Makinesi"
+   ],
+   "brands": {
+    "Liebherr": [
+     "LH 22",
+     "LH 40"
+    ],
+    "Sennebogen": [
+     "818",
+     "825",
+     "835"
+    ],
+    "Fuchs": []
+   }
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "İş Makineleri",
+    "Asfalt Plenti"
+   ],
+   "brands": {
+    "Ammann": [],
+    "Benninghoven": [],
+    "Marini": [],
+    "Polygonmach": []
+   }
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "İş Makineleri",
+    "İş Makinesi Kiralama"
+   ],
+   "add": [
+    "Ekskavatör Kiralama",
+    "Mini Ekskavatör Kiralama",
+    "Beko Loder Kiralama",
+    "Loder Kiralama",
+    "Mini Loder Kiralama",
+    "Forklift Kiralama",
+    "Vinç Kiralama",
+    "Manlift & Platform Kiralama",
+    "Silindir Kiralama",
+    "Greyder & Dozer Kiralama",
+    "Telehandler Kiralama",
+    "Jeneratör & Kompresör Kiralama"
+   ]
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "Tarım Makineleri"
+   ],
+   "add": [
+    "Patoz & Harman Makinesi",
+    "Merdane",
+    "Dipkazan (Subsoiler)",
+    "Tırmık",
+    "Fide Dikim Makinesi",
+    "Patates Dikim Makinesi",
+    "Yağmurlama Sulama Sistemi",
+    "Tamburlu Sulama Makinesi",
+    "Pivot (Lineer) Sulama Sistemi",
+    "Tahıl Kurutma Makinesi",
+    "Selektör & Tohum Eleme Makinesi",
+    "Tahıl Silosu",
+    "Hayvancılık Ekipmanı"
+   ]
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "Tarım Makineleri",
+    "Hayvancılık Ekipmanı"
+   ],
+   "add": [
+    "Süt Soğutma Tankı",
+    "Gübre Sıyırma Sistemi",
+    "Buzağı Kulübesi",
+    "Koyun Kırkım Makinesi",
+    "İnek Yatağı & Kauçuk Altlık",
+    "Otomatik Suluk Sistemi"
+   ]
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "Tarım Makineleri",
+    "Tamburlu Sulama Makinesi"
+   ],
+   "brands": {
+    "Ocmis": [],
+    "Bauer": [],
+    "Irrimec": []
+   }
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "Tarım Makineleri",
+    "Pivot (Lineer) Sulama Sistemi"
+   ],
+   "brands": {
+    "Valley": [],
+    "Lindsay": [],
+    "Reinke": []
+   }
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "Sanayi Makineleri",
+    "Kaynak Makinesi (Elektrot)"
+   ],
+   "brands": {
+    "Magmaweld": [],
+    "Gedik Kaynak": [],
+    "Askaynak": [],
+    "Lincoln Electric": [],
+    "ESAB": [],
+    "Kemppi": [],
+    "Fronius": [],
+    "Jasic": []
+   }
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "Sanayi Makineleri",
+    "Geri Dönüşüm Makinesi"
+   ],
+   "add": [
+    "Atık Balya Presi",
+    "Parçalama Makinesi (Shredder)",
+    "Kablo Soyma Makinesi",
+    "Lastik Geri Dönüşüm Hattı",
+    "Hurda Metal Presi"
+   ]
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "Sanayi Makineleri",
+    "Kuyumculuk Makinesi"
+   ],
+   "add": [
+    "Zincir Makinesi",
+    "Vakum Döküm Makinesi",
+    "Hadde Makinesi",
+    "Kuyumcu Cila Makinesi",
+    "Kuyumcu Lazer Kaynak"
+   ]
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "Sanayi Makineleri",
+    "Endüstriyel Su Arıtma Sistemi"
+   ],
+   "add": [
+    "Ters Ozmoz (RO) Sistemi",
+    "Su Yumuşatma Sistemi",
+    "Atık Su Arıtma Tesisi",
+    "Ultrafiltrasyon Sistemi"
+   ]
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "Elektrik & Enerji"
+   ],
+   "add": [
+    "Elektrikli Araç Şarj İstasyonu (DC)",
+    "Güneş Paneli Montaj Konstrüksiyonu",
+    "Enerji Depolama Sistemi (ESS)",
+    "Jeneratör (Doğalgaz)",
+    "Kaynak Jeneratörü",
+    "Orta Gerilim Hücresi",
+    "Elektrik Sayacı & Enerji Analizörü"
+   ]
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "Elektrik & Enerji",
+    "Elektrikli Araç Şarj İstasyonu (DC)"
+   ],
+   "brands": {
+    "ABB": [],
+    "Siemens": [],
+    "Schneider Electric": [],
+    "Vestel": [],
+    "Alpitronic": []
+   }
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "İnşaat Malzemeleri & Ekipman"
+   ],
+   "add": [
+    "Şap Makinesi",
+    "Sıva Makinesi",
+    "Derz Kesme Makinesi",
+    "Toprak Tokmağı (Kurbağa)",
+    "Şantiye Asansörü (Yük & Personel)"
+   ]
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "İnşaat Malzemeleri & Ekipman",
+    "Sıva Makinesi"
+   ],
+   "brands": {
+    "PFT": [],
+    "Putzmeister": [],
+    "m-tec": []
+   }
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "İnşaat Malzemeleri & Ekipman",
+    "Toprak Tokmağı (Kurbağa)"
+   ],
+   "brands": {
+    "Wacker Neuson": [],
+    "Bomag": [],
+    "Mikasa": []
+   }
+  },
+  {
+   "path": [
+    "İş Makineleri & Sanayi",
+    "Depolama & Lojistik Ekipman"
+   ],
+   "add": [
+    "Yükleme Rampası (Dock Leveler)",
+    "Endüstriyel Seksiyonel Kapı"
    ]
   }
  ]
