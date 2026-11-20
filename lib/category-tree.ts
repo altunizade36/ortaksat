@@ -87,21 +87,26 @@ function brandGroupNodes(brands: string[], groups: string[], formKey: string): C
 }
 
 // Otomobil yedek parça grupları (marka bazlı listelenir).
-const CAR_PART_GROUPS = ["Motor Parçaları", "Fren Sistemi", "Süspansiyon & Rot-Balans", "Şanzıman & Debriyaj", "Egzoz Sistemi", "Soğutma & Radyatör", "Elektrik & Aydınlatma", "Kaporta & Dış Aksam", "Far & Stop", "Cam & Ayna", "İç Aksam & Döşeme", "Filtreler", "Triger & Kayış Seti", "Amortisör", "Yakıt Sistemi", "Klima & Kalorifer", "Marş & Alternatör", "Turbo & Yağlama"];
+const CAR_PART_GROUPS = ["Motor Parçaları", "Fren Sistemi", "Süspansiyon & Rot-Balans", "Şanzıman & Debriyaj", "Egzoz Sistemi", "Soğutma & Radyatör", "Elektrik & Aydınlatma", "Kaporta & Dış Aksam", "Far & Stop", "Cam & Ayna", "İç Aksam & Döşeme", "Filtreler", "Triger & Kayış Seti", "Amortisör", "Yakıt Sistemi", "Klima & Kalorifer", "Marş & Alternatör", "Turbo & Yağlama", "Batarya & Şarj Sistemi (Elektrikli/Hibrit)"];
 // Sahibinden yedek-parça "parça sistemi" seviyesi (araç tipinin altında, en derin seçilebilir düzey).
-const OTO_PARCA_SISTEM = ["Ateşleme & Yakıt", "Egzoz", "Elektrik", "Filtre", "Fren & Debriyaj", "Isıtma & Havalandırma & Klima", "Kaporta & Karoser", "Mekanik", "Motor", "Şanzıman & Vites", "Yürüyen & Direksiyon"];
-const MOTO_PARCA_SISTEM = ["Motor", "Ateşleme & Yakıt", "Elektrik", "Egzoz", "Fren", "Şanzıman & Zincir", "Süspansiyon", "Gövde & Kaporta", "Gidon & Kumanda", "Far & Sinyal", "Ayna & Cam"];
+const OTO_PARCA_SISTEM = ["Ateşleme & Yakıt", "Egzoz", "Elektrik", "Filtre", "Fren & Debriyaj", "Isıtma & Havalandırma & Klima", "Kaporta & Karoser", "Mekanik", "Motor", "Şanzıman & Vites", "Yürüyen & Direksiyon", "Soğutma & Radyatör", "Batarya & Şarj Sistemi (Elektrikli/Hibrit)"];
+// Motoru olmayan / farklı yapıdaki araçlar için ayrı parça listeleri (treylerde motor-egzoz-klima yok).
+const TREYLER_PARCA = ["Aks & Dingil", "Fren Sistemi", "Süspansiyon & Makas", "Elektrik & Aydınlatma", "Kaporta & Karoser", "Dorse Ayağı & King Pin", "Tente & Branda", "Lastik & Jant"];
+const GOKART_PARCA = ["Motor", "Fren", "Şasi & Direksiyon", "Aktarma & Zincir", "Lastik & Jant", "Koltuk & Gövde", "Elektrik"];
+const TRAKTOR_PARCA = ["Motor", "Şanzıman & Vites", "Hidrolik Sistem", "Fren & Debriyaj", "Elektrik", "Kabin & Kaporta", "Ön Aks & Direksiyon", "Filtre", "Lastik & Jant", "Kuyruk Mili & Bağlantı"];
+const ATV_PARCA = ["Motor", "Aktarma & Şanzıman", "Fren", "Süspansiyon", "Elektrik", "Gövde & Plastik Aksam", "Lastik & Jant", "Filtre"];
+const MOTO_PARCA_SISTEM = ["Motor", "Ateşleme & Yakıt", "Elektrik", "Egzoz", "Fren", "Şanzıman & Zincir", "Süspansiyon", "Gövde & Kaporta", "Gidon & Kumanda", "Far & Sinyal", "Ayna & Cam", "Filtre", "Soğutma & Radyatör"];
 const AKS_TAM = ["İç Aksesuar", "Dış Aksesuar", "Performans", "Elektronik", "Bakım & Onarım Ürünleri"];
 const AKS_KISA = ["İç Aksesuar", "Dış Aksesuar", "Bakım & Onarım Ürünleri"];
 
 // ---- marka/değer listeleri ----------------------------------------------
-export const CAR_BRANDS = ["Alfa Romeo", "Aston Martin", "Audi", "Bentley", "BMW", "BYD", "Cadillac", "Chery", "Chevrolet", "Chrysler", "Citroën", "Cupra", "Dacia", "Daihatsu", "DFSK", "Dodge", "DS Automobiles", "Ferrari", "Fiat", "Fisker", "Ford", "Geely", "Genesis", "GMC", "Honda", "Hongqi", "Hyundai", "Infiniti", "Isuzu", "Jaguar", "Jeep", "Kia", "Lada", "Lamborghini", "Lancia", "Land Rover", "Leapmotor", "Lexus", "Lotus", "Lucid", "Mahindra", "Maserati", "Maybach", "Mazda", "McLaren", "Mercedes-Benz", "MG", "Mini", "Mitsubishi", "NIO", "Nissan", "Opel", "Ora", "Peugeot", "Porsche", "Proton", "Renault", "Rolls-Royce", "Seat", "Seres", "Škoda", "Skywell", "Smart", "SsangYong", "Subaru", "Suzuki", "Tesla", "Tofaş", "Togg", "Toyota", "Volkswagen", "Volvo", "Jaecoo", "Jetour", "Lynk & Co", "XPeng", "Zeekr", "Omoda", "Diğer"];
-export const MOTO_BRANDS = ["Honda", "Yamaha", "Kawasaki", "Suzuki", "KTM", "BMW", "Ducati", "Triumph", "Harley-Davidson", "Aprilia", "Vespa", "Piaggio", "Benelli", "Royal Enfield", "Moto Guzzi", "Bajaj", "TVS", "CFMoto", "SYM", "Kymco", "Mondial", "Kuba", "RKS", "Arora", "Yuki", "Motolux", "Falcon", "Zontes", "Voge", "QJ Motor", "Keeway", "Hero", "Lifan", "Husqvarna", "Indian", "MV Agusta", "Bimota", "Can-Am", "Segway Powersports", "Diğer"];
+export const CAR_BRANDS = ["Alfa Romeo", "Aston Martin", "Audi", "Bentley", "BMW", "BYD", "Cadillac", "Chery", "Chevrolet", "Chrysler", "Citroën", "Cupra", "Dacia", "Daewoo", "Daihatsu", "DFSK", "Dodge", "DS Automobiles", "Ferrari", "Fiat", "Fisker", "Ford", "Geely", "Genesis", "GMC", "Honda", "Hongqi", "Hummer", "Hyundai", "Infiniti", "Isuzu", "Jaguar", "Jeep", "Kia", "Lada", "Lamborghini", "Lancia", "Land Rover", "Leapmotor", "Lexus", "Lotus", "Lucid", "Mahindra", "Maserati", "Maybach", "Mazda", "McLaren", "Mercedes-Benz", "MG", "Mini", "Mitsubishi", "NIO", "Nissan", "Opel", "Ora", "Peugeot", "Polestar", "Porsche", "Proton", "Renault", "Rolls-Royce", "Rover", "Saab", "Seat", "Seres", "Škoda", "Skywell", "Smart", "SsangYong", "Subaru", "Suzuki", "Tata", "Tesla", "Tofaş", "Togg", "Toyota", "Volkswagen", "Volvo", "Jaecoo", "Jetour", "Lynk & Co", "XPeng", "Zeekr", "Omoda", "Diğer"];
+export const MOTO_BRANDS = ["Honda", "Yamaha", "Kawasaki", "Suzuki", "KTM", "BMW", "Ducati", "Triumph", "Harley-Davidson", "Aprilia", "Vespa", "Piaggio", "Benelli", "Royal Enfield", "Moto Guzzi", "Bajaj", "TVS", "CFMoto", "SYM", "Kymco", "Mondial", "Kuba", "RKS", "Arora", "Yuki", "Motolux", "Falcon", "Zontes", "Voge", "QJ Motor", "Keeway", "Hero", "Lifan", "Husqvarna", "Indian", "MV Agusta", "Bimota", "Can-Am", "Peugeot", "Hyosung", "Beta", "Diğer"];
 // Traktör marka → model haritası (Türkiye pazarı; Sahibinden derinliği). En çok aranan
 // kategori (GSC: "bursa satılık traktör" vb.). Marka seçilince model bu listeden gelir,
 // yoksa serbest metin. Klasikler (Fiat 480, Tümosan, Başak) + modern seriler.
 export const TRACTOR_MODELS: Record<string, string[]> = {
-  "New Holland": ["TD 65", "TD 75", "TD 85", "TD 95", "TD5.65", "TD5.75", "TD5.85", "TD5.95", "TD5.110", "T4.55", "T4.65", "T4.75", "T4.85", "T4.105", "T5.100", "T5.110", "T5.120", "TT4.55", "TT4.75", "TT50", "TT55", "TT65", "TT75", "56-66", "80-66", "4635", "8560"],
+  "New Holland": ["TD 65", "TD 75", "TD 85", "TD 95", "TD5.65", "TD5.75", "TD5.85", "TD5.95", "TD5.110", "T4.55", "T4.65", "T4.75", "T4.85", "T4.105", "T5.100", "T5.110", "T5.120", "TT4.55", "TT4.75", "TT50", "TT55", "TT65", "TT75", "4635", "8560"],
   "Massey Ferguson": ["135", "240", "240S", "255", "260", "265", "285", "285S", "3050", "3060", "3065", "3070", "3080", "3090", "4708", "4709", "5710", "5711", "6713", "7614", "398", "399"],
   "John Deere": ["5050D", "5055E", "5065E", "5075E", "5085E", "5090E", "5100E", "5310", "6100B", "6110B", "6120B", "6130B", "5720", "5820", "2140", "3130"],
   "Case IH": ["JX 75", "JX 90", "JX 95", "JXU", "Farmall 90", "Farmall 105", "Farmall 110", "Maxxum 110", "Maxxum 125", "Luxxum", "Puma", "CS 78", "4210"],
@@ -116,12 +121,14 @@ export const TRACTOR_MODELS: Record<string, string[]> = {
   "Başak": ["2073", "2075", "2080", "2085", "2090", "2110", "5110", "5120"],
   "Hattat": ["A70", "A80", "A90", "A100", "A110", "T4100", "T4110", "3075", "3085"],
   "Claas": ["Arion", "Axion", "Atos", "Elios", "Nexos", "Celtis"],
-  "Valtra": ["A Serisi", "N Serisi", "T Serisi", "A75", "A95", "N123"]
+  "Valtra": ["A Serisi", "N Serisi", "T Serisi", "A75", "A95", "N123"],
+  "Solis": ["Solis 26", "Solis 50", "Solis 60", "Solis 75", "Solis 90"],
+  "McCormick": ["X4", "X5", "X6", "X7", "CX"]
 };
 export const WHITE_GOODS_BRANDS = ["Arçelik", "Beko", "Bosch", "Siemens", "Vestel", "Samsung", "LG", "Profilo", "Altus", "Grundig", "Regal", "Silverline", "Electrolux", "Whirlpool", "Simfer", "Kumtel", "Luxell", "Sharp", "Hisense", "Midea", "Candy", "Indesit", "Ariston", "Diğer"];
 // Kombi/klima markaları (beyaz eşyadan farklı).
-export const HEATING_BRANDS = ["Baymak", "DemirDöküm", "Vaillant", "Buderus", "Bosch", "ECA", "Airfel", "Viessmann", "Warmhaus", "Diğer"];
-export const AC_BRANDS = ["Arçelik", "Vestel", "Samsung", "LG", "Bosch", "Daikin", "Mitsubishi", "Toshiba", "Baymak", "Gree", "Midea", "Beko", "Diğer"];
+export const HEATING_BRANDS = ["Baymak", "DemirDöküm", "Vaillant", "Buderus", "Bosch", "ECA", "Airfel", "Viessmann", "Warmhaus", "Alarko", "Immergas", "Ferroli", "Diğer"];
+export const AC_BRANDS = ["Arçelik", "Vestel", "Samsung", "LG", "Bosch", "Daikin", "Mitsubishi", "Toshiba", "Baymak", "Gree", "Midea", "Beko", "Alarko Carrier", "Diğer"];
 // İş makinesi markaları (ekskavatör/loder/vinç/forklift; Türkiye pazarı + yerli Hidromek/Çukurova/MST).
 export const CONSTRUCTION_BRANDS = ["Caterpillar", "Komatsu", "Hidromek", "JCB", "Volvo", "Hitachi", "Case", "Doosan", "Liebherr", "Hyundai", "Kobelco", "New Holland", "Çukurova", "MST", "Sanko", "Çesan", "Terex", "Bobcat", "Kubota", "Takeuchi", "Yanmar", "Wacker Neuson", "XCMG", "SANY", "LiuGong", "Sumitomo", "JLG", "Manitou", "Merlo", "Atlas Copco", "Wirtgen", "Bomag", "Dynapac", "Ammann", "Putzmeister", "Schwing", "Linde", "Still", "Hyster", "Yale", "Jungheinrich", "Toyota", "Cummins", "Diğer"];
 const CAR_COLORS = ["Beyaz", "Siyah", "Gri", "Gümüş", "Kırmızı", "Mavi", "Lacivert", "Yeşil", "Kahverengi", "Bej", "Turuncu", "Diğer"];
@@ -144,40 +151,40 @@ export const PHONE_BRANDS = ["iPhone", "Samsung", "Xiaomi", "Huawei", "Oppo", "R
 // listeden gelir; markası burada yoksa model serbest metin olarak girilir.
 export const MODELS_BY_BRAND: Record<string, string[]> = {
   // Otomobil
-  Renault: ["Clio", "Megane", "Fluence", "Symbol", "Captur", "Austral", "Taliant", "Kadjar", "Talisman", "Zoe", "Koleos", "Latitude", "Laguna", "Scenic", "Twingo"],
-  Fiat: ["Egea", "Linea", "Doblo", "Fiorino", "Panda", "500", "500L", "500X", "Punto", "Tipo", "Bravo", "Albea", "Palio", "Marea"],
-  Volkswagen: ["Golf", "Polo", "Passat", "Jetta", "Tiguan", "T-Roc", "T-Cross", "Touareg", "Transporter", "Caddy", "Arteon", "Scirocco", "Bora", "Beetle", "ID.4", "ID.3"],
-  Toyota: ["Corolla", "Yaris", "Yaris Cross", "C-HR", "RAV4", "Hilux", "Camry", "Auris", "Avensis", "Land Cruiser", "Proace", "bZ4X"],
-  Hyundai: ["i10", "i20", "i30", "Accent", "Elantra", "Tucson", "Bayon", "Kona", "Getz", "Santa Fe", "ix35", "Accent Blue", "IONIQ"],
-  Ford: ["Focus", "Fiesta", "Mondeo", "Courier", "Transit", "Kuga", "Puma", "Ranger", "EcoSport", "Explorer", "Tourneo", "C-Max", "Connect"],
+  Renault: ["Clio", "Megane", "Fluence", "Symbol", "Captur", "Austral", "Taliant", "Kadjar", "Talisman", "Zoe", "Koleos", "Latitude", "Laguna", "Scenic", "Twingo", "R 9", "R 11", "R 12", "R 19", "R 21", "Kangoo", "Modus"],
+  Fiat: ["Egea", "Linea", "Doblo", "Fiorino", "Panda", "500", "500L", "500X", "Punto", "Tipo", "Bravo", "Albea", "Palio", "Marea", "Siena", "Brava", "Uno", "Grande Punto", "Idea", "Stilo"],
+  Volkswagen: ["Golf", "Polo", "Passat", "Jetta", "Tiguan", "T-Roc", "T-Cross", "Touareg", "Caddy", "Arteon", "Scirocco", "Bora", "Beetle", "ID.4", "ID.3", "Vento", "Touran", "Sharan", "Up!", "Taigo", "Amarok", "Passat CC"],
+  Toyota: ["Corolla", "Yaris", "Yaris Cross", "C-HR", "RAV4", "Hilux", "Camry", "Auris", "Avensis", "Land Cruiser", "bZ4X", "Corolla Cross", "Prius", "Verso", "Carina"],
+  Hyundai: ["i10", "i20", "i30", "Accent", "Elantra", "Tucson", "Bayon", "Kona", "Getz", "Santa Fe", "ix35", "Accent Blue", "IONIQ", "Accent Era", "i40", "Matrix", "Excel", "IONIQ 5", "IONIQ 6"],
+  Ford: ["Focus", "Fiesta", "Mondeo", "Courier", "Kuga", "Puma", "Ranger", "EcoSport", "Explorer", "Tourneo", "C-Max", "Escort", "Fusion", "Mustang", "S-Max", "Galaxy", "Ka", "B-Max", "Taunus"],
   Honda: ["Civic", "City", "Accord", "CR-V", "Jazz", "HR-V", "ZR-V", "e:Ny1", "Insight"],
   BMW: ["1 Serisi", "2 Serisi", "3 Serisi", "4 Serisi", "5 Serisi", "6 Serisi", "7 Serisi", "8 Serisi", "X1", "X2", "X3", "X4", "X5", "X6", "X7", "i3", "i4", "iX", "Z4", "M Serisi"],
-  "Mercedes-Benz": ["A Serisi", "B Serisi", "C Serisi", "E Serisi", "S Serisi", "CLA", "CLS", "GLA", "GLB", "GLC", "GLE", "GLS", "G Serisi", "EQC", "EQE", "AMG", "Vito", "Sprinter"],
-  Audi: ["A1", "A3", "A4", "A5", "A6", "A7", "A8", "Q2", "Q3", "Q5", "Q7", "Q8", "TT", "R8", "e-tron", "RS Serisi", "S Serisi"],
-  Opel: ["Corsa", "Astra", "Insignia", "Mokka", "Crossland", "Grandland", "Vectra", "Zafira", "Meriva", "Combo Life"],
-  Peugeot: ["208", "301", "308", "2008", "3008", "5008", "508", "Partner", "Rifter", "207", "206", "406", "e-208"],
-  "Citroën": ["C3", "C4", "C5 Aircross", "C5 X", "Berlingo", "C-Elysee", "C3 Aircross", "DS3", "DS4", "Xsara"],
-  Nissan: ["Qashqai", "Juke", "Micra", "X-Trail", "Note", "Navara", "Leaf", "Pulsar", "Primera"],
-  Kia: ["Rio", "Ceed", "Sportage", "Stonic", "Picanto", "Cerato", "Sorento", "Niro", "Soul", "EV6", "Venga"],
-  Dacia: ["Sandero", "Duster", "Logan", "Jogger", "Lodgy", "Dokker", "Spring"],
+  "Mercedes-Benz": ["A Serisi", "B Serisi", "C Serisi", "E Serisi", "S Serisi", "CLA", "CLS", "GLA", "GLB", "GLC", "GLE", "GLS", "G Serisi", "EQA", "EQB", "EQC", "EQE", "EQS", "AMG GT", "SL", "SLK", "190", "X-Class"],
+  Audi: ["A1", "A3", "A4", "A5", "A6", "A7", "A8", "Q2", "Q3", "Q4 e-tron", "Q5", "Q7", "Q8", "TT", "R8", "e-tron", "RS Serisi", "S Serisi", "A2", "80"],
+  Opel: ["Corsa", "Astra", "Insignia", "Mokka", "Crossland", "Grandland", "Vectra", "Zafira", "Meriva", "Combo Life", "Frontera", "Kadett", "Omega", "Tigra", "Agila"],
+  Peugeot: ["208", "301", "308", "2008", "3008", "5008", "508", "Rifter", "207", "206", "406", "e-208", "106", "306", "307", "405", "407", "408", "107", "607"],
+  "Citroën": ["C3", "C4", "C5 Aircross", "C5 X", "Berlingo", "C-Elysee", "C3 Aircross", "Xsara", "C1", "C5", "C4 X", "C4 Picasso", "Saxo", "ë-C4"],
+  Nissan: ["Qashqai", "Juke", "Micra", "X-Trail", "Note", "Navara", "Leaf", "Pulsar", "Primera", "Almera", "Patrol", "Tiida", "Sunny"],
+  Kia: ["Rio", "Ceed", "Sportage", "Stonic", "Picanto", "Cerato", "Sorento", "Niro", "Soul", "EV6", "Venga", "XCeed", "EV3", "EV9", "Carens"],
+  Dacia: ["Sandero", "Duster", "Logan", "Jogger", "Lodgy", "Dokker", "Spring", "Bigster"],
   Tesla: ["Model 3", "Model Y", "Model S", "Model X", "Cybertruck", "Roadster"],
   Togg: ["T10X", "T10F"],
-  BYD: ["Atto 3", "Seal", "Dolphin", "Han", "Tang", "Song Plus", "Seal U", "Yuan Plus", "Sealion 7"],
+  BYD: ["Atto 3", "Seal", "Dolphin", "Han", "Tang", "Song Plus", "Seal U", "Yuan Plus", "Sealion 7", "Atto 2"],
   // Yeni eklenen Çin/EV markaları — model listeleri (eskiden yalnız "Diğer Model" veriyordu).
   Jaecoo: ["J5", "J6", "J7", "J8"],
   Jetour: ["Dashing", "X70", "X70 Plus", "X90", "X90 Plus", "T2", "T1"],
   "Lynk & Co": ["01", "02", "03", "05", "06", "08", "09"],
   XPeng: ["G6", "G9", "P7", "P5", "X9", "G3i"],
   Zeekr: ["001", "X", "007", "009", "7X", "Mix"],
-  Omoda: ["5", "E5", "7", "9", "C5"],
+  Omoda: ["5", "E5", "7", "9"],
   // Cep telefonu
-  iPhone: ["iPhone 16 Pro Max", "iPhone 16 Pro", "iPhone 16", "iPhone 15 Pro Max", "iPhone 15", "iPhone 14", "iPhone 13", "iPhone 12", "iPhone 11", "iPhone SE"],
-  Samsung: ["Galaxy S24 Ultra", "Galaxy S24+", "Galaxy S24", "Galaxy S23 Ultra", "Galaxy S23", "Galaxy S22", "Galaxy A55", "Galaxy A35", "Galaxy A25", "Galaxy A15", "Galaxy A05", "Galaxy M Serisi", "Galaxy Z Fold5", "Galaxy Z Flip5", "Galaxy Note 20", "Galaxy S21 FE"],
-  Xiaomi: ["14 Pro", "14", "13T Pro", "13T", "Redmi Note 13 Pro", "Redmi Note 13", "Redmi Note 12", "Redmi 13C", "Redmi 12"],
+  iPhone: ["iPhone 17 Pro Max", "iPhone 17 Pro", "iPhone Air", "iPhone 17", "iPhone 16 Pro Max", "iPhone 16 Pro", "iPhone 16 Plus", "iPhone 16", "iPhone 16e", "iPhone 15 Pro Max", "iPhone 15 Pro", "iPhone 15 Plus", "iPhone 15", "iPhone 14 Pro Max", "iPhone 14 Pro", "iPhone 14 Plus", "iPhone 14", "iPhone 13 Pro Max", "iPhone 13 Pro", "iPhone 13", "iPhone 13 mini", "iPhone 12 Pro Max", "iPhone 12 Pro", "iPhone 12", "iPhone 11 Pro Max", "iPhone 11 Pro", "iPhone 11", "iPhone XS Max", "iPhone XS", "iPhone XR", "iPhone X", "iPhone 8 Plus", "iPhone 8", "iPhone SE"],
+  Samsung: ["Galaxy S26 Ultra", "Galaxy S26+", "Galaxy S26", "Galaxy S25 Ultra", "Galaxy S25 Edge", "Galaxy S25+", "Galaxy S25", "Galaxy S25 FE", "Galaxy S24 Ultra", "Galaxy S24+", "Galaxy S24", "Galaxy S24 FE", "Galaxy S23 Ultra", "Galaxy S23+", "Galaxy S23", "Galaxy S23 FE", "Galaxy S22 Ultra", "Galaxy S22", "Galaxy S21 FE", "Galaxy A56", "Galaxy A55", "Galaxy A54", "Galaxy A36", "Galaxy A35", "Galaxy A34", "Galaxy A26", "Galaxy A25", "Galaxy A16", "Galaxy A15", "Galaxy A05", "Galaxy M Serisi", "Galaxy Z Fold7", "Galaxy Z Flip7", "Galaxy Z Fold6", "Galaxy Z Flip6", "Galaxy Z Fold5", "Galaxy Z Flip5", "Galaxy Note 20"],
+  Xiaomi: ["Xiaomi 15 Ultra", "Xiaomi 15", "Xiaomi 15T Pro", "Xiaomi 15T", "Xiaomi 14 Ultra", "Xiaomi 14", "Xiaomi 14T Pro", "Xiaomi 14T", "Xiaomi 13T Pro", "Xiaomi 13T", "Redmi Note 14 Pro+", "Redmi Note 14 Pro", "Redmi Note 14", "Redmi Note 13 Pro", "Redmi Note 13", "Redmi Note 12", "Redmi 14C", "Redmi 13C", "Redmi 12"],
   Poco: ["Poco X6 Pro", "Poco X6", "Poco F5", "Poco F5 Pro", "Poco C65", "Poco M6 Pro", "Poco X5 Pro"],
-  Huawei: ["P60", "P50", "Mate 50", "Nova 12", "Nova 11"],
+  Huawei: ["Pura 70", "P60", "P50", "Mate 60", "Mate 50", "Nova 13", "Nova 12", "Nova 11"],
   Oppo: ["Reno 11", "Reno 10", "A98", "A78", "A58"],
-  Realme: ["C67", "C55", "11 Pro", "GT Neo", "Number serisi"],
+  Realme: ["Realme 14 Pro", "Realme 13 Pro", "Realme 12 Pro", "Realme 11 Pro", "C75", "C67", "C55", "GT Neo"],
   // Ek otomobil markaları
   Chevrolet: ["Cruze", "Aveo", "Spark", "Captiva", "Trax", "Lacetti", "Kalos", "Epica", "Nubira", "Malibu", "Camaro"],
   Seat: ["Ibiza", "Leon", "Arona", "Ateca", "Toledo", "Cordoba", "Altea", "Alhambra", "Tarraco"],
@@ -189,24 +196,24 @@ export const MODELS_BY_BRAND: Record<string, string[]> = {
   "Land Rover": ["Range Rover", "Range Rover Sport", "Range Rover Velar", "Evoque", "Discovery", "Discovery Sport", "Defender", "Freelander"],
   Jeep: ["Renegade", "Compass", "Cherokee", "Grand Cherokee", "Wrangler", "Avenger", "Commander"],
   Mazda: ["2", "3", "6", "CX-3", "CX-30", "CX-5", "CX-60", "MX-5", "CX-9"],
-  "Alfa Romeo": ["Giulietta", "Giulia", "Stelvio", "Mito", "Tonale", "159", "147", "Brera"],
+  "Alfa Romeo": ["Giulietta", "Giulia", "Stelvio", "MiTo", "Tonale", "159", "147", "Brera"],
   MG: ["ZS", "HS", "MG4", "MG5", "MG3", "Marvel R", "MG7", "EHS"],
-  Chery: ["Tiggo 7", "Tiggo 7 Pro", "Tiggo 8", "Tiggo 8 Pro", "Omoda 5", "Omoda E5", "Tiggo 4", "Tiggo 2"],
+  Chery: ["Tiggo 7", "Tiggo 7 Pro", "Tiggo 8", "Tiggo 8 Pro", "Tiggo 4", "Tiggo 2"],
   Porsche: ["911", "Cayenne", "Macan", "Panamera", "Taycan", "Boxster", "Cayman"],
   Jaguar: ["XE", "XF", "XJ", "F-Pace", "E-Pace", "I-Pace", "F-Type"],
   Lexus: ["IS", "ES", "LS", "UX", "NX", "RX", "RZ", "LC", "CT"],
   Cupra: ["Formentor", "Leon", "Born", "Ateca", "Terramar", "Tavascan"],
-  "DS Automobiles": ["DS3", "DS3 Crossback", "DS4", "DS7", "DS7 Crossback", "DS9"],
+  "DS Automobiles": ["DS3", "DS3 Crossback", "DS4", "DS5", "DS7", "DS9"],
   SsangYong: ["Tivoli", "Korando", "Rexton", "Musso", "Actyon", "Rodius", "Kyron", "Torres"],
   Subaru: ["Impreza", "XV", "Forester", "Outback", "Legacy", "BRZ", "WRX", "Levorg"],
-  Isuzu: ["D-Max", "MU-X", "NPR", "NLR", "NKR", "NQR", "Novociti", "Trooper", "Rodeo"],
+  Isuzu: ["D-Max", "MU-X", "Trooper", "Rodeo"],
   Infiniti: ["Q30", "Q50", "Q60", "Q70", "QX30", "QX50", "QX55", "QX60", "QX70", "QX80", "FX", "EX"],
   "Aston Martin": ["DB11", "DB12", "DBS", "DBX", "Vantage", "Vanquish", "Rapide", "DB9", "Valhalla"],
   Bentley: ["Continental GT", "Continental GTC", "Flying Spur", "Bentayga", "Mulsanne", "Batur", "Arnage", "Azure"],
   Ferrari: ["Roma", "Portofino", "296 GTB", "F8", "SF90", "Purosangue", "812", "Daytona SP3", "Roma Spider"],
   Lamborghini: ["Huracán", "Urus", "Aventador", "Revuelto", "Gallardo", "Murciélago", "Countach", "Temerario"],
   Maserati: ["Ghibli", "Levante", "Quattroporte", "Grecale", "MC20", "GranTurismo", "GranCabrio"],
-  Lada: ["Vesta", "Granta", "Niva", "Niva Travel", "Largus", "Kalina", "Priora", "Samara", "XRAY", "4x4"],
+  Lada: ["Vesta", "Granta", "Niva", "Niva Travel", "Largus", "Kalina", "Priora", "Samara", "XRAY", "Nova"],
   Smart: ["ForTwo", "ForFour", "#1", "#3", "#5", "Roadster"],
   Daihatsu: ["Terios", "Sirion", "Materia", "Cuore", "YRV", "Charade", "Feroza", "Gran Max", "Copen", "Move"],
   // Ek cep telefonu markaları
@@ -214,12 +221,15 @@ export const MODELS_BY_BRAND: Record<string, string[]> = {
   Tecno: ["Camon 20", "Spark 10", "Pova 5", "Phantom X2"],
   "General Mobile": ["GM 24", "GM 23", "GM 22", "GM 21"],
   OnePlus: ["12", "11", "Nord 3", "Nord CE 3"],
-  Nothing: ["Phone (2)", "Phone (2a)", "Phone (1)"],
+  Nothing: ["Phone (3)", "Phone (3a)", "Phone (2)", "Phone (2a)", "Phone (1)"],
   Reeder: ["S19 Max Pro", "P13 Blue Max", "S23 Pro"],
+  Google: ["Pixel 10 Pro", "Pixel 10", "Pixel 9 Pro", "Pixel 9", "Pixel 9a", "Pixel 8 Pro", "Pixel 8", "Pixel 8a", "Pixel 7"],
+  Honor: ["Magic 7 Pro", "Magic 6 Pro", "Honor 400", "Honor 200", "Honor X9c", "Honor X8b", "Honor 90"],
+  Infinix: ["Note 40 Pro", "Note 40", "Hot 50", "Hot 40", "Zero 40", "Smart 9"],
   // Yeni eklenen otomobil markalarının modelleri
   Cadillac: ["Escalade", "CT4", "CT5", "CT6", "XT4", "XT5", "XT6", "ATS", "CTS", "SRX", "BLS", "Lyriq"],
   Chrysler: ["300C", "Voyager", "Grand Voyager", "PT Cruiser", "Sebring", "Pacifica", "Crossfire"],
-  DFSK: ["Glory 580", "Glory 500", "Glory 330", "K01", "K05", "C31", "C32", "Fengon 500", "Mini Truck", "Seres 3"],
+  DFSK: ["Glory 580", "Glory 500", "Glory 330", "Fengon 500"],
   Dodge: ["Charger", "Challenger", "Durango", "Journey", "Nitro", "Ram", "Caliber", "Avenger"],
   Fisker: ["Ocean", "Karma"],
   Geely: ["Coolray", "Emgrand", "Tugella", "Okavango", "Atlas", "Monjaro", "Geometry C"],
@@ -239,8 +249,92 @@ export const MODELS_BY_BRAND: Record<string, string[]> = {
   "Rolls-Royce": ["Phantom", "Ghost", "Wraith", "Cullinan", "Dawn", "Spectre"],
   Seres: ["3", "5", "SF5", "Aito M5", "Aito M7", "Aito M9"],
   Skywell: ["ET5", "BE11"],
-  Tofaş: ["Şahin", "Doğan", "Kartal", "Serçe", "Murat 124", "Murat 131", "Tempra", "Tipo", "Uno"]
+  Tofaş: ["Şahin", "Doğan", "Kartal", "Serçe", "Murat 124", "Murat 131", "Tempra", "Tipo", "Uno"],
+  // 2026-11-20: Türkiye ikinci el pazarında hâlâ ilanı çıkan markalar (eksikti).
+  Daewoo: ["Nexia", "Lanos", "Matiz", "Espero", "Tico", "Racer", "Leganza", "Nubira"],
+  Hummer: ["H1", "H2", "H3"],
+  Polestar: ["Polestar 2", "Polestar 3", "Polestar 4"],
+  Rover: ["25", "45", "75", "214", "216", "416", "420", "620"],
+  Saab: ["9-3", "9-5", "900", "9000"],
+  Tata: ["Indica", "Indigo", "Manza", "Vista", "Xenon"]
 };
+
+// "Arazi, SUV & Pickup" dalı — 2026-11-20: eskiden MODELS_BY_BRAND'in TAMAMINI kullanıyordu
+// (Clio, Golf, Corolla, 911… SUV diye listeleniyordu). Artık yalnız SUV/arazi/pickup modelleri.
+// Model adları MODELS_BY_BRAND'de de bulunur (otomobil formunun model seçimiyle uyumlu).
+export const SUV_MODELS: Record<string, string[]> = {
+  "Aston Martin": ["DBX"],
+  Audi: ["Q2", "Q3", "Q4 e-tron", "Q5", "Q7", "Q8", "e-tron"],
+  Bentley: ["Bentayga"],
+  BMW: ["X1", "X2", "X3", "X4", "X5", "X6", "X7", "iX"],
+  BYD: ["Atto 2", "Atto 3", "Tang", "Song Plus", "Seal U", "Yuan Plus", "Sealion 7"],
+  Cadillac: ["Escalade", "XT4", "XT5", "XT6", "SRX", "Lyriq"],
+  Chery: ["Tiggo 2", "Tiggo 4", "Tiggo 7", "Tiggo 7 Pro", "Tiggo 8", "Tiggo 8 Pro"],
+  Chevrolet: ["Captiva", "Trax"],
+  "Citroën": ["C3 Aircross", "C5 Aircross"],
+  Cupra: ["Formentor", "Ateca", "Terramar", "Tavascan"],
+  Dacia: ["Duster", "Bigster"],
+  Daihatsu: ["Terios", "Feroza"],
+  DFSK: ["Glory 580", "Glory 500", "Glory 330", "Fengon 500"],
+  Dodge: ["Durango", "Nitro", "Journey", "Ram"],
+  "DS Automobiles": ["DS3 Crossback", "DS7"],
+  Ferrari: ["Purosangue"],
+  Fisker: ["Ocean"],
+  Ford: ["Kuga", "Puma", "EcoSport", "Explorer", "Ranger"],
+  Geely: ["Coolray", "Tugella", "Okavango", "Atlas", "Monjaro"],
+  Genesis: ["GV60", "GV70", "GV80"],
+  GMC: ["Sierra", "Yukon", "Acadia", "Terrain", "Canyon", "Hummer EV"],
+  Honda: ["CR-V", "HR-V", "ZR-V", "e:Ny1"],
+  Hongqi: ["E-HS9", "HS3", "HS5", "HS7", "E-QM5"],
+  Hummer: ["H1", "H2", "H3"],
+  Hyundai: ["Tucson", "Bayon", "Kona", "Santa Fe", "ix35", "IONIQ 5"],
+  Infiniti: ["QX30", "QX50", "QX55", "QX60", "QX70", "QX80", "FX", "EX"],
+  Isuzu: ["D-Max", "MU-X", "Trooper", "Rodeo"],
+  Jaecoo: ["J5", "J6", "J7", "J8"],
+  Jaguar: ["F-Pace", "E-Pace", "I-Pace"],
+  Jeep: ["Renegade", "Compass", "Cherokee", "Grand Cherokee", "Wrangler", "Avenger", "Commander"],
+  Jetour: ["Dashing", "X70", "X70 Plus", "X90", "X90 Plus", "T2", "T1"],
+  Kia: ["Sportage", "Stonic", "Sorento", "Niro", "EV6", "EV3", "EV9"],
+  Lada: ["Niva", "Niva Travel", "XRAY"],
+  Lamborghini: ["Urus"],
+  "Land Rover": ["Range Rover", "Range Rover Sport", "Range Rover Velar", "Evoque", "Discovery", "Discovery Sport", "Defender", "Freelander"],
+  Leapmotor: ["C10", "C11", "C16", "B10"],
+  Lexus: ["UX", "NX", "RX", "RZ"],
+  "Lynk & Co": ["01", "05", "06", "08", "09"],
+  Mahindra: ["Scorpio", "XUV500", "XUV700", "Thar", "Pik-Up", "KUV100"],
+  Maserati: ["Levante", "Grecale"],
+  Mazda: ["CX-3", "CX-30", "CX-5", "CX-60", "CX-9"],
+  "Mercedes-Benz": ["GLA", "GLB", "GLC", "GLE", "GLS", "G Serisi", "EQA", "EQB", "EQC", "X-Class"],
+  MG: ["ZS", "HS", "EHS", "Marvel R"],
+  Mini: ["Countryman", "Paceman"],
+  Mitsubishi: ["ASX", "Outlander", "Eclipse Cross", "L200", "Pajero"],
+  NIO: ["ES6", "ES8", "EL7", "EC6"],
+  Nissan: ["Qashqai", "Juke", "X-Trail", "Navara", "Patrol"],
+  Omoda: ["5", "E5", "7", "9"],
+  Opel: ["Mokka", "Crossland", "Grandland", "Frontera"],
+  Peugeot: ["2008", "3008", "5008"],
+  Polestar: ["Polestar 3", "Polestar 4"],
+  Porsche: ["Cayenne", "Macan"],
+  Proton: ["X50", "X70"],
+  Renault: ["Captur", "Austral", "Kadjar", "Koleos"],
+  "Rolls-Royce": ["Cullinan"],
+  Seat: ["Arona", "Ateca", "Tarraco"],
+  Seres: ["5", "SF5", "Aito M5", "Aito M7", "Aito M9"],
+  "Škoda": ["Kamiq", "Karoq", "Kodiaq", "Yeti", "Enyaq"],
+  Skywell: ["ET5"],
+  Smart: ["#1", "#3", "#5"],
+  SsangYong: ["Tivoli", "Korando", "Rexton", "Musso", "Actyon", "Kyron", "Torres"],
+  Subaru: ["XV", "Forester", "Outback"],
+  Suzuki: ["Vitara", "SX4 S-Cross", "Jimny", "Grand Vitara"],
+  Tesla: ["Model Y", "Model X", "Cybertruck"],
+  Togg: ["T10X"],
+  Toyota: ["Yaris Cross", "C-HR", "Corolla Cross", "RAV4", "Hilux", "Land Cruiser", "bZ4X"],
+  Volkswagen: ["Tiguan", "T-Roc", "T-Cross", "Taigo", "Touareg", "ID.4", "Amarok"],
+  Volvo: ["XC40", "XC60", "XC90", "C40", "EX30"],
+  XPeng: ["G6", "G9"],
+  Zeekr: ["X", "7X"]
+};
+const SUV_BRANDS = [...CAR_BRANDS.filter((b) => SUV_MODELS[b]), "Diğer"];
 
 // Motosiklet markaları -> model/seri (araba markalarıyla çakışmasın diye ayrı).
 export const MOTO_MODELS: Record<string, string[]> = {
@@ -265,7 +359,7 @@ export const MOTO_MODELS: Record<string, string[]> = {
   SYM: ["Symphony", "Jet", "Fiddle", "Maxsym", "Cruisym"],
   Kymco: ["Agility", "People", "Downtown", "Xciting", "Like"],
   Mondial: ["Drift", "150 MG", "Roadster", "XCR", "SMX", "Turbo"],
-  Kuba: ["Milano", "Titan", "GTS", "Fantic"],
+  Kuba: ["Milano", "Titan", "GTS"],
   RKS: ["Beta", "Titanic", "Falcon", "Roadstar"],
   Arora: ["Cappella", "Titan", "Vertu", "Speedmax"],
   Yuki: ["YK", "Panter", "Sirius"],
@@ -280,15 +374,18 @@ export const MOTO_MODELS: Record<string, string[]> = {
   Indian: ["Scout", "Chief", "Chieftain", "Roadmaster", "FTR", "Springfield"],
   "MV Agusta": ["Brutale", "F3", "F4", "Dragster", "Turismo Veloce", "Rush"],
   Bimota: ["Tesi", "KB4", "DB"],
-  "Can-Am": ["Ryker", "Spyder", "Maverick", "Outlander"],
-  Lifan: ["KP", "KPT", "KPR", "KPM", "KPS"],
-  "Segway Powersports": ["Snarler", "Villain", "Fugleman", "UT10", "AT6"]
+  "Can-Am": ["Ryker", "Spyder"],
+  Peugeot: ["Kisbee", "Tweet", "Django", "Speedfight", "Metropolis", "Pulsion"],
+  Hyosung: ["GT250R", "GV250", "GT650", "Aquila", "GD250N"],
+  Beta: ["RR", "Alp", "Xtrainer", "RR Enduro"],
+  Lifan: ["KP", "KPT", "KPR", "KPM", "KPS"]
 };
 
 // Dizüstü / masaüstü bilgisayar markaları -> seri.
-export const COMPUTER_BRANDS = ["Apple", "Asus", "Lenovo", "HP", "Dell", "Acer", "MSI", "Monster", "Casper", "Huawei", "Samsung", "Toshiba", "Gigabyte", "Diğer"];
+export const COMPUTER_BRANDS = ["Apple", "Asus", "Lenovo", "HP", "Dell", "Acer", "MSI", "Monster", "Casper", "Huawei", "Samsung", "Microsoft", "Toshiba", "Gigabyte", "Diğer"];
 export const COMPUTER_MODELS: Record<string, string[]> = {
-  Apple: ["MacBook Air", "MacBook Pro", "iMac", "Mac Mini", "Mac Studio"],
+  Apple: ["MacBook Air", "MacBook Pro"],
+  Microsoft: ["Surface Laptop", "Surface Pro", "Surface Book", "Surface Go"],
   Asus: ["ROG", "TUF Gaming", "Zenbook", "Vivobook", "ProArt", "ExpertBook"],
   Lenovo: ["ThinkPad", "IdeaPad", "Legion", "Yoga", "LOQ", "ThinkBook"],
   HP: ["Pavilion", "Omen", "Victus", "EliteBook", "ProBook", "Envy", "Spectre"],
@@ -304,43 +401,52 @@ export const COMPUTER_MODELS: Record<string, string[]> = {
 };
 
 // Televizyon markaları -> seri.
-export const TV_BRANDS = ["Samsung", "LG", "Vestel", "Philips", "Sony", "TCL", "Arçelik", "Beko", "Xiaomi", "Panasonic", "Grundig", "Diğer"];
+export const TV_BRANDS = ["Samsung", "LG", "Vestel", "Philips", "Sony", "TCL", "Arçelik", "Beko", "Xiaomi", "Panasonic", "Grundig", "Regal", "Hisense", "Toshiba", "Diğer"];
 export const TV_MODELS: Record<string, string[]> = {
   Samsung: ["Crystal UHD", "QLED", "Neo QLED", "OLED", "The Frame", "DU/CU Serisi"],
   LG: ["OLED", "QNED", "NanoCell", "UHD", "UR/UT Serisi"],
   Sony: ["Bravia", "OLED", "X Serisi", "A Serisi"],
   TCL: ["QLED", "Mini LED", "C Serisi", "P Serisi", "S Serisi"],
   Xiaomi: ["TV A2", "TV A Pro", "TV P1", "TV Q2", "TV S Pro"],
-  Vestel: ["Satellite", "Regal", "Smart"],
+  Vestel: ["Satellite", "Smart", "OLED", "QLED"],
   Philips: ["Ambilight", "The One", "OLED", "PUS Serisi"],
   Arçelik: ["Crystal", "OLED", "QLED", "A Serisi"],
   Beko: ["Crystal", "QLED", "B Serisi"],
   Grundig: ["Vision", "OLED", "QLED"],
-  Panasonic: ["OLED", "LX Serisi", "MX Serisi"]
+  Panasonic: ["OLED", "LX Serisi", "MX Serisi"],
+  Regal: ["Smart TV", "Android TV", "QLED", "UHD"],
+  Hisense: ["ULED", "Mini LED", "QLED", "Laser TV", "UHD"],
+  Toshiba: ["Smart TV", "QLED", "OLED", "UHD"]
 };
 
 // Ticari araç markaları -> model.
-export const COMMERCIAL_BRANDS = ["Ford", "Mercedes-Benz", "Volkswagen", "Fiat", "Renault", "Peugeot", "Citroën", "Iveco", "Opel", "Hyundai", "Isuzu", "Diğer"];
+export const COMMERCIAL_BRANDS = ["Ford", "Mercedes-Benz", "Volkswagen", "Fiat", "Renault", "Peugeot", "Citroën", "Iveco", "Opel", "Hyundai", "Isuzu", "Toyota", "Nissan", "Mitsubishi", "Dacia", "Karsan", "DFSK", "Diğer"];
 export const COMMERCIAL_MODELS: Record<string, string[]> = {
-  Ford: ["Transit", "Transit Custom", "Courier", "Ranger", "Cargo"],
-  "Mercedes-Benz": ["Sprinter", "Vito", "Citan", "Atego", "Actros"],
+  Ford: ["Transit", "Transit Custom", "Transit Connect", "Transit Courier", "Ranger"],
+  "Mercedes-Benz": ["Sprinter", "Vito", "Citan"],
   Volkswagen: ["Transporter", "Crafter", "Caddy Cargo", "Amarok"],
   Fiat: ["Ducato", "Doblo Cargo", "Fiorino", "Scudo"],
   Renault: ["Master", "Trafic", "Kangoo", "Express"],
   Peugeot: ["Boxer", "Partner", "Expert", "Bipper"],
   "Citroën": ["Jumper", "Berlingo", "Jumpy"],
-  Iveco: ["Daily", "Eurocargo", "Stralis", "S-Way"],
+  Iveco: ["Daily"],
   Opel: ["Movano", "Vivaro", "Combo"],
   Hyundai: ["H-100", "H-350", "Staria Cargo"],
-  Isuzu: ["D-Max", "NPR", "NLR", "NQR", "Novociti"]
+  Isuzu: ["D-Max", "NPR", "NLR", "NQR"],
+  Toyota: ["Hilux", "Proace", "Proace City"],
+  Nissan: ["Navara", "NV200", "NV400", "Primastar"],
+  Mitsubishi: ["L200", "Canter"],
+  Dacia: ["Dokker Van", "Logan Van"],
+  Karsan: ["Jest", "J10", "e-JEST"],
+  DFSK: ["K01", "K05", "C31", "C32", "C35"]
 };
 
 // Deniz motoru, saat, gözlük, kozmetik/parfüm markaları.
 export const MARINE_ENGINE_BRANDS = ["Yamaha", "Mercury", "Honda", "Suzuki", "Tohatsu", "Volvo Penta", "Mercruiser", "Selva", "Parsun", "Evinrude", "Diğer"];
-export const WATCH_BRANDS = ["Rolex", "Omega", "Casio", "Seiko", "Citizen", "Tissot", "Fossil", "Michael Kors", "Daniel Wellington", "Apple Watch", "Samsung Galaxy Watch", "Huawei Watch", "Garmin", "Swatch", "Guess", "Emporio Armani", "Diğer"];
+export const WATCH_BRANDS = ["Rolex", "Omega", "Casio", "Seiko", "Citizen", "Tissot", "Fossil", "Michael Kors", "Daniel Wellington", "Swatch", "Guess", "Emporio Armani", "Tag Heuer", "Longines", "Breitling", "Cartier", "Patek Philippe", "Diğer"];
 export const EYEWEAR_BRANDS = ["Ray-Ban", "Oakley", "Gucci", "Prada", "Police", "Persol", "Carrera", "Tom Ford", "Versace", "Emporio Armani", "Dolce & Gabbana", "Diğer"];
-export const COSMETIC_BRANDS = ["MAC", "Maybelline", "L'Oréal Paris", "Estée Lauder", "Clinique", "NYX", "Nivea", "Garnier", "The Ordinary", "Dior", "Chanel", "Flormar", "Golden Rose", "Diğer"];
-export const PERFUME_BRANDS = ["Dior", "Chanel", "Tom Ford", "Versace", "Hugo Boss", "Giorgio Armani", "Yves Saint Laurent", "Bvlgari", "Lacoste", "Calvin Klein", "Paco Rabanne", "Montblanc", "Diğer"];
+export const COSMETIC_BRANDS = ["MAC", "Maybelline", "L'Oréal Paris", "Estée Lauder", "Clinique", "NYX", "Dior", "Chanel", "Flormar", "Golden Rose", "Pastel", "Note", "Farmasi", "Essence", "Huda Beauty", "Diğer"];
+export const PERFUME_BRANDS = ["Dior", "Chanel", "Tom Ford", "Versace", "Hugo Boss", "Giorgio Armani", "Yves Saint Laurent", "Bvlgari", "Lacoste", "Calvin Klein", "Paco Rabanne", "Montblanc", "Carolina Herrera", "Jean Paul Gaultier", "Lancôme", "Gucci", "Diğer"];
 
 // ---- shared field fragments ---------------------------------------------
 const F = {
@@ -1679,23 +1785,30 @@ const YAZLIK_TYPES = ["Yazlık Daire", "Müstakil Yazlık", "Dubleks Yazlık", "
 // devremulk formKey). Tapu durumu (Kat İrtifaklı/Mülkiyetli/Hisseli) = deed alanı, tip değil.
 const KONUT_OZEL = ["Kooperatif Dairesi", "Teras Evi", "Su Kenarı Evi", "Ekolojik / Sürdürülebilir Ev", "Konut + İşyeri (Karma)", "Bağımsız Bölüm"];
 const YALI_TYPES = ["Boğaz Yalısı", "Müstakil Yalı", "Tarihi Yalı", "Restorasyonluk Yalı", "Deniz Kenarı Yalı", "Korunması Gerekli Yalı"];
-const YALI_DAIRESI_TYPES = ["Boğaz Yalı Dairesi", "Deniz Manzaralı Yalı Dairesi", "Müstakil Yalı Dairesi", "Yalı Bahçe Katı", "Yalı Ara Kat", "Yalı Çatı Katı"];
+const YALI_DAIRESI_TYPES = ["Boğaz Yalı Dairesi", "Deniz Manzaralı Yalı Dairesi", "Yalı Bahçe Katı", "Yalı Ara Kat", "Yalı Çatı Katı"];
 const LOFT_TYPES = ["Stüdyo Loft", "Tek Katlı Loft", "Dubleks Loft", "Endüstriyel Loft", "Bahçe Loft", "Teras Loft"];
-const KOSK_KONAK_TYPES = ["Tarihi Köşk", "Ahşap Köşk", "Bahçeli Köşk", "Müstakil Konak", "Tarihi Konak", "Kagir Konak", "Restorasyonluk Konak", "Butik Otel/Konak Uygun"];
+const KOSK_KONAK_TYPES = ["Tarihi Köşk", "Ahşap Köşk", "Bahçeli Köşk", "Müstakil Konak", "Tarihi Konak", "Kagir Konak", "Restorasyonluk Konak", "Butik Otele Uygun Konak"];
 const CIFTLIK_EV_TYPES = ["Çiftlik Evi", "Bağ Evi", "Hobi Bahçeli Ev", "Yayla Evi", "Dağ Evi", "Göl Evi", "Orman İçi Ev", "Zeytinlik Evi", "Tarla İçinde Ev", "Doğa İçinde Ev"];
-const konutBranch = (fk: string): CategoryNode[] => [
-  node("Daire", leaves(DAIRE_TYPES, fk), fk),
-  node("Rezidans", leaves(REZIDANS_TYPES, fk), fk),
-  node("Müstakil Ev", leaves(MUSTAKIL_TYPES, fk), fk),
-  node("Villa", leaves(VILLA_TYPES, fk), fk),
-  node("Yalı", leaves(YALI_TYPES, fk), fk),
-  node("Yalı Dairesi", leaves(YALI_DAIRESI_TYPES, fk), fk),
-  node("Köşk & Konak", leaves(KOSK_KONAK_TYPES, fk), fk),
-  node("Çiftlik & Bağ Evi", leaves(CIFTLIK_EV_TYPES, fk), fk),
-  node("Yazlık", leaves(YAZLIK_TYPES, fk), fk),
-  node("Loft", leaves(LOFT_TYPES, fk), fk),
-  node("Özel Konut Tipleri", leaves(KONUT_OZEL, fk), fk)
-];
+// 2026-11-20: kiralık / günlük kiralıkta yalnız SATIŞA özgü tipler çıkarılır (restorasyonluk mülk
+// kiralanmaz; kooperatif / bağımsız bölüm mülkiyet terimidir). Satılık ve devren aynen kalır.
+const SATISA_OZGU_KONUT = new Set(["Restorasyonluk Ev", "Restorasyonluk Yalı", "Restorasyonluk Konak", "Korunması Gerekli Yalı", "Kooperatif Dairesi", "Bağımsız Bölüm"]);
+const GUNLUKTE_OLMAYAN = new Set(["Konut + İşyeri (Karma)"]);
+const konutBranch = (fk: string, mode: "satis" | "kira" | "gunluk" = "satis"): CategoryNode[] => {
+  const pick = (types: string[]) => types.filter((t) => mode === "satis" || (!SATISA_OZGU_KONUT.has(t) && !(mode === "gunluk" && GUNLUKTE_OLMAYAN.has(t))));
+  return [
+    node("Daire", leaves(pick(DAIRE_TYPES), fk), fk),
+    node("Rezidans", leaves(pick(REZIDANS_TYPES), fk), fk),
+    node("Müstakil Ev", leaves(pick(MUSTAKIL_TYPES), fk), fk),
+    node("Villa", leaves(pick(VILLA_TYPES), fk), fk),
+    node("Yalı", leaves(pick(YALI_TYPES), fk), fk),
+    node("Yalı Dairesi", leaves(pick(YALI_DAIRESI_TYPES), fk), fk),
+    node("Köşk & Konak", leaves(pick(KOSK_KONAK_TYPES), fk), fk),
+    node("Çiftlik & Bağ Evi", leaves(pick(CIFTLIK_EV_TYPES), fk), fk),
+    node("Yazlık", leaves(pick(YAZLIK_TYPES), fk), fk),
+    node("Loft", leaves(pick(LOFT_TYPES), fk), fk),
+    node("Özel Konut Tipleri", leaves(pick(KONUT_OZEL), fk), fk)
+  ];
+};
 const isyeriBranch = (fk: string): CategoryNode[] => [
   node("Dükkan & Mağaza", leaves(["Cadde Üzeri Dükkan", "Ana Cadde Dükkanı", "Köşe Dükkan", "Pasaj İçi Dükkan", "AVM Mağazası", "Site Altı Dükkan", "Depolu Dükkan", "Vitrinli Dükkan", "Market", "Ruhsatlı Dükkan"], fk), fk),
   node("Ofis & Büro", leaves(["Plaza Ofisi", "Kat Ofisi", "Home Office", "Hazır Ofis", "Paylaşımlı Ofis", "Klinik Ofis", "Avukatlık Bürosu", "Muhasebe Bürosu", "Yönetim Ofisi"], "isyeriOfis"), "isyeriOfis"),
@@ -1703,13 +1816,17 @@ const isyeriBranch = (fk: string): CategoryNode[] => [
   node("Fabrika & Üretim", leaves(["Fabrika", "Üretim Tesisi", "OSB Fabrikası", "Depolu Fabrika", "Gıda Üretim Tesisi", "Tekstil Fabrikası", "Metal İşleme", "Plastik Üretim", "Mobilya Fabrikası", "Kimya Tesisi", "Paketleme Tesisi"], "isyeriFabrika"), "isyeriFabrika"),
   node("Atölye & İmalathane", leaves(["Sanayi Atölyesi", "Küçük Sanayi Dükkanı", "Marangoz Atölyesi", "Tekstil Atölyesi", "Oto Tamir Atölyesi", "Kaynak Atölyesi", "Mobilya Atölyesi"], "isyeriFabrika"), "isyeriFabrika"),
   node("Restoran & Cafe & Eğlence", leaves(["Restoran", "Cafe", "Lokanta", "Pastane", "Fırın", "Fast Food", "Bar", "Pub", "Gece Kulübü", "Nargile Cafe", "Kahvaltı Salonu", "Yemekhane", "Alkollü Ruhsatlı İşletme"], "isyeriRestoran"), "isyeriRestoran"),
-  node("Sağlık & Güzellik", leaves(["Klinik", "Muayenehane", "Diş Kliniği", "Güzellik Merkezi", "Kuaför Salonu", "Berber", "Masaj Salonu", "SPA Merkezi", "Fizik Tedavi", "Veteriner Kliniği", "Eczane Yeri"], fk), fk),
+  node("Sağlık & Güzellik", leaves(["Klinik", "Muayenehane", "Diş Kliniği", "Güzellik Merkezi", "Kuaför Salonu", "Berber", "Masaj Salonu", "SPA Merkezi", "Fizik Tedavi", "Veteriner Kliniği", "Eczane"], fk), fk),
   node("Eğitim & Kurs", leaves(["Kreş", "Anaokulu", "Kurs Merkezi", "Dershane", "Etüt Merkezi", "Dil Kursu", "Sürücü Kursu", "Spor Kursu", "Okul Binası"], fk), fk),
   node("Spor & Sosyal Tesis", leaves(["Spor Salonu", "Fitness Salonu", "Pilates Salonu", "Yoga Salonu", "Halı Saha", "Yüzme Havuzu Tesisi", "Düğün Salonu", "Organizasyon Salonu", "Oyun Salonu", "Çocuk Oyun Merkezi"], fk), fk),
-  node("Oto & Akaryakıt", leaves(["Oto Galeri", "Oto Yıkama", "Oto Servis", "Oto Ekspertiz", "Lastikçi", "Benzin İstasyonu", "LPG İstasyonu", "Elektrikli Şarj İstasyonu", "Otopark", "Kapalı Otopark"], fk), fk),
+  node("Oto & Akaryakıt", leaves(["Oto Galeri", "Oto Yıkama", "Oto Servis", "Oto Ekspertiz", "Lastikçi", "Benzin İstasyonu", "LPG İstasyonu", "Elektrikli Şarj İstasyonu"], fk), fk),
   node("Tarım & Hayvancılık İşletmesi", leaves(["Çiftlik", "Tavuk Çiftliği", "Büyükbaş Çiftliği", "Küçükbaş Çiftliği", "Süt Üretim Tesisi", "Sera", "Mantar Üretim", "Balık Çiftliği", "Arıcılık Tesisi"], fk), fk),
   // Sahibinden İş Yeri mülk-tiplerinden eksik olan standalone ticari alanlar (grup yapımıza eklendi):
-  node("Plaza & İş Hanı & Rezidans", leaves(["Plaza", "Plaza Katı & Ofisi", "İş Hanı", "İş Hanı Katı & Ofisi", "Rezidans Katı & Ofisi", "Komple Bina", "Kat Karşılığı Ticari", "Ticari Apartman Dairesi", "Ticari Villa", "Ticari Köşk & Konak", "AVM / Alışveriş Merkezi (Komple)"], fk), fk),
+  // Kat ofisleri ofis formuyla açılır; "Kat Karşılığı Ticari" arsa işlemidir → Arsa › Kat Karşılığı Satılık.
+  node("Plaza & İş Hanı & Rezidans", [
+    ...leaves(["Plaza", "İş Hanı", "Komple Bina", "Ticari Apartman Dairesi", "Ticari Villa", "Ticari Köşk & Konak", "AVM / Alışveriş Merkezi (Komple)"], fk),
+    ...leaves(["Plaza Katı & Ofisi", "İş Hanı Katı & Ofisi", "Rezidans Katı & Ofisi"], "isyeriOfis")
+  ], fk),
   node("Otopark & Garaj", leaves(["Açık Otopark", "Kapalı Otopark", "Katlı Otopark", "AVM Otoparkı", "Garaj", "Kapalı Garaj", "Park Yeri", "Vale Otoparkı"], fk), fk),
   node("Diğer Ticari & Alan", leaves(["Maden Ocağı", "Taş Ocağı", "Pazar Yeri", "Toplantı & Etkinlik Salonu", "Enerji Santrali (GES/RES)", "AVM Standı", "Reklam Panosu Alanı", "Baz İstasyonu Alanı", "ATM Yeri", "Büfe / Kiosk", "Konteyner Ofis"], fk), fk)
 ];
@@ -1719,9 +1836,9 @@ export const categoryTree: CategoryNode[] = [
   node("Emlak", [
     node("Konut", [
       node("Satılık", konutBranch("konut"), "konut"),
-      node("Kiralık", konutBranch("konut"), "konut"),
+      node("Kiralık", konutBranch("konut", "kira"), "konut"),
       // Sahibinden'de Konut'un 3. kardeşi (eskiden ayrı üst-düğümdü, kullanıcı burada arar).
-      node("Turistik Günlük Kiralık", konutBranch("gunlukKiralik"), "gunlukKiralik"),
+      node("Turistik Günlük Kiralık", konutBranch("gunlukKiralik", "gunluk"), "gunlukKiralik"),
       // Devren satılık konut (Sahibinden paritesi): kiralık konutun / kira sözleşmesinin
       // devri. konut şeması listingType'ında "Devren" zaten var; aynı konut tipleri kullanılır.
       node("Devren Satılık Konut", konutBranch("konut"), "konut")
@@ -1736,9 +1853,9 @@ export const categoryTree: CategoryNode[] = [
     ], "isyeri"),
     node("Arsa / Arazi", [
       // Sahibinden Arsa'da üst-seviye seçenek (Satılık/Kiralık kardeşi).
-      node("Kat Karşılığı Satılık", leaves(["Kat Karşılığı Arsa", "Hasılat Paylaşımlı Arsa", "Müteahhide Uygun Arsa", "Kentsel Dönüşüm Arsası", "Konut İmarlı (Kat Karşılığı)", "Ticari İmarlı (Kat Karşılığı)"], "arsa"), "arsa"),
+      node("Kat Karşılığı Satılık", leaves(["Kat Karşılığı Arsa", "Hasılat Paylaşımlı Arsa", "Müteahhide Uygun Arsa", "Kentsel Dönüşüm Arsası", "Konut İmarlı (Kat Karşılığı)", "Ticari İmarlı (Kat Karşılığı)", "Kat Karşılığı Ticari"], "arsa"), "arsa"),
       node("Satılık", [
-        node("İmarlı Arsa", leaves(["Konut İmarlı", "Villa İmarlı", "Apartman İmarlı", "Toplu Konut İmarlı", "Ticari İmarlı", "Dükkan İmarlı", "AVM İmarlı", "Akaryakıt İmarlı", "Turizm İmarlı", "Sanayi İmarlı", "Depolama İmarlı", "Sağlık Alanı İmarlı", "Eğitim Alanı İmarlı"], "arsa"), "arsa"),
+        node("İmarlı Arsa", leaves(["Konut İmarlı", "Villa İmarlı", "Apartman İmarlı", "Toplu Konut İmarlı", "Ticari İmarlı", "Dükkan İmarlı", "AVM İmarlı", "Akaryakıt İmarlı", "Turizm İmarlı", "Sanayi İmarlı", "Depolama İmarlı", "Sağlık Alanı İmarlı", "Eğitim Alanı İmarlı", "Ticari + Konut İmarlı", "Turizm + Konut İmarlı", "Turizm + Ticari İmarlı", "Spor Alanı İmarlı", "Kültürel Tesis İmarlı", "Özel Kullanım İmarlı", "Tarla + Depo İmarlı"], "arsa"), "arsa"),
         node("Tarla", leaves(["Ekilebilir Tarla", "Sulak Tarla", "Kuru Tarla", "Yola Cepheli Tarla", "Elektriği Olan Tarla", "Suyu Olan Tarla", "GES'e Uygun Tarla", "Hobi Bahçesine Uygun"], "arsa"), "arsa"),
         node("Bahçe & Bağ & Zeytinlik", leaves(["Hobi Bahçesi", "Meyve Bahçesi", "Zeytinlik", "Fındıklık", "Ceviz Bahçesi", "Narenciye Bahçesi", "Üzüm Bağı", "Organik Tarım Alanı"], "arsa"), "arsa"),
         node("Çiftlik & Doğa Arazisi", leaves(["Çiftlik Arazisi", "Hayvancılık Arazisi", "Sera Arazisi", "Yayla Arazisi", "Orman Kenarı", "Dere Kenarı", "Göl Kenarı", "Deniz Manzaralı", "Kamp/Bungalov Alanına Uygun"], "arsa"), "arsa"),
@@ -1751,9 +1868,9 @@ export const categoryTree: CategoryNode[] = [
       node("Kiralık", leaves(["Komple Bina", "Apartman", "İş Hanı", "Plaza", "Okul Binası", "Yurt Binası", "Hastane / Klinik Binası", "Depo Binası", "Fabrika Binası", "Otel Binası", "Kurumsal Kullanıma Uygun"], "bina"), "bina")
     ], "bina"),
     node("Turistik Tesis", [
-      node("Satılık", leaves(["Otel", "Apart Otel", "Butik Otel", "Motel", "Pansiyon", "Kamp Yeri (Mocamp)", "Tatil Köyü"], "turistik"), "turistik"),
+      node("Satılık", leaves(["Otel", "Apart Otel", "Butik Otel", "Motel", "Pansiyon", "Hostel", "Kamp Yeri (Mocamp)", "Tatil Köyü", "Bungalov & Dağ Evi Tesisi", "Plaj"], "turistik"), "turistik"),
       // Kiralık, Satılık ile HİZALANDI (eskiden 6 tip eksikti: Motel/Hostel/Glamping/Termal/Dağ/Sahil/Aquapark/Karavan Parkı).
-      node("Kiralık", leaves(["Otel", "Apart Otel", "Butik Otel", "Motel", "Pansiyon", "Kamp Yeri (Mocamp)", "Tatil Köyü", "Plaj"], "turistik"), "turistik")
+      node("Kiralık", leaves(["Otel", "Apart Otel", "Butik Otel", "Motel", "Pansiyon", "Hostel", "Kamp Yeri (Mocamp)", "Tatil Köyü", "Bungalov & Dağ Evi Tesisi", "Plaj"], "turistik"), "turistik")
     ], "turistik"),
     // Sahibinden gibi Satılık/Kiralık düğümü (eskiden düz leaf listesiydi).
     node("Devre Mülk", [
@@ -1782,23 +1899,35 @@ export const categoryTree: CategoryNode[] = [
     // formda `bodyType` alanı — ikili giriş yolu (duplikasyon) kaldırıldı.
     node("Otomobil", brandModelNodes(CAR_BRANDS, MODELS_BY_BRAND, "otomobil"), "otomobil"),
     // Düz marka-yaprağı (model seçilemiyordu) → brand→model. "Range Rover" ÇIKARILDI (Land Rover'ın MODELİ).
-    node("Arazi, SUV & Pickup", brandModelNodes(["Audi", "BMW", "Chery", "Citroën", "Dacia", "Ford", "Honda", "Hyundai", "Jeep", "Kia", "Land Rover", "Mazda", "Mercedes-Benz", "MG", "Mitsubishi", "Nissan", "Opel", "Peugeot", "Porsche", "Renault", "Suzuki", "Toyota", "Volkswagen", "Volvo", "BYD", "Togg", "Tesla", "Diğer"], MODELS_BY_BRAND, "otomobil"), "otomobil"),
+    node("Arazi, SUV & Pickup", brandModelNodes(SUV_BRANDS, SUV_MODELS, "otomobil"), "otomobil"),
     // "Şarj Ekipmanı" ÇIKARILDI (araç değil aksesuar → Yedek Parça'da).
-    node("Elektrikli Araçlar", leaves(["Elektrikli Otomobil", "Hibrit (HEV)", "Plug-in Hibrit (PHEV)", "Menzil Artırıcılı (EREV)", "Elektrikli SUV", "Elektrikli Minivan & Panelvan", "Elektrikli Ticari", "Elektrikli Hizmet Araçları"], "otomobil"), "otomobil"),
+    node("Elektrikli Araçlar", [
+      ...leaves(["Elektrikli Otomobil", "Hibrit (HEV)", "Plug-in Hibrit (PHEV)", "Menzil Artırıcılı (EREV)", "Elektrikli SUV"], "otomobil"),
+      // Ticari elektrikliler ticari formuyla (yük/kasa alanları) açılır.
+      ...leaves(["Elektrikli Minivan & Panelvan", "Elektrikli Ticari"], "ticari"),
+      leaf("Elektrikli Hizmet Araçları", "vasitaGenel")
+    ], "otomobil"),
     // Sahibinden'de tek başlık: "Motosiklet" (marka→model). Tür, formda `motoType` alanı.
     node("Motosiklet", brandModelNodes(MOTO_BRANDS, MOTO_MODELS, "motosiklet"), "motosiklet"),
-    node("Minivan & Panelvan", leaves(["Panelvan", "Minivan", "Kombi Van", "Camlı Van", "Yük Vanı", "Yolcu Vanı"], "ticari"), "ticari"),
+    node("Minivan & Panelvan", leaves(["Panelvan", "Minivan", "Kombi Van", "Yolcu Vanı"], "ticari"), "ticari"),
     node("Ticari Araçlar", brandModelNodes(COMMERCIAL_BRANDS, COMMERCIAL_MODELS, "ticari"), "ticari"),
     node("Deniz Araçları", [
-      node("Yat", leaves(["Motoryat", "Yelkenli Yat", "Katamaran", "Trawler", "Mega Yat", "Gulet", "Klasik Yat", "Ahşap Yat", "Süper Yat"], "deniz"), "deniz"),
-      ...leaves(["Sürat Teknesi", "Yelkenli", "Şişme Bot & Zodyak", "Jet Ski", "Balıkçı Teknesi", "Fiber Tekne", "Ahşap Tekne", "Kano & Kayak", "SUP & Sörf", "Römork (Deniz)"], "deniz"),
+      node("Yat", leaves(["Motoryat", "Katamaran", "Trawler", "Mega Yat", "Gulet", "Klasik Yat", "Ahşap Yat", "Süper Yat"], "deniz"), "deniz"),
+      ...leaves(["Sürat Teknesi", "Yelkenli", "Şişme Bot & Zodyak", "Jet Ski", "Balıkçı Teknesi", "Fiber Tekne", "Ahşap Tekne", "Kano & Kayak", "SUP & Sörf", "Tekne Römorku"], "deniz"),
       node("Tekne Motoru", brandModelNodes(MARINE_ENGINE_BRANDS, {}, "deniz"), "deniz")
     ], "deniz"),
     node("Karavan", leaves(["Motokaravan", "Çekme Karavan", "Van Karavan", "Off-road Karavan", "Kamp Römorku"], "vasitaGenel"), "vasitaGenel"),
-    node("ATV", leaves(["ATV", "Elektrikli ATV", "Paletli ATV", "Çocuk ATV (Elektrikli)"], "vasitaGenel"), "vasitaGenel"),
-    node("UTV", leaves(["UTV", "Buggy", "Side-by-Side", "Elektrikli UTV"], "vasitaGenel"), "vasitaGenel"),
-    node("Klasik Araçlar", leaves(["Klasik Otomobil", "Klasik Motosiklet", "Antika Araç", "Restorasyonluk Araç", "Amerikan Klasik", "Anadol / Murat / Şahin", "Jeep & Willys"], "otomobil"), "otomobil"),
-    node("Engelli Plakalı Araçlar", leaves(["Engelli Otomobil (ÖTV'siz)", "Adaptasyonlu Araç", "Engelli Scooter", "Akülü Sandalye"], "vasitaGenel"), "vasitaGenel"),
+    node("ATV", leaves(["Benzinli ATV", "Elektrikli ATV", "Paletli ATV", "Çocuk ATV (Elektrikli)"], "vasitaGenel"), "vasitaGenel"),
+    node("UTV", leaves(["Benzinli UTV", "Buggy", "Elektrikli UTV"], "vasitaGenel"), "vasitaGenel"),
+    node("Klasik Araçlar", [
+      ...leaves(["Klasik Otomobil", "Antika Araç", "Restorasyonluk Araç", "Amerikan Klasik", "Anadol / Murat / Şahin", "Jeep & Willys"], "otomobil"),
+      leaf("Klasik Motosiklet", "motosiklet")
+    ], "otomobil"),
+    // Akülü sandalye / engelli scooter plakalı araç değil → İkinci El › Sağlık & Medikal › Hareket & Ortopedi.
+    node("Engelli Plakalı Araçlar", [
+      leaf("Engelli Otomobil (ÖTV'siz)", "otomobil"),
+      leaf("Adaptasyonlu Araç", "vasitaGenel")
+    ], "vasitaGenel"),
     // HAVA ARAÇLARI — Sahibinden Vasıta altında standart alt kategori; bizde eksikti. Düşük hacim,
     // kendi minimal şeması (havaAraci: uçuş saati/motor tipi/koltuk — km/vites değil).
     node("Hava Araçları", leaves(["Uçak (Tek Motor)", "Uçak (Çift Motor)", "Jet", "Helikopter", "Planör", "Microlight / Ultralight", "Paramotor", "Yamaç Paraşütü", "Balon", "Amfibik Uçak", "Profesyonel Drone", "Diğer Hava Aracı"], "havaAraci"), "havaAraci"),
@@ -1815,11 +1944,12 @@ export const categoryTree: CategoryNode[] = [
     // KİRALIK — tek yapraktı; Sahibinden gibi tam alt-ağaç + kiralamaya özel şema (aracKiralik).
     // ——— Sahibinden listesinde OLMAYAN ek dallarımız: Sahibinden sırasının ALTINA alındı ———
     node("Ağır Vasıta", [
-      ...leaves(["Kamyon", "Kamyonet", "Çekici (TIR)", "Otobüs", "Midibüs", "Minibüs", "Oto Kurtarıcı & Taşıyıcı", "Karoser & Üst Yapı", "Dorse (Lowbed)", "Dorse (Damperli)", "Dorse (Tenteli)", "Dorse (Frigorifik)", "Dorse (Silobas)", "Dorse (Tanker)", "Römork (Ticari)", "Tanker", "Frigorifik", "Damperli Kamyon", "Beton Mikseri", "Vinçli Kamyon"], "agirVasita"),
-      // Ticari hat/plaka DEVRİ (Sahibinden "Ticari Hat & Ticari Plaka") — araç değil, hat/plaka hakkı → ticariPlaka şeması.
-      leaf("Ticari Hat & Ticari Plaka", "ticariPlaka")
+      ...leaves(["Kamyon", "Kamyonet", "Çekici (TIR)", "Otobüs", "Midibüs", "Minibüs", "Oto Kurtarıcı & Taşıyıcı", "Karoser & Üst Yapı", "Dorse (Lowbed)", "Dorse (Damperli)", "Dorse (Tenteli)", "Dorse (Frigorifik)", "Dorse (Silobas)", "Dorse (Tanker)", "Dorse (Platform / Açık Kasa)", "Dorse (Konteyner Taşıyıcı)", "Römork (Ticari)", "Damperli Kamyon", "Beton Mikseri", "Vinçli Kamyon"], "agirVasita")
     ], "agirVasita"),
-    node("Traktör & Tarım Araçları", brandModelNodes(["New Holland", "Massey Ferguson", "John Deere", "Case IH", "Fiat", "Ford", "Deutz-Fahr", "Kubota", "Same", "Landini", "Tümosan", "Erkunt", "Başak", "TürkTraktör", "Hattat", "Claas", "Valtra", "Diğer"], TRACTOR_MODELS, "traktor"), "traktor"),
+    // Ticari hat/plaka DEVRİ (Sahibinden "Ticari Hat & Ticari Plaka") — araç değil, hat/plaka hakkı → ticariPlaka şeması.
+    // 2026-11-20: taksi/dolmuş plakası ağır vasıta değil → Vasıta altında kendi başlığı.
+    leaf("Ticari Hat & Ticari Plaka", "ticariPlaka"),
+    node("Traktör & Tarım Araçları", brandModelNodes(["New Holland", "Massey Ferguson", "John Deere", "Case IH", "Fiat", "Ford", "Deutz-Fahr", "Kubota", "Same", "Landini", "Tümosan", "Erkunt", "Başak", "Hattat", "Claas", "Valtra", "Solis", "McCormick", "Diğer"], TRACTOR_MODELS, "traktor"), "traktor"),
     node("Elektrikli Ulaşım", leaves(["Elektrikli Scooter", "Elektrikli Bisiklet", "Elektrikli Motosiklet", "Hoverboard", "Segway", "Elektrikli Golf Aracı"], "vasitaGenel"), "vasitaGenel"),
     node("Kiralık Araçlar", [
       node("Otomobil Kiralama", leaves(["Günlük Kiralık", "Haftalık Kiralık", "Aylık Kiralık", "Uzun Dönem Kiralama", "Şoförlü Kiralama", "Filo Kiralama", "Ekonomik Segment", "Lüks & Premium"], "aracKiralik"), "aracKiralik"),
@@ -1832,7 +1962,8 @@ export const categoryTree: CategoryNode[] = [
       // Sahibinden Kiralık'ta olup bizde eksik olan iki dal:
       node("Oto Kurtarıcı & Taşıyıcı Kiralama", leaves(["Oto Kurtarıcı", "Çoklu Araç Taşıyıcı", "Tekli Kurtarıcı", "Kayar Kasa Kurtarıcı", "Forkliftli Taşıyıcı"], "aracKiralik"), "aracKiralik"),
       node("Hava Aracı Kiralama", leaves(["Helikopter Kiralama", "Uçak Kiralama", "Özel Jet Kiralama", "Sıcak Hava Balonu", "Drone Kiralama"], "aracKiralik"), "aracKiralik"),
-      ...leaves(["Lüks & VIP Araç", "Düğün Arabası", "Elektrikli Araç Kiralama", "Klasik Araç Kiralama"], "aracKiralik")
+      node("Deniz Aracı Kiralama", leaves(["Yat Kiralama", "Gulet Kiralama", "Tekne Kiralama", "Jet Ski Kiralama"], "aracKiralik"), "aracKiralik"),
+      ...leaves(["Düğün Arabası", "Elektrikli Araç Kiralama", "Klasik Araç Kiralama"], "aracKiralik")
     ], "aracKiralik")
   ], "vasitaGenel", IMG("1503376780353-7e6692767b70")),
 
@@ -1849,10 +1980,12 @@ export const categoryTree: CategoryNode[] = [
           node("Kamyon & Çekici", leaves(OTO_PARCA_SISTEM, "yedekParca"), "yedekParca"),
           node("Kamyonet & Pickup", leaves(OTO_PARCA_SISTEM, "yedekParca"), "yedekParca"),
           node("Oto Kurtarıcı & Taşıyıcı", leaves(OTO_PARCA_SISTEM, "yedekParca"), "yedekParca"),
-          node("Treyler", leaves(OTO_PARCA_SISTEM, "yedekParca"), "yedekParca")
+          node("Treyler", leaves(TREYLER_PARCA, "yedekParca"), "yedekParca")
         ], "yedekParca"),
         node("Karavan", leaves(OTO_PARCA_SISTEM, "yedekParca"), "yedekParca"),
-        node("Go Kart", leaves(OTO_PARCA_SISTEM, "yedekParca"), "yedekParca"),
+        node("Go Kart", leaves(GOKART_PARCA, "yedekParca"), "yedekParca"),
+        node("Traktör & Tarım Aracı", leaves(TRAKTOR_PARCA, "yedekParca"), "yedekParca"),
+        node("ATV & UTV", leaves(ATV_PARCA, "yedekParca"), "yedekParca"),
         node("Markaya Göre", brandGroupNodes(CAR_BRANDS, CAR_PART_GROUPS, "yedekParca"), "yedekParca")
       ], "yedekParca"),
       node("Aksesuar & Tuning", [
@@ -1866,19 +1999,20 @@ export const categoryTree: CategoryNode[] = [
         node("Karavan", leaves(AKS_KISA, "yedekParca"), "yedekParca")
       ], "yedekParca"),
       node("Jant & Lastik", leaves(["Jant", "Lastik (Yaz)", "Lastik (Kış)", "Lastik (4 Mevsim)", "Jant & Lastik Takımları", "Jant Kapakları", "Bijon & Somun", "Lastik Zinciri", "Aksesuar & Ekipman"], "yedekParca"), "yedekParca"),
+      node("Akü, Yağ & Bakım", leaves(["Akü", "Motor Yağı", "Antifriz & Sıvılar", "Elektrikli Araç Şarj Kablosu & Wallbox", "Çeki Demiri & Römork Ekipmanı", "Oto Bakım & Temizlik", "Akü Takviye & Lastik Şişirme"], "yedekParca"), "yedekParca"),
       node("Ses & Görüntü Sistemleri", leaves(["Oto Teyp / Multimedya", "Hoparlör", "Amfi", "Subwoofer", "Ekran / Navigasyon", "Kamera & Park Sensörü", "Anten", "Kablo & Montaj Malzemesi"], "yedekParca"), "yedekParca")
     ], "yedekParca"),
     node("Motosiklet Ekipmanları", [
       node("Yedek Parça", leaves(MOTO_PARCA_SISTEM, "yedekParca"), "yedekParca"),
-      node("Aksesuar & Tuning", leaves(["Kask", "Motosiklet Giyim", "Çanta & Bagaj", "Koruma Demiri", "İç Aksesuar", "Dış Aksesuar", "Performans", "Bakım & Onarım Ürünleri"], "yedekParca"), "yedekParca"),
+      node("Aksesuar & Tuning", leaves(["Kask", "Motosiklet Giyim", "Çanta & Bagaj", "Koruma Demiri", "Dış Aksesuar", "Performans", "Bakım & Onarım Ürünleri"], "yedekParca"), "yedekParca"),
       node("Lastik & Jant", leaves(["Ön Lastik", "Arka Lastik", "Jant", "Jant & Lastik Takımı", "İç Lastik"], "yedekParca"), "yedekParca"),
       // Sahibinden "Motosiklet Ekipmanları > Elektronik Ekipman" karşılığı (bizde eksikti; Kask/Giyim zaten Aksesuar & Tuning'de).
       node("Elektronik Ekipman", leaves(["İnterkom & Kask İçi Haberleşme", "Navigasyon", "Aksiyon Kamera", "Alarm & İmmobilizer", "Isıtmalı Ekipman", "Telefon Tutucu", "Sensör & Röle", "USB & Şarj"], "yedekParca"), "yedekParca")
     ], "yedekParca"),
     node("Deniz Aracı Ekipmanları", [
       node("Yedek Parça", leaves(["Motor Parçası", "Şaft & Pervane", "Elektrik & Elektronik", "Yakıt Sistemi", "Dümen & Direksiyon", "Gövde & Kaporta", "Soğutma Sistemi"], "yedekParca"), "yedekParca"),
-      // Sahibinden Deniz Ekipmanları'ndaki eksik dallar eklendi (Giyim/Havalandırma/Hırdavat/Güverte/Kabin & Kamera).
-      node("Aksesuar & Donanım", leaves(["Can Yeleği & Güvenlik", "Halat & Palamar", "Çıpa & Demir", "Fender & Usturmaça", "Navigasyon & Elektronik", "Aydınlatma", "Tekne Örtüsü & Branda", "Temizlik & Bakım", "Deniz Giyim & Yağmurluk", "Havalandırma & Klima", "Hırdavat & Tesisat", "Güverte Donanımı", "Kabin & Kamera"], "yedekParca"), "yedekParca"),
+      // Sahibinden Deniz Ekipmanları'ndaki eksik dallar eklendi (Giyim/Havalandırma/Hırdavat/Güverte/Kabin & Kamara).
+      node("Aksesuar & Donanım", leaves(["Can Yeleği & Güvenlik", "Halat & Palamar", "Çıpa & Demir", "Fender & Usturmaça", "Navigasyon & Elektronik", "Aydınlatma", "Tekne Örtüsü & Branda", "Temizlik & Bakım", "Deniz Giyim & Yağmurluk", "Havalandırma & Klima", "Hırdavat & Tesisat", "Güverte Donanımı", "Kabin & Kamara"], "yedekParca"), "yedekParca"),
       node("Motor & Şaft", leaves(["Dıştan Takma Motor", "İçten Takma Motor", "Pervane", "Şaft", "Motor Yedek Parça"], "yedekParca"), "yedekParca")
     ], "yedekParca")
   ], "yedekParca", IMG("1486262715619-67b85e0b08d3")),
@@ -1886,12 +2020,12 @@ export const categoryTree: CategoryNode[] = [
   node("İkinci El & Sıfır Alışveriş", [
     node("Elektronik", [
       node("Televizyon", brandModelNodes(TV_BRANDS, TV_MODELS, "televizyon"), "televizyon"),
-      node("Tablet", leaves(["iPad", "Samsung Galaxy Tab", "Xiaomi Pad", "Huawei MatePad", "Lenovo Tab", "Reeder Tablet", "E-Kitap Okuyucu", "Grafik Tablet", "Diğer Tablet"], "elektronik"), "elektronik"),
-      node("Ses & Kulaklık", leaves(["Kablosuz Kulaklık", "Kulak İçi Kulaklık", "Kulak Üstü Kulaklık", "Bluetooth Hoparlör", "Soundbar", "Ev Sinema Sistemi", "Mikrofon"], "elektronik"), "elektronik"),
+      node("Tablet", leaves(["iPad", "Samsung Galaxy Tab", "Xiaomi Pad", "Huawei MatePad", "Lenovo Tab", "Reeder Tablet", "E-Kitap Okuyucu", "Diğer Tablet"], "elektronik"), "elektronik"),
+      node("Ses & Kulaklık", leaves(["Kablosuz Kulaklık", "Kulak İçi Kulaklık", "Kulak Üstü Kulaklık", "Bluetooth Hoparlör", "Soundbar", "Ev Sinema Sistemi", "Mikrofon", "Hi-Fi & Müzik Seti", "Amfi & Receiver", "Pikap (Plak Çalar)", "Radyo"], "elektronik"), "elektronik"),
       // Foto & Kamera Sahibinden granülerliğine çıkarıldı (Analog/Lens & Filtre/Stüdyo + optik: Dürbün/Teleskop/Mikroskop).
-      node("Foto & Kamera", leaves(["DSLR Fotoğraf Makinesi", "Aynasız Fotoğraf Makinesi", "Kompakt Kamera", "Analog Fotoğraf Makinesi", "Aksiyon Kamera", "Objektif", "Lens & Filtre", "Tripod", "Stüdyo Ekipmanı (Işık/Softbox)", "Drone", "Güvenlik Kamerası", "Dürbün", "Teleskop", "Mikroskop"], "elektronik"), "elektronik"),
+      node("Foto & Kamera", leaves(["DSLR Fotoğraf Makinesi", "Aynasız Fotoğraf Makinesi", "Kompakt Kamera", "Analog Fotoğraf Makinesi", "Aksiyon Kamera", "Objektif", "Lens & Filtre", "Tripod", "Stüdyo Ekipmanı (Işık/Softbox)", "Video Kamera", "Anlık Fotoğraf Makinesi (Instax/Polaroid)", "Güvenlik Kamerası", "Dürbün", "Teleskop", "Mikroskop"], "elektronik"), "elektronik"),
       node("Giyilebilir Teknoloji", leaves(["Akıllı Saat", "Akıllı Bileklik", "VR Gözlük", "Akıllı Yüzük", "Akıllı Gözlük"], "elektronik"), "elektronik"),
-      node("Akıllı Ev", leaves(["Akıllı Ampul & Priz", "Güvenlik Kamerası", "Akıllı Kilit", "Sesli Asistan", "Akıllı Termostat", "Robot Süpürge"], "elektronik"), "elektronik"),
+      node("Akıllı Ev", leaves(["Akıllı Ampul & Priz", "Güvenlik Kamerası", "Akıllı Kilit", "Sesli Asistan", "Akıllı Termostat"], "elektronik"), "elektronik"),
       node("Elektrikli Ulaşım", leaves(["Elektrikli Scooter", "Hoverboard", "Elektrikli Kaykay", "Segway", "Scooter Yedek Parça"], "elektronik"), "elektronik"),
       // Teknik/hobi elektroniği (Sahibinden "Teknik Elektronik", 120K ilan) — bizde HİÇ yoktu: maker/tekniker segmenti.
       node("Teknik Elektronik", leaves(["Devre & Montaj", "Test & Ölçüm Cihazı", "Metal Dedektörü", "Terazi & Tartı", "Pil & Batarya", "Güç Kaynağı & Adaptör", "Lisanssız Telsiz", "El Feneri & Lazer", "Lehim & Havya", "Sensör & Modül", "Arduino & Geliştirme Kartı", "Kablo & Konnektör", "Yedek Parça"], "elektronik"), "elektronik"),
@@ -1901,32 +2035,31 @@ export const categoryTree: CategoryNode[] = [
       node("Drone", leaves(["Kamera Dronu", "FPV & Yarış Dronu", "Mini & Oyuncak Drone", "Tarım & İlaçlama Dronu", "Temizlik & Yıkama Dronu", "Kargo & Endüstriyel Drone", "Drone Bataryası", "Pervane & Yedek Parça", "Kumanda & FPV Gözlük", "Drone Çanta & Aksesuar"], "elektronik"), "elektronik"),
       node("3D Yazıcı & Maker", leaves(["3D Yazıcı (FDM)", "3D Yazıcı (Reçine)", "Filament & Reçine", "3D Tarayıcı", "Lazer Kazıma & Kesim", "Hobi CNC", "3D Yazıcı Yedek Parça"], "elektronik"), "elektronik"),
       node("Güç & Enerji", leaves(["Kesintisiz Güç Kaynağı (UPS)", "Taşınabilir Güç İstasyonu", "Taşınabilir Güneş Paneli", "İnvertör", "Akü & Şarj Cihazı", "Elektrikli Araç Şarj Cihazı", "Regülatör"], "elektronik"), "elektronik"),
-      node("İş Yeri Elektroniği", leaves(["Barkod Okuyucu", "Barkod & Etiket Yazıcı", "Yazar Kasa & POS", "Para Sayma Makinesi", "Kiosk & Sıramatik", "LED Ekran & Dijital Tabela", "Fotokopi Makinesi", "Test & Ölçüm (Osiloskop)"], "elektronik"), "elektronik"),
-      ...leaves(["Projeksiyon", "Yazıcı & Tarayıcı", "Network & Modem", "Elektronik Aksesuar"], "elektronik")
+      node("İş Yeri Elektroniği", leaves(["Barkod Okuyucu", "Barkod & Etiket Yazıcı", "Yazar Kasa & POS", "Para Sayma Makinesi", "Kiosk & Sıramatik", "LED Ekran & Dijital Tabela", "Fotokopi Makinesi"], "elektronik"), "elektronik"),
+      ...leaves(["Projeksiyon", "Yazıcı & Tarayıcı", "Network & Modem", "Uydu Alıcısı & Çanak Anten", "TV Box & Medya Oynatıcı", "Ev Telefonu", "Elektronik Aksesuar"], "elektronik")
     ], "elektronik"),
     node("Telefon & Aksesuar", [
       node("Cep Telefonu", brandModelNodes(PHONE_BRANDS, MODELS_BY_BRAND, "telefon"), "telefon"),
       leaf("Tuşlu Telefon", "telefon"),
-      leaf("Akıllı Saat & Bileklik", "elektronik"),
       ...leaves(["Kılıf & Kapak", "Ekran Koruyucu", "Şarj Aleti & Kablo", "Powerbank", "Kulaklık", "Telefon Tutucu & Stand", "Hafıza Kartı", "Telefon Yedek Parça", "Kablosuz Şarj Cihazı", "Gimbal & Selfie Çubuğu"], "alisverisGenel")
     ], "telefon"),
     node("Bilgisayar & Oyun", [
       node("Dizüstü Bilgisayar", brandModelNodes(COMPUTER_BRANDS, COMPUTER_MODELS, "bilgisayar"), "bilgisayar"),
-      node("Masaüstü Bilgisayar", leaves(["Hazır Sistem", "Toplama Sistem", "All-in-One", "Mini PC", "İş İstasyonu"], "bilgisayar"), "bilgisayar"),
+      node("Masaüstü Bilgisayar", leaves(["Hazır Sistem", "Toplama Sistem", "All-in-One", "Mini PC", "İş İstasyonu", "iMac", "Mac Mini & Mac Studio"], "bilgisayar"), "bilgisayar"),
       node("Bilgisayar Bileşenleri", leaves(["Ekran Kartı", "İşlemci", "Anakart", "RAM", "SSD & HDD", "Güç Kaynağı", "Kasa", "CPU Soğutucu", "Ekran Kartı Yükseltici"], "elektronik"), "elektronik"),
-      node("Çevre Birimleri", leaves(["Monitör", "Klavye", "Mouse", "Kulaklık", "Webcam", "Mikrofon", "Yazıcı & Tarayıcı", "Modem & Network", "Harici Disk", "USB Bellek", "Grafik Tablet", "NAS & Ağ Depolama", "Oyuncu Ekipmanı (Klavye/Mouse Seti)"], "elektronik"), "elektronik"),
-      node("Oyun & Konsol", leaves(["PlayStation 5", "PlayStation 4", "Xbox Series X/S", "Xbox One", "Nintendo Switch", "Konsol Oyunları", "Oyun Kolu", "VR Gözlük", "Oyuncu Koltuğu", "El Konsolu", "Direksiyon Seti", "Retro Konsol"], "elektronik"), "elektronik"),
+      node("Çevre Birimleri", leaves(["Monitör", "Klavye", "Mouse", "Kulaklık", "Webcam", "Mikrofon", "Yazıcı & Tarayıcı", "Modem & Network", "Harici Disk", "USB Bellek", "Grafik Tablet (Çizim)", "NAS & Ağ Depolama", "Oyuncu Ekipmanı (Klavye/Mouse Seti)"], "elektronik"), "elektronik"),
+      node("Oyun & Konsol", leaves(["PlayStation 5", "PlayStation 4", "Xbox Series X/S", "Xbox One", "Nintendo Switch 2", "Nintendo Switch", "Konsol Oyunları", "PC Oyunları", "Oyun Kolu", "VR Gözlük", "Oyuncu Koltuğu", "El Konsolu", "Direksiyon Seti", "Retro Konsol"], "elektronik"), "elektronik"),
       leaf("Yazılım & Lisans", "dijitalHizmet")
     ], "bilgisayar"),
     node("Ev & Yaşam", [
-      node("Mobilya", leaves(["Koltuk Takımı", "Köşe Koltuk", "Kanepe", "Berjer", "Masa", "Sandalye", "Yatak", "Baza", "Gardırop", "Kitaplık", "TV Ünitesi", "Çalışma Masası", "Bebek Mobilyası", "Yatak Odası Takımı", "Yemek Odası Takımı", "Çocuk & Genç Odası", "Ofis Koltuğu", "Oyuncu Koltuğu", "Mutfak Dolabı", "Ayakkabılık & Portmanto", "Para Kasası"], "mobilya"), "mobilya"),
+      node("Mobilya", leaves(["Koltuk Takımı", "Köşe Koltuk", "Kanepe", "Berjer", "Masa", "Sandalye", "Yatak", "Baza", "Gardırop", "Kitaplık", "TV Ünitesi", "Çalışma Masası", "Bebek Mobilyası", "Yatak Odası Takımı", "Yemek Odası Takımı", "Çocuk & Genç Odası", "Ofis Koltuğu", "Oyuncu Koltuğu", "Mutfak Dolabı", "Ayakkabılık & Portmanto", "Para Kasası", "Sehpa (Orta / Yan / Zigon)", "Komodin & Şifonyer", "Vitrin & Konsol", "Tabure & Bar Sandalyesi"], "mobilya"), "mobilya"),
       // 2026-11-15: bu dört başlık tek yapraktı (altı boştu); alt kategorileri eklendi. Adları ve adresleri aynı.
       node("Dekorasyon", leaves(["Tablo & Çerçeve", "Ayna", "Duvar Kağıdı & Sticker", "Vazo & Biblo", "Duvar Saati", "Mum & Oda Kokusu", "Yapay Çiçek"], "alisverisGenel"), "alisverisGenel"),
       node("Aydınlatma", leaves(["Avize", "Abajur & Lambader", "Aplik", "LED & Şerit Aydınlatma", "Spot", "Masa Lambası", "Ampul"], "alisverisGenel"), "alisverisGenel"),
       node("Ev Tekstili", leaves(["Nevresim Takımı", "Battaniye & Pike", "Yorgan & Yastık", "Perde & Stor", "Halı & Kilim", "Havlu & Bornoz", "Masa Örtüsü", "Yatak Örtüsü", "Kırlent"], "alisverisGenel"), "alisverisGenel"),
       node("Banyo", leaves(["Duşakabin", "Banyo Dolabı", "Lavabo & Batarya", "Klozet", "Küvet & Jakuzi", "Banyo Aksesuarı"], "alisverisGenel"), "alisverisGenel"),
       node("Isıtma & Soğutma", leaves(["Soba (Odun & Kömür)", "Pelet Sobası", "Şömine", "Elektrikli Isıtıcı", "Vantilatör", "Hava Soğutucu"], "alisverisGenel"), "alisverisGenel"),
-      ...leaves(["Bahçe & Balkon", "Temizlik Ürünleri", "Düzenleyiciler", "Ev Gereçleri"], "alisverisGenel")
+      ...leaves(["Temizlik Ürünleri", "Düzenleyiciler", "Ev Gereçleri"], "alisverisGenel")
     ], "alisverisGenel"),
     node("Beyaz Eşya", [
       node("Buzdolabı", leaves(WHITE_GOODS_BRANDS, "beyazEsya"), "beyazEsya"),
@@ -1934,25 +2067,26 @@ export const categoryTree: CategoryNode[] = [
       node("Kurutma Makinesi", leaves(WHITE_GOODS_BRANDS, "beyazEsya"), "beyazEsya"),
       node("Bulaşık Makinesi", leaves(WHITE_GOODS_BRANDS, "beyazEsya"), "beyazEsya"),
       node("Fırın & Ankastre", leaves(["Ankastre Fırın", "Set Üstü Fırın", "Mikrodalga", "Ankastre Ocak", "Ankastre Set", "Davlumbaz"], "beyazEsya"), "beyazEsya"),
-      node("Ocak & Set Üstü", leaves(["Gazlı Ocak", "Elektrikli Ocak", "İndüksiyon Ocak", "Vitroseramik", "Set Üstü Fırın"], "beyazEsya"), "beyazEsya"),
+      node("Ocak & Set Üstü", leaves(["Gazlı Ocak", "Elektrikli Ocak", "İndüksiyon Ocak", "Vitroseramik"], "beyazEsya"), "beyazEsya"),
       node("Klima", leaves(AC_BRANDS, "klima"), "klima"),
       node("Kombi & Isıtma", leaves(HEATING_BRANDS, "kombi"), "kombi"),
-      node("Süpürge", leaves(["Robot Süpürge", "Dikey Süpürge", "Toz Torbalı", "Toz Torbasız", "Islak-Kuru", "Halı Yıkama"], "beyazEsya"), "beyazEsya"),
-      ...leaves(["Derin Dondurucu", "Su Sebili", "Şofben & Termosifon", "Bulaşık Kurutma"], "beyazEsya")
+      // Süpürgeler Küçük Ev Aletleri'nde tek yerde (eskiden üç ayrı yerde Robot Süpürge vardı).
+      ...leaves(["Derin Dondurucu", "Su Sebili", "Şofben & Termosifon"], "beyazEsya")
     ], "beyazEsya"),
     node("Mutfak", leaves(["Tencere & Tava", "Düdüklü Tencere", "Çaydanlık & Cezve", "Bıçak & Kesim Aletleri", "Sofra Takımı", "Bardak & Kupa", "Saklama Kabı", "Pişirme Kabı", "Fırın & Pasta Malzemesi", "Kahve & Çay Ekipmanı", "Mutfak Gereçleri", "Mutfak Düzenleme", "Yemek Takımı", "Çay & Kahve Seti", "Termos & Matara"], "alisverisGenel"), "alisverisGenel"),
-    node("Küçük Ev Aletleri", leaves(["Elektrikli Süpürge", "Robot Süpürge", "Dikey Süpürge", "Ütü & Ütü Sistemi", "Blender & Rondo", "El Blenderi", "Su Isıtıcı (Kettle)", "Airfryer & Fritöz", "Kahve Makinesi", "Çay Makinesi", "Tost & Izgara Makinesi", "Mikser & Çırpıcı", "Meyve/Sebze Sıkacağı", "Doğrayıcı", "Ekmek & Yoğurt Makinesi", "Semaver", "Nem Alma & Hava Temizleyici", "Saç Kurutma & Şekillendirme"], "beyazEsya"), "beyazEsya"),
+    node("Küçük Ev Aletleri", leaves(["Elektrikli Süpürge", "Robot Süpürge", "Dikey Süpürge", "Ütü & Ütü Sistemi", "Blender & Rondo", "El Blenderi", "Su Isıtıcı (Kettle)", "Airfryer & Fritöz", "Kahve Makinesi", "Çay Makinesi", "Tost & Izgara Makinesi", "Mikser & Çırpıcı", "Meyve/Sebze Sıkacağı", "Doğrayıcı", "Ekmek & Yoğurt Makinesi", "Semaver", "Nem Alma & Hava Temizleyici", "Islak-Kuru Süpürge", "Şarjlı El Süpürgesi", "Halı Yıkama Makinesi", "Buharlı Temizleyici", "Mutfak Robotu", "Mutfak Tartısı", "Dikiş Makinesi", "Saç Kurutma & Şekillendirme"], "beyazEsya"), "beyazEsya"),
     node("Moda", [
-      node("Kadın Giyim", leaves(["Elbise", "Bluz", "Gömlek", "Pantolon", "Etek", "Şort", "Tulum", "Ceket", "Mont", "Kazak", "Sweatshirt", "Takım", "Abiye", "Gelinlik", "Pijama & Gecelik", "İç Giyim", "Mayo & Bikini", "Eşofman"], "moda"), "moda"),
-      node("Erkek Giyim", leaves(["Tişört", "Gömlek", "Pantolon", "Şort", "Ceket", "Mont", "Takım Elbise", "Sweatshirt", "Kazak", "Yelek", "Spor Giyim", "Pijama", "İç Giyim", "Damatlık", "Eşofman", "Mayo & Deniz Şortu"], "moda"), "moda"),
+      node("Kadın Giyim", leaves(["Elbise", "Bluz", "Gömlek", "Pantolon", "Etek", "Şort", "Tulum", "Ceket", "Mont", "Kazak", "Sweatshirt", "Takım", "Abiye", "Gelinlik", "Pijama & Gecelik", "İç Giyim", "Mayo & Bikini", "Eşofman", "Tişört & Atlet", "Hırka", "Yelek", "Kot Pantolon (Jean)", "Kaban & Trençkot"], "moda"), "moda"),
+      node("Erkek Giyim", leaves(["Tişört", "Gömlek", "Pantolon", "Şort", "Ceket", "Mont", "Takım Elbise", "Sweatshirt", "Kazak", "Yelek", "Spor Giyim", "Pijama", "İç Giyim", "Damatlık", "Eşofman", "Mayo & Deniz Şortu", "Kot Pantolon (Jean)", "Kaban & Palto", "Hırka"], "moda"), "moda"),
       node("Çocuk Giyim", leaves(["Kız Çocuk", "Erkek Çocuk", "Bebek Giyim", "Okul Kıyafeti"], "moda"), "moda"),
-      node("Ayakkabı", leaves(["Kadın Ayakkabı", "Erkek Ayakkabı", "Spor Ayakkabı", "Bot & Çizme", "Sandalet & Terlik", "Çocuk Ayakkabı"], "ayakkabi"), "ayakkabi"),
-      node("Çanta", leaves(["Kadın Çanta", "Sırt Çantası", "Cüzdan", "Valiz & Bavul", "Laptop Çantası", "El Çantası"], "ayakkabi"), "ayakkabi"),
-      node("Saat", brandModelNodes(WATCH_BRANDS, {}, "aksesuar"), "aksesuar"),
+      node("Ayakkabı", leaves(["Kadın Ayakkabı", "Erkek Ayakkabı", "Spor Ayakkabı", "Bot & Çizme", "Sandalet & Terlik", "Çocuk Ayakkabı", "İş Ayakkabısı"], "ayakkabi"), "ayakkabi"),
+      // Çanta ayakkabı formuyla (numara alanı) açılıyordu → aksesuar formu.
+      node("Çanta", leaves(["Kadın Çanta", "Sırt Çantası", "Cüzdan", "Valiz & Bavul", "Laptop Çantası", "El Çantası"], "aksesuar"), "aksesuar"),
+      node("Saat", [...brandModelNodes(WATCH_BRANDS.filter((b) => b !== "Diğer"), {}, "aksesuar"), leaf("Saat Kordonu & Aksesuar", "aksesuar")], "aksesuar"),
       node("Gözlük", brandModelNodes(EYEWEAR_BRANDS, {}, "aksesuar"), "aksesuar"),
-      node("Takı & Mücevher", leaves(["Yüzük", "Kolye", "Bilezik", "Küpe", "Altın", "Pırlanta", "Gümüş", "Saat Kordonu"], "aksesuar"), "aksesuar"),
+      node("Takı & Mücevher", leaves(["Yüzük", "Kolye", "Bilezik", "Küpe", "Altın", "Pırlanta", "Gümüş"], "aksesuar"), "aksesuar"),
       node("Şapka, Kemer & Aksesuar", leaves(["Şapka & Bere", "Kemer", "Atkı, Şal & Fular", "Eldiven", "Kravat & Papyon", "Çorap", "Saç Aksesuarı", "Şemsiye"], "aksesuar"), "aksesuar"),
-      node("İş Kıyafeti & Üniforma", leaves(["İş Elbisesi & Tulum", "Önlük & Forma", "Aşçı Kıyafeti", "Güvenlik Kıyafeti", "Okul Forması", "İş Ayakkabısı"], "moda"), "moda"),
+      node("İş Kıyafeti & Üniforma", leaves(["İş Elbisesi & Tulum", "Önlük & Forma", "Aşçı Kıyafeti", "Güvenlik Kıyafeti", "Sağlık Personeli Kıyafeti"], "moda"), "moda"),
       node("Kostüm & Özel Gün", leaves(["Kostüm", "Kına & Bindallı", "Sünnet Kıyafeti", "Mezuniyet Kıyafeti", "Halk Oyunları Kıyafeti"], "moda"), "moda"),
       ...leaves(["Tesettür Giyim", "Spor Giyim"], "moda")
     ], "moda"),
@@ -1961,18 +2095,21 @@ export const categoryTree: CategoryNode[] = [
       node("Oto Koltuğu", leaves(["0-13 kg", "9-36 kg", "15-36 kg", "360° Dönebilen", "Yükseltici"], "bebek"), "bebek"),
       node("Beslenme", leaves(["Mama Sandalyesi", "Biberon & Emzik", "Mama Hazırlama", "Göğüs Pompası", "Termos & Saklama"], "bebek"), "bebek"),
       node("Bebek Odası", leaves(["Beşik", "Park Yatak", "Bebek Yatağı", "Alt Açma Ünitesi", "Bebek Odası Takımı", "Uyku & Tekstil"], "bebek"), "bebek"),
-      ...leaves(["Bebek Giyim", "Bebek Bakım & Bez", "Bebek Güvenliği", "Oyuncak", "Anne Ürünleri", "Hamile Giyim", "Bebek Ayakkabı", "Bebek Telsizi & Kamera", "Oyun Halısı & Oyun Parkı", "Bebek Küveti & Banyo", "Yürüteç & Salıncak", "Sterilizatör & Mama Isıtıcı"], "bebek")
+      ...leaves(["Bebek Giyim", "Bebek Bakım & Bez", "Bebek Güvenliği", "Anne Ürünleri", "Hamile Giyim", "Bebek Ayakkabı", "Bebek Telsizi & Kamera", "Oyun Halısı & Oyun Parkı", "Bebek Küveti & Banyo", "Yürüteç & Salıncak", "Sterilizatör & Mama Isıtıcı"], "bebek")
     ], "bebek"),
     node("Kozmetik & Kişisel Bakım", [
       node("Parfüm", brandModelNodes(PERFUME_BRANDS, {}, "kozmetik"), "kozmetik"),
       node("Makyaj", brandModelNodes(COSMETIC_BRANDS, {}, "kozmetik"), "kozmetik"),
-      ...leaves(["Cilt Bakımı", "Saç Bakımı", "Erkek Bakım", "Kişisel Bakım Cihazları", "Ağız Bakımı", "Tıraş Ürünleri", "Güneş Bakımı", "Peruk & Saç Ekleme"], "kozmetik")
+      node("Cilt Bakımı", leaves(["Nemlendirici", "Serum", "Yüz Temizleme & Tonik", "Yüz Maskesi", "Göz Bakımı", "Akne & Leke Bakımı", "Dermokozmetik"], "kozmetik"), "kozmetik"),
+      ...leaves(["Saç Bakımı", "Erkek Bakım", "Kişisel Bakım Cihazları", "Ağız Bakımı", "Tıraş Ürünleri", "Güneş Bakımı", "Peruk & Saç Ekleme", "Tırnak Bakımı & Oje", "Deodorant", "Vücut Bakımı"], "kozmetik")
     ], "kozmetik"),
     node("Spor & Outdoor", [
       node("Fitness & Kondisyon", leaves(["Koşu Bandı", "Kondisyon Bisikleti", "Eliptik", "Ağırlık & Dambıl", "Kürek Çekme", "Fitness İstasyonu", "Direniş Bandı", "Yoga & Pilates"], "spor"), "spor"),
       node("Bisiklet", leaves(["Dağ Bisikleti", "Yol Bisikleti", "Şehir Bisikleti", "Elektrikli Bisiklet", "Çocuk Bisikleti", "Katlanır Bisiklet", "Bisiklet Parçaları"], "spor"), "spor"),
       node("Kamp & Doğa", leaves(["Çadır", "Uyku Tulumu", "Kamp Sandalyesi", "Kamp Ocağı", "Sırt Çantası", "Termos & Matara", "Outdoor Giyim & Ayakkabı"], "spor"), "spor"),
-      node("Takım Sporları", leaves(["Futbol", "Basketbol", "Voleybol", "Tenis", "Masa Tenisi", "Badminton"], "spor"), "spor"),
+      node("Takım Sporları", leaves(["Futbol", "Basketbol", "Voleybol", "Hentbol"], "spor"), "spor"),
+      // Tenis/masa tenisi/badminton takım sporu değil → kendi dalı (2026-11-20).
+      node("Raket Sporları", leaves(["Tenis", "Masa Tenisi", "Badminton", "Squash", "Padel"], "spor"), "spor"),
       // 2026-11-15: dört başlık tek yapraktı; alt kategorileri + eksik spor dalları eklendi. (Ateşli silah, mühimmat
       // ve bıçak yok — yasaklı ürünler listesinde; avcılık yalnız kıyafet/optik, balıkçılık olta takımı.)
       node("Su Sporları", leaves(["Dalış Ekipmanı", "Şnorkel & Maske", "Sörf & Kitesurf", "SUP (Kürek Sörfü)", "Yüzme Ekipmanı", "Wetsuit & Dalış Elbisesi", "Can Yeleği"], "spor"), "spor"),
@@ -1983,27 +2120,28 @@ export const categoryTree: CategoryNode[] = [
       node("Tırmanış & Dağcılık", leaves(["Tırmanış Ayakkabısı", "Emniyet Kemeri & Karabina", "İp & Kask", "Trekking Batonu"], "spor"), "spor"),
       node("Salon & Oyun Sporları", leaves(["Bilardo", "Langırt", "Dart", "Hava Hokeyi", "Bowling"], "spor"), "spor"),
       node("Trambolin & Oyun Parkı", leaves(["Trambolin", "Çocuk Oyun Parkı", "Salıncak & Kaydırak"], "spor"), "spor"),
-      leaf("Kaykay & Paten", "spor")
+      ...leaves(["Kaykay & Paten", "Sporcu Besini"], "spor")
     ], "spor"),
     node("Kitap & Hobi", [
       node("Kitap", leaves(["Roman", "Öykü & Şiir", "Edebiyat & Klasikler", "Kişisel Gelişim", "Bilim & Felsefe", "Tarih & Politika", "Din & Maneviyat", "Çocuk & Gençlik", "Ders & Sınav Kitabı", "Akademik & Referans", "Sanat & Tasarım", "Çizgi Roman & Manga", "Yabancı Dil", "Sözlük & Ansiklopedi", "Sağlık & Yaşam", "Yemek & Mutfak", "Sahaf / Eski Baskı"], "kitap"), "kitap"),
       node("Dergi & Gazete", leaves(["Dergi", "Gazete", "Koleksiyon Dergi", "Fasikül"], "kitap"), "kitap"),
-      node("Müzik & Film", leaves(["Plak (LP)", "CD", "Kaset", "DVD & Blu-ray", "Dijital Müzik"], "alisverisGenel"), "alisverisGenel"),
-      node("Hobi & El Sanatları", leaves(["Model & Maket", "Puzzle & Yapboz", "Örgü & Dikiş", "Resim & Boyama", "Takı Tasarım", "Ahşap Boyama", "Seramik & Kil", "Astronomi & Teleskop", "RC / Drone Hobi", "Kokulu Taş & Mum"], "alisverisGenel"), "alisverisGenel"),
-      node("Kırtasiye & Ofis", leaves(["Defter & Bloknot", "Kalem", "Dosya & Klasör", "Sanat Malzemesi", "Okul Malzemesi"], "alisverisGenel"), "alisverisGenel"),
+      node("Müzik & Film", leaves(["Plak (LP)", "CD", "Kaset", "DVD & Blu-ray"], "alisverisGenel"), "alisverisGenel"),
+      node("Hobi & El Sanatları", leaves(["Model & Maket", "Puzzle & Yapboz", "Örgü & Dikiş", "Resim & Boyama", "Takı Tasarım", "Ahşap Boyama", "Seramik & Kil", "RC Model Hobi", "Kokulu Taş & Mum", "Sanat Malzemesi"], "alisverisGenel"), "alisverisGenel"),
+      // Kırtasiye tek yerde: İkinci El › Ofis & Kırtasiye (burada birebir kopyası vardı).
       node("Oyun & Eğlence", leaves(["Tavla", "Okey Takımı", "Satranç", "Kart Oyunları", "Koleksiyon Kartları", "Kutu Oyunu"], "alisverisGenel"), "alisverisGenel"),
       node("El Yapımı Ürünler", leaves(["El Yapımı Takı", "Örgü & Amigurumi", "Ahşap El İşi", "Seramik & Çini", "Sabun & Mum", "Makrome", "Deri El İşi"], "alisverisGenel"), "alisverisGenel")
     ], "kitap"),
     node("Koleksiyon & Antika", [
       node("Nümizmatik (Para)", leaves(["Osmanlı Parası", "Cumhuriyet Parası", "Madeni Para", "Kağıt Para (Banknot)", "Yabancı Para", "Hatıra Para", "Altın Sikke"], "koleksiyon"), "koleksiyon"),
       node("Filateli (Pul)", leaves(["Osmanlı Pulu", "Cumhuriyet Pulu", "Yabancı Pul", "İlk Gün Zarfı", "Blok Pul"], "koleksiyon"), "koleksiyon"),
-      node("Antika", leaves(["Antika Mobilya", "Antika Saat", "Gramofon & Radyo", "Porselen & Seramik", "Bakır & Pirinç", "Antika Aydınlatma", "Tablo & Yağlıboya", "El Yazması & Belge"], "koleksiyon"), "koleksiyon"),
-      node("Koleksiyon Ürünleri", leaves(["Kartpostal", "Rozet & Madalya", "Telefon Kartı", "Kibrit & Etiket", "Plak Koleksiyonu", "Oyuncak Koleksiyonu", "Figür & Aksiyon Figür", "Model Araba", "Askeri Malzeme", "Taş & Mineral", "İmza & Fotoğraf", "Saat Koleksiyonu"], "koleksiyon"), "koleksiyon")
+      node("Antika", leaves(["Antika Mobilya", "Antika Saat", "Gramofon & Radyo", "Porselen & Seramik", "Bakır & Pirinç", "Antika Aydınlatma", "Tablo & Yağlıboya", "El Yazması & Belge", "Antika Halı & Kilim", "Antika Gümüş & Takı"], "koleksiyon"), "koleksiyon"),
+      node("Koleksiyon Ürünleri", leaves(["Kartpostal", "Rozet & Madalya", "Telefon Kartı", "Kibrit & Etiket", "Plak Koleksiyonu", "Oyuncak Koleksiyonu", "Figür & Aksiyon Figür", "Model Araba", "Askeri Malzeme", "Taş & Mineral", "İmza & Fotoğraf", "Saat Koleksiyonu", "Tespih", "Spor Hatıra & Forma"], "koleksiyon"), "koleksiyon"),
+      node("Sanat Eseri", leaves(["Tablo", "Heykel", "Hat & Ebru", "Minyatür", "Gravür & Baskı", "Fotoğraf Sanatı"], "koleksiyon"), "koleksiyon")
     ], "koleksiyon"),
     node("Süpermarket & Gıda", leaves(["Temel Gıda", "Kahvaltılık", "Atıştırmalık & Şekerleme", "Bakliyat & Makarna", "Konserve & Hazır Yemek", "Kahve & Çay", "İçecek", "Su & Maden Suyu", "Süt & Süt Ürünleri", "Bebek Maması & Gıdası", "Organik & Glutensiz", "Baharat & Sos", "Zeytin & Zeytinyağı", "Bal & Reçel", "Kuruyemiş & Kurutulmuş Gıda", "Deterjan & Temizlik", "Kağıt Ürünleri", "Kişisel Temizlik & Hijyen", "Yöresel Ürünler", "Peynir & Şarküteri"], "alisverisGenel"), "alisverisGenel"),
     node("Ofis & Kırtasiye", leaves(["Kırtasiye Malzemesi", "Defter & Bloknot", "Kalem & Yazı Gereçleri", "Ofis Mobilyası", "Yazıcı & Sarf Malzeme", "Dosyalama & Arşiv", "Sunum & Pano", "Hesap Makinesi", "Ofis Elektroniği", "Okul Malzemesi", "Toplantı Masası", "Yazı Tahtası"], "alisverisGenel"), "alisverisGenel"),
     node("Oyuncak", leaves(["Eğitici Oyuncak", "Peluş Oyuncak", "Yapı & Bloklar (Lego)", "Uzaktan Kumandalı", "Bebek & Figür", "Puzzle & Zeka Oyunları", "Kutu Oyunları", "Oyun Seti", "Araba & Araç Oyuncak", "Su & Kum Oyuncakları", "Elektronik Oyuncak", "Bebek Oyuncakları (0-3 yaş)", "Akülü Araba", "Oyun Evi & Çadır", "Çocuk Scooter & Üç Teker"], "oyuncak"), "oyuncak"),
-    node("Dijital Ürünler", leaves(["Yazılım Lisansı", "Dijital Eğitim", "E-kitap", "Tasarım Dosyası", "Oyun Kodu", "Tema & Şablon", "Dijital Hesap", "Online Hizmet"], "dijitalHizmet"), "dijitalHizmet"),
+    node("Dijital Ürünler", leaves(["Yazılım Lisansı", "Dijital Eğitim", "E-kitap", "Tasarım Dosyası", "Oyun Kodu", "Tema & Şablon"], "dijitalHizmet"), "dijitalHizmet"),
     node("Evcil Hayvan Ürünleri", leaves(["Kedi Ürünleri", "Köpek Ürünleri", "Kuş Ürünleri", "Balık & Akvaryum", "Kemirgen Ürünleri", "Mama & Yem", "Kafes & Aksesuar", "Pet Bakım & Hijyen", "Tasma & Gezdirme", "Oyuncak & Kaşıma", "Kedi Kumu & Tuvalet", "Pet Taşıma Çantası"], "petUrun"), "petUrun"),
     // Eski KÖK "Yapı Market & Bahçe" → İkinci El altına taşındı (ana kategori konsolidasyonu).
     node("Bahçe & Yapı Market", [
@@ -2011,7 +2149,7 @@ export const categoryTree: CategoryNode[] = [
         "Matkap (Darbeli)", "Matkap (Şarjlı)", "Vidalama", "Kırıcı-Delici", "Dekupaj Testere",
         "Daire Testere", "Şerit Testere", "Taşlama / Spiral", "Avuç Taşlama", "Zımpara Makinesi",
         "Planya", "El Frezesi", "Sıcak Hava Tabancası", "Tutkal Tabancası", "Lehim İstasyonu",
-        "Basınçlı Yıkama Makinesi", "Ağaç Kesme Testeresi", "Atölye Vakumu"
+        "Basınçlı Yıkama Makinesi", "Atölye Vakumu", "Gönye Kesme Makinesi", "Kaynak Makinesi (Hobi)", "Su Pompası & Dalgıç Pompa"
       ], "elektrikliAlet"), "elektrikliAlet"),
       node("El Aletleri (Manuel)", leaves([
         "Tornavida Seti", "Anahtar Takımı", "Lokma Takımı", "Pense & Kerpeten", "Çekiç & Balyoz",
@@ -2039,23 +2177,23 @@ export const categoryTree: CategoryNode[] = [
         "Ses Yalıtımı", "Çatı Malzemesi", "Kiremit & Oluk", "Kapı", "Pencere & PVC Doğrama"
       ], "yapiMarket"), "yapiMarket"),
       node("Elektrik & Aydınlatma", leaves([
-        "Kablo", "Priz & Anahtar", "Sigorta & Pano", "Ampul & LED", "Avize", "Spot & Downlight",
+        "Kablo", "Priz & Anahtar", "Sigorta & Pano", "Ampul & LED", "Spot & Downlight",
         "Bahçe Aydınlatması", "Sensörlü Aydınlatma", "Uzatma Kablosu", "Adaptör & Trafo (Aydınlatma)"
       ], "yapiMarket"), "yapiMarket"),
       node("Tesisat & Su", leaves([
         "Batarya & Musluk", "Duş Sistemi", "Klozet & Lavabo", "Rezervuar", "Boru & Fitting",
-        "Su Deposu", "Hidrofor", "Su Arıtma", "Kombi & Radyatör", "Petek & Vana", "Sifon & Gider"
+        "Su Deposu", "Hidrofor", "Su Arıtma", "Radyatör (Petek)", "Vana", "Sifon & Gider"
       ], "yapiMarket"), "yapiMarket"),
       node("Bahçe & Peyzaj", leaves([
         "Çim Biçme Makinesi (Benzinli)", "Çim Biçme Makinesi (Elektrikli)", "Robot Çim Biçme",
         "Misinalı Tırpan", "Çit Budama Makinesi", "Ağaç Kesme Motoru", "Yaprak Üfleme",
         "Toprak Frezesi", "Sulama Sistemi", "Damla Sulama", "Hortum & Fıskiye", "Bahçe Aletleri",
-        "Tohum & Fide", "Saksı & Toprak", "Gübre & İlaç", "Sera & Örtü", "Çit & Tel", "Bahçe Mobilyası",
+        "Tohum & Fide", "Saksı & Toprak", "Gübre & Toprak Düzenleyici", "Sera & Örtü", "Çit & Tel", "Bahçe Mobilyası",
         "Şezlong & Salıncak", "Barbekü & Mangal", "Bahçe Havuzu", "Peyzaj Taşı & Çakıl",
         "Şemsiye & Gölgelik", "Yapay Çiçek & Bitki", "Bahçe Dekorasyonu", "Havuz & Şişme", "Kamp & Piknik"
       ], "yapiMarket"), "yapiMarket"),
       node("Güvenlik & İş Güvenliği", leaves([
-        "Çelik Kapı Aksesuarı", "Kasa", "Alarm Sistemi", "Güvenlik Kamerası", "Baret & Eldiven",
+        "Çelik Kapı Aksesuarı", "Çelik Kasa", "Alarm Sistemi", "Güvenlik Kamerası", "Baret & Eldiven",
         "İş Ayakkabısı", "Koruyucu Gözlük & Maske", "Yangın Söndürücü"
       ], "yapiMarket"), "yapiMarket")
     ], "yapiMarket"),
@@ -2091,7 +2229,7 @@ export const categoryTree: CategoryNode[] = [
       ], "muzik"), "muzik"),
       node("Amfi & Ses Sistemi", leaves([
         "Gitar Amfisi", "Bas Amfisi", "Klavye Amfisi", "Kabin (Cabinet)", "Efekt Pedalı",
-        "Pedal Board", "Hoparlör & Monitör", "Power Mikser", "Anfi (PA)", "Sahne Işığı"
+        "Pedal Board", "Hoparlör & Monitör", "Power Mikser", "PA Ses Sistemi", "Sahne Işığı"
       ], "muzik"), "muzik"),
       node("Nota, Eğitim & Aksesuar", leaves([
         "Nota Sehpası", "Nota Kitabı", "Metronom", "Akort Aleti", "Enstrüman Kılıfı", "Bakım & Temizlik Seti"
@@ -2103,17 +2241,17 @@ export const categoryTree: CategoryNode[] = [
         "Tekerlekli Sandalye (Manuel)", "Tekerlekli Sandalye (Akülü)", "Refakatçi Sandalyesi",
         "Yürüteç (Walker)", "Rollator", "Baston", "Koltuk Değneği", "Protez", "Ortez",
         "Ortopedik Tabanlık", "Boyunluk", "Korse", "Bandaj & Atel", "Dizlik & Bileklik",
-        "Engelli Rampası", "Engelli Lift", "Hasta Transfer Ürünleri"
+        "Engelli Rampası", "Engelli Lift", "Hasta Transfer Ürünleri", "Engelli Scooter"
       ], "medikal"), "medikal"),
       node("Hasta Bakım Ürünleri", leaves([
-        "Hasta Yatağı (Manuel)", "Hasta Yatağı (Motorlu)", "Havalı Yatak", "Hasta Karyolası",
+        "Hasta Yatağı (Manuel)", "Hasta Yatağı (Motorlu)", "Havalı Yatak",
         "Hasta Bezi & Altlık", "Yatak Koruyucu", "Serum Askısı", "Hasta Masası", "Banyo Sandalyesi",
         "Klozet Yükseltici", "Sürgü & Ördek", "Medikal Sarf Malzeme", "Pansuman Malzemesi",
         "Yara Bakım Ürünleri", "Eldiven & Maske"
       ], "medikal"), "medikal"),
       node("Ölçüm & Teşhis Cihazları", leaves([
         "Tansiyon Aleti (Koldan)", "Tansiyon Aleti (Bilekten)", "Şeker Ölçüm Cihazı", "Şeker Ölçüm Stripi",
-        "Ateş Ölçer (Temassız)", "Ateş Ölçer (Klasik)", "Pulse Oksimetre", "Steteskop",
+        "Ateş Ölçer (Temassız)", "Ateş Ölçer (Klasik)", "Pulse Oksimetre", "Stetoskop",
         "Vücut Analiz Tartısı", "Holter Cihazı", "EKG Cihazı", "Doppler", "Otoskop", "Tıbbi Terazi"
       ], "medikal"), "medikal"),
       node("Solunum & İşitme", leaves([
@@ -2126,7 +2264,7 @@ export const categoryTree: CategoryNode[] = [
         "Bel & Boyun Traksiyon"
       ], "medikal"), "medikal"),
       node("Anne & Bebek Sağlığı", leaves([
-        "Göğüs Pompası", "Bebek Tartısı", "Bebek Aspiratörü", "Buhar Makinesi", "Bebek Ateş Ölçer",
+        "Bebek Tartısı", "Bebek Aspiratörü", "Buhar Makinesi", "Bebek Ateş Ölçer",
         "Emzirme Ürünleri"
       ], "medikal"), "medikal"),
       node("Klinik & Muayene", leaves([
@@ -2147,14 +2285,14 @@ export const categoryTree: CategoryNode[] = [
       "Ekskavatör (Paletli)", "Ekskavatör (Lastikli)", "Mini Ekskavatör", "Kazıcı Yükleyici (Beko Loder)",
       "Lastikli Yükleyici (Loder)", "Mini Loder", "Greyder", "Dozer", "Silindir (Toprak)",
       "Silindir (Asfalt)", "Vinç (Mobil)", "Vinç (Kule)", "Sepetli Platform", "Makaslı Platform",
-      "Telehandler", "Forklift (Dizel)", "Forklift (Elektrikli)", "Transpalet", "İstif Makinesi",
-      "Kırıcı Ataşman", "Kaya Kırıcı", "Beton Pompası", "Asfalt Finişeri", "Kompaktör",
+      "Teleskopik Yükleyici (Telehandler)", "Forklift (Dizel)", "Forklift (Elektrikli)", "Transpalet", "İstif Makinesi",
+      "Hidrolik Kırıcı", "Konkasör & Eleme Tesisi", "Beton Pompası", "Asfalt Finişeri", "Asfalt Freze", "Kompaktör",
       "Yol Süpürme Aracı", "Vidanjör", "Kanal Açma Makinesi", "Sondaj Makinesi"
     ], "isMakinesi"), "isMakinesi"),
     node("Tarım Makineleri", leaves([
-      "Traktör (Bahçe Tipi)", "Traktör (Tarla Tipi)", "Traktör (4x4)", "Biçerdöver", "Balya Makinesi",
-      "Silaj Makinesi", "Pulluk", "Diskaro", "Kültivatör", "Rotovatör", "Ekim Makinesi",
-      "Mibzer", "Gübre Dağıtma Makinesi", "İlaçlama Makinesi", "Sırt Pülverizatörü", "Römork (Tarım)",
+      "Traktör (Bahçe Tipi)", "Traktör (Tarla Tipi)", "Biçerdöver", "Balya Makinesi",
+      "Silaj Makinesi", "Pulluk", "Diskaro", "Kültivatör", "Rotovatör", "Ekim Makinesi (Mibzer)",
+      "Gübre Dağıtma Makinesi", "İlaçlama Makinesi", "Sırt Pülverizatörü", "Römork (Tarım)",
       "Süt Sağım Makinesi", "Yem Karma Makinesi", "Hasat Makinesi", "Çapa Makinesi",
       "Su Pompası (Tarım)", "Damla Sulama Sistemi", "Sera Ekipmanı", "Traktör Ataşmanı",
       "Tarım & İlaçlama Dronu", "Saman & Yem Kırma Makinesi"
@@ -2163,23 +2301,24 @@ export const categoryTree: CategoryNode[] = [
       "CNC Torna", "CNC Freze", "CNC Router", "Lazer Kesim Makinesi", "Plazma Kesim", "Su Jeti",
       "Torna Tezgahı", "Freze Tezgahı", "Matkap Tezgahı", "Taşlama Tezgahı", "Testere Tezgahı",
       "Abkant Pres", "Hidrolik Pres", "Eksantrik Pres", "Giyotin Makas", "Kaynak Makinesi (Gazaltı)",
-      "Kaynak Makinesi (Argon)", "Punta Kaynak", "Enjeksiyon Makinesi", "Ekstruder",
+      "Kaynak Makinesi (Argon)", "Punta Kaynak", "Enjeksiyon Makinesi", "Ekstrüder",
       "Paketleme Makinesi", "Dolum Makinesi", "Etiketleme Makinesi", "Matbaa Makinesi",
       "Serigrafi Makinesi", "Gıda Üretim Makinesi", "Değirmen Makinesi", "Tekstil Makinesi",
-      "Dikiş Makinesi (Sanayi)", "Overlok Makinesi", "Nakış Makinesi", "Ağaç İşleme Makinesi", "Konveyör Sistemi"
+      "Dikiş Makinesi (Sanayi)", "Overlok Makinesi", "Nakış Makinesi", "Ağaç İşleme Makinesi", "Konveyör Sistemi",
+      "Mermer & Taş İşleme Makinesi", "Cam İşleme Makinesi", "Deri & Ayakkabı Makinesi", "Kağıt & Karton Makinesi", "Döküm Makinesi"
     ], "isMakinesi"), "isMakinesi"),
     node("Elektrik & Enerji", leaves([
       "Güneş Paneli (Monokristal)", "Güneş Paneli (Polikristal)", "İnvertör (On-Grid)", "İnvertör (Off-Grid)",
       "Hibrit İnvertör", "Şarj Regülatörü", "Akü (Jel)", "Akü (Lityum)", "Akü Grubu",
       "Jeneratör (Dizel)", "Jeneratör (Benzinli)", "Kabinli Jeneratör", "Trafo", "Pano & Şalt Malzemesi",
       "Kesintisiz Güç Kaynağı", "Rüzgâr Türbini", "Su Türbini (Hidroelektrik)", "Buhar Türbini",
-      "Kojenerasyon", "Kablo Kanalı", "Elektrik Motoru", "Akaryakıt Ürünleri & Tank", "Basınçlı Kaplar & Kompresör Tankı"
+      "Kojenerasyon", "Kablo Kanalı", "Kablo & Elektrik Malzemesi", "Endüstriyel Aydınlatma", "Elektrik Motoru", "Akaryakıt Ürünleri & Tank"
     ], "isMakinesi"), "isMakinesi"),
     node("İnşaat Malzemeleri & Ekipman", leaves([
       "İskele Sistemi", "Kalıp Sistemi", "Beton Mikseri", "Beton Santrali", "Perdah Makinesi",
       "Beton Vibratörü", "Kırıcı-Delici (Elektrikli)", "Darbeli Matkap (Ağır)", "Kompresör (Vidalı)",
       "Kompresör (Pistonlu)", "Su Pompası (İnşaat)", "Şantiye Konteyneri", "Kule Aydınlatma",
-      "İş Güvenliği Ekipmanı", "Hırdavat & Sarf"
+      "İş Güvenliği Ekipmanı"
     ], "isMakinesi"), "isMakinesi"),
     node("Depolama & Lojistik Ekipman", leaves([
       "Raf Sistemi", "Palet", "Konteyner", "Soğuk Hava Deposu", "Terazi & Baskül", "Ambalaj Makinesi",
@@ -2190,30 +2329,33 @@ export const categoryTree: CategoryNode[] = [
       "Analiz Cihazı", "Steril Kabin"
     ], "isMakinesi"), "isMakinesi"),
     node("Yedek Parça & Servis", leaves([
-      "İş Makinesi Yedek Parçası", "Palet & Zincir Takımı", "Hidrolik Hortum & Pompa",
+      "İş Makinesi Yedek Parçası", "Yürüyüş Paleti & Zincir", "Hidrolik Hortum & Pompa",
       "Filtre & Yağ", "Ataşman", "Bakım & Servis Hizmeti"
     ], "isMakinesi"), "isMakinesi"),
     // Sahibinden "Sanayi" makine-DIŞI kalemleri (bizde boş leaf'ti) → tam dal.
     node("Endüstriyel Ürünler", leaves([
       "Endüstriyel Mutfak", "Endüstriyel Mobilya", "Endüstriyel Temizlik", "Endüstriyel Hırdavat",
       "Raf & Ürün Teşhir", "Çadır, Tente & Kepenk", "Konteyner & Kabin", "Koruma & Sığınak Sistemleri",
-      "Kompresör", "Taşıma & İstifleme Ekipmanı", "Vinç & Kaldırma Ekipmanı", "Soğutma & İklimlendirme",
+      "Basınçlı Kaplar & Tanklar", "Taşıma & İstifleme Ekipmanı", "Vinç & Kaldırma Ekipmanı", "Soğutma & İklimlendirme",
       "Temizlik Robotu & Yıkama Dronu", "Rulman, Kayış & Güç Aktarım", "Kazan & Brülör", "Koli & Ambalaj Malzemesi", "Mağaza Mankeni & Vitrin"
     ], "isMakinesi"), "isMakinesi")
   ], "isMakinesi", IMG("1581094794329-c8112a89af12")),
 
   node("Ustalar & Hizmetler", [
-    node("Ev Tadilat & Dekorasyon", leaves(["Ev Tadilat", "Boya & Badana", "Alçı & Alçıpan", "Fayans & Seramik", "Parke & Zemin", "Cam & Alüminyum", "Kapı, Pencere & Cam Balkon", "Mutfak & Dolap", "Marangoz & Doğrama", "Demir & Ferforje", "Duvar Kağıdı", "Asma Tavan", "İç Mimari & Dekorasyon", "Mimarlık & Mühendislik", "Bahçe & Peyzaj Düzenleme", "Mantolama & Dış Cephe", "Su Yalıtımı & İzolasyon", "Çatı & Oluk"], "hizmet"), "hizmet"),
-    node("Tesisat & Teknik", leaves(["Elektrikçi", "Su Tesisatçısı", "Doğalgaz Tesisatı", "Kombi & Klima Servisi", "Beyaz Eşya Servisi", "Asansör Bakım", "Jeneratör Servisi", "Güneş Enerjisi Kurulumu", "Uydu & Anten", "Klima Montaj & Bakım", "Elektrikli Araç Şarj İstasyonu Kurulumu"], "hizmet"), "hizmet"),
-    node("Teknik Servis & Tamir", leaves(["Bilgisayar Teknik Servis", "Telefon Tamiri", "TV & Elektronik Tamiri", "Mobilya Montaj & Tamir", "Saat Tamiri", "Ayakkabı & Çanta Tamiri", "Anahtarcı & Çilingir", "Enstrüman Tamiri & Piyano Akort", "Jakuzi & Havuz Tamiri", "Tekstil Tadilatı & Terzi", "Yazıcı & Fotokopi Tamiri", "Bisiklet Tamiri", "Altın & Gümüş Tamiri", "Tabela Tamiri", "Veri Kurtarma", "Drone Tamiri"], "hizmet"), "hizmet"),
+    node("Ev Tadilat & Dekorasyon", leaves(["Ev Tadilat", "Boya & Badana", "Alçı & Alçıpan", "Fayans & Seramik", "Parke & Zemin", "Cam & Alüminyum", "Kapı, Pencere & Cam Balkon", "Mutfak & Dolap", "Marangoz & Doğrama", "Demir & Ferforje", "Duvar Kağıdı", "Asma Tavan", "İç Mimari & Dekorasyon", "Bahçe & Peyzaj Düzenleme", "Küptaş & Kilit Parke Döşeme", "Doğal Taş & Taş Duvar", "Mantolama & Dış Cephe", "Su Yalıtımı & İzolasyon", "Çatı & Oluk"], "hizmet"), "hizmet"),
+    node("Tesisat & Teknik", leaves(["Elektrikçi", "Su Tesisatçısı", "Doğalgaz Tesisatı", "Kombi Servisi", "Asansör Bakım", "Jeneratör Servisi", "Güneş Enerjisi Kurulumu", "Uydu & Anten", "Klima Montaj & Bakım", "Elektrikli Araç Şarj İstasyonu Kurulumu"], "hizmet"), "hizmet"),
+    node("Teknik Servis & Tamir", leaves(["Bilgisayar Teknik Servis", "Telefon Tamiri", "TV & Elektronik Tamiri", "Beyaz Eşya Servisi", "Mobilya Montaj & Tamir", "Saat Tamiri", "Ayakkabı & Çanta Tamiri", "Anahtarcı & Çilingir", "Enstrüman Tamiri & Piyano Akort", "Jakuzi & Havuz Tamiri", "Tekstil Tadilatı & Terzi", "Yazıcı & Fotokopi Tamiri", "Bisiklet Tamiri", "Altın & Gümüş Tamiri", "Tabela Tamiri", "Veri Kurtarma", "Drone Tamiri"], "hizmet"), "hizmet"),
     // Sahibinden "Araç Servis & Bakım" sekmesinin TAMAMI eksikti (yalnız "Oto Servis" tek yaprak vardı) → tam dal.
     node("Araç Servis & Bakım", leaves(["Oto Tamir & Servis", "Oto Kaporta & Boya", "Oto Lastik Tamiri", "Oto Elektrik & Ses", "Oto Ekspertiz", "Oto Modifiye", "Oto Döşeme", "Oto Plaka", "Oto Temizlik & Yıkama", "Çekici & Yol Yardım", "Motosiklet Servisi", "Marina & Liman Hizmetleri", "Tekne & Yat Tamiri", "Trafik Müşavirliği"], "hizmet"), "hizmet"),
-    node("Nakliye & Lojistik", leaves(["Evden Eve Nakliyat", "Şehirler Arası Nakliyat", "Ofis Taşıma", "Parça Eşya Taşıma", "Asansörlü Taşıma", "Depolama & Ambar", "Kurye & Kargo", "Uluslararası Taşıma"], "hizmet"), "hizmet"),
-    node("Temizlik & Bakım", leaves(["Ev Temizliği", "Ofis Temizliği", "İnşaat Sonrası Temizlik", "Cam Temizliği", "Halı & Koltuk Yıkama", "Dezenfeksiyon", "İlaçlama & Haşere", "Bahçe Bakımı", "Dış Cephe & Güneş Paneli Yıkama", "Havuz Temizliği"], "hizmet"), "hizmet"),
-    node("Güzellik & Kişisel Bakım", leaves(["Kuaför & Berber", "Saç Boyama & Bakım", "Cilt Bakımı", "Ağda & Epilasyon", "Lazer Epilasyon", "Manikür & Pedikür", "Kalıcı Makyaj", "Makyaj (Gelin & Özel Gün)", "Masaj & Spa", "Dövme & Piercing", "Solaryum", "Evde Güzellik Hizmeti"], "hizmet"), "hizmet"),
-    node("Organizasyon & Etkinlik", leaves(["Düğün Organizasyon", "Nişan & Kına", "Doğum Günü", "Catering & İkram", "Fotoğraf & Video Çekimi", "Müzik & DJ", "Süsleme & Balon", "Davetiye & Matbaa", "Sahne & Ses Sistemi", "Palyaço & Animasyon", "Özel Şef & Aşçı"], "hizmet"), "hizmet"),
-    node("Profesyonel Hizmetler", leaves(["Danışmanlık", "Muhasebe & Mali Müşavir", "Hukuki Danışmanlık", "Sigorta", "Tercüme & Çeviri", "Emlak Danışmanlığı", "İş Kurma Danışmanlığı", "Vergi Danışmanlığı", "Harita & Kadastro"], "hizmet"), "hizmet"),
-    node("Güvenlik & Sağlık", leaves(["Özel Güvenlik", "Kamera & Alarm Sistemi", "Sağlık & Hasta Bakımı", "Yaşlı Bakımı", "Fizyoterapi", "Diyetisyen", "Psikolog & Danışman", "Evde Sağlık"], "hizmet"), "hizmet"),
+    node("Nakliye & Lojistik", leaves(["Evden Eve Nakliyat", "Şehirler Arası Nakliyat", "Ofis Taşıma", "Parça Eşya Taşıma", "Asansörlü Taşıma", "Depolama & Ambar", "Kurye & Kargo", "Uluslararası Taşıma", "Yük Taşıma (Kamyon & Tır)", "Araç Taşıma (Oto Taşıyıcı)", "Personel & Öğrenci Servisi", "Transfer & VIP Taşıma"], "hizmet"), "hizmet"),
+    node("Temizlik & Bakım", leaves(["Ev Temizliği", "Ofis Temizliği", "İnşaat Sonrası Temizlik", "Cam Temizliği", "Halı & Koltuk Yıkama", "Dezenfeksiyon", "İlaçlama & Haşere", "Bahçe Bakımı", "Dış Cephe & Güneş Paneli Yıkama", "Havuz Temizliği", "Apartman & Merdiven Temizliği", "Kuru Temizleme & Çamaşır", "Perde Yıkama"], "hizmet"), "hizmet"),
+    node("Güzellik & Kişisel Bakım", leaves(["Kuaför & Berber", "Saç Boyama & Bakım", "Cilt Bakımı", "Ağda & Epilasyon", "Lazer Epilasyon", "Manikür & Pedikür", "Kalıcı Makyaj", "Makyaj (Gelin & Özel Gün)", "Masaj & Spa", "Dövme & Piercing", "Solaryum", "Evde Güzellik Hizmeti", "Kaş & Kirpik"], "hizmet"), "hizmet"),
+    node("Organizasyon & Etkinlik", leaves(["Düğün Organizasyon", "Nişan & Kına", "Doğum Günü", "Catering & İkram", "Fotoğraf & Video Çekimi", "Müzik & DJ", "Süsleme & Balon", "Davetiye & Matbaa", "Sahne & Ses Sistemi", "Palyaço & Animasyon", "Özel Şef & Aşçı", "Sünnet Organizasyonu", "Kurumsal Etkinlik & Toplantı", "Gelin Arabası & Araç Süsleme"], "hizmet"), "hizmet"),
+    // 2026-11-20: fotoğraf/video yalnız etkinlik altındaydı; baskı/reklamın hiç evi yoktu.
+    node("Fotoğraf & Video", leaves(["Ürün Fotoğrafçılığı", "Vesikalık & Stüdyo Çekimi", "Dış Çekim & Portre", "Drone Çekimi", "Tanıtım Filmi & Reklam Çekimi", "Emlak Fotoğrafçılığı"], "hizmet"), "hizmet"),
+    node("Matbaa & Reklam", leaves(["Kartvizit & Broşür Baskı", "Dijital Baskı & Afiş", "Promosyon Ürünleri", "Tabela & Reklam Uygulama", "Araç Giydirme"], "hizmet"), "hizmet"),
+    node("Profesyonel Hizmetler", leaves(["Danışmanlık", "Muhasebe & Mali Müşavir", "Hukuki Danışmanlık", "Sigorta", "Yeminli Tercüme", "Emlak Danışmanlığı", "İş Kurma Danışmanlığı", "Vergi Danışmanlığı", "Harita & Kadastro", "Mimarlık & Mühendislik", "Patent & Marka Tescili", "Gümrük Müşavirliği"], "hizmet"), "hizmet"),
+    node("Güvenlik & Sağlık", leaves(["Özel Güvenlik", "Kamera & Alarm Sistemi", "Sağlık & Hasta Bakımı", "Fizyoterapi", "Diyetisyen", "Psikolog & Danışman", "Evde Sağlık"], "hizmet"), "hizmet"),
     // Eski KÖK "Dijital Ürünler & Hizmetler" → hizmet olduğu için Ustalar altına "Dijital Hizmetler" olarak taşındı (formKey korundu).
     node("Dijital Hizmetler", [
       node("Web & Yazılım", leaves([
@@ -2228,7 +2370,7 @@ export const categoryTree: CategoryNode[] = [
         "İllüstrasyon", "3D Modelleme", "Fotoğraf Rötuş"
       ], "dijitalHizmet"), "dijitalHizmet"),
       node("Video & Ses", leaves([
-        "Video Kurgu", "Reels / TikTok Kurgu", "Motion Graphics", "Animasyon", "Intro / Outro",
+        "Video Kurgu", "Reels / TikTok Kurgu", "Motion Graphics", "Animasyon (2D/3D)", "Intro / Outro",
         "Seslendirme", "Podcast Kurgu", "Müzik Prodüksiyon", "Altyazı & Çeviri (Video)"
       ], "dijitalHizmet"), "dijitalHizmet"),
       node("Pazarlama & Reklam", leaves([
@@ -2259,15 +2401,15 @@ export const categoryTree: CategoryNode[] = [
   ], "hizmet", IMG("1581578731548-c64695cc6952")),
 
   node("Özel Ders & Eğitim", [
-    node("Akademik Dersler", leaves(["İlkokul Dersleri", "Ortaokul Dersleri", "Lise Dersleri", "Üniversite Dersleri", "Matematik", "Fizik", "Kimya", "Biyoloji", "Türkçe & Edebiyat", "Geometri"], "ders"), "ders"),
-    node("Sınav Hazırlık", leaves(["LGS", "YKS (TYT-AYT)", "KPSS", "ALES", "DGS", "YDS/YÖKDİL", "IELTS/TOEFL", "Ehliyet Teori", "Meslek Sınavları"], "ders"), "ders"),
-    node("Yabancı Dil", leaves(["İngilizce", "Almanca", "Fransızca", "İspanyolca", "İtalyanca", "Arapça", "Rusça", "Çince", "Japonca", "İşaret Dili"], "ders"), "ders"),
-    node("Müzik & Sanat", leaves(["Piyano", "Gitar", "Keman", "Bağlama", "Şan & Vokal", "Resim & Çizim", "Bale & Dans", "Tiyatro & Drama", "Fotoğrafçılık", "Hat & Ebru"], "ders"), "ders"),
-    node("Spor Dersleri", leaves(["Yüzme", "Tenis", "Fitness & PT", "Yoga & Pilates", "Basketbol", "Futbol", "Dövüş Sanatları", "Kayak", "Binicilik"], "ders"), "ders"),
-    node("Meslek & Yazılım", leaves(["Yazılım & Kodlama", "Web Tasarım", "Grafik Tasarım", "Dijital Pazarlama", "Muhasebe Eğitimi", "Bilgisayar Kullanımı", "Ofis Programları", "Yapay Zeka & Veri", "Robotik Kodlama"], "ders"), "ders"),
-    node("Kişisel Gelişim & Diğer", leaves(["Direksiyon Dersi", "Diksiyon & Sunum", "Satranç", "Kişisel Gelişim", "Koçluk", "El Sanatları", "Aşçılık", "Kariyer Danışmanlığı", "Hızlı Okuma", "Okuma Yazma (Yetişkin)"], "ders"), "ders"),
+    node("Akademik Dersler", leaves(["İlkokul Dersleri", "Ortaokul Dersleri", "Lise Dersleri", "Üniversite Dersleri", "Matematik", "Fizik", "Kimya", "Biyoloji", "Türkçe & Edebiyat", "Geometri", "Fen Bilimleri", "Tarih & Coğrafya", "Felsefe", "Etüt & Ödev Desteği"], "ders"), "ders"),
+    node("Sınav Hazırlık", leaves(["LGS", "YKS (TYT-AYT)", "KPSS", "ALES", "DGS", "YDS/YÖKDİL", "IELTS/TOEFL", "SAT / GRE / GMAT", "YÖS", "Ehliyet Teori", "Meslek Sınavları"], "ders"), "ders"),
+    node("Yabancı Dil", leaves(["İngilizce", "Almanca", "Fransızca", "İspanyolca", "İtalyanca", "Arapça", "Rusça", "Çince", "Japonca", "Korece", "Türkçe (Yabancılara)", "İşaret Dili"], "ders"), "ders"),
+    node("Müzik & Sanat", leaves(["Piyano", "Gitar", "Keman", "Bağlama", "Şan & Vokal", "Resim & Çizim", "Bale & Dans", "Tiyatro & Drama", "Fotoğrafçılık", "Hat & Ebru", "Bateri & Davul", "Ud", "Ney", "Solfej & Müzik Teorisi", "Seramik & Heykel", "El Sanatları"], "ders"), "ders"),
+    node("Spor Dersleri", leaves(["Yüzme", "Tenis", "Fitness & PT", "Yoga & Pilates", "Basketbol", "Futbol", "Dövüş Sanatları", "Kayak", "Binicilik", "Voleybol", "Jimnastik", "Dalış"], "ders"), "ders"),
+    node("Meslek & Yazılım", leaves(["Yazılım & Kodlama", "Web Tasarım", "Grafik Tasarım", "Dijital Pazarlama", "Muhasebe Eğitimi", "Bilgisayar Kullanımı", "Ofis Programları", "Yapay Zeka & Veri", "Robotik Kodlama", "Aşçılık & Pastacılık"], "ders"), "ders"),
+    node("Kişisel Gelişim & Diğer", leaves(["Direksiyon Dersi", "Diksiyon & Sunum", "Satranç", "Kişisel Gelişim", "Koçluk", "Kariyer Danışmanlığı", "Hızlı Okuma", "Okuma Yazma (Yetişkin)"], "ders"), "ders"),
     // Sahibinden "Özel Ders Verenler"deki "Özel Eğitim" (özel gereksinim) + "Çocuk Gelişimi" eksikti → tek dalda.
-    node("Özel Eğitim & Çocuk Gelişimi", leaves(["Özel Eğitim (Genel)", "Disleksi Eğitimi", "Otizm & Özel Gereksinim", "Konuşma & Dil Terapisi", "İşitme / Görme Engelli Eğitimi", "Zihinsel Engelli Eğitimi", "Çocuk Gelişimi", "Okul Öncesi Gelişim", "Etüt & Ödev Desteği", "Dikkat & Zeka Geliştirme", "Rehberlik & Psikolojik Danışmanlık"], "ders"), "ders"),
+    node("Özel Eğitim & Çocuk Gelişimi", leaves(["Özel Eğitim (Genel)", "Disleksi Eğitimi", "Otizm & Özel Gereksinim", "Konuşma & Dil Terapisi", "İşitme / Görme Engelli Eğitimi", "Zihinsel Engelli Eğitimi", "Çocuk Gelişimi", "Okul Öncesi Gelişim", "Dikkat & Zeka Geliştirme", "Rehberlik & Psikolojik Danışmanlık"], "ders"), "ders"),
     leaf("Online Eğitim", "ders")
   ], "ders", IMG("1503676260728-1c00da094a0b")),
 
@@ -2276,34 +2418,35 @@ export const categoryTree: CategoryNode[] = [
     node("Satış, Pazarlama & Perakende", leaves(["Satış Temsilcisi", "Saha Satış", "Mağaza Personeli", "Kasiyer", "Reyon Görevlisi", "Pazarlama Uzmanı", "Dijital Pazarlama", "Mağaza Müdürü"], "isIlani"), "isIlani"),
     node("Bilişim & Yazılım", leaves(["Yazılım Geliştirici", "Web Geliştirici", "Mobil Geliştirici", "Test Uzmanı", "DevOps & Sistem", "Veri Analisti", "Siber Güvenlik", "IT Destek"], "isIlani"), "isIlani"),
     node("Ofis & Yönetim", leaves(["Muhasebe & Finans", "İnsan Kaynakları", "Sekreter & Asistan", "Yönetici & Müdür", "Satın Alma", "Halkla İlişkiler", "Hukuk & Avukatlık", "Ofis Elemanı"], "isIlani"), "isIlani"),
-    node("Üretim, Lojistik & Sanayi", leaves(["Üretim İşçisi", "Kalite Kontrol", "Depo & Sevkiyat", "Forklift Operatörü", "Şoför", "Kurye & Motokurye", "Vinç/İş Makinesi Operatörü", "Teknik Bakım", "Kaynakçı", "Depo Elemanı"], "isIlani"), "isIlani"),
-    node("Hizmet & Turizm", leaves(["Garson & Komi", "Aşçı & Mutfak", "Barista", "Resepsiyon", "Kat Görevlisi", "Animasyon", "Temizlik Personeli", "Güvenlik Görevlisi", "Çağrı Merkezi"], "isIlani"), "isIlani"),
+    node("Üretim, Lojistik & Sanayi", leaves(["Üretim İşçisi", "Kalite Kontrol", "Depo & Sevkiyat", "Forklift Operatörü", "Şoför", "Kurye & Motokurye", "Vinç/İş Makinesi Operatörü", "Teknik Bakım", "Kaynakçı"], "isIlani"), "isIlani"),
+    node("Hizmet & Turizm", leaves(["Garson & Komi", "Aşçı & Mutfak", "Barista", "Resepsiyon", "Kat Görevlisi", "Animatör", "Temizlik Personeli", "Güvenlik Görevlisi", "Çağrı Merkezi", "Pastacı & Fırıncı", "Bulaşıkçı", "Tur Rehberi"], "isIlani"), "isIlani"),
     node("Güzellik & Bakım", leaves(["Kuaför & Berber", "Estetisyen", "Cilt Bakım Uzmanı", "Manikürist & Pedikürist", "Masör & Masöz", "Makyaj Artisti", "Kalıcı Makyaj Uzmanı", "Epilasyon Uzmanı", "Güzellik Merkezi Danışmanı", "Spa Terapisti"], "isIlani"), "isIlani"),
-    node("Sağlık & Eğitim", leaves(["Doktor", "Hemşire", "Sağlık Teknikeri", "Fizyoterapist", "Öğretmen", "Öğretim Görevlisi", "Bakıcı & Refakatçi", "Eczane Personeli"], "isIlani"), "isIlani"),
+    node("Sağlık & Eğitim", leaves(["Doktor", "Hemşire", "Sağlık Teknikeri", "Fizyoterapist", "Öğretmen", "Öğretim Görevlisi", "Bakıcı & Refakatçi", "Eczane Personeli", "Diyetisyen", "Psikolog"], "isIlani"), "isIlani"),
     node("İnşaat & Mühendislik", leaves(["İnşaat Mühendisi", "Mimar", "Makine Mühendisi", "Elektrik Mühendisi", "Usta & Kalfa", "Şantiye Şefi", "Teknik Ressam", "İş Güvenliği Uzmanı", "İnşaat İşçisi", "Elektrikçi & Tesisatçı"], "isIlani"), "isIlani"),
     // Sahibinden'de ayrı sektörler (Radyo/Sinema/TV + Tasarım & Yaratıcılık) bizde eksikti.
-    node("Medya, Tasarım & Yaratıcılık", leaves(["Grafik Tasarımcı", "UI/UX Tasarımcı", "Video Editör & Kurgu", "Fotoğrafçı", "İçerik Üreticisi", "Sosyal Medya Uzmanı", "Radyo/TV Sunucu", "Kameraman", "Ses Teknisyeni", "Oyuncu & Figüran", "Yazar & Editör", "Seslendirme Sanatçısı", "Reklam & Kreatif"], "isIlani"), "isIlani"),
+    node("Medya, Tasarım & Yaratıcılık", leaves(["Grafik Tasarımcı", "UI/UX Tasarımcı", "Video Editör & Kurgu", "Fotoğrafçı", "İçerik Üreticisi", "Sosyal Medya Uzmanı", "Radyo / TV Sunucusu", "Kameraman", "Ses Teknisyeni", "Oyuncu & Figüran", "Yazar & Editör", "Seslendirme Sanatçısı", "Reklam & Kreatif"], "isIlani"), "isIlani"),
     // Sahibinden "Tarım & Hayvancılık" + "Tekstil & Konfeksiyon" sektörleri bizde eksikti.
-    node("Tarım, Hayvancılık & Tekstil", leaves(["Tarım İşçisi", "Çiftlik Çalışanı", "Hayvan Bakıcısı", "Ziraat Mühendisi", "Veteriner & Veteriner Teknikeri", "Terzi & Dikişçi", "Konfeksiyon İşçisi", "Modelist & Stilist", "Kesimci", "Ütücü (Tekstil)", "Kalıpçı & Örgü Ustası"], "isIlani"), "isIlani")
+    node("Tarım, Hayvancılık & Tekstil", leaves(["Tarım İşçisi", "Çiftlik Çalışanı", "Hayvan Bakıcısı", "Ziraat Mühendisi", "Veteriner & Veteriner Teknikeri", "Terzi & Dikişçi", "Konfeksiyon İşçisi", "Modelist & Stilist", "Kesimci", "Ütücü (Tekstil)", "Kalıpçı & Örgü Ustası"], "isIlani"), "isIlani"),
+    // 2026-11-20: otomotiv sektörü yoktu.
+    node("Otomotiv", leaves(["Oto Tamircisi", "Kaporta & Boya Ustası", "Oto Elektrikçisi", "Oto Yıkama Elemanı", "Lastikçi", "Servis Danışmanı", "Galeri Satış Danışmanı"], "isIlani"), "isIlani")
   ], "isIlani", IMG("1521737604893-d14cc237f11d")),
 
   node("Hayvanlar Alemi", [
     node("Sahiplendirme", [
       node("Kedi", leaves([
         "Tekir & Sokak Kedisi", "British Shorthair", "Scottish Fold", "Van Kedisi", "Ankara Kedisi",
-        "Sphynx", "Maine Coon", "Persian (İran)", "Ragdoll", "Bengal", "Siyam", "Norveç Orman Kedisi",
-        "Chinchilla", "Exotic Shorthair", "Munchkin", "Yavru Kedi", "Melez Kedi"
+        "Sphynx", "Maine Coon", "İran Kedisi (Persian)", "Ragdoll", "Bengal", "Siyam", "Norveç Orman Kedisi",
+        "Chinchilla Kedisi", "Exotic Shorthair", "Munchkin", "Melez Kedi"
       ], "hayvan"), "hayvan"),
       node("Köpek", leaves([
         "Golden Retriever", "Labrador", "Alman Kurdu", "Pomeranian", "Chihuahua", "Poodle",
         "Rottweiler", "Kangal", "Akbaş", "Malaklı", "Terrier", "Husky", "Bulldog", "Beagle",
         "Cocker Spaniel", "Border Collie", "Doberman", "Shih Tzu", "Maltese", "Pug",
-        "Belçika Malinois", "Yavru Köpek", "Melez Köpek"
+        "Belçika Malinois", "Melez Köpek"
       ], "hayvan"), "hayvan"),
       node("Kuş", leaves([
         "Muhabbet Kuşu", "Kanarya", "Papağan (Jako)", "Papağan (Amazon)", "Sultan Papağanı",
-        "Cennet Papağanı", "Forpus", "Sevda Papağanı", "Güvercin", "Bülbül & Ötücü", "Saka",
-        "Kakadu", "Diğer Kuş"
+        "Cennet Papağanı", "Forpus", "Sevda Papağanı", "Kakadu", "Zebra İspinozu", "Diğer Kuş"
       ], "hayvan"), "hayvan"),
       node("Kemirgen & Küçük Dost", leaves([
         "Hamster", "Tavşan", "Gine Domuzu", "Sincap", "Chinchilla (Kemirgen)", "Fare & Gerbil"
@@ -2317,7 +2460,7 @@ export const categoryTree: CategoryNode[] = [
     node("Büyükbaş Hayvanlar", leaves(["At", "Yarış Atı", "Binek Atı", "Midilli", "Boğa", "İnek", "Düve", "Buzağı", "Dana", "Manda", "Deve", "Eşek & Katır"], "hayvan"), "hayvan"),
     node("Küçükbaş Hayvanlar", leaves(["Keçi", "Teke", "Koç", "Koyun", "Kuzu", "Oğlak", "Toklu", "Çepiç"], "hayvan"), "hayvan"),
     node("Kümes Hayvanları", leaves(["Tavuk", "Horoz", "Ördek", "Kaz", "Hindi", "Bıldırcın", "Güvercin", "Devekuşu", "Tavus Kuşu", "Sülün", "Beç Tavuğu", "Kuluçkalık Yumurta"], "hayvan"), "hayvan"),
-    node("Akvaryum & Deniz Canlıları", leaves(["Japon Balığı", "Beta (Siyam)", "Lepistes & Canlı Doğuran", "Melek Balığı", "Discus", "Cichlid (Çiklet)", "Tetra", "Labirentli Balık", "Sazan & Koi", "Vatoz & Kedi Balığı", "Karides & Salyangoz", "Deniz Balığı & Mercan", "Anemon & Deniz Canlısı", "Akvaryum Bitkisi"], "hayvan"), "hayvan"),
+    node("Akvaryum & Deniz Canlıları", leaves(["Japon Balığı", "Betta Balığı", "Lepistes & Canlı Doğuran", "Melek Balığı", "Discus", "Çiklit (Cichlid)", "Tetra", "Gurami & Labirentli Balık", "Sazan & Koi", "Vatoz & Kedi Balığı", "Karides & Salyangoz", "Deniz Balığı & Mercan", "Anemon & Deniz Canlısı"], "hayvan"), "hayvan"),
     node("Böcekler & Arıcılık", leaves(["Ana Arı", "Oğul & Bal Arısı Kolonisi", "İpek Böceği", "Karınca Kolonisi", "Solucan (Kompost)", "Diğer Böcek"], "hayvan"), "hayvan"),
     leaf("Kayıp Hayvan İlanı", "hayvan"),
     leaf("Bulunan Hayvan İlanı", "hayvan"),
@@ -2333,19 +2476,19 @@ export const categoryTree: CategoryNode[] = [
     ], "petUrun"), "petUrun"),
     node("Akvaryum & Terrarium", leaves([
       "Akvaryum", "Akvaryum Filtresi", "Isıtıcı", "Aydınlatma", "Hava Motoru", "Dekor & Kum",
-      "Terrarium", "Su Testi & Bakım"
+      "Terrarium", "Su Testi & Bakım", "Akvaryum Bitkisi"
     ], "petUrun"), "petUrun"),
     node("Bakım & Oyuncak", leaves([
       "Pet Şampuanı", "Tarak & Fırça", "Tırnak Makası", "Tüy Toplayıcı", "Diş Bakımı",
       "Kedi Oyuncağı", "Köpek Oyuncağı", "Kuş Oyuncağı"
     ], "petUrun"), "petUrun"),
     node("Veteriner & Hizmetler", leaves([
-      "Veteriner Hizmetleri", "Aşı & Muayene", "Pet Kuaför", "Pet Oteli", "Evcil Hayvan Bakıcısı",
+      "Veteriner Hizmetleri", "Pet Kuaför", "Pet Oteli", "Evcil Hayvan Bakıcısı",
       "Köpek Eğitmeni", "Pet Taksi", "Pet Fotoğrafçısı"
     ], "hizmet"), "hizmet"),
     node("Çiftlik & Hayvancılık Ekipmanı", leaves([
       "Yemlik & Suluk (Çiftlik)", "Kuluçka Makinesi", "Süt Sağım Ekipmanı", "Kümes Malzemesi",
-      "Ahır Malzemesi", "Arıcılık Ekipmanı", "Kovan & Bal Ürünleri", "Yem & Saman"
+      "Ahır Malzemesi", "Arıcılık Ekipmanı & Kovan", "Yem & Saman"
     ], "petUrun"), "petUrun")
   ], "hayvan", IMG("1450778869180-41d0601e046e")),
 
@@ -2354,7 +2497,7 @@ export const categoryTree: CategoryNode[] = [
       "Bebek Bakıcısı (0-1 Yaş)", "Bebek Bakıcısı (1-3 Yaş)", "Çocuk Bakıcısı", "Yatılı Bakıcı",
       "Saatlik Bakıcı", "Gündüz Bakıcısı", "Hafta Sonu Bakıcısı", "Kreş Öncesi Bakım",
       "Okul Sonrası Bakım", "Yabancı Dil Bilen Bakıcı", "İkiz Bakıcısı", "Gece Bakıcısı",
-      "Ödev Takibi Yapan Bakıcı", "Sertifikalı Çocuk Gelişimci"
+      "Ödev Takibi Yapan Bakıcı", "Sertifikalı Çocuk Gelişimci", "Lohusa & Doğum Sonrası Bakıcı"
     ], "yardimci"), "yardimci"),
     node("Yaşlı & Hasta Bakımı", leaves([
       "Yaşlı Bakıcısı", "Hasta Bakıcısı", "Refakatçi (Hastane)", "Yatılı Hasta Bakımı",
@@ -2364,23 +2507,22 @@ export const categoryTree: CategoryNode[] = [
     ], "yardimci"), "yardimci"),
     node("Ev İşleri & Temizlik", leaves([
       "Ev Yardımcısı", "Temizlikçi (Gündelik)", "Temizlikçi (Haftalık)", "Yatılı Ev Yardımcısı",
-      "Gündelik Yardımcı", "Ütücü", "Çamaşır & Ütü", "Yemek Yapan (Aşçı)", "Diyet Yemeği Yapan",
-      "Detaylı / Derin Temizlik", "Bayram / Özel Gün Temizliği", "Ofis Yardımcısı"
+      "Çamaşır & Ütü", "Yemek Yapan (Aşçı)", "Diyet Yemeği Yapan",
+      "Detaylı / Derin Temizlik", "Bayram / Özel Gün Temizliği"
     ], "yardimci"), "yardimci"),
     node("Şoför & Ulaşım", leaves([
-      "Özel Şoför", "Aile Şoförü", "Okul Servisi Şoförü", "Yaşlı Refakat Şoförü",
+      "Özel Şoför", "Okul Servisi Şoförü", "Yaşlı Refakat Şoförü",
       "Alışveriş & Ulaşım Yardımcısı"
     ], "yardimci"), "yardimci"),
     node("Bahçe & Dış Alan", leaves([
-      "Bahçıvan", "Peyzaj Bakımı", "Havuz Bakımı", "Kapıcı / Apartman Görevlisi", "Site Görevlisi"
+      "Bahçıvan", "Havuz Bakımı", "Kapıcı / Site Görevlisi"
     ], "yardimci"), "yardimci"),
     node("Eğitim & Destek", leaves([
       "Özel Ders Yardımcısı", "Ödev Takip Öğretmeni", "Yabancı Dil Konuşma Partneri",
       "Özel Eğitim Destek Personeli"
     ], "yardimci"), "yardimci"),
     node("Evcil Hayvan & Diğer", leaves([
-      "Evcil Hayvan Bakıcısı", "Köpek Gezdirici", "Ev & Bitki Bakımı (Tatilde)",
-      "Yardımcı Personel (Genel)"
+      "Evcil Hayvan Bakıcısı", "Köpek Gezdirici", "Ev & Bitki Bakımı (Tatilde)"
     ], "yardimci"), "yardimci")
   ], "yardimci", IMG("1576091160550-2173dba999ef")),
 
@@ -2388,38 +2530,42 @@ export const categoryTree: CategoryNode[] = [
     node("Emlak Talebi", leaves([
       "Satılık Daire Arıyorum", "Kiralık Daire Arıyorum", "Müstakil Ev Arıyorum", "Villa Arıyorum",
       "Arsa Arıyorum", "Tarla Arıyorum", "Dükkan / Mağaza Arıyorum", "Ofis Arıyorum",
-      "Depo Arıyorum", "Yazlık Arıyorum", "Öğrenci Evi Arıyorum", "Devremülk Arıyorum"
+      "Depo Arıyorum", "Yazlık Arıyorum", "Öğrenci Evi Arıyorum", "Devremülk Arıyorum", "Ev Arkadaşı Arıyorum"
     ], "arayan"), "arayan"),
     node("Vasıta Talebi", leaves([
       "Otomobil Arıyorum", "SUV Arıyorum", "Motosiklet Arıyorum", "Ticari Araç Arıyorum",
       "Kamyonet Arıyorum", "Traktör Arıyorum", "Karavan Arıyorum", "Tekne Arıyorum",
-      "Hasarlı Araç Arıyorum", "Klasik Araç Arıyorum"
+      "Hasarlı Araç Arıyorum", "Klasik Araç Arıyorum", "Yedek Parça Arıyorum", "İş Makinesi Arıyorum"
     ], "arayan"), "arayan"),
     node("Elektronik Talebi", leaves([
       "Telefon Arıyorum", "Bilgisayar Arıyorum", "Laptop Arıyorum", "Tablet Arıyorum",
-      "Televizyon Arıyorum", "Oyun Konsolu Arıyorum", "Kamera Arıyorum", "Beyaz Eşya Arıyorum",
-      "Ekran Kartı Arıyorum"
+      "Televizyon Arıyorum", "Oyun Konsolu Arıyorum", "Kamera Arıyorum", "Ekran Kartı Arıyorum"
     ], "arayan"), "arayan"),
     node("Ev & Yaşam Talebi", leaves([
       "Mobilya Arıyorum", "Beyaz Eşya Arıyorum (Ev)", "Halı Arıyorum", "Bebek Ürünü Arıyorum",
       "Spor Aleti Arıyorum", "Müzik Aleti Arıyorum", "Antika Arıyorum", "Koleksiyon Ürünü Arıyorum"
     ], "arayan"), "arayan"),
     node("İş & Eleman Talebi", leaves([
-      "İş Arıyorum", "Eleman Arıyorum", "Usta Arıyorum", "Şoför Arıyorum", "Temizlikçi Arıyorum",
-      "Bakıcı Arıyorum", "Öğretmen / Özel Ders Arıyorum", "Freelance Hizmet Arıyorum",
-      "Stajyer Arıyorum"
+      "İş Arıyorum", "Eleman Arıyorum", "Şoför Arıyorum", "Stajyer Arıyorum"
+    ], "arayan"), "arayan"),
+    // 2026-11-20: hizmet / ders / bakıcı talepleri iş talebine karışıyordu → ana köklerin karşılığı.
+    node("Hizmet & Usta Talebi", leaves([
+      "Usta Arıyorum", "Tadilat Ustası Arıyorum", "Nakliyeci Arıyorum", "Temizlik Hizmeti Arıyorum",
+      "Organizasyon Firması Arıyorum", "Freelance Hizmet Arıyorum"
+    ], "arayan"), "arayan"),
+    node("Özel Ders & Bakıcı Talebi", leaves([
+      "Öğretmen / Özel Ders Arıyorum", "Bakıcı Arıyorum", "Yaşlı / Hasta Bakıcısı Arıyorum", "Temizlikçi Arıyorum"
     ], "arayan"), "arayan"),
     node("Ticaret & Ortaklık Talebi", leaves([
       "Ortak Satış Ortağı Arıyorum", "Yatırımcı Arıyorum", "Ürün Tedarikçisi Arıyorum",
-      "Bayilik Arıyorum", "Toptan Ürün Arıyorum", "İş Ortağı Arıyorum", "Devren İşletme Arıyorum"
+      "Bayilik Arıyorum", "Toptan Ürün Arıyorum", "İş Ortağı Arıyorum", "Devren İşletme Arıyorum", "Hurda / İkinci El Alıyorum"
     ], "arayan"), "arayan"),
     node("Kiralama Talebi", leaves([
       "Kiralık Ürün Arıyorum", "Kiralık Araç Arıyorum", "Kiralık İş Makinesi Arıyorum",
       "Kiralık Ekipman Arıyorum", "Günlük Kiralık Arıyorum"
     ], "arayan"), "arayan"),
     node("Hayvan & Diğer Talep", leaves([
-      "Evcil Hayvan Arıyorum", "Çiftlik Hayvanı Arıyorum", "Hurda / İkinci El Alıyorum",
-      "Hizmet Arıyorum"
+      "Evcil Hayvan Arıyorum", "Çiftlik Hayvanı Arıyorum"
     ], "arayan"), "arayan")
   ], "arayan", IMG("1454165804606-c3d57bc86b40"))
 ];
@@ -2758,6 +2904,15 @@ function key(value: string) {
 // Manual hints so common product words land on the right path even if the word
 // isn't a category label (e.g. "araba" → Vasıta > Otomobil).
 const HINTS: Array<{ words: string[]; path: string[] }> = [
+  // 2026-11-20 — özel terimler EN ÜSTTE (genel "usta/hizmet/telefon" ipuçlarından önce öneri sırasına girsin).
+  { words: ["kuptas", "küptaş", "kup tas", "küp taş", "kilit parke", "begonit", "granit kuptas", "granit küptaş", "parke tasi", "parke taşı", "bazalt"], path: ["Ustalar & Hizmetler", "Ev Tadilat & Dekorasyon", "Küptaş & Kilit Parke Döşeme"] },
+  { words: ["tas duvar", "taş duvar", "dogal tas", "doğal taş", "tas kaplama", "taş kaplama"], path: ["Ustalar & Hizmetler", "Ev Tadilat & Dekorasyon", "Doğal Taş & Taş Duvar"] },
+  { words: ["akilli saat", "akıllı saat", "smart watch", "smartwatch", "apple watch", "galaxy watch", "huawei watch", "garmin"], path: ["İkinci El & Sıfır Alışveriş", "Elektronik", "Giyilebilir Teknoloji", "Akıllı Saat"] },
+  { words: ["robot supurge", "robot süpürge", "dikey supurge", "dikey süpürge", "roborock", "dyson"], path: ["İkinci El & Sıfır Alışveriş", "Küçük Ev Aletleri"] },
+  { words: ["gonye", "gönye", "gönye kesme"], path: ["İkinci El & Sıfır Alışveriş", "Bahçe & Yapı Market", "Elektrikli El Aletleri", "Gönye Kesme Makinesi"] },
+  { words: ["suv arac", "suv araç", "pickup", "arazi araci", "arazi aracı", "4x4 arac", "4x4 araç"], path: ["Vasıta", "Arazi, SUV & Pickup"] },
+  { words: ["kamyon", "cekici", "çekici", "tir cekici", "tır çekici", "dorse"], path: ["Vasıta", "Ağır Vasıta"] },
+  { words: ["panelvan", "minivan", "kamyonet"], path: ["Vasıta", "Ticari Araçlar"] },
   { words: ["is ariyorum", "iş arıyorum", "eleman ariyorum", "eleman arıyorum", "usta ariyorum", "usta arıyorum", "bakici ariyorum", "bakıcı arıyorum", "aranıyor"], path: ["Arayanlar / Talep İlanları", "İş & Eleman Talebi"] },
   { words: ["is ilani", "iş ilanı", "personel araniyor", "personel aranıyor", "eleman lazim", "eleman lazım", "ise aliyorum", "işe alıyorum"], path: ["İş İlanları"] },
   { words: ["bakici", "bakıcı", "yardimci", "yardımcı", "temizlikci", "temizlikçi", "hasta bakimi", "hasta bakımı", "yasli bakimi", "yaşlı bakımı", "cocuk bakimi", "çocuk bakımı"], path: ["Yardımcı Arayanlar"] },

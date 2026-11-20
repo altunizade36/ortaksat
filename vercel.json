@@ -250,6 +250,271 @@
       "source": "/kategori/hobi-oyun",
       "destination": "/kategori/kitap-ve-hobi",
       "permanent": true
+    },
+    {
+      "source": "/kategori/segway-powersports",
+      "destination": "/kategori/utv",
+      "permanent": true
+    },
+    {
+      "source": "/kategori/camli-van",
+      "destination": "/kategori/kombi-van",
+      "permanent": true
+    },
+    {
+      "source": "/kategori/romork-deniz",
+      "destination": "/kategori/tekne-romorku",
+      "permanent": true
+    },
+    {
+      "source": "/kategori/atv-atv",
+      "destination": "/kategori/benzinli-atv",
+      "permanent": true
+    },
+    {
+      "source": "/kategori/utv-utv",
+      "destination": "/kategori/benzinli-utv",
+      "permanent": true
+    },
+    {
+      "source": "/kategori/side-by-side",
+      "destination": "/kategori/utv",
+      "permanent": true
+    },
+    {
+      "source": "/kategori/akulu-sandalye",
+      "destination": "/kategori/hareket-ve-ortopedi",
+      "permanent": true
+    },
+    {
+      "source": "/kategori/tanker",
+      "destination": "/kategori/agir-vasita",
+      "permanent": true
+    },
+    {
+      "source": "/kategori/turktraktor",
+      "destination": "/kategori/traktor-ve-tarim-araclari",
+      "permanent": true
+    },
+    {
+      "source": "/kategori/luks-ve-vip-arac",
+      "destination": "/kategori/otomobil-kiralama",
+      "permanent": true
+    },
+    {
+      "source": "/kategori/akilli-saat-ve-bileklik",
+      "destination": "/kategori/giyilebilir-teknoloji",
+      "permanent": true
+    },
+    {
+      "source": "/kategori/bahce-ve-balkon",
+      "destination": "/kategori/bahce-ve-peyzaj",
+      "permanent": true
+    },
+    {
+      "source": "/kategori/supurge",
+      "destination": "/kategori/kucuk-ev-aletleri",
+      "permanent": true
+    },
+    {
+      "source": "/kategori/bulasik-kurutma",
+      "destination": "/kategori/mutfak",
+      "permanent": true
+    },
+    {
+      "source": "/kategori/anne-ve-bebek-oyuncak",
+      "destination": "/kategori/oyuncak",
+      "permanent": true
+    },
+    {
+      "source": "/kategori/kirtasiye-ve-ofis",
+      "destination": "/kategori/ofis-ve-kirtasiye",
+      "permanent": true
+    },
+    {
+      "source": "/kategori/dijital-hesap",
+      "destination": "/kategori/dijital-urunler",
+      "permanent": true
+    },
+    {
+      "source": "/kategori/online-hizmet",
+      "destination": "/kategori/dijital-hizmetler",
+      "permanent": true
+    },
+    {
+      "source": "/kategori/telehandler",
+      "destination": "/kategori/teleskopik-yukleyici-telehandler",
+      "permanent": true
+    },
+    {
+      "source": "/kategori/kirici-atasman",
+      "destination": "/kategori/atasman",
+      "permanent": true
+    },
+    {
+      "source": "/kategori/kaya-kirici",
+      "destination": "/kategori/hidrolik-kirici",
+      "permanent": true
+    },
+    {
+      "source": "/kategori/traktor-4x4",
+      "destination": "/kategori/tarim-makineleri",
+      "permanent": true
+    },
+    {
+      "source": "/kategori/ekim-makinesi",
+      "destination": "/kategori/ekim-makinesi-mibzer",
+      "permanent": true
+    },
+    {
+      "source": "/kategori/mibzer",
+      "destination": "/kategori/ekim-makinesi-mibzer",
+      "permanent": true
+    },
+    {
+      "source": "/kategori/basincli-kaplar-ve-kompresor-tanki",
+      "destination": "/kategori/basincli-kaplar-ve-tanklar",
+      "permanent": true
+    },
+    {
+      "source": "/kategori/hirdavat-ve-sarf",
+      "destination": "/kategori/endustriyel-hirdavat",
+      "permanent": true
+    },
+    {
+      "source": "/kategori/palet-ve-zincir-takimi",
+      "destination": "/kategori/yuruyus-paleti-ve-zincir",
+      "permanent": true
+    },
+    {
+      "source": "/kategori/kompresor",
+      "destination": "/kategori/insaat-malzemeleri-ve-ekipman",
+      "permanent": true
+    },
+    {
+      "source": "/kategori/kombi-ve-klima-servisi",
+      "destination": "/kategori/kombi-servisi",
+      "permanent": true
+    },
+    {
+      "source": "/kategori/tercume-ve-ceviri",
+      "destination": "/kategori/yeminli-tercume",
+      "permanent": true
+    },
+    {
+      "source": "/kategori/yasli-bakimi",
+      "destination": "/kategori/yasli-ve-hasta-bakimi",
+      "permanent": true
+    },
+    {
+      "source": "/kategori/ascilik",
+      "destination": "/kategori/ascilik-ve-pastacilik",
+      "permanent": true
+    },
+    {
+      "source": "/kategori/depo-elemani",
+      "destination": "/kategori/depo-ve-sevkiyat",
+      "permanent": true
+    },
+    {
+      "source": "/kategori/animasyon",
+      "destination": "/kategori/animator",
+      "permanent": true
+    },
+    {
+      "source": "/kategori/radyo-tv-sunucu",
+      "destination": "/kategori/radyo-tv-sunucusu",
+      "permanent": true
+    },
+    {
+      "source": "/kategori/beta-siyam",
+      "destination": "/kategori/betta-baligi",
+      "permanent": true
+    },
+    {
+      "source": "/kategori/cichlid-ciklet",
+      "destination": "/kategori/ciklit-cichlid",
+      "permanent": true
+    },
+    {
+      "source": "/kategori/labirentli-balik",
+      "destination": "/kategori/gurami-ve-labirentli-balik",
+      "permanent": true
+    },
+    {
+      "source": "/kategori/asi-ve-muayene",
+      "destination": "/kategori/veteriner-hizmetleri",
+      "permanent": true
+    },
+    {
+      "source": "/kategori/aricilik-ekipmani",
+      "destination": "/kategori/aricilik-ekipmani-ve-kovan",
+      "permanent": true
+    },
+    {
+      "source": "/kategori/kovan-ve-bal-urunleri",
+      "destination": "/kategori/aricilik-ekipmani-ve-kovan",
+      "permanent": true
+    },
+    {
+      "source": "/kategori/gundelik-yardimci",
+      "destination": "/kategori/temizlikci-gundelik",
+      "permanent": true
+    },
+    {
+      "source": "/kategori/utucu",
+      "destination": "/kategori/camasir-ve-utu",
+      "permanent": true
+    },
+    {
+      "source": "/kategori/ofis-yardimcisi",
+      "destination": "/kategori/ofis-elemani",
+      "permanent": true
+    },
+    {
+      "source": "/kategori/aile-soforu",
+      "destination": "/kategori/ozel-sofor",
+      "permanent": true
+    },
+    {
+      "source": "/kategori/peyzaj-bakimi",
+      "destination": "/kategori/bahcivan",
+      "permanent": true
+    },
+    {
+      "source": "/kategori/kapici-apartman-gorevlisi",
+      "destination": "/kategori/kapici-site-gorevlisi",
+      "permanent": true
+    },
+    {
+      "source": "/kategori/site-gorevlisi",
+      "destination": "/kategori/kapici-site-gorevlisi",
+      "permanent": true
+    },
+    {
+      "source": "/kategori/yardimci-personel-genel",
+      "destination": "/kategori/evcil-hayvan-ve-diger",
+      "permanent": true
+    },
+    {
+      "source": "/kategori/beyaz-esya-ariyorum",
+      "destination": "/kategori/beyaz-esya-ariyorum-ev",
+      "permanent": true
+    },
+    {
+      "source": "/kategori/hizmet-ariyorum",
+      "destination": "/kategori/hizmet-ve-usta-talebi",
+      "permanent": true
+    },
+    {
+      "source": "/kategori/eczane-yeri",
+      "destination": "/kategori/is-yeri",
+      "permanent": true
+    },
+    {
+      "source": "/kategori/test-ve-olcum-osiloskop",
+      "destination": "/kategori/test-ve-olcum-cihazi",
+      "permanent": true
     }
   ],
   "rewrites": [
