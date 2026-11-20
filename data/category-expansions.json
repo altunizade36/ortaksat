@@ -19628,7 +19628,10 @@
     "Selkirk Rex",
     "Oriental",
     "Burmese",
-    "Sibirya Kedisi"
+    "Sibirya Kedisi",
+    "Bombay",
+    "Somali",
+    "Tonkinese"
    ]
   },
   {
@@ -19671,7 +19674,25 @@
     "Zağar",
     "Türk Tazısı",
     "Çatalburun",
-    "Kars Çoban Köpeği"
+    "Kars Çoban Köpeği",
+    "Miniature Schnauzer",
+    "Miniature Pinscher",
+    "Havanese",
+    "Coton de Tulear",
+    "Whippet",
+    "Greyhound",
+    "Afgan Tazısı",
+    "Newfoundland",
+    "Leonberger",
+    "Kafkas Çoban Köpeği",
+    "Alman Spitz",
+    "Kurzhaar (Alman Pointer)",
+    "Drahthaar",
+    "Epagneul Breton",
+    "Golden Doodle",
+    "Maltipoo",
+    "Labradoodle",
+    "Bolonez (Bolognese)"
    ]
   },
   {
@@ -19773,7 +19794,8 @@
    ],
    "add": [
     "Mısır Yılanı (Corn Snake)",
-    "Aksolotl"
+    "Aksolotl",
+    "Pacman Kurbağası"
    ]
   },
   {
@@ -20276,7 +20298,12 @@
     "Çelik Konstrüksiyon & Prefabrik",
     "Havuz Yapımı",
     "Sauna & Hamam Yapımı",
-    "Ses Yalıtımı"
+    "Ses Yalıtımı",
+    "Mutfak Tadilatı",
+    "Tente & Branda",
+    "Ufak Tamir & Montaj İşleri",
+    "Dekoratif Duvar Paneli",
+    "Jakuzi Montajı"
    ]
   },
   {
@@ -20298,7 +20325,11 @@
     "Havalandırma & Davlumbaz",
     "Otomatik Kapı & Bariyer",
     "Diafon & Görüntülü İnterkom",
-    "Network & Data Kablolama"
+    "Network & Data Kablolama",
+    "Su Kuyusu Açma (Sondaj)",
+    "Basınçlı Hava Tesisatı",
+    "Merkezi Süpürge Sistemi",
+    "Kazan Dairesi Kurulumu"
    ]
   },
   {
@@ -20314,7 +20345,13 @@
     "Fotoğraf Makinesi & Kamera Tamiri",
     "Elektrikli Scooter Tamiri",
     "Dikiş Makinesi Tamiri",
-    "Gözlük Tamiri"
+    "Gözlük Tamiri",
+    "Tablet Tamiri",
+    "Akıllı Saat Tamiri",
+    "UPS & Kesintisiz Güç Kaynağı Servisi",
+    "Endüstriyel Mutfak Ekipmanı Servisi",
+    "Ses Sistemi & Amfi Tamiri",
+    "Projeksiyon Tamiri"
    ]
   },
   {
@@ -20335,7 +20372,15 @@
     "Oto Anahtar & İmmobilizer",
     "Akü Servisi",
     "Elektrikli Araç Servisi",
-    "Karavan Tadilat"
+    "Karavan Tadilat",
+    "Jant Tamiri & Boyama",
+    "Araç Takip Sistemi Montajı",
+    "Çeki Demiri Montajı",
+    "Turbo Tamiri",
+    "Enjektör Tamiri",
+    "Oto Radyatör Tamiri",
+    "DPF Temizliği",
+    "Far Temizleme & Polisaj"
    ]
   },
   {
@@ -20348,7 +20393,16 @@
     "Canlı Hayvan Taşıma",
     "Soğuk Zincir Taşıma",
     "Parsiyel Yük Taşıma",
-    "Moloz & Hafriyat Taşıma"
+    "Moloz & Hafriyat Taşıma",
+    "Paketleme & Ambalaj Hizmeti",
+    "Beyaz Eşya Taşıma",
+    "Kasa (Para Kasası) Taşıma",
+    "Şoförlü Kamyonet Kiralama",
+    "Öğrenci Eşyası Taşıma",
+    "Motosiklet Taşıma",
+    "Tekne Taşıma",
+    "Ağır Yük & Makine Taşıma",
+    "Hamaliye Hizmeti"
    ]
   },
   {
@@ -20363,7 +20417,13 @@
     "Fabrika & Endüstriyel Temizlik",
     "Yatak Yıkama",
     "Çöp Ev Temizliği",
-    "Ev Düzenleme & Toplama"
+    "Ev Düzenleme & Toplama",
+    "Yangın & Sel Sonrası Temizlik",
+    "Okul & Kreş Temizliği",
+    "Otel & Restoran Temizliği",
+    "Çatı & Oluk Temizliği",
+    "Tekne & Yat Temizliği",
+    "Site Ortak Alan Temizliği"
    ]
   },
   {
@@ -20391,7 +20451,16 @@
     "Çadır, Masa & Sandalye Kiralama",
     "Çiçek & Gelin Buketi",
     "Davul Zurna & Mehter",
-    "Fasıl & Saz Ekibi"
+    "Fasıl & Saz Ekibi",
+    "Fotoğraf Kabini (Photobooth)",
+    "Dansçı & Gösteri Ekibi",
+    "Konser & Festival Organizasyonu",
+    "Piknik & Kamp Organizasyonu",
+    "Garson & Hostes Hizmeti",
+    "Sunucu & Spiker (Etkinlik)",
+    "Nikah Organizasyonu",
+    "Açılış Organizasyonu",
+    "Çocuk Etkinlik & Atölye"
    ]
   },
   {
@@ -20403,7 +20472,13 @@
     "Yenidoğan & Bebek Çekimi",
     "Hamile Çekimi",
     "Moda & Katalog Çekimi",
-    "Fotoğraf Baskı & Albüm"
+    "Fotoğraf Baskı & Albüm",
+    "Etkinlik & Konser Çekimi",
+    "Aile & Çocuk Fotoğrafı",
+    "Mezuniyet Fotoğrafı",
+    "Kurumsal & CV Fotoğrafı",
+    "Yemek Fotoğrafçılığı",
+    "360 Derece & Sanal Tur Çekimi"
    ]
   },
   {
@@ -20418,7 +20493,13 @@
     "Kaşe & Mühür",
     "Matbu Evrak (Fatura & Form)",
     "Lazer Kesim & Gravür",
-    "Fuar Standı"
+    "Fuar Standı",
+    "Ofset Baskı",
+    "Kitap & Dergi Baskı",
+    "Takvim & Ajanda Baskı",
+    "Kanvas & Fotoblok Baskı",
+    "Roll-up & Branda Baskı",
+    "Kupa & Bardak Baskı"
    ]
   },
   {
@@ -20435,7 +20516,11 @@
     "Enerji Kimlik Belgesi",
     "Zemin Etüdü",
     "İhale Danışmanlığı",
-    "Dış Ticaret Danışmanlığı"
+    "Dış Ticaret Danışmanlığı",
+    "Vize Danışmanlığı",
+    "Yurt Dışı Eğitim Danışmanlığı",
+    "KVKK Danışmanlığı",
+    "Franchise Danışmanlığı"
    ]
   },
   {
@@ -20446,7 +20531,11 @@
    "add": [
     "Yangın Tüpü Dolum & Bakım",
     "Konuşma Terapisti",
-    "Özel Ambulans Hizmeti"
+    "Özel Ambulans Hizmeti",
+    "Ergoterapi",
+    "Odyoloji & İşitme Testi",
+    "Doula & Doğum Koçu",
+    "Emzirme Danışmanlığı"
    ]
   },
   {
@@ -20525,7 +20614,9 @@
     "Lineer Cebir",
     "Ekonomi",
     "Hukuk Dersleri",
-    "IB & Cambridge Müfredatı"
+    "IB & Cambridge Müfredatı",
+    "Mantık",
+    "Sosyoloji & Psikoloji"
    ]
   },
   {
@@ -20546,7 +20637,16 @@
     "Özel Yetenek Sınavları",
     "SMMM Sınavları",
     "TOEIC",
-    "PTE"
+    "PTE",
+    "ÖABT",
+    "DHBT",
+    "Açık Lise Sınavları",
+    "Hakimlik & Savcılık Sınavı",
+    "Kaymakamlık Sınavı",
+    "SRC Belgesi Sınavı",
+    "Duolingo English Test",
+    "Cambridge Sınavları (KET-PET-FCE)",
+    "Kurum Sınavları (Banka & SPK)"
    ]
   },
   {
@@ -20561,7 +20661,26 @@
     "Hollandaca",
     "Osmanlıca",
     "Latince",
-    "Kürtçe"
+    "Kürtçe",
+    "Azerbaycan Türkçesi",
+    "Gürcüce",
+    "Ermenice",
+    "Ukraynaca",
+    "Bulgarca",
+    "Romence",
+    "Boşnakça",
+    "Arnavutça",
+    "İbranice",
+    "Hintçe",
+    "İsveççe",
+    "Lehçe",
+    "Macarca",
+    "Çekçe",
+    "Kazakça",
+    "Özbekçe",
+    "Zazaca",
+    "Lazca",
+    "Çerkezce"
    ]
   },
   {
@@ -20583,7 +20702,23 @@
     "Org & Klavye",
     "DJ & Müzik Prodüksiyonu",
     "Karikatür & Çizgi Roman",
-    "Dikiş & Moda Tasarımı"
+    "Dikiş & Moda Tasarımı",
+    "Viyola",
+    "Kontrbas",
+    "Arp",
+    "Mandolin",
+    "Bendir & Def",
+    "Tambur",
+    "Kaval",
+    "Zurna",
+    "Mey",
+    "Obua",
+    "Trombon",
+    "Korno",
+    "Mızıka (Armonika)",
+    "Koro",
+    "Mozaik & Vitray",
+    "Kaligrafi"
    ]
   },
   {
@@ -20607,7 +20742,14 @@
     "Kaykay",
     "Tırmanış",
     "Squash",
-    "Hentbol"
+    "Hentbol",
+    "Padel",
+    "Snowboard",
+    "Bilardo",
+    "Kano & Rafting",
+    "Yamaç Paraşütü",
+    "Su Kayağı & Wakeboard",
+    "Bowling"
    ]
   },
   {
@@ -20628,7 +20770,10 @@
     "Wing Chun",
     "Güreş",
     "Krav Maga",
-    "Kung Fu"
+    "Kung Fu",
+    "MMA",
+    "Capoeira",
+    "Kendo"
    ]
   },
   {
@@ -20646,7 +20791,18 @@
     "Dış Ticaret Eğitimi",
     "E-ticaret Eğitimi",
     "Finansal Okuryazarlık",
-    "İlk Yardım Eğitimi"
+    "İlk Yardım Eğitimi",
+    "Bilgisayar Donanımı & Tamir Eğitimi",
+    "Telefon Tamiri Eğitimi",
+    "İHA (Drone) Pilotluğu Eğitimi",
+    "Forklift Operatörlüğü Eğitimi",
+    "İş Makinesi Operatörlüğü Eğitimi",
+    "Kaynakçılık Eğitimi",
+    "Elektrik & Tesisat Eğitimi",
+    "Masaj Eğitimi",
+    "Proje Yönetimi & Agile",
+    "İnsan Kaynakları Eğitimi",
+    "Çiçek Tasarımı (Floristlik)"
    ]
   },
   {
@@ -20660,7 +20816,12 @@
     "Yaratıcı Yazarlık",
     "Akıl & Zeka Oyunları",
     "Ebeveyn Eğitimi",
-    "Briç"
+    "Briç",
+    "Hafıza Teknikleri",
+    "Mülakat Hazırlık",
+    "Etiket & Protokol",
+    "Siyer & Temel Dini Bilgiler",
+    "Zaman Yönetimi"
    ]
   },
   {
@@ -20671,7 +20832,12 @@
    "add": [
     "Oyun Terapisi",
     "Montessori Eğitimi",
-    "Duyu Bütünleme"
+    "Duyu Bütünleme",
+    "DEHB Destek Eğitimi",
+    "Diskalkuli & Matematik Güçlüğü",
+    "Üstün Yetenekli Çocuk Eğitimi",
+    "Erken Çocukluk Müdahalesi",
+    "Gölge Öğretmen Desteği"
    ]
   },
   {
@@ -20687,7 +20853,25 @@
     "Satış Müdürü",
     "Merchandiser",
     "Kozmetik Danışmanı",
-    "Ürün Müdürü"
+    "Ürün Müdürü",
+    "Bayi Satış Sorumlusu",
+    "Bölge Satış Müdürü",
+    "Kilit Müşteri Yöneticisi (Key Account)",
+    "Satış Destek Uzmanı",
+    "Medikal Mümessil",
+    "İlaç Tanıtım Temsilcisi",
+    "Mağaza Müdür Yardımcısı",
+    "Market Elemanı",
+    "Şarküteri Elemanı",
+    "Kuyumcu Satış Elemanı",
+    "Pazarlama Müdürü",
+    "Marka Yöneticisi",
+    "CRM Uzmanı",
+    "Performans Pazarlama Uzmanı",
+    "SEO Uzmanı",
+    "Pazar Araştırma Uzmanı",
+    "Sigorta Satış Temsilcisi",
+    "Ticari Müdür"
    ]
   },
   {
@@ -20707,7 +20891,16 @@
     "ERP / SAP Danışmanı",
     "Veritabanı Yöneticisi",
     "Ağ (Network) Uzmanı",
-    "İş Analisti"
+    "İş Analisti",
+    "Sistem Yöneticisi",
+    "Yazılım Mimarı",
+    "Bulut (Cloud) Mühendisi",
+    "Gömülü Yazılım Mühendisi",
+    "Scrum Master",
+    "Bilgi İşlem Müdürü",
+    "Veri Mühendisi",
+    "İş Zekâsı (BI) Uzmanı",
+    "Donanım Teknisyeni"
    ]
   },
   {
@@ -20726,7 +20919,15 @@
     "Mali Müşavir",
     "Arşiv Görevlisi",
     "İş Geliştirme Uzmanı",
-    "Dış Ticaret Uzmanı"
+    "Dış Ticaret Uzmanı",
+    "Müşteri Hizmetleri Temsilcisi",
+    "Kurumsal İletişim Uzmanı",
+    "Operasyon Uzmanı",
+    "İdari İşler Sorumlusu",
+    "Danışma Görevlisi",
+    "Kalite Yönetim Sistemleri Uzmanı",
+    "Gümrük Müşavir Yardımcısı",
+    "Planlama Uzmanı"
    ]
   },
   {
@@ -20751,7 +20952,21 @@
     "Matbaa Operatörü",
     "Yükleme & Boşaltma Elemanı",
     "Kalıp Ustası (Metal)",
-    "Sanayi Boyacısı"
+    "Sanayi Boyacısı",
+    "Torna & Freze Ustası",
+    "Elektrik-Elektronik Teknisyeni",
+    "Mekatronik Teknisyeni",
+    "Çelik Konstrüksiyon Montajcısı",
+    "Fabrika Müdürü",
+    "Üretim Şefi",
+    "Vardiya Amiri",
+    "Gıda Üretim Elemanı",
+    "Gemi Adamı & Gemici",
+    "Kaptan (Denizcilik)",
+    "Uçak Bakım Teknisyeni",
+    "Yer Hizmetleri Personeli",
+    "Stok Kontrol Elemanı",
+    "Boru Tesisatçısı (Endüstriyel)"
    ]
   },
   {
@@ -20771,7 +20986,22 @@
     "Kabin Memuru",
     "Cankurtaran",
     "Vale",
-    "Bellboy"
+    "Bellboy",
+    "Kebap & Ocakbaşı Ustası",
+    "Çiğ Köfte Ustası",
+    "Börek Ustası",
+    "Simit Ustası",
+    "Mantı & Gözleme Ustası",
+    "Fast Food Elemanı",
+    "Host & Hostes",
+    "Ön Büro Müdürü",
+    "Kat Şefi",
+    "Restoran Müdürü",
+    "Kafe Elemanı",
+    "Kapıcı & Apartman Görevlisi",
+    "Çamaşırhane Elemanı",
+    "Otopark Görevlisi",
+    "Rezervasyon & Seyahat Acentesi Personeli"
    ]
   },
   {
@@ -20783,7 +21013,8 @@
     "Kolorist",
     "Protez Tırnak Uzmanı",
     "Kaş & Kirpik Uzmanı",
-    "Dövme Sanatçısı"
+    "Dövme Sanatçısı",
+    "Saç Ekim Teknisyeni"
    ]
   },
   {
@@ -20802,7 +21033,18 @@
     "Okul Öncesi Öğretmeni",
     "Özel Eğitim Öğretmeni",
     "Rehber Öğretmen",
-    "Antrenör & Spor Eğitmeni"
+    "Antrenör & Spor Eğitmeni",
+    "Diş Hekimi Asistanı",
+    "Optisyen",
+    "Odyolog",
+    "Dil & Konuşma Terapisti",
+    "Ergoterapist",
+    "Biyolog",
+    "Hasta Danışmanı",
+    "Çocuk Gelişimci",
+    "Eğitim Müdürü & Koordinatör",
+    "Kurs Eğitmeni",
+    "Eczacı Kalfası"
    ]
   },
   {
@@ -20824,7 +21066,28 @@
     "Fayans Ustası",
     "Sıva Ustası",
     "Kalıpçı & Demirci (İnşaat)",
-    "Alçıpan Ustası"
+    "Alçıpan Ustası",
+    "Parke Ustası",
+    "Mermer Ustası",
+    "Çatı Ustası",
+    "İzolasyon Ustası",
+    "PVC & Alüminyum Doğrama Ustası",
+    "Mantolama Ustası",
+    "Duvar Ustası",
+    "Doğalgaz Tesisat Ustası",
+    "Klima Teknisyeni",
+    "Asansör Teknisyeni",
+    "Metraj & Hakediş Uzmanı",
+    "Proje Müdürü (İnşaat)",
+    "Saha Mühendisi",
+    "Elektronik Mühendisi",
+    "Bilgisayar Mühendisi",
+    "Mekatronik Mühendisi",
+    "Metalurji Mühendisi",
+    "Tekstil Mühendisi",
+    "Enerji Mühendisi",
+    "Otomotiv Mühendisi",
+    "İnşaat Ustabaşı"
    ]
   },
   {
@@ -20840,7 +21103,14 @@
     "Motion Designer",
     "Müzisyen",
     "Dansçı",
-    "Model & Manken"
+    "Model & Manken",
+    "Metin Yazarı (Copywriter)",
+    "Sanat Yönetmeni",
+    "Dekoratör",
+    "3D Tasarımcı",
+    "Endüstriyel Ürün Tasarımcısı",
+    "Işık Teknisyeni",
+    "Moda Tasarımcısı"
    ]
   },
   {
@@ -20859,7 +21129,20 @@
     "Düz Makineci",
     "Reçmeci",
     "Ortacı",
-    "Nakışçı"
+    "Nakışçı",
+    "Mevsimlik Tarım İşçisi",
+    "Fidanlık Elemanı",
+    "Kümes & Kanatlı Görevlisi",
+    "Balıkçı & Su Ürünleri Çalışanı",
+    "Numune Dikişçisi",
+    "Dokuma Operatörü",
+    "Örme Makinesi Operatörü",
+    "Boyahane Elemanı",
+    "Tekstil Baskı Operatörü",
+    "Kumaş Kontrolcü",
+    "İplik Operatörü",
+    "Ütü Paket Elemanı",
+    "Kalite Kontrol (Tekstil)"
    ]
   },
   {
@@ -20874,7 +21157,17 @@
     "Yedek Parça Satış Elemanı",
     "Oto Döşemeci",
     "Rot-Balans Ustası",
-    "Detaylı Temizlik (Detailing) Uzmanı"
+    "Detaylı Temizlik (Detailing) Uzmanı",
+    "Oto Klima Ustası",
+    "Şanzıman Ustası",
+    "Motor Ustası",
+    "Oto Cam Ustası",
+    "Oto Diagnostik Uzmanı",
+    "Servis Müdürü",
+    "Rent a Car Personeli",
+    "Pompacı (Akaryakıt İstasyonu)",
+    "Egzoz Ustası",
+    "Elektrikli Araç Teknisyeni"
    ]
   },
   {
@@ -20883,7 +21176,13 @@
     "Ev İşleri & Temizlik"
    ],
    "add": [
-    "Kişisel Asistan"
+    "Kişisel Asistan",
+    "Ütücü",
+    "Ev Yöneticisi (Kâhya)",
+    "Karı-Koca Personel",
+    "Villa & Yalı Personeli",
+    "Mutfak Yardımcısı",
+    "Yatılı Aşçı"
    ]
   },
   {
@@ -20892,7 +21191,9 @@
     "Şoför & Ulaşım"
    ],
    "add": [
-    "Getir-Götür & Kurye Yardımcısı"
+    "Getir-Götür & Kurye Yardımcısı",
+    "Yatılı Şoför",
+    "Şoför & Ev Personeli"
    ]
   },
   {
@@ -20902,7 +21203,10 @@
    ],
    "add": [
     "Bağ & Bahçe İşçisi",
-    "Ev Tamir Ustası (Tadilat Yardımcısı)"
+    "Ev Tamir Ustası (Tadilat Yardımcısı)",
+    "Villa Bakım Görevlisi",
+    "Bekçi",
+    "Çiftlik Evi Bekçisi"
    ]
   },
   {
@@ -20912,7 +21216,8 @@
    ],
    "add": [
     "Oyun Ablası / Abisi",
-    "Evde Müzik Öğretmeni"
+    "Evde Müzik Öğretmeni",
+    "Yabancı Dil Bilen Ev Öğretmeni"
    ]
   },
   {
@@ -20923,7 +21228,10 @@
    "add": [
     "Kedi Bakıcısı (Evde)",
     "At Bakıcısı (Seyis)",
-    "Çiftlik & Hayvan Bakıcısı"
+    "Çiftlik & Hayvan Bakıcısı",
+    "Akvaryum Bakımı",
+    "Kuş Bakıcısı",
+    "Ev Bekleme (House Sitting)"
    ]
   },
   {
@@ -30527,7 +30835,12 @@
     "Cam Balkon",
     "Çelik Kapı",
     "Amerikan Panel Kapı",
-    "Isıcam Değişimi"
+    "Isıcam Değişimi",
+    "Ahşap Kapı",
+    "Panjur & Kepenk",
+    "Pencere & Kapı Tamiri",
+    "Katlanır Cam Kapı",
+    "Sürme Kapı Sistemleri"
    ]
   },
   {
@@ -30562,7 +30875,12 @@
     "Protherm": [],
     "Airfel": [],
     "Ferroli": [],
-    "Alarko": []
+    "Alarko": [],
+    "Arçelik": [],
+    "Warmhaus": [],
+    "Baxi": [],
+    "Termodinamik": [],
+    "Beko": []
    }
   },
   {
@@ -30575,7 +30893,11 @@
     "Elektrik Arıza",
     "Bina Elektrik Tesisatı",
     "Aydınlatma Montajı",
-    "Sigorta & Pano Değişimi"
+    "Sigorta & Pano Değişimi",
+    "Priz & Anahtar Montajı",
+    "Elektrik Kablo Yenileme",
+    "Kaçak Akım Rölesi Montajı",
+    "Elektrik Projesi & Abonelik"
    ]
   },
   {
@@ -30588,7 +30910,12 @@
     "Musluk & Batarya Değişimi",
     "Sıhhi Tesisat Yenileme",
     "Klozet & Rezervuar Tamiri",
-    "Termosifon & Şofben Montajı"
+    "Termosifon & Şofben Montajı",
+    "Lavabo & Evye Montajı",
+    "Pis Su & Gider Tesisatı",
+    "Çamaşır & Bulaşık Makinesi Bağlantısı",
+    "Ana Vana & Sayaç Değişimi",
+    "Temiz Su Tesisatı"
    ]
   },
   {
@@ -30614,7 +30941,10 @@
    "add": [
     "Lavabo & Gider Açma",
     "Klozet Tıkanıklığı",
-    "Kanalizasyon Açma (Robotlu)"
+    "Kanalizasyon Açma (Robotlu)",
+    "Fosseptik Çekimi",
+    "Mutfak Gideri Açma",
+    "Yağmur Gideri & Rögar Açma"
    ]
   },
   {
@@ -30629,7 +30959,10 @@
     "Şarj Soketi Tamiri",
     "Anakart Tamiri",
     "Kasa & Arka Cam Değişimi",
-    "Kamera Değişimi"
+    "Kamera Değişimi",
+    "Hoparlör & Mikrofon Tamiri",
+    "Sıvı Teması Onarımı",
+    "Face ID & Parmak İzi Tamiri"
    ]
   },
   {
@@ -30644,7 +30977,12 @@
     "Anakart Tamiri (Bilgisayar)",
     "Klavye Değişimi",
     "Fan Temizliği & Termal Macun",
-    "Virüs Temizleme"
+    "Virüs Temizleme",
+    "SSD & RAM Yükseltme",
+    "Masaüstü PC Toplama",
+    "Laptop Menteşe & Kasa Tamiri",
+    "Laptop Batarya Değişimi",
+    "Ağ & Modem Kurulumu"
    ]
   },
   {
@@ -30658,7 +30996,11 @@
     "Çamaşır Makinesi Servisi",
     "Bulaşık Makinesi Servisi",
     "Fırın & Ocak Servisi",
-    "Kurutma Makinesi Servisi"
+    "Kurutma Makinesi Servisi",
+    "Ankastre Montajı",
+    "Derin Dondurucu Servisi",
+    "Su Sebili Servisi",
+    "Davlumbaz & Aspiratör Servisi"
    ]
   },
   {
@@ -30670,7 +31012,10 @@
    "add": [
     "TV Panel & Ekran Tamiri",
     "TV Anakart Tamiri",
-    "TV Duvar Montajı"
+    "TV Duvar Montajı",
+    "TV Arka Aydınlatma (LED) Değişimi",
+    "TV Güç Kartı Tamiri",
+    "Smart TV Yazılım & Kurulum"
    ]
   },
   {
@@ -30713,7 +31058,12 @@
     "Fare & Kemirgen Mücadelesi",
     "Pire İlaçlama",
     "Sivrisinek İlaçlama",
-    "Akrep & Böcek İlaçlama"
+    "Akrep & Böcek İlaçlama",
+    "Güve İlaçlama",
+    "Kene İlaçlama",
+    "Karınca İlaçlama",
+    "Arı & Eşek Arısı Yuvası Temizliği",
+    "Kuş Uzaklaştırma (Kuş Teli)"
    ]
   },
   {
@@ -30725,7 +31075,10 @@
    "add": [
     "Halı Yıkama",
     "Koltuk Yıkama",
-    "Araç Koltuk Yıkama"
+    "Araç Koltuk Yıkama",
+    "Yerinde Halı Yıkama",
+    "El Halısı & Kilim Yıkama",
+    "Sandalye Yıkama"
    ]
   },
   {
@@ -30737,7 +31090,10 @@
    "add": [
     "Günlük Ev Temizliği",
     "Detaylı Ev Temizliği",
-    "Taşınma Temizliği"
+    "Taşınma Temizliği",
+    "Haftalık Ev Temizliği",
+    "Boş Ev Temizliği",
+    "Villa Temizliği"
    ]
   },
   {
@@ -30749,7 +31105,10 @@
    "add": [
     "Erkek Berber",
     "Kadın Kuaför",
-    "Çocuk Kuaförü"
+    "Çocuk Kuaförü",
+    "Gelin Saçı",
+    "Topuz & Fön",
+    "Sakal Tıraşı & Bakım"
    ]
   },
   {
@@ -30804,7 +31163,13 @@
     "Miras Hukuku",
     "Ticaret & Şirketler Hukuku",
     "İcra & Alacak Takibi",
-    "Trafik Kazası & Tazminat"
+    "Trafik Kazası & Tazminat",
+    "Tüketici Hukuku",
+    "Bilişim Hukuku",
+    "İdare Hukuku",
+    "Vatandaşlık & Yabancılar Hukuku",
+    "Sağlık Hukuku (Malpraktis)",
+    "Fikri Mülkiyet Hukuku"
    ]
   },
   {
@@ -30867,7 +31232,9 @@
     "Ortaokul Matematik (LGS)",
     "Lise Matematik (TYT-AYT)",
     "Üniversite Matematiği",
-    "KPSS & ALES Matematik"
+    "KPSS & ALES Matematik",
+    "Mental Aritmetik",
+    "Olimpiyat Matematiği"
    ]
   },
   {
@@ -30912,7 +31279,12 @@
    "add": [
     "Mühendislik Dersleri",
     "Tıp & Sağlık Bilimleri Dersleri",
-    "İşletme & İktisat Dersleri"
+    "İşletme & İktisat Dersleri",
+    "Mimarlık Dersleri",
+    "Bilgisayar Bilimleri Dersleri",
+    "Fen & Edebiyat Fakültesi Dersleri",
+    "Muhasebe & Finans Dersleri",
+    "Eğitim Fakültesi Dersleri"
    ]
   },
   {
@@ -30927,7 +31299,10 @@
     "İş İngilizcesi",
     "Çocuklar İçin İngilizce",
     "Okul İngilizcesi",
-    "YDT (YKS Dil)"
+    "YDT (YKS Dil)",
+    "Akademik İngilizce",
+    "Hazırlık Sınıfı İngilizcesi",
+    "Telaffuz & Aksan"
    ]
   },
   {
@@ -30964,7 +31339,9 @@
    ],
    "add": [
     "Genel Fransızca",
-    "DELF & DALF Hazırlık"
+    "DELF & DALF Hazırlık",
+    "Fransızca Konuşma Pratiği",
+    "Çocuklar İçin Fransızca"
    ]
   },
   {
@@ -31014,7 +31391,11 @@
     "Yağlı Boya",
     "Suluboya",
     "Akrilik",
-    "Dijital Çizim"
+    "Dijital Çizim",
+    "Pastel Boya",
+    "Portre Çizimi",
+    "Manga & Anime Çizimi",
+    "Çocuk Resim Atölyesi"
    ]
   },
   {
@@ -31057,7 +31438,10 @@
     "Kişisel Antrenör (PT)",
     "Online PT",
     "Fonksiyonel Antrenman",
-    "CrossFit"
+    "CrossFit",
+    "Calisthenics",
+    "Evde PT",
+    "Kadınlara Özel PT"
    ]
   },
   {
@@ -31070,7 +31454,10 @@
     "Yoga",
     "Reformer Pilates",
     "Mat Pilates",
-    "Hamile Yogası"
+    "Hamile Yogası",
+    "Aerial Yoga",
+    "Çocuk Yogası",
+    "Klinik Pilates"
    ]
   },
   {
@@ -31097,7 +31484,16 @@
     "C# & .NET",
     "C & C++",
     "Mobil Uygulama Geliştirme",
-    "Çocuklar İçin Kodlama (Scratch)"
+    "Çocuklar İçin Kodlama (Scratch)",
+    "PHP",
+    "Go (Golang)",
+    "Kotlin",
+    "Swift (iOS)",
+    "React",
+    "SQL",
+    "Flutter",
+    "Unity & Oyun Programlama",
+    "Algoritma & Veri Yapıları"
    ]
   },
   {
@@ -31121,7 +31517,10 @@
    "add": [
     "Photoshop",
     "Illustrator",
-    "InDesign"
+    "InDesign",
+    "CorelDRAW",
+    "Canva",
+    "After Effects"
    ]
   },
   {
@@ -31134,7 +31533,10 @@
     "Manuel Vites Direksiyon",
     "Otomatik Vites Direksiyon",
     "Direksiyon Sınavı Hazırlık",
-    "Ehliyetliye Pratik (Tazeleme)"
+    "Ehliyetliye Pratik (Tazeleme)",
+    "Motosiklet (A Sınıfı)",
+    "Ağır Vasıta (C-D-E Sınıfı)",
+    "Direksiyon Korkusunu Yenme"
    ]
   },
   {
@@ -31158,7 +31560,12 @@
    "add": [
     "Kamyon Şoförü",
     "Otobüs Şoförü",
-    "Özel Şoför"
+    "Özel Şoför",
+    "Kamyonet Şoförü",
+    "Tanker Şoförü",
+    "Dağıtım Şoförü",
+    "Ambulans Şoförü",
+    "Minibüs & Dolmuş Şoförü"
    ]
   },
   {
@@ -35037,6 +35444,2358 @@
     "Elleci": [],
     "Schock": []
    }
+  },
+  {
+   "path": [
+    "Ustalar & Hizmetler",
+    "Ev Tadilat & Dekorasyon",
+    "Ev Tadilat"
+   ],
+   "add": [
+    "Komple Ev Tadilatı",
+    "Anahtar Teslim Tadilat",
+    "Eski Ev Yenileme",
+    "Ofis & Dükkan Tadilatı"
+   ]
+  },
+  {
+   "path": [
+    "Ustalar & Hizmetler",
+    "Ev Tadilat & Dekorasyon",
+    "Alçı & Alçıpan"
+   ],
+   "add": [
+    "Saten Alçı",
+    "Alçı Sıva",
+    "Alçıpan Bölme Duvar",
+    "Gizli Perdelik & Işık Bandı"
+   ]
+  },
+  {
+   "path": [
+    "Ustalar & Hizmetler",
+    "Ev Tadilat & Dekorasyon",
+    "Fayans & Seramik"
+   ],
+   "add": [
+    "Banyo Fayansı",
+    "Mutfak Tezgah Arası Seramik",
+    "Yer Seramiği & Granit",
+    "Derz Dolgu & Silikon Yenileme",
+    "Fayans Üstüne Fayans"
+   ]
+  },
+  {
+   "path": [
+    "Ustalar & Hizmetler",
+    "Ev Tadilat & Dekorasyon",
+    "Cam & Alüminyum"
+   ],
+   "add": [
+    "Ayna Montajı",
+    "Cam Kesim & Değişimi",
+    "Giyotin Cam Sistemleri",
+    "Alüminyum Cephe Giydirme",
+    "Temperli Cam Korkuluk"
+   ]
+  },
+  {
+   "path": [
+    "Ustalar & Hizmetler",
+    "Ev Tadilat & Dekorasyon",
+    "Marangoz & Doğrama"
+   ],
+   "add": [
+    "Özel Ölçü Mobilya Yapımı",
+    "Ahşap Tamiri & Restorasyon",
+    "Ahşap Deck & Teras",
+    "Ahşap Ev & Bungalov Yapımı",
+    "Kütüphane & Raf Yapımı",
+    "Ahşap Duvar Kaplama"
+   ]
+  },
+  {
+   "path": [
+    "Ustalar & Hizmetler",
+    "Ev Tadilat & Dekorasyon",
+    "Demir & Ferforje"
+   ],
+   "add": [
+    "Ferforje Korkuluk",
+    "Bahçe Kapısı",
+    "Pencere Demiri",
+    "Demir Merdiven",
+    "Kaynak İşleri"
+   ]
+  },
+  {
+   "path": [
+    "Ustalar & Hizmetler",
+    "Ev Tadilat & Dekorasyon",
+    "Asma Tavan"
+   ],
+   "add": [
+    "Alçıpan Asma Tavan",
+    "Gergi Tavan",
+    "Taşyünü Asma Tavan",
+    "Ahşap Tavan Kaplama",
+    "Metal Asma Tavan"
+   ]
+  },
+  {
+   "path": [
+    "Ustalar & Hizmetler",
+    "Ev Tadilat & Dekorasyon",
+    "İç Mimari & Dekorasyon"
+   ],
+   "add": [
+    "Ev Dekorasyonu",
+    "Ofis İç Mimarisi",
+    "Mağaza & Cafe Dekorasyonu",
+    "Otel & Restoran İç Mimarisi",
+    "Dekorasyon Danışmanlığı"
+   ]
+  },
+  {
+   "path": [
+    "Ustalar & Hizmetler",
+    "Ev Tadilat & Dekorasyon",
+    "Bahçe & Peyzaj Düzenleme"
+   ],
+   "add": [
+    "Rulo Çim & Çim Ekimi",
+    "Otomatik Sulama Sistemi",
+    "Ağaç & Fidan Dikimi",
+    "Bahçe Aydınlatma",
+    "Peyzaj Projesi",
+    "Dikey Bahçe",
+    "Süs Havuzu & Şelale",
+    "Yapay Çim Döşeme"
+   ]
+  },
+  {
+   "path": [
+    "Ustalar & Hizmetler",
+    "Ev Tadilat & Dekorasyon",
+    "Mantolama & Dış Cephe"
+   ],
+   "add": [
+    "Isı Yalıtımı (Mantolama)",
+    "Kompozit Panel Kaplama",
+    "Siding Kaplama",
+    "Dış Cephe Taş Kaplama",
+    "Cephe Tamiri"
+   ]
+  },
+  {
+   "path": [
+    "Ustalar & Hizmetler",
+    "Ev Tadilat & Dekorasyon",
+    "Su Yalıtımı & İzolasyon"
+   ],
+   "add": [
+    "Çatı Su Yalıtımı",
+    "Temel & Bodrum Yalıtımı",
+    "Teras & Balkon Yalıtımı",
+    "Banyo Su Yalıtımı",
+    "Havuz Yalıtımı",
+    "Rutubet & Nem Tedavisi"
+   ]
+  },
+  {
+   "path": [
+    "Ustalar & Hizmetler",
+    "Ev Tadilat & Dekorasyon",
+    "Çatı & Oluk"
+   ],
+   "add": [
+    "Çatı Yapımı",
+    "Çatı Tamiri & Aktarma",
+    "Kiremit Değişimi",
+    "Oluk & Yağmur İnişi",
+    "Shingle Kaplama",
+    "Sandviç Panel Çatı",
+    "Çatı Arası Yalıtımı"
+   ]
+  },
+  {
+   "path": [
+    "Ustalar & Hizmetler",
+    "Ev Tadilat & Dekorasyon",
+    "Banyo Tadilatı"
+   ],
+   "add": [
+    "Komple Banyo Yenileme",
+    "Küvetten Duşa Dönüşüm",
+    "Gömme Rezervuar Montajı",
+    "Lavabo & Klozet Değişimi",
+    "Banyo Dolabı & Ayna Montajı"
+   ]
+  },
+  {
+   "path": [
+    "Ustalar & Hizmetler",
+    "Ev Tadilat & Dekorasyon",
+    "Sıva & Şap"
+   ],
+   "add": [
+    "Kaba Sıva",
+    "İnce Sıva",
+    "Makine Sıvası",
+    "Şap Dökümü",
+    "Tesviye Şapı"
+   ]
+  },
+  {
+   "path": [
+    "Ustalar & Hizmetler",
+    "Ev Tadilat & Dekorasyon",
+    "Perde & Stor Montajı"
+   ],
+   "add": [
+    "Stor Perde",
+    "Zebra Perde",
+    "Jaluzi",
+    "Tül & Fon Perde",
+    "Motorlu Perde",
+    "Dikey Perde",
+    "Ahşap Jaluzi"
+   ]
+  },
+  {
+   "path": [
+    "Ustalar & Hizmetler",
+    "Ev Tadilat & Dekorasyon",
+    "Sineklik Montajı"
+   ],
+   "add": [
+    "Plise Sineklik",
+    "Menteşeli Sineklik",
+    "Sürme Sineklik",
+    "Stor Sineklik",
+    "Kapı Sinekliği"
+   ]
+  },
+  {
+   "path": [
+    "Ustalar & Hizmetler",
+    "Ev Tadilat & Dekorasyon",
+    "Mermer & Granit Tezgah"
+   ],
+   "add": [
+    "Mutfak Tezgahı",
+    "Kuvars & Çimstone Tezgah",
+    "Mermer Merdiven & Basamak",
+    "Mermer Silme & Cilalama",
+    "Denizlik & Eşik"
+   ]
+  },
+  {
+   "path": [
+    "Ustalar & Hizmetler",
+    "Ev Tadilat & Dekorasyon",
+    "Panel Çit & Tel Örgü"
+   ],
+   "add": [
+    "Panel Çit",
+    "Tel Örgü",
+    "Jiletli Tel",
+    "Bahçe Duvarı & Çit"
+   ]
+  },
+  {
+   "path": [
+    "Ustalar & Hizmetler",
+    "Ev Tadilat & Dekorasyon",
+    "Pergole & Kış Bahçesi"
+   ],
+   "add": [
+    "Bioklimatik Pergole",
+    "Rolling Roof",
+    "Kış Bahçesi",
+    "Ahşap Pergole",
+    "Tente Pergole"
+   ]
+  },
+  {
+   "path": [
+    "Ustalar & Hizmetler",
+    "Ev Tadilat & Dekorasyon",
+    "Merdiven Yapımı"
+   ],
+   "add": [
+    "Ahşap Merdiven",
+    "Döner Merdiven",
+    "Çelik Merdiven",
+    "Merdiven Basamak Kaplama"
+   ]
+  },
+  {
+   "path": [
+    "Ustalar & Hizmetler",
+    "Ev Tadilat & Dekorasyon",
+    "Havuz Yapımı"
+   ],
+   "add": [
+    "Betonarme Havuz",
+    "Prefabrik Havuz",
+    "Havuz Ekipman Montajı",
+    "Havuz Kaplama & Mozaik"
+   ]
+  },
+  {
+   "path": [
+    "Ustalar & Hizmetler",
+    "Ev Tadilat & Dekorasyon",
+    "Epoksi Zemin Kaplama"
+   ],
+   "add": [
+    "Epoksi Zemin",
+    "Poliüretan Zemin",
+    "Mikro Beton Kaplama",
+    "Endüstriyel Zemin (Helikopter Perdah)"
+   ]
+  },
+  {
+   "path": [
+    "Ustalar & Hizmetler",
+    "Tesisat & Teknik",
+    "Doğalgaz Tesisatı"
+   ],
+   "add": [
+    "Doğalgaz Proje & Tesisat",
+    "Kombi Montajı",
+    "Doğalgaz Kaçak Kontrolü",
+    "Sayaç & Hat Taşıma",
+    "Ocak Dönüşümü (Doğalgaz)"
+   ]
+  },
+  {
+   "path": [
+    "Ustalar & Hizmetler",
+    "Tesisat & Teknik",
+    "Güneş Enerjisi Kurulumu"
+   ],
+   "add": [
+    "Çatı GES Kurulumu",
+    "Arazi GES Kurulumu",
+    "Off-Grid Sistem (Bağ Evi & Karavan)",
+    "Güneş Paneli Bakım & Arıza",
+    "Güneş Enerjili Su Isıtıcı"
+   ]
+  },
+  {
+   "path": [
+    "Ustalar & Hizmetler",
+    "Tesisat & Teknik",
+    "Uydu & Anten"
+   ],
+   "add": [
+    "Uydu Çanak Kurulumu",
+    "Merkezi Uydu Sistemi",
+    "Uydu Ayarı & Arıza",
+    "Karasal Anten Montajı"
+   ]
+  },
+  {
+   "path": [
+    "Ustalar & Hizmetler",
+    "Tesisat & Teknik",
+    "Kalorifer & Radyatör Tesisatı"
+   ],
+   "add": [
+    "Petek Temizliği",
+    "Petek & Radyatör Montajı",
+    "Kalorifer Kazanı Servisi",
+    "Kalorifer Tesisatı Yenileme"
+   ]
+  },
+  {
+   "path": [
+    "Ustalar & Hizmetler",
+    "Tesisat & Teknik",
+    "Su Deposu & Hidrofor"
+   ],
+   "add": [
+    "Hidrofor Montajı & Tamiri",
+    "Su Deposu Montajı",
+    "Dalgıç Pompa Servisi",
+    "Yangın Pompası Servisi"
+   ]
+  },
+  {
+   "path": [
+    "Ustalar & Hizmetler",
+    "Tesisat & Teknik",
+    "Akıllı Ev Sistemleri"
+   ],
+   "add": [
+    "Akıllı Aydınlatma",
+    "Akıllı Priz & Anahtar",
+    "Akıllı Kilit Montajı",
+    "Ev Otomasyonu (KNX)"
+   ]
+  },
+  {
+   "path": [
+    "Ustalar & Hizmetler",
+    "Tesisat & Teknik",
+    "Asansör Bakım"
+   ],
+   "add": [
+    "Asansör Periyodik Bakım",
+    "Asansör Arıza & Tamir",
+    "Asansör Modernizasyonu",
+    "Yük & Engelli Asansörü Montajı"
+   ]
+  },
+  {
+   "path": [
+    "Ustalar & Hizmetler",
+    "Tesisat & Teknik",
+    "Jeneratör Servisi"
+   ],
+   "add": [
+    "Jeneratör Bakımı",
+    "Jeneratör Montajı",
+    "Jeneratör Kiralama"
+   ]
+  },
+  {
+   "path": [
+    "Ustalar & Hizmetler",
+    "Teknik Servis & Tamir",
+    "Mobilya Montaj & Tamir"
+   ],
+   "add": [
+    "Mobilya Kurulumu",
+    "Koltuk Döşeme",
+    "Mobilya Tamiri & Rötuş",
+    "Sandalye & Masa Tamiri",
+    "Ofis Mobilyası Kurulumu"
+   ]
+  },
+  {
+   "path": [
+    "Ustalar & Hizmetler",
+    "Teknik Servis & Tamir",
+    "Saat Tamiri"
+   ],
+   "add": [
+    "Pil & Kayış Değişimi",
+    "Mekanik Saat Bakımı",
+    "Duvar & Kule Saati Tamiri"
+   ]
+  },
+  {
+   "path": [
+    "Ustalar & Hizmetler",
+    "Teknik Servis & Tamir",
+    "Ayakkabı & Çanta Tamiri"
+   ],
+   "add": [
+    "Taban & Pençe Değişimi",
+    "Fermuar Değişimi",
+    "Deri Boyama & Onarım",
+    "Bavul & Valiz Tamiri"
+   ]
+  },
+  {
+   "path": [
+    "Ustalar & Hizmetler",
+    "Teknik Servis & Tamir",
+    "Tekstil Tadilatı & Terzi"
+   ],
+   "add": [
+    "Paça & Boy Kısaltma",
+    "Fermuar & Düğme Değişimi",
+    "Gelinlik & Abiye Tadilatı",
+    "Özel Dikim (Terzi)",
+    "Deri & Kürk Tadilatı"
+   ]
+  },
+  {
+   "path": [
+    "Ustalar & Hizmetler",
+    "Araç Servis & Bakım",
+    "Oto Kaporta & Boya"
+   ],
+   "add": [
+    "Lokal Boya",
+    "Komple Boya",
+    "Kaporta Düzeltme",
+    "Çizik & Rötuş Boya",
+    "Tampon Tamiri"
+   ]
+  },
+  {
+   "path": [
+    "Ustalar & Hizmetler",
+    "Araç Servis & Bakım",
+    "Oto Lastik Tamiri"
+   ],
+   "add": [
+    "Lastik Değişimi",
+    "Lastik Oteli",
+    "Mobil Lastikçi",
+    "Lastik Tamiri (Yama)"
+   ]
+  },
+  {
+   "path": [
+    "Ustalar & Hizmetler",
+    "Araç Servis & Bakım",
+    "Oto Elektrik & Ses"
+   ],
+   "add": [
+    "Oto Ses Sistemi",
+    "Multimedya & Ekran Montajı",
+    "Geri Görüş Kamerası & Park Sensörü",
+    "Far & Aydınlatma Tamiri",
+    "Marş & Şarj Dinamosu Tamiri"
+   ]
+  },
+  {
+   "path": [
+    "Ustalar & Hizmetler",
+    "Araç Servis & Bakım",
+    "Oto Modifiye"
+   ],
+   "add": [
+    "Chip Tuning & ECU Yazılım",
+    "Body Kit & Spoiler",
+    "Ambiyans Aydınlatma",
+    "Folyo Kaplama"
+   ]
+  },
+  {
+   "path": [
+    "Ustalar & Hizmetler",
+    "Araç Servis & Bakım",
+    "Oto Temizlik & Yıkama"
+   ],
+   "add": [
+    "İç-Dış Yıkama",
+    "Detaylı İç Temizlik",
+    "Pasta & Cila",
+    "Motor Yıkama",
+    "Mobil Oto Yıkama",
+    "Buharlı Yıkama"
+   ]
+  },
+  {
+   "path": [
+    "Ustalar & Hizmetler",
+    "Araç Servis & Bakım",
+    "Çekici & Yol Yardım"
+   ],
+   "add": [
+    "Oto Çekici",
+    "Motosiklet Çekici",
+    "Ağır Vasıta Çekici",
+    "Akü Takviye & Yol Yardım"
+   ]
+  },
+  {
+   "path": [
+    "Ustalar & Hizmetler",
+    "Araç Servis & Bakım",
+    "Motosiklet Servisi"
+   ],
+   "add": [
+    "Motosiklet Periyodik Bakım",
+    "Motosiklet Lastik",
+    "Motosiklet Kaporta & Boya",
+    "Motosiklet Elektrik",
+    "Scooter & Moped Servisi"
+   ]
+  },
+  {
+   "path": [
+    "Ustalar & Hizmetler",
+    "Araç Servis & Bakım",
+    "Oto Cam & Cam Filmi"
+   ],
+   "add": [
+    "Ön Cam Değişimi",
+    "Cam Tamiri (Taş İzi)",
+    "Cam Filmi",
+    "Cam Krikosu & Mekanizma"
+   ]
+  },
+  {
+   "path": [
+    "Ustalar & Hizmetler",
+    "Araç Servis & Bakım",
+    "Tekne & Yat Tamiri"
+   ],
+   "add": [
+    "Tekne Bakım & Zehirli Boya",
+    "Deniz Motoru Servisi",
+    "Tekne Elektrik & Elektronik",
+    "Jelkot & Fiber Tamiri",
+    "Tekne Döşeme & Branda"
+   ]
+  },
+  {
+   "path": [
+    "Ustalar & Hizmetler",
+    "Temizlik & Bakım",
+    "Cam Temizliği"
+   ],
+   "add": [
+    "Ev Cam Silme",
+    "Bina Cephe Cam Temizliği (İple Erişim)",
+    "Mağaza Vitrin Temizliği"
+   ]
+  },
+  {
+   "path": [
+    "Ustalar & Hizmetler",
+    "Temizlik & Bakım",
+    "Kuru Temizleme & Çamaşır"
+   ],
+   "add": [
+    "Ütü Hizmeti",
+    "Gelinlik Temizleme",
+    "Deri & Süet Temizleme",
+    "Ayakkabı Temizleme",
+    "Yorgan & Battaniye Yıkama"
+   ]
+  },
+  {
+   "path": [
+    "Ustalar & Hizmetler",
+    "Temizlik & Bakım",
+    "Bahçe Bakımı"
+   ],
+   "add": [
+    "Çim Biçme",
+    "Ağaç Kesimi & Budama",
+    "Bahçe Gübreleme",
+    "Ot & Çalı Temizliği",
+    "Arazi Temizliği"
+   ]
+  },
+  {
+   "path": [
+    "Ustalar & Hizmetler",
+    "Temizlik & Bakım",
+    "Dezenfeksiyon"
+   ],
+   "add": [
+    "Ev Dezenfeksiyonu",
+    "İş Yeri Dezenfeksiyonu",
+    "Araç Dezenfeksiyonu",
+    "Ozon Dezenfeksiyonu"
+   ]
+  },
+  {
+   "path": [
+    "Ustalar & Hizmetler",
+    "Temizlik & Bakım",
+    "Ofis Temizliği"
+   ],
+   "add": [
+    "Günlük Ofis Temizliği",
+    "Detaylı Ofis Temizliği",
+    "Mağaza Temizliği"
+   ]
+  },
+  {
+   "path": [
+    "Ustalar & Hizmetler",
+    "Güzellik & Kişisel Bakım",
+    "Saç Boyama & Bakım"
+   ],
+   "add": [
+    "Ombre & Balyaj",
+    "Röfle",
+    "Keratin Bakımı",
+    "Brezilya Fönü",
+    "Perma & Dalga",
+    "Saç Botoksu"
+   ]
+  },
+  {
+   "path": [
+    "Ustalar & Hizmetler",
+    "Güzellik & Kişisel Bakım",
+    "Cilt Bakımı"
+   ],
+   "add": [
+    "Klasik Cilt Bakımı",
+    "Hydrafacial",
+    "Leke Bakımı",
+    "Dermapen",
+    "Kimyasal Peeling",
+    "Erkek Cilt Bakımı"
+   ]
+  },
+  {
+   "path": [
+    "Ustalar & Hizmetler",
+    "Güzellik & Kişisel Bakım",
+    "Ağda & Epilasyon"
+   ],
+   "add": [
+    "Sir Ağda",
+    "Sıcak Ağda",
+    "Erkek Ağda",
+    "İğneli Epilasyon"
+   ]
+  },
+  {
+   "path": [
+    "Ustalar & Hizmetler",
+    "Güzellik & Kişisel Bakım",
+    "Lazer Epilasyon"
+   ],
+   "add": [
+    "Buz Lazer",
+    "Alexandrite Lazer",
+    "Diode Lazer",
+    "Erkek Lazer Epilasyon"
+   ]
+  },
+  {
+   "path": [
+    "Ustalar & Hizmetler",
+    "Güzellik & Kişisel Bakım",
+    "Manikür & Pedikür"
+   ],
+   "add": [
+    "Kalıcı Oje",
+    "Spa Manikür & Pedikür",
+    "Medikal Pedikür",
+    "Erkek Manikür"
+   ]
+  },
+  {
+   "path": [
+    "Ustalar & Hizmetler",
+    "Güzellik & Kişisel Bakım",
+    "Kalıcı Makyaj"
+   ],
+   "add": [
+    "Microblading",
+    "Kaş Pudralama",
+    "Dudak Renklendirme",
+    "Dipliner & Eyeliner",
+    "Kalıcı Makyaj Silme"
+   ]
+  },
+  {
+   "path": [
+    "Ustalar & Hizmetler",
+    "Güzellik & Kişisel Bakım",
+    "Kaş & Kirpik"
+   ],
+   "add": [
+    "İpek Kirpik",
+    "Kirpik Lifting",
+    "Kaş Laminasyonu",
+    "İple Kaş Alma",
+    "Kaş & Kirpik Boyama"
+   ]
+  },
+  {
+   "path": [
+    "Ustalar & Hizmetler",
+    "Güzellik & Kişisel Bakım",
+    "Protez Tırnak & Nail Art"
+   ],
+   "add": [
+    "Jel Tırnak",
+    "Akrilik Tırnak",
+    "Protez Tırnak Bakımı",
+    "Nail Art"
+   ]
+  },
+  {
+   "path": [
+    "Ustalar & Hizmetler",
+    "Güzellik & Kişisel Bakım",
+    "Bölgesel İncelme"
+   ],
+   "add": [
+    "Lenf Drenaj Masajı",
+    "G5 Masajı",
+    "Kavitasyon",
+    "Selülit Bakımı"
+   ]
+  },
+  {
+   "path": [
+    "Ustalar & Hizmetler",
+    "Organizasyon & Etkinlik",
+    "Düğün Organizasyon"
+   ],
+   "add": [
+    "Kır Düğünü",
+    "Salon Düğünü",
+    "Tekne & Sahil Düğünü",
+    "Düğün Planlayıcısı (Wedding Planner)"
+   ]
+  },
+  {
+   "path": [
+    "Ustalar & Hizmetler",
+    "Organizasyon & Etkinlik",
+    "Doğum Günü"
+   ],
+   "add": [
+    "Çocuk Doğum Günü",
+    "Yetişkin Doğum Günü",
+    "Evde Doğum Günü Süslemesi"
+   ]
+  },
+  {
+   "path": [
+    "Ustalar & Hizmetler",
+    "Organizasyon & Etkinlik",
+    "Catering & İkram"
+   ],
+   "add": [
+    "Düğün Yemeği",
+    "Kokteyl & Fingerfood",
+    "Kahvaltı Organizasyonu",
+    "Kurumsal Yemek & Tabldot",
+    "Mangal & Barbekü Ekibi",
+    "Özel Gün Pastası",
+    "İftar Organizasyonu"
+   ]
+  },
+  {
+   "path": [
+    "Ustalar & Hizmetler",
+    "Organizasyon & Etkinlik",
+    "Müzik & DJ"
+   ],
+   "add": [
+    "DJ",
+    "Orkestra",
+    "Canlı Müzik & Solist",
+    "Yaylı Grup (Keman)",
+    "Akustik Grup"
+   ]
+  },
+  {
+   "path": [
+    "Ustalar & Hizmetler",
+    "Organizasyon & Etkinlik",
+    "Süsleme & Balon"
+   ],
+   "add": [
+    "Balon Süsleme",
+    "Masa & Salon Süsleme",
+    "Kapı & Oda Süsleme",
+    "Konsept Parti Süsleme"
+   ]
+  },
+  {
+   "path": [
+    "Ustalar & Hizmetler",
+    "Organizasyon & Etkinlik",
+    "Sahne & Ses Sistemi"
+   ],
+   "add": [
+    "Ses Sistemi Kiralama",
+    "Işık Sistemi Kiralama",
+    "LED Ekran Kiralama",
+    "Sahne & Podyum Kurulumu"
+   ]
+  },
+  {
+   "path": [
+    "Ustalar & Hizmetler",
+    "Organizasyon & Etkinlik",
+    "Palyaço & Animasyon"
+   ],
+   "add": [
+    "Palyaço",
+    "Sihirbaz & İllüzyonist",
+    "Yüz Boyama",
+    "Maskot & Kostümlü Karakter",
+    "Balon Sanatçısı",
+    "Kukla Gösterisi"
+   ]
+  },
+  {
+   "path": [
+    "Ustalar & Hizmetler",
+    "Matbaa & Reklam",
+    "Tabela & Reklam Uygulama"
+   ],
+   "add": [
+    "Kutu Harf Tabela",
+    "Işıklı Tabela",
+    "Totem & Pilon",
+    "Folyo & Vitrin Giydirme",
+    "Yönlendirme Tabelası"
+   ]
+  },
+  {
+   "path": [
+    "Ustalar & Hizmetler",
+    "Matbaa & Reklam",
+    "Tişört & Tekstil Baskı"
+   ],
+   "add": [
+    "DTF Baskı",
+    "Serigrafi (Elek) Baskı",
+    "Nakış İşleme",
+    "Süblimasyon Baskı"
+   ]
+  },
+  {
+   "path": [
+    "Ustalar & Hizmetler",
+    "Profesyonel Hizmetler",
+    "Sigorta"
+   ],
+   "add": [
+    "Kasko",
+    "Trafik Sigortası",
+    "DASK (Zorunlu Deprem)",
+    "Konut Sigortası",
+    "Tamamlayıcı Sağlık Sigortası",
+    "Seyahat Sağlık Sigortası",
+    "İşyeri Sigortası"
+   ]
+  },
+  {
+   "path": [
+    "Ustalar & Hizmetler",
+    "Profesyonel Hizmetler",
+    "Mimarlık & Mühendislik"
+   ],
+   "add": [
+    "Mimari Proje Çizimi",
+    "Statik Proje",
+    "Tesisat Projesi",
+    "Tadilat & Ruhsat Projesi",
+    "Deprem Performans Analizi"
+   ]
+  },
+  {
+   "path": [
+    "Ustalar & Hizmetler",
+    "Profesyonel Hizmetler",
+    "Muhasebe & Mali Müşavir"
+   ],
+   "add": [
+    "Şahıs Şirketi Muhasebesi",
+    "Limited & Anonim Şirket Muhasebesi",
+    "E-Ticaret Muhasebesi",
+    "Beyanname Hazırlama",
+    "Kira Geliri Beyannamesi"
+   ]
+  },
+  {
+   "path": [
+    "Ustalar & Hizmetler",
+    "Profesyonel Hizmetler",
+    "Danışmanlık"
+   ],
+   "add": [
+    "Yönetim Danışmanlığı",
+    "Finansal Danışmanlık",
+    "İnsan Kaynakları Danışmanlığı",
+    "Satış & Pazarlama Danışmanlığı"
+   ]
+  },
+  {
+   "path": [
+    "Ustalar & Hizmetler",
+    "Güvenlik & Sağlık",
+    "Özel Güvenlik"
+   ],
+   "add": [
+    "Site & Bina Güvenliği",
+    "Etkinlik Güvenliği",
+    "Yakın Koruma",
+    "Bekçilik"
+   ]
+  },
+  {
+   "path": [
+    "Ustalar & Hizmetler",
+    "Güvenlik & Sağlık",
+    "Evde Sağlık"
+   ],
+   "add": [
+    "Evde Serum & Enjeksiyon",
+    "Evde Kan Alma",
+    "Evde Pansuman",
+    "Evde Doktor Muayenesi"
+   ]
+  },
+  {
+   "path": [
+    "Özel Ders & Eğitim",
+    "Akademik Dersler",
+    "Üniversite Dersleri",
+    "Mühendislik Dersleri"
+   ],
+   "add": [
+    "Statik & Mukavemet",
+    "Termodinamik",
+    "Devre Analizi",
+    "Akışkanlar Mekaniği",
+    "Diferansiyel Denklemler",
+    "Sayısal Analiz"
+   ]
+  },
+  {
+   "path": [
+    "Özel Ders & Eğitim",
+    "Akademik Dersler",
+    "Türkçe & Edebiyat"
+   ],
+   "add": [
+    "İlkokul Türkçe",
+    "LGS Türkçe",
+    "TYT Türkçe",
+    "AYT Edebiyat",
+    "Paragraf & Anlam Bilgisi"
+   ]
+  },
+  {
+   "path": [
+    "Özel Ders & Eğitim",
+    "Akademik Dersler",
+    "Geometri"
+   ],
+   "add": [
+    "Ortaokul Geometri",
+    "Lise Geometri (TYT-AYT)"
+   ]
+  },
+  {
+   "path": [
+    "Özel Ders & Eğitim",
+    "Akademik Dersler",
+    "Fen Bilimleri"
+   ],
+   "add": [
+    "İlkokul Fen Bilimleri",
+    "Ortaokul Fen Bilimleri (LGS)"
+   ]
+  },
+  {
+   "path": [
+    "Özel Ders & Eğitim",
+    "Akademik Dersler",
+    "Tarih & Coğrafya"
+   ],
+   "add": [
+    "Lise Tarih",
+    "Lise Coğrafya",
+    "KPSS Tarih",
+    "KPSS Coğrafya",
+    "İnkılap Tarihi (LGS)"
+   ]
+  },
+  {
+   "path": [
+    "Özel Ders & Eğitim",
+    "Yabancı Dil",
+    "İspanyolca"
+   ],
+   "add": [
+    "Genel İspanyolca",
+    "DELE Hazırlık",
+    "İspanyolca Konuşma Pratiği"
+   ]
+  },
+  {
+   "path": [
+    "Özel Ders & Eğitim",
+    "Yabancı Dil",
+    "İtalyanca"
+   ],
+   "add": [
+    "Genel İtalyanca",
+    "İtalyanca Konuşma Pratiği"
+   ]
+  },
+  {
+   "path": [
+    "Özel Ders & Eğitim",
+    "Yabancı Dil",
+    "Rusça"
+   ],
+   "add": [
+    "Genel Rusça",
+    "Rusça Konuşma Pratiği",
+    "Çocuklar İçin Rusça"
+   ]
+  },
+  {
+   "path": [
+    "Özel Ders & Eğitim",
+    "Yabancı Dil",
+    "Türkçe (Yabancılara)"
+   ],
+   "add": [
+    "TÖMER Hazırlık",
+    "Arapça Konuşanlara Türkçe"
+   ]
+  },
+  {
+   "path": [
+    "Özel Ders & Eğitim",
+    "Müzik & Sanat",
+    "Şan & Vokal"
+   ],
+   "add": [
+    "Pop Şan",
+    "Klasik Şan (Opera)",
+    "Türk Sanat Müziği",
+    "Türk Halk Müziği",
+    "Çocuk Şan"
+   ]
+  },
+  {
+   "path": [
+    "Özel Ders & Eğitim",
+    "Müzik & Sanat",
+    "Keman"
+   ],
+   "add": [
+    "Klasik Keman",
+    "Türk Müziği Keman",
+    "Çocuklar İçin Keman"
+   ]
+  },
+  {
+   "path": [
+    "Özel Ders & Eğitim",
+    "Müzik & Sanat",
+    "El Sanatları"
+   ],
+   "add": [
+    "Örgü & Tığ",
+    "Makrome",
+    "Takı Tasarımı",
+    "Mum & Sabun Yapımı",
+    "Epoksi Sanatı",
+    "Ahşap Boyama",
+    "Keçe Sanatı",
+    "Punch & Nakış"
+   ]
+  },
+  {
+   "path": [
+    "Özel Ders & Eğitim",
+    "Müzik & Sanat",
+    "Hat & Ebru"
+   ],
+   "add": [
+    "Hat Sanatı",
+    "Ebru",
+    "Tezhip",
+    "Minyatür"
+   ]
+  },
+  {
+   "path": [
+    "Özel Ders & Eğitim",
+    "Müzik & Sanat",
+    "Seramik & Heykel"
+   ],
+   "add": [
+    "Çömlek (Çark)",
+    "Heykel",
+    "Seramik Boyama"
+   ]
+  },
+  {
+   "path": [
+    "Özel Ders & Eğitim",
+    "Müzik & Sanat",
+    "Fotoğrafçılık"
+   ],
+   "add": [
+    "Temel Fotoğrafçılık",
+    "Telefonla Fotoğrafçılık",
+    "Stüdyo & Ürün Fotoğrafçılığı",
+    "Fotoğraf Düzenleme (Lightroom)"
+   ]
+  },
+  {
+   "path": [
+    "Özel Ders & Eğitim",
+    "Müzik & Sanat",
+    "Tiyatro & Drama"
+   ],
+   "add": [
+    "Oyunculuk (Kamera Önü)",
+    "Çocuk Drama",
+    "Konservatuvar Hazırlık"
+   ]
+  },
+  {
+   "path": [
+    "Özel Ders & Eğitim",
+    "Spor Dersleri",
+    "Tenis"
+   ],
+   "add": [
+    "Çocuk Tenis",
+    "Yetişkin Tenis",
+    "Lisanslı Tenis Antrenmanı"
+   ]
+  },
+  {
+   "path": [
+    "Özel Ders & Eğitim",
+    "Spor Dersleri",
+    "Dalış"
+   ],
+   "add": [
+    "Tüplü Dalış (PADI & CMAS)",
+    "Serbest Dalış (Freediving)"
+   ]
+  },
+  {
+   "path": [
+    "Özel Ders & Eğitim",
+    "Spor Dersleri",
+    "Jimnastik"
+   ],
+   "add": [
+    "Artistik Jimnastik",
+    "Ritmik Jimnastik",
+    "Çocuk Cimnastiği",
+    "Akrobasi"
+   ]
+  },
+  {
+   "path": [
+    "Özel Ders & Eğitim",
+    "Spor Dersleri",
+    "Binicilik"
+   ],
+   "add": [
+    "Çocuk Binicilik",
+    "Yetişkin Binicilik",
+    "Engel Atlama"
+   ]
+  },
+  {
+   "path": [
+    "Özel Ders & Eğitim",
+    "Spor Dersleri",
+    "Basketbol"
+   ],
+   "add": [
+    "Çocuk Basketbol",
+    "Bireysel Basketbol Antrenmanı"
+   ]
+  },
+  {
+   "path": [
+    "Özel Ders & Eğitim",
+    "Spor Dersleri",
+    "Voleybol"
+   ],
+   "add": [
+    "Salon Voleybolu",
+    "Plaj Voleybolu",
+    "Çocuk Voleybol"
+   ]
+  },
+  {
+   "path": [
+    "Özel Ders & Eğitim",
+    "Meslek & Yazılım",
+    "Web Tasarım"
+   ],
+   "add": [
+    "HTML & CSS",
+    "WordPress Eğitimi",
+    "Figma & Arayüz Tasarımı"
+   ]
+  },
+  {
+   "path": [
+    "Özel Ders & Eğitim",
+    "Meslek & Yazılım",
+    "Video Kurgu Eğitimi"
+   ],
+   "add": [
+    "Premiere Pro",
+    "DaVinci Resolve",
+    "Final Cut Pro",
+    "CapCut"
+   ]
+  },
+  {
+   "path": [
+    "Özel Ders & Eğitim",
+    "Meslek & Yazılım",
+    "3D Modelleme & Render"
+   ],
+   "add": [
+    "Blender",
+    "3ds Max",
+    "SketchUp",
+    "Revit",
+    "Rhino",
+    "Cinema 4D",
+    "Lumion"
+   ]
+  },
+  {
+   "path": [
+    "Özel Ders & Eğitim",
+    "Meslek & Yazılım",
+    "AutoCAD & Teknik Çizim"
+   ],
+   "add": [
+    "AutoCAD 2D",
+    "AutoCAD 3D",
+    "SolidWorks",
+    "CATIA",
+    "Fusion 360"
+   ]
+  },
+  {
+   "path": [
+    "Özel Ders & Eğitim",
+    "Meslek & Yazılım",
+    "Ofis Programları",
+    "Excel"
+   ],
+   "add": [
+    "Temel Excel",
+    "İleri Excel",
+    "Excel Makro & VBA"
+   ]
+  },
+  {
+   "path": [
+    "Özel Ders & Eğitim",
+    "Meslek & Yazılım",
+    "Yapay Zeka & Veri"
+   ],
+   "add": [
+    "Yapay Zekâ Araçları",
+    "Makine Öğrenmesi",
+    "Power BI & Tableau",
+    "Veri Bilimi",
+    "Veri Analizi (Python)"
+   ]
+  },
+  {
+   "path": [
+    "Özel Ders & Eğitim",
+    "Meslek & Yazılım",
+    "Muhasebe Eğitimi"
+   ],
+   "add": [
+    "Ön Muhasebe",
+    "Logo Programı",
+    "Netsis Programı",
+    "Mikro Programı",
+    "Luca Programı"
+   ]
+  },
+  {
+   "path": [
+    "Özel Ders & Eğitim",
+    "Meslek & Yazılım",
+    "Aşçılık & Pastacılık"
+   ],
+   "add": [
+    "Pastacılık",
+    "Ekmek & Hamur İşi",
+    "Dünya Mutfağı",
+    "Çikolata Yapımı",
+    "Türk Mutfağı"
+   ]
+  },
+  {
+   "path": [
+    "Özel Ders & Eğitim",
+    "Meslek & Yazılım",
+    "Kuaförlük & Makyaj Eğitimi"
+   ],
+   "add": [
+    "Makyaj Eğitimi",
+    "Kalıcı Makyaj Eğitimi",
+    "İpek Kirpik Eğitimi",
+    "Protez Tırnak Eğitimi",
+    "Erkek Berberliği Eğitimi",
+    "Cilt Bakım Eğitimi"
+   ]
+  },
+  {
+   "path": [
+    "Özel Ders & Eğitim",
+    "Meslek & Yazılım",
+    "Dijital Pazarlama"
+   ],
+   "add": [
+    "Sosyal Medya Uzmanlığı",
+    "Google Ads Eğitimi",
+    "Meta Reklamları Eğitimi",
+    "SEO Eğitimi"
+   ]
+  },
+  {
+   "path": [
+    "Özel Ders & Eğitim",
+    "Kişisel Gelişim & Diğer",
+    "Koçluk"
+   ],
+   "add": [
+    "Yaşam Koçluğu",
+    "Yönetici & İş Koçluğu",
+    "Öğrenci & Sınav Koçluğu",
+    "İlişki Koçluğu"
+   ]
+  },
+  {
+   "path": [
+    "Özel Ders & Eğitim",
+    "Kişisel Gelişim & Diğer",
+    "Satranç"
+   ],
+   "add": [
+    "Çocuk Satranç",
+    "Turnuva Hazırlık (Satranç)"
+   ]
+  },
+  {
+   "path": [
+    "Özel Ders & Eğitim",
+    "Özel Eğitim & Çocuk Gelişimi",
+    "Konuşma & Dil Terapisi"
+   ],
+   "add": [
+    "Kekemelik",
+    "Artikülasyon Bozukluğu",
+    "Gecikmiş Konuşma",
+    "Ses Bozuklukları"
+   ]
+  },
+  {
+   "path": [
+    "Özel Ders & Eğitim",
+    "Online Eğitim"
+   ],
+   "add": [
+    "Online Özel Ders",
+    "Online Dil Kursu",
+    "Online Sınav Hazırlık",
+    "Online Müzik Dersi",
+    "Online Kodlama Dersi"
+   ]
+  },
+  {
+   "path": [
+    "İş İlanları",
+    "Çalışma Şekli"
+   ],
+   "add": [
+    "Hafta Sonu",
+    "Emekliye Uygun",
+    "Engelli Kadrosu",
+    "Öğrenciye Uygun",
+    "Hibrit"
+   ]
+  },
+  {
+   "path": [
+    "İş İlanları",
+    "Bilişim & Yazılım",
+    "Yazılım Geliştirici"
+   ],
+   "add": [
+    "Java Geliştirici",
+    ".NET Geliştirici",
+    "Python Geliştirici",
+    "PHP Geliştirici",
+    "Node.js Geliştirici"
+   ]
+  },
+  {
+   "path": [
+    "İş İlanları",
+    "Ofis & Yönetim",
+    "Muhasebe & Finans"
+   ],
+   "add": [
+    "Muhasebe Uzmanı",
+    "Muhasebe Müdürü",
+    "Finans Uzmanı",
+    "Mali İşler Müdürü (CFO)",
+    "Bütçe & Raporlama Uzmanı",
+    "İç Denetçi",
+    "Tahsilat Uzmanı",
+    "Hazine Uzmanı"
+   ]
+  },
+  {
+   "path": [
+    "İş İlanları",
+    "Ofis & Yönetim",
+    "İnsan Kaynakları"
+   ],
+   "add": [
+    "İK Uzmanı",
+    "İşe Alım Uzmanı",
+    "İK Müdürü",
+    "Eğitim & Gelişim Uzmanı"
+   ]
+  },
+  {
+   "path": [
+    "İş İlanları",
+    "Ofis & Yönetim",
+    "Sekreter & Asistan"
+   ],
+   "add": [
+    "Yönetici Asistanı",
+    "Ofis Asistanı",
+    "Hukuk Sekreteri"
+   ]
+  },
+  {
+   "path": [
+    "İş İlanları",
+    "Ofis & Yönetim",
+    "Yönetici & Müdür"
+   ],
+   "add": [
+    "Genel Müdür",
+    "Operasyon Müdürü",
+    "Şube Müdürü",
+    "Bölge Müdürü"
+   ]
+  },
+  {
+   "path": [
+    "İş İlanları",
+    "Ofis & Yönetim",
+    "Satın Alma"
+   ],
+   "add": [
+    "Satın Alma Uzmanı",
+    "Satın Alma Müdürü",
+    "Tedarik Zinciri Uzmanı"
+   ]
+  },
+  {
+   "path": [
+    "İş İlanları",
+    "Ofis & Yönetim",
+    "Hukuk & Avukatlık"
+   ],
+   "add": [
+    "Avukat",
+    "Stajyer Avukat",
+    "Hukuk Müşaviri",
+    "Avukat Asistanı & Kâtip"
+   ]
+  },
+  {
+   "path": [
+    "İş İlanları",
+    "Ofis & Yönetim",
+    "Bankacılık Personeli"
+   ],
+   "add": [
+    "Gişe Yetkilisi",
+    "Bireysel Müşteri Temsilcisi",
+    "Kredi Analisti",
+    "Kurumsal Bankacılık Uzmanı"
+   ]
+  },
+  {
+   "path": [
+    "İş İlanları",
+    "Üretim, Lojistik & Sanayi",
+    "Kalite Kontrol"
+   ],
+   "add": [
+    "Kalite Kontrol Teknisyeni",
+    "Kalite Güvence Uzmanı",
+    "Kalite Müdürü"
+   ]
+  },
+  {
+   "path": [
+    "İş İlanları",
+    "Üretim, Lojistik & Sanayi",
+    "Teknik Bakım"
+   ],
+   "add": [
+    "Elektrik Bakım Teknisyeni",
+    "Mekanik Bakım Teknisyeni",
+    "Bakım Müdürü"
+   ]
+  },
+  {
+   "path": [
+    "İş İlanları",
+    "Üretim, Lojistik & Sanayi",
+    "Kaynakçı"
+   ],
+   "add": [
+    "Argon Kaynakçı",
+    "Gazaltı Kaynakçı",
+    "Elektrik Ark Kaynakçı",
+    "Boru Kaynakçısı"
+   ]
+  },
+  {
+   "path": [
+    "İş İlanları",
+    "Üretim, Lojistik & Sanayi",
+    "CNC Operatörü"
+   ],
+   "add": [
+    "CNC Torna Operatörü",
+    "CNC Freze Operatörü",
+    "CNC Programcısı"
+   ]
+  },
+  {
+   "path": [
+    "İş İlanları",
+    "Üretim, Lojistik & Sanayi",
+    "Kurye & Motokurye"
+   ],
+   "add": [
+    "Moto Kurye",
+    "Araçlı Kurye",
+    "Yaya Kurye",
+    "Paket Servis Elemanı"
+   ]
+  },
+  {
+   "path": [
+    "İş İlanları",
+    "Üretim, Lojistik & Sanayi",
+    "Vinç/İş Makinesi Operatörü"
+   ],
+   "add": [
+    "Ekskavatör Operatörü",
+    "Beko Loder Operatörü",
+    "Loder Operatörü",
+    "Kule Vinç Operatörü",
+    "Mobil Vinç Operatörü",
+    "Greyder Operatörü",
+    "Silindir Operatörü"
+   ]
+  },
+  {
+   "path": [
+    "İş İlanları",
+    "Hizmet & Turizm",
+    "Aşçı & Mutfak"
+   ],
+   "add": [
+    "Aşçı Yardımcısı",
+    "Sıcak Mutfak Aşçısı",
+    "Soğuk Mutfak Aşçısı",
+    "Ev Yemekleri Aşçısı"
+   ]
+  },
+  {
+   "path": [
+    "İş İlanları",
+    "Hizmet & Turizm",
+    "Çağrı Merkezi"
+   ],
+   "add": [
+    "Çağrı Merkezi Takım Lideri",
+    "Yabancı Dil Bilen Çağrı Merkezi Temsilcisi"
+   ]
+  },
+  {
+   "path": [
+    "İş İlanları",
+    "Güzellik & Bakım",
+    "Kuaför & Berber"
+   ],
+   "add": [
+    "Kadın Kuaförü",
+    "Erkek Berberi",
+    "Kuaför Kalfası",
+    "Kuaför Çırağı"
+   ]
+  },
+  {
+   "path": [
+    "İş İlanları",
+    "Sağlık & Eğitim",
+    "Doktor"
+   ],
+   "add": [
+    "Pratisyen Hekim",
+    "Uzman Hekim",
+    "İşyeri Hekimi",
+    "Asistan Hekim"
+   ]
+  },
+  {
+   "path": [
+    "İş İlanları",
+    "Sağlık & Eğitim",
+    "Hemşire"
+   ],
+   "add": [
+    "Servis Hemşiresi",
+    "Yoğun Bakım Hemşiresi",
+    "Ameliyathane Hemşiresi",
+    "İşyeri Hemşiresi",
+    "Evde Bakım Hemşiresi"
+   ]
+  },
+  {
+   "path": [
+    "İş İlanları",
+    "Sağlık & Eğitim",
+    "Sağlık Teknikeri"
+   ],
+   "add": [
+    "Radyoloji Teknikeri",
+    "Anestezi Teknikeri",
+    "Ameliyathane Teknikeri",
+    "Diyaliz Teknikeri",
+    "Fizyoterapi Teknikeri"
+   ]
+  },
+  {
+   "path": [
+    "İş İlanları",
+    "Sağlık & Eğitim",
+    "Öğretmen"
+   ],
+   "add": [
+    "Sınıf Öğretmeni",
+    "Matematik Öğretmeni",
+    "İngilizce Öğretmeni",
+    "Fen Bilimleri Öğretmeni",
+    "Türkçe & Edebiyat Öğretmeni",
+    "Fizik Öğretmeni",
+    "Kimya Öğretmeni",
+    "Biyoloji Öğretmeni",
+    "Tarih Öğretmeni",
+    "Müzik Öğretmeni",
+    "Beden Eğitimi Öğretmeni",
+    "Bilişim Teknolojileri Öğretmeni"
+   ]
+  },
+  {
+   "path": [
+    "Yardımcı Arayanlar",
+    "Çocuk & Bebek Bakımı"
+   ],
+   "add": [
+    "Mürebbiye",
+    "Yaz Tatili Bakıcısı",
+    "Engelli Çocuk Bakıcısı"
+   ]
+  },
+  {
+   "path": [
+    "Yardımcı Arayanlar",
+    "Yaşlı & Hasta Bakımı"
+   ],
+   "add": [
+    "Yatılı Yaşlı Bakıcısı",
+    "Diyaliz Hastası Bakımı",
+    "Palyatif Bakım",
+    "Parkinson Hastası Bakımı"
+   ]
+  },
+  {
+   "path": [
+    "Hayvanlar Alemi",
+    "Büyükbaş Hayvanlar"
+   ],
+   "add": [
+    "Kurbanlık Büyükbaş",
+    "Tosun"
+   ]
+  },
+  {
+   "path": [
+    "Hayvanlar Alemi",
+    "Küçükbaş Hayvanlar"
+   ],
+   "add": [
+    "Kurbanlık Küçükbaş"
+   ]
+  },
+  {
+   "path": [
+    "Hayvanlar Alemi",
+    "Kümes Hayvanları"
+   ],
+   "add": [
+    "Civciv",
+    "Palaz (Ördek & Kaz Yavrusu)",
+    "Süs Tavuğu & Bantam"
+   ]
+  },
+  {
+   "path": [
+    "Hayvanlar Alemi",
+    "Böcekler & Arıcılık"
+   ],
+   "add": [
+    "Bombus Arısı Kolonisi",
+    "Un Kurdu",
+    "Kara Asker Sineği (Larva)"
+   ]
+  },
+  {
+   "path": [
+    "Hayvanlar Alemi",
+    "Mama & Besleme"
+   ],
+   "add": [
+    "Sürüngen Yemi",
+    "Canlı Yem",
+    "Kedi Çimi",
+    "Kemik & Çiğneme Ürünleri",
+    "Pet Su Pınarı",
+    "Yavru Süt Tozu (Kedi & Köpek)"
+   ]
+  },
+  {
+   "path": [
+    "Hayvanlar Alemi",
+    "Mama & Besleme",
+    "Kedi Maması (Kuru)"
+   ],
+   "brands": {
+    "Royal Canin": [],
+    "Pro Plan": [],
+    "Hill's": [],
+    "N&D": [],
+    "Acana": [],
+    "Orijen": [],
+    "Reflex": [],
+    "Brit Care": [],
+    "Purina One": [],
+    "Whiskas": [],
+    "Cat Chow": [],
+    "Josera": [],
+    "Matisse": [],
+    "Jungle": [],
+    "Bonnie": [],
+    "Felix": [],
+    "Lavital": []
+   }
+  },
+  {
+   "path": [
+    "Hayvanlar Alemi",
+    "Mama & Besleme",
+    "Kedi Maması (Yaş)"
+   ],
+   "brands": {
+    "Whiskas": [],
+    "Felix": [],
+    "Gourmet": [],
+    "Sheba": [],
+    "Royal Canin": [],
+    "Pro Plan": [],
+    "Reflex": [],
+    "Jungle": [],
+    "Schesir": [],
+    "Animonda": [],
+    "Hill's": [],
+    "N&D": []
+   }
+  },
+  {
+   "path": [
+    "Hayvanlar Alemi",
+    "Mama & Besleme",
+    "Köpek Maması (Kuru)"
+   ],
+   "brands": {
+    "Royal Canin": [],
+    "Pro Plan": [],
+    "Hill's": [],
+    "N&D": [],
+    "Acana": [],
+    "Orijen": [],
+    "Reflex": [],
+    "Brit Care": [],
+    "Pedigree": [],
+    "Dog Chow": [],
+    "Josera": [],
+    "Bonnie": [],
+    "Jungle": [],
+    "Eukanuba": [],
+    "Lavital": []
+   }
+  },
+  {
+   "path": [
+    "Hayvanlar Alemi",
+    "Mama & Besleme",
+    "Köpek Maması (Yaş)"
+   ],
+   "brands": {
+    "Pedigree": [],
+    "Royal Canin": [],
+    "Reflex": [],
+    "Jungle": [],
+    "Hill's": [],
+    "Pro Plan": [],
+    "N&D": []
+   }
+  },
+  {
+   "path": [
+    "Hayvanlar Alemi",
+    "Mama & Besleme",
+    "Balık Yemi"
+   ],
+   "brands": {
+    "Tetra": [],
+    "JBL": [],
+    "Sera": [],
+    "Tropical": []
+   }
+  },
+  {
+   "path": [
+    "Hayvanlar Alemi",
+    "Mama & Besleme",
+    "Kuş Yemi"
+   ],
+   "brands": {
+    "Versele-Laga": [],
+    "Vitakraft": []
+   }
+  },
+  {
+   "path": [
+    "Hayvanlar Alemi",
+    "Kafes, Tasma & Taşıma"
+   ],
+   "add": [
+    "Pet Çit & Kapı Bariyeri",
+    "Pet Arabası (Puset)",
+    "Kuş Tüneği & Yuva",
+    "Pet Kapısı",
+    "Araç İçi Pet Ürünleri"
+   ]
+  },
+  {
+   "path": [
+    "Hayvanlar Alemi",
+    "Akvaryum & Terrarium"
+   ],
+   "add": [
+    "CO2 Sistemi",
+    "Akvaryum Dolabı & Sehpası",
+    "Protein Skimmer",
+    "Sirkülasyon Pompası",
+    "UV Sterilizatör",
+    "Akvaryum Soğutucu (Chiller)",
+    "Terrarium Isıtıcı & UVB Lamba",
+    "Bitki Toprağı & Zemin"
+   ]
+  },
+  {
+   "path": [
+    "Hayvanlar Alemi",
+    "Bakım & Oyuncak"
+   ],
+   "add": [
+    "Pet Kıyafeti",
+    "Pet Tıraş Makinesi",
+    "Kulak & Göz Temizleyici",
+    "Pet Parfümü & Bakım Spreyi",
+    "Çiş Pedi & Eğitim Ürünleri",
+    "Dışkı Torbası",
+    "Kemirgen Oyuncağı"
+   ]
+  },
+  {
+   "path": [
+    "Hayvanlar Alemi",
+    "Veteriner & Hizmetler"
+   ],
+   "add": [
+    "Hayvan Davranış Uzmanı",
+    "Pet Kreş",
+    "Evde Veteriner",
+    "Hayvan Ambulansı"
+   ]
+  },
+  {
+   "path": [
+    "Hayvanlar Alemi",
+    "Çiftlik & Hayvancılık Ekipmanı"
+   ],
+   "add": [
+    "Kırkım Makinesi",
+    "Hayvan Kantarı",
+    "Buzağı Biberon & Mama Kovası",
+    "Kulak Küpesi & İşaretleme",
+    "Elektrikli Çit (Çoban Teli)",
+    "Hayvan Altlığı & Ahır Paspası"
+   ]
+  },
+  {
+   "path": [
+    "Emlak",
+    "İş Yeri",
+    "Satılık",
+    "Restoran & Cafe & Eğlence"
+   ],
+   "add": [
+    "Kıraathane",
+    "Kantin",
+    "Kır & Kahvaltı Bahçesi",
+    "Çay Bahçesi"
+   ]
+  },
+  {
+   "path": [
+    "Emlak",
+    "İş Yeri",
+    "Satılık",
+    "Spor & Sosyal Tesis"
+   ],
+   "add": [
+    "Sinema & Konferans Salonu",
+    "Tenis Kortu",
+    "Bowling & Bilardo Salonu"
+   ]
+  },
+  {
+   "path": [
+    "Emlak",
+    "İş Yeri",
+    "Satılık",
+    "Sağlık & Güzellik"
+   ],
+   "add": [
+    "Huzurevi",
+    "Hastane",
+    "Tıp Merkezi",
+    "Laboratuvar",
+    "Diyaliz Merkezi"
+   ]
+  },
+  {
+   "path": [
+    "Emlak",
+    "İş Yeri",
+    "Satılık",
+    "Eğitim & Kurs"
+   ],
+   "add": [
+    "Müzik & Sanat Kursu",
+    "Özel Eğitim & Rehabilitasyon Merkezi",
+    "Bilgisayar Kursu"
+   ]
+  },
+  {
+   "path": [
+    "Emlak",
+    "İş Yeri",
+    "Satılık",
+    "Oto & Akaryakıt"
+   ],
+   "add": [
+    "Rent a Car Ofisi",
+    "Motosiklet Servisi",
+    "Oto Kuaför & Detailing"
+   ]
+  },
+  {
+   "path": [
+    "Emlak",
+    "İş Yeri",
+    "Satılık",
+    "Tarım & Hayvancılık İşletmesi"
+   ],
+   "add": [
+    "Ahır & Ağıl",
+    "Kümes",
+    "Fidanlık",
+    "Hara (At Çiftliği)"
+   ]
+  },
+  {
+   "path": [
+    "Emlak",
+    "İş Yeri",
+    "Satılık",
+    "Ofis & Büro"
+   ],
+   "add": [
+    "Sanal Ofis",
+    "Mimarlık Ofisi",
+    "Emlak Ofisi"
+   ]
+  },
+  {
+   "path": [
+    "Emlak",
+    "İş Yeri",
+    "Satılık",
+    "Atölye & İmalathane"
+   ],
+   "add": [
+    "Matbaa Atölyesi",
+    "Mermer Atölyesi",
+    "Cam Atölyesi",
+    "Kuyumcu Atölyesi"
+   ]
+  },
+  {
+   "path": [
+    "Emlak",
+    "İş Yeri",
+    "Satılık",
+    "Dükkan & Mağaza"
+   ],
+   "add": [
+    "Showroom"
+   ]
+  },
+  {
+   "path": [
+    "Emlak",
+    "İş Yeri",
+    "Kiralık",
+    "Restoran & Cafe & Eğlence"
+   ],
+   "add": [
+    "Kıraathane",
+    "Kantin",
+    "Kır & Kahvaltı Bahçesi",
+    "Çay Bahçesi"
+   ]
+  },
+  {
+   "path": [
+    "Emlak",
+    "İş Yeri",
+    "Kiralık",
+    "Spor & Sosyal Tesis"
+   ],
+   "add": [
+    "Sinema & Konferans Salonu",
+    "Tenis Kortu",
+    "Bowling & Bilardo Salonu"
+   ]
+  },
+  {
+   "path": [
+    "Emlak",
+    "İş Yeri",
+    "Kiralık",
+    "Sağlık & Güzellik"
+   ],
+   "add": [
+    "Huzurevi",
+    "Hastane",
+    "Tıp Merkezi",
+    "Laboratuvar",
+    "Diyaliz Merkezi"
+   ]
+  },
+  {
+   "path": [
+    "Emlak",
+    "İş Yeri",
+    "Kiralık",
+    "Eğitim & Kurs"
+   ],
+   "add": [
+    "Müzik & Sanat Kursu",
+    "Özel Eğitim & Rehabilitasyon Merkezi",
+    "Bilgisayar Kursu"
+   ]
+  },
+  {
+   "path": [
+    "Emlak",
+    "İş Yeri",
+    "Kiralık",
+    "Oto & Akaryakıt"
+   ],
+   "add": [
+    "Rent a Car Ofisi",
+    "Motosiklet Servisi",
+    "Oto Kuaför & Detailing"
+   ]
+  },
+  {
+   "path": [
+    "Emlak",
+    "İş Yeri",
+    "Kiralık",
+    "Tarım & Hayvancılık İşletmesi"
+   ],
+   "add": [
+    "Ahır & Ağıl",
+    "Kümes",
+    "Fidanlık",
+    "Hara (At Çiftliği)"
+   ]
+  },
+  {
+   "path": [
+    "Emlak",
+    "İş Yeri",
+    "Kiralık",
+    "Ofis & Büro"
+   ],
+   "add": [
+    "Sanal Ofis",
+    "Mimarlık Ofisi",
+    "Emlak Ofisi"
+   ]
+  },
+  {
+   "path": [
+    "Emlak",
+    "İş Yeri",
+    "Kiralık",
+    "Atölye & İmalathane"
+   ],
+   "add": [
+    "Matbaa Atölyesi",
+    "Mermer Atölyesi",
+    "Cam Atölyesi",
+    "Kuyumcu Atölyesi"
+   ]
+  },
+  {
+   "path": [
+    "Emlak",
+    "İş Yeri",
+    "Kiralık",
+    "Dükkan & Mağaza"
+   ],
+   "add": [
+    "Showroom"
+   ]
+  },
+  {
+   "path": [
+    "Emlak",
+    "İş Yeri",
+    "Devren Satılık"
+   ],
+   "add": [
+    "Otopark & Garaj",
+    "Plaj",
+    "Sinema & Konferans Salonu",
+    "Döner & Kebapçı",
+    "Pideci & Lahmacuncu",
+    "Kahvaltı Salonu",
+    "Fast Food",
+    "Diş Kliniği",
+    "Kitapçı",
+    "Oyuncakçı",
+    "Ayakkabıcı",
+    "Mobilya Mağazası",
+    "Beyaz Eşya Bayisi",
+    "Otel & Pansiyon",
+    "Bebe Mağazası",
+    "Spor Mağazası"
+   ]
+  },
+  {
+   "path": [
+    "Emlak",
+    "İş Yeri",
+    "Devren Kiralık"
+   ],
+   "add": [
+    "Otopark & Garaj",
+    "Plaj",
+    "Sinema & Konferans Salonu",
+    "Döner & Kebapçı",
+    "Pideci & Lahmacuncu",
+    "Kahvaltı Salonu",
+    "Fast Food",
+    "Diş Kliniği",
+    "Kitapçı",
+    "Oyuncakçı",
+    "Ayakkabıcı",
+    "Mobilya Mağazası",
+    "Beyaz Eşya Bayisi",
+    "Otel & Pansiyon",
+    "Bebe Mağazası",
+    "Spor Mağazası"
+   ]
+  },
+  {
+   "path": [
+    "Emlak",
+    "Arsa / Arazi",
+    "Satılık",
+    "İmarlı Arsa"
+   ],
+   "add": [
+    "A-Lejantlı Arsa",
+    "Enerji Depolama İmarlı",
+    "Muhtelif Alan",
+    "Sera İmarlı"
+   ]
+  },
+  {
+   "path": [
+    "Emlak",
+    "Arsa / Arazi",
+    "Satılık",
+    "Bahçe & Bağ & Zeytinlik"
+   ],
+   "add": [
+    "Antep Fıstığı Bahçesi",
+    "Badem Bahçesi",
+    "Çay Bahçesi",
+    "Kivi Bahçesi",
+    "Lavanta Bahçesi"
+   ]
+  },
+  {
+   "path": [
+    "Emlak",
+    "Emlak Hizmetleri"
+   ],
+   "add": [
+    "Konut Kredisi Danışmanlığı",
+    "Yabancıya Satış & Vatandaşlık Danışmanlığı",
+    "İskân & Ruhsat Takibi",
+    "Kat Mülkiyeti Geçişi",
+    "Kısa Dönem Kiralama Yönetimi",
+    "Ev Sahnelenmesi (Home Staging)",
+    "Kira Tespit & Tahliye Danışmanlığı"
+   ]
+  },
+  {
+   "path": [
+    "Emlak",
+    "Projeler"
+   ],
+   "add": [
+    "Sanayi Sitesi Projesi",
+    "Depo & Lojistik Projesi",
+    "Otel Projesi",
+    "Yazlık Projesi"
+   ]
   },
   {
    "path": [
