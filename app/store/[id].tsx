@@ -7,8 +7,8 @@ import { ProfileCoverImage } from "@/components/profile-cover-image";
 import { MaterialCommunityIcons } from "@/components/icons";
 import { Image } from "expo-image";
 import { Link, useLocalSearchParams, useRouter } from "expo-router";
-import { useEffect, useMemo, useState } from "react";
-import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, RefreshControl, ScrollView, Text, TextInput, View, useWindowDimensions } from "react-native";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, RefreshControl, ScrollView, Text, TextInput, View, useWindowDimensions, type ScrollViewInstance } from "react-native";
 
 import { Alert } from "@/lib/alert";
 import { showToast } from "@/lib/toast";
@@ -32,6 +32,7 @@ import { openUrlSafe } from "@/lib/link";
 import { shareOrCopy } from "@/lib/share";
 import { responsiveGrid, useIsWideWeb } from "@/lib/layout";
 import { displayText } from "@/lib/text";
+import { foldKey } from "@/lib/fast-text";
 import { calculateUserTrustScores } from "@/lib/trust-score";
 import type { Listing, Review, User } from "@/lib/types";
 import { useStore } from "@/lib/use-store";
@@ -39,6 +40,15 @@ import { isMobileApp } from "@/lib/mobile-app";
 import { MobileSellerStore } from "@/components/mobile/seller-store";
 
 type StoreFilter = "active" | "all" | "partner";
+type StoreSort = "store" | "new" | "priceAsc" | "priceDesc";
+type MobileTab = "listings" | "about" | "reviews" | "policies";
+const STORE_PAGE = 24;
+const SORT_OPTIONS: Array<{ key: StoreSort; label: string; icon: keyof typeof MaterialCommunityIcons.glyphMap }> = [
+  { key: "store", label: "Mağaza sırası", icon: "storefront-outline" },
+  { key: "new", label: "En yeni", icon: "clock-outline" },
+  { key: "priceAsc", label: "En düşük fiyat", icon: "sort-ascending" },
+  { key: "priceDesc", label: "En yüksek fiyat", icon: "sort-descending" }
+];
 type ProfileTab = "about" | "listings" | "partnerships" | "policies" | "reviews" | "badges";
 const NO_REVIEW_STATS: RatingStats = { count: 0, average: 0, dist: [0, 0, 0, 0, 0] };
 
@@ -92,7 +102,12 @@ function StoreScreenLegacy() {
   const [filter, setFilter] = useState<StoreFilter>("active");
   const [catFilter, setCatFilter] = useState<string>("all"); // mağaza-içi kategori filtresi (Trendyol)
   // Varsayılan: satıcının belirlediği mağaza sırası (yeni eklenen ilan en başta) — bkz. lib/store-order.ts.
-  const [storeSort, setStoreSort] = useState<"store" | "new" | "priceAsc" | "priceDesc">("store");
+  const [storeSort, setStoreSort] = useState<StoreSort>("store");
+  // Dar ekran (mobil web) sekmesi — ürünler varsayılan; yapışkan sekme çubuğuyla değişir.
+  const [mobileTab, setMobileTab] = useState<MobileTab>("listings");
+  const scrollRef = useRef<ScrollViewInstance>(null);
+  const scrollYRef = useRef(0);
+  const heroHeightRef = useRef(0);
   // Sekme: kullanıcı seçene kadar otomatik — ilanı olan satıcının mağazası İLANLARLA açılır (mağazaya gelen önce
   // ürünleri görür), ilanı olmayan profil "Hakkında" ile. Bkz. aşağıda `tab`.
   const [pickedTab, setTab] = useState<ProfileTab | null>(null);
@@ -158,14 +173,24 @@ function StoreScreenLegacy() {
   }, [filteredByStatus]);
   // Seçili kategori artık listede yoksa (durum filtresi değişti) "tümü"ne düş.
   useEffect(() => { if (catFilter !== "all" && !storeCategories.some(([c]) => c === catFilter)) setCatFilter("all"); }, [storeCategories, catFilter]);
+  // Mağaza-içi arama (uygulamadaki mağaza ekranıyla parite): başlık + kategori + konum, Türkçe harf duyarsız.
+  const [storeQuery, setStoreQuery] = useState("");
+  const queryKey = foldKey(storeQuery).trim();
+  // Büyük mağazada (toplu ilan → yüzlerce ürün) hepsini birden çizmemek için kademeli gösterim.
+  const [visibleCount, setVisibleCount] = useState(STORE_PAGE);
+  useEffect(() => { setVisibleCount(STORE_PAGE); }, [filter, catFilter, storeSort, queryKey]);
+  const [sortOpen, setSortOpen] = useState(false);
   const sellerListings = useMemo(() => {
-    const arr = filteredByStatus.filter((listing) => catFilter === "all" || displayText(listing.category) === catFilter);
+    const arr = filteredByStatus.filter((listing) => catFilter === "all" || displayText(listing.category) === catFilter)
+      .filter((listing) => !queryKey || queryKey.split(" ").every((w) => foldKey(`${displayListingTitle(listing.title)} ${listing.category ?? ""} ${listing.location ?? ""}`).includes(w)));
     if (storeSort === "priceAsc") arr.sort((a, b) => a.price - b.price);
     else if (storeSort === "priceDesc") arr.sort((a, b) => b.price - a.price);
     else if (storeSort === "new") arr.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
     else return sortByStoreOrder(arr);
     return arr;
-  }, [filteredByStatus, catFilter, storeSort]);
+  }, [filteredByStatus, catFilter, storeSort, queryKey]);
+  const shownListings = sellerListings.slice(0, visibleCount);
+  const hiddenCount = sellerListings.length - shownListings.length;
   const activeListings = scopedListings.filter((listing) => listing.status === "active");
   const tab: ProfileTab = pickedTab ?? (activeListings.length > 0 ? "listings" : "about");
   const activityLabel = useProfileActivity(id); // "Bugün aktif" / "Bu hafta aktif" (kaba aralık; bkz. lib/activity.ts)
@@ -417,6 +442,9 @@ function StoreScreenLegacy() {
                 ) : null}
                 {isOwnStore ? (
                   <Link href="/create" asChild><Pressable accessibilityRole="button" accessibilityLabel={translateCopy("Yeni ilan", language)} style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 10, flexDirection: "row", gap: 7, paddingHorizontal: 18, paddingVertical: 11 }}><MaterialCommunityIcons name="plus" size={17} color="#FFFFFF" /><Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>{translateCopy("Yeni ilan", language)}</Text></Pressable></Link>
+                ) : null}
+                {isOwnStore ? (
+                  <Link href="/magaza-sirasi" asChild><Pressable accessibilityRole="button" accessibilityLabel={translateCopy("Mağaza sırası", language)} style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.primary, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 7, paddingHorizontal: 16, paddingVertical: 11 }}><MaterialCommunityIcons name="swap-vertical" size={17} color={colors.primaryDark} /><Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "900" }}>{translateCopy("Mağaza sırası", language)}</Text></Pressable></Link>
                 ) : (
                   <Pressable onPress={messageSeller} accessibilityRole="button" accessibilityLabel={translateCopy("Mesaj gönder", language)} style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 10, flexDirection: "row", gap: 7, paddingHorizontal: 18, paddingVertical: 11 }}><MaterialCommunityIcons name="message-text-outline" size={17} color="#FFFFFF" /><Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>{translateCopy("Mesaj gönder", language)}</Text></Pressable>
                 )}
@@ -516,23 +544,26 @@ function StoreScreenLegacy() {
                       <StoreFilterChip active={filter === "partner"} icon="handshake-outline" label="Ortaklığa açık" onPress={() => setFilter("partner")} />
                       <StoreFilterChip active={filter === "all"} icon="view-grid-outline" label="Tümü" onPress={() => setFilter("all")} />
                     </View>
-                    <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "800" }}>{sellerListings.length} {translateCopy("ürün", language)}</Text>
+                    <View style={{ alignItems: "center", flexDirection: "row", gap: 10 }}>
+                      <StoreSearchBox value={storeQuery} onChange={setStoreQuery} language={language} width={280} />
+                      <StoreSortButton value={storeSort} open={sortOpen} onToggle={() => setSortOpen((o) => !o)} language={language} />
+                    </View>
                   </View>
-                  {/* Mağaza-içi sıralama (Trendyol mağaza sayfasındaki gibi). */}
-                  <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-                    <StoreFilterChip active={storeSort === "store"} icon="storefront-outline" label="Mağaza sırası" onPress={() => setStoreSort("store")} />
-                    <StoreFilterChip active={storeSort === "new"} icon="clock-outline" label="En yeni" onPress={() => setStoreSort("new")} />
-                    <StoreFilterChip active={storeSort === "priceAsc"} icon="sort-ascending" label="En düşük fiyat" onPress={() => setStoreSort("priceAsc")} />
-                    <StoreFilterChip active={storeSort === "priceDesc"} icon="sort-descending" label="En yüksek fiyat" onPress={() => setStoreSort("priceDesc")} />
-                  </View>
+                  {sortOpen ? <StoreSortPanel value={storeSort} onPick={(s) => { setStoreSort(s); setSortOpen(false); }} language={language} narrow /> : null}
                   <StoreCategoryBar categories={storeCategories} value={catFilter} onChange={setCatFilter} total={filteredByStatus.length} language={language} />
+                  <StoreResultLine count={sellerListings.length} query={storeQuery} onClear={() => setStoreQuery("")} isOwnStore={isOwnStore} language={language} />
                   {sellerListings.length === 0 ? (
-                    <EmptyState title={translateCopy("Ürün yok", language)} body={isOwnStore ? translateCopy("İlk ilanını açınca burada görünür.", language) : translateCopy("Bu mağazada şu an görünür ürün yok.", language)} />
+                    queryKey ? (
+                      <EmptyState title={translateCopy("Sonuç yok", language)} body={translateCopy("Bu mağazada aramana uyan ürün bulunamadı. Farklı bir kelime dene.", language)} />
+                    ) : (
+                      <EmptyState title={translateCopy("Ürün yok", language)} body={isOwnStore ? translateCopy("İlk ilanını açınca burada görünür.", language) : translateCopy("Bu mağazada şu an görünür ürün yok.", language)} />
+                    )
                   ) : (
                     <View style={{ alignItems: "flex-start", flexDirection: "row", flexWrap: "wrap", gap: 14 }}>
-                      {sellerListings.map((listing, index) => <ListingCard key={listing.id} listing={listing} owner={seller} width={deskGridCardWidth} eager={index < 4} />)}
+                      {shownListings.map((listing, index) => <ListingCard key={listing.id} listing={listing} owner={seller} width={deskGridCardWidth} eager={index < 4} />)}
                     </View>
                   )}
+                  <StoreLoadMore hidden={hiddenCount} onPress={() => setVisibleCount((n) => n + STORE_PAGE)} language={language} />
                 </>
               ) : null}
 
@@ -656,19 +687,41 @@ function StoreScreenLegacy() {
     );
   }
 
+  // ── DAR EKRAN (mobil web) ── 2026-11-23 yeniden tasarım: kompakt başlık kartı + YAPIŞKAN sekme çubuğu
+  // (Ürünler / Hakkında / Yorumlar / Politikalar) + mağaza-içi arama ve açılır sıralama. Eskiden her bölüm alt
+  // alta diziliyordu: ürünlere ulaşmak için ~2 ekran kaydırmak ve üç sıra çip geçmek gerekiyordu.
+  const mobileTabs: Array<{ key: MobileTab; label: string; count?: number }> = [
+    { key: "listings", label: translateCopy("Ürünler", language), count: activeListings.length },
+    { key: "about", label: translateCopy("Hakkında", language) },
+    { key: "reviews", label: translateCopy("Yorumlar", language), count: reviewCount },
+    { key: "policies", label: translateCopy("Politikalar", language) }
+  ];
+  const blocked = isUserBlocked(seller.id);
+  const metaBits = [seller.city, memberLabel, activityLabel ? translateCopy(activityLabel, language) : null].filter(Boolean) as string[];
+  function pickMobileTab(next: MobileTab) {
+    haptic.selection();
+    setMobileTab(next);
+    // Başlık kartının altına inilmişse sekme çubuğu yerinde kalsın: yeni içerik en baştan görünsün.
+    if (scrollYRef.current > heroHeightRef.current) scrollRef.current?.scrollTo({ y: heroHeightRef.current, animated: false });
+  }
+
   return (
     <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={{ flex: 1 }}>
     <ScrollView
+      ref={scrollRef}
       contentInsetAdjustmentBehavior="automatic"
       keyboardShouldPersistTaps="handled"
+      stickyHeaderIndices={[1]}
+      scrollEventThrottle={64}
+      onScroll={(e) => { scrollYRef.current = e.nativeEvent.contentOffset.y; }}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={colors.primary} colors={[colors.primary]} />}
-      contentContainerStyle={{ gap: 12, padding: 12, paddingBottom: 104 }}
+      style={{ backgroundColor: colors.background }}
+      contentContainerStyle={{ paddingBottom: 104 }}
     >
-      {/* SEO/JsonLd mobil dalda da (eskiden yalnız masaüstündeydi → dar-ekran web'de
-          sayfa meta/aggregateRating üretmiyordu). Görsel çıktı yok; head'e enjekte eder. */}
-      {seller && <TrustEntry userId={seller.id} />}
-        <Seo title={`${seller?.name ?? "Satıcı"} — Mağaza ve ilanları | OrtakSat`} description={`${seller?.name ?? "Bu satıcının"} OrtakSat mağazası: ${activeListings.length} aktif ilan. Ürünleri incele, ortak ol veya doğrudan satıcıyla iletişime geç.`} path={id ? `/store/${id}` : undefined} image={seller?.avatar?.startsWith("http") ? seller.avatar : undefined} />
-      {seller ? (
+      {/* 0 — BAŞLIK (SEO/JsonLd de burada: yapışkan indeks sabit kalsın diye koşullu çocuk üst düzeyde yok). */}
+      <View onLayout={(e) => { heroHeightRef.current = e.nativeEvent.layout.height; }} style={{ gap: 12, paddingHorizontal: 12, paddingTop: 12 }}>
+        {seller ? <TrustEntry userId={seller.id} /> : null}
+        <Seo title={`${seller.name} — Mağaza ve ilanları | OrtakSat`} description={`${seller.name} OrtakSat mağazası: ${activeListings.length} aktif ilan. Ürünleri incele, ortak ol veya doğrudan satıcıyla iletişime geç.`} path={id ? `/store/${id}` : undefined} image={seller.avatar?.startsWith("http") ? seller.avatar : undefined} />
         <JsonLd id="store" json={JSON.stringify({
           "@context": "https://schema.org",
           "@type": "Store",
@@ -677,212 +730,346 @@ function StoreScreenLegacy() {
           ...(seller.avatar?.startsWith("http") ? { image: seller.avatar } : {}),
           ...(reviewStats.count > 0 ? { aggregateRating: { "@type": "AggregateRating", ratingValue: reviewStats.average, reviewCount: reviewStats.count, bestRating: 5, worstRating: 1 } } : {})
         })} />
-      ) : null}
-      <StoreCover cover={seller.cover} height={92} radius={10} />
-      <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 8, borderWidth: 1, gap: 12, marginTop: -44, padding: 14 }}>
-        <View style={{ alignItems: "center", flexDirection: "row", gap: 12 }}>
-          <UserAvatar uri={seller.avatar} size={66} />
-          <View style={{ flex: 1, gap: 5, minWidth: 0 }}>
-            <Text selectable numberOfLines={1} style={{ color: colors.ink, fontSize: 21, fontWeight: "900" }}>
-              {seller.name}
-            </Text>
-            <Text selectable numberOfLines={2} style={{ color: colors.muted, fontSize: 13, fontWeight: "800", lineHeight: 18 }}>
+        <StoreCover cover={seller.cover} height={112} radius={14} />
+        <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 14, marginHorizontal: 4, marginTop: -54, padding: 14 }}>
+          <View style={{ alignItems: "flex-end", flexDirection: "row", gap: 12 }}>
+            <View style={{ backgroundColor: colors.surface, borderColor: colors.surface, borderRadius: 999, borderWidth: 3, marginTop: -44 }}>
+              <UserAvatar uri={seller.avatar} name={seller.name} size={76} />
+            </View>
+            <View style={{ flex: 1, flexDirection: "row", flexWrap: "wrap", gap: 6, justifyContent: "flex-end", minWidth: 0 }}>
+              {ratingValue != null ? <StatusPill label={`★ ${ratingText}`} tone="info" /> : <StatusPill label={translateCopy("Yeni mağaza", language)} tone="info" />}
+              {seller.verifiedIdentity ? <StatusPill label={t("identityVerified")} tone="success" /> : null}
+            </View>
+          </View>
+          <View style={{ gap: 4 }}>
+            <View style={{ alignItems: "center", flexDirection: "row", gap: 6 }}>
+              <Text selectable numberOfLines={2} style={{ color: colors.ink, flexShrink: 1, fontSize: 20, fontWeight: "900", lineHeight: 25 }}>{seller.name}</Text>
+              {seller.verifiedIdentity ? <MaterialCommunityIcons name="check-decagram" size={19} color={colors.info} /> : null}
+            </View>
+            <Text selectable numberOfLines={3} style={{ color: colors.muted, fontSize: 13, fontWeight: "600", lineHeight: 19 }}>
               {seller.bio || translateCopy("Satıcı mağazası", language)}
             </Text>
-            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
-              <StatusPill label={ratingValue == null ? translateCopy("Henüz puan yok", language) : `${ratingText} ${t("points")}`} tone="info" />
-              <StatusPill label={seller.verifiedIdentity ? t("identityVerified") : t("identityPending")} tone={seller.verifiedIdentity ? "success" : "warning"} />
+            {metaBits.length ? (
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10, marginTop: 2 }}>
+                {seller.city ? <MetaBit icon="map-marker-outline" text={seller.city} /> : null}
+                {memberLabel ? <MetaBit icon="calendar-check-outline" text={memberLabel} /> : null}
+                {activityLabel ? <MetaBit icon="clock-check-outline" text={translateCopy(activityLabel, language)} strong /> : null}
+              </View>
+            ) : null}
+          </View>
+
+          {/* Tek satır ölçüm şeridi — eski 2×3 kutu ızgarası başlığı ekranın tamamına yayıyordu. */}
+          <View style={{ backgroundColor: colors.surfaceAlt, borderRadius: 12, flexDirection: "row", paddingVertical: 10 }}>
+            <MobileStat value={ratingText} label={translateCopy("Puan", language)} />
+            <MobileStat value={`${seller.successfulSales}`} label={translateCopy("Satış", language)} />
+            <MobileStat value={`${activeListings.length}`} label={translateCopy("İlan", language)} />
+            <MobileStat value={`${seller.followerCount}`} label={translateCopy("Takipçi", language)} last />
+          </View>
+
+          {isOwnStore ? (
+            <View style={{ gap: 8 }}>
+              <View style={{ flexDirection: "row", gap: 8 }}>
+                <View style={{ flex: 1 }}><PrimaryButton href="/create" icon="plus">{translateCopy("Yeni ilan", language)}</PrimaryButton></View>
+                <View style={{ flex: 1 }}><PrimaryButton href="/(tabs)/seller" tone="secondary" icon="storefront-outline">{translateCopy("Satıcı paneli", language)}</PrimaryButton></View>
+              </View>
+              <View style={{ flexDirection: "row", gap: 8 }}>
+                <IconAction href="/magaza-sirasi" icon="swap-vertical" label={translateCopy("Mağaza sırası", language)} />
+                <IconAction href="/profile-edit" icon="image-edit-outline" label={translateCopy("Profil & kapak", language)} />
+                <IconAction onPress={() => void shareStore()} icon="share-variant-outline" label={translateCopy("Paylaş", language)} />
+              </View>
             </View>
-            {seller.city || memberLabel ? (
-              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
-                {seller.city ? (
-                  <View style={{ alignItems: "center", flexDirection: "row", gap: 4 }}>
-                    <MaterialCommunityIcons name="map-marker-outline" size={13} color={colors.muted} />
-                    <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "700" }}>{seller.city}</Text>
+          ) : (
+            <View style={{ gap: 8 }}>
+              <View style={{ flexDirection: "row", gap: 8 }}>
+                <Pressable onPress={handleFollow} accessibilityRole="button" accessibilityLabel={translateCopy(following ? "Takiptesin" : "Takip Et", language)} style={({ pressed }) => ({ alignItems: "center", backgroundColor: following ? colors.surface : colors.primarySoft, borderColor: following ? colors.line : colors.primarySoft, borderRadius: 12, borderWidth: 1, flex: 1, flexDirection: "row", gap: 7, justifyContent: "center", minHeight: 46, opacity: pressed ? 0.75 : 1 })}>
+                  <MaterialCommunityIcons name={following ? "account-check" : "account-plus-outline"} size={18} color={colors.primaryDark} />
+                  <Text numberOfLines={1} style={{ color: colors.primaryDark, fontSize: 14, fontWeight: "900" }}>{translateCopy(following ? "Takiptesin" : "Takip Et", language)}</Text>
+                </Pressable>
+                <Pressable onPress={messageSeller} accessibilityRole="button" accessibilityLabel={translateCopy("Mesaj gönder", language)} style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.primary, borderRadius: 12, flex: 1, flexDirection: "row", gap: 7, justifyContent: "center", minHeight: 46, opacity: pressed ? 0.85 : 1 })}>
+                  <MaterialCommunityIcons name="message-text-outline" size={18} color="#FFFFFF" />
+                  <Text numberOfLines={1} style={{ color: "#FFFFFF", fontSize: 14, fontWeight: "900" }}>{translateCopy("Mesaj gönder", language)}</Text>
+                </Pressable>
+              </View>
+              <View style={{ flexDirection: "row", gap: 8 }}>
+                {revealedPhone ? (
+                  <Pressable onPress={() => void openUrlSafe(`tel:${trPhoneIntl(revealedPhone)}`)} accessibilityRole="button" style={{ alignItems: "center", backgroundColor: colors.successSoft, borderColor: colors.success, borderRadius: 12, borderWidth: 1, flex: 1, flexDirection: "row", gap: 7, justifyContent: "center", minHeight: 44 }}>
+                    <MaterialCommunityIcons name="phone" size={17} color={colors.success} />
+                    <Text selectable numberOfLines={1} style={{ color: colors.success, fontSize: 14, fontWeight: "900" }}>{revealedPhone}</Text>
+                  </Pressable>
+                ) : (
+                  <Pressable onPress={() => void revealPhone()} accessibilityRole="button" accessibilityLabel={translateCopy("Numarayı Göster", language)} style={({ pressed }) => ({ alignItems: "center", borderColor: colors.line, borderRadius: 12, borderWidth: 1, flex: 1, flexDirection: "row", gap: 7, justifyContent: "center", minHeight: 44, opacity: pressed ? 0.75 : 1 })}>
+                    <MaterialCommunityIcons name="phone-outline" size={17} color={colors.primaryDark} />
+                    <Text numberOfLines={1} style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "800" }}>{revealingPhone ? "…" : translateCopy("Numarayı Göster", language)}</Text>
+                  </Pressable>
+                )}
+                <SquareAction icon="share-variant-outline" label={translateCopy("Profili paylaş", language)} onPress={() => void shareStore()} />
+                <SquareAction icon="flag-outline" label={translateCopy("Satıcıyı şikayet et", language)} onPress={() => void handleReportSeller()} />
+                <SquareAction icon={blocked ? "account-check-outline" : "account-cancel-outline"} label={translateCopy(blocked ? "Engeli kaldır" : "Kullanıcıyı engelle", language)} onPress={() => handleToggleBlock()} active={blocked} />
+              </View>
+            </View>
+          )}
+        </View>
+      </View>
+
+      {/* 1 — YAPIŞKAN SEKME ÇUBUĞU */}
+      <View style={{ backgroundColor: colors.background, borderBottomColor: colors.line, borderBottomWidth: 1, marginTop: 6 }}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0 }} contentContainerStyle={{ paddingHorizontal: 8 }}>
+          {mobileTabs.map((tb) => {
+            const on = mobileTab === tb.key;
+            return (
+              <Pressable key={tb.key} onPress={() => pickMobileTab(tb.key)} accessibilityRole="tab" accessibilityState={{ selected: on }} accessibilityLabel={tb.label} style={{ alignItems: "center", borderBottomColor: on ? colors.primary : "transparent", borderBottomWidth: 2.5, flexDirection: "row", gap: 6, paddingHorizontal: 12, paddingVertical: 12 }}>
+                <Text style={{ color: on ? colors.primaryDark : colors.muted, fontSize: 14, fontWeight: "900" }}>{tb.label}</Text>
+                {tb.count ? (
+                  <View style={{ backgroundColor: on ? colors.primary : colors.surfaceAlt, borderRadius: 999, minWidth: 20, paddingHorizontal: 6, paddingVertical: 1 }}>
+                    <Text style={{ color: on ? "#FFFFFF" : colors.muted, fontSize: 11, fontVariant: ["tabular-nums"], fontWeight: "900", textAlign: "center" }}>{tb.count}</Text>
                   </View>
                 ) : null}
-                {memberLabel ? (
-                  <View style={{ alignItems: "center", flexDirection: "row", gap: 4 }}>
-                    <MaterialCommunityIcons name="calendar-check-outline" size={13} color={colors.muted} />
-                    <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "700" }}>{memberLabel}</Text>
+              </Pressable>
+            );
+          })}
+        </ScrollView>
+      </View>
+
+      {/* 2 — SEKME İÇERİĞİ */}
+      <View style={{ gap: 12, paddingHorizontal: 12, paddingTop: 12 }}>
+        {mobileTab === "listings" ? (
+          <>
+            <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
+              <View style={{ flex: 1, minWidth: 0 }}><StoreSearchBox value={storeQuery} onChange={setStoreQuery} language={language} /></View>
+              <StoreSortButton value={storeSort} open={sortOpen} onToggle={() => setSortOpen((o) => !o)} language={language} compact />
+            </View>
+            {sortOpen ? <StoreSortPanel value={storeSort} onPick={(s) => { setStoreSort(s); setSortOpen(false); }} language={language} /> : null}
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0 }} contentContainerStyle={{ gap: 8 }}>
+              <StoreFilterChip active={filter === "active"} icon="check-circle-outline" label="Aktif" onPress={() => setFilter("active")} />
+              <StoreFilterChip active={filter === "partner"} icon="handshake-outline" label="Ortaklığa açık" onPress={() => setFilter("partner")} />
+              <StoreFilterChip active={filter === "all"} icon="view-grid-outline" label="Tümü" onPress={() => setFilter("all")} />
+            </ScrollView>
+            <StoreCategoryBar categories={storeCategories} value={catFilter} onChange={setCatFilter} total={filteredByStatus.length} language={language} />
+            <StoreResultLine count={sellerListings.length} query={storeQuery} onClear={() => setStoreQuery("")} isOwnStore={isOwnStore} language={language} />
+            {sellerListings.length === 0 ? (
+              queryKey ? (
+                <EmptyState title={translateCopy("Sonuç yok", language)} body={translateCopy("Bu mağazada aramana uyan ürün bulunamadı. Farklı bir kelime dene.", language)} />
+              ) : (
+                <EmptyState title={translateCopy("Ürün yok", language)} body={isOwnStore ? translateCopy("İlk ilanını açınca mağazana ve ana pazara otomatik düşer.", language) : translateCopy("Bu mağazada şu an görünür ürün yok.", language)} />
+              )
+            ) : (
+              <View style={{ alignItems: "flex-start", flexDirection: "row", flexWrap: "wrap", gap: gridGap }}>
+                {shownListings.map((listing, index) => (
+                  <ListingCard key={listing.id} listing={listing} owner={seller} width={cardWidth} eager={index < 4} />
+                ))}
+              </View>
+            )}
+            <StoreLoadMore hidden={hiddenCount} onPress={() => setVisibleCount((n) => n + STORE_PAGE)} language={language} />
+          </>
+        ) : null}
+
+        {mobileTab === "about" ? (
+          <>
+            <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 10, padding: 16 }}>
+              <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>{translateCopy("Hakkında", language)}</Text>
+              <Text selectable style={{ color: colors.muted, fontSize: 14, fontWeight: "500", lineHeight: 21 }}>{seller.bio || translateCopy("Bu satıcı henüz bir açıklama eklememiş.", language)}</Text>
+              <View style={{ borderTopColor: colors.line, borderTopWidth: 1, gap: 11, marginTop: 2, paddingTop: 12 }}>
+                <DeskAboutRow icon="cart-check" label={translateCopy("Toplam satış", language)} value={`${seller.successfulSales}`} />
+                {seller.responseRate > 0 ? <DeskAboutRow icon="lightning-bolt" label={translateCopy("Yanıt oranı", language)} value={`%${seller.responseRate}`} /> : null}
+                {totalCommission > 0 ? <DeskAboutRow icon="tag-multiple-outline" label={translateCopy("Toplam komisyon havuzu", language)} value={money(totalCommission)} /> : null}
+                <DeskAboutRow icon="shield-check" label={translateCopy("Satıcı güven puanı", language)} value={trust?.seller.score == null ? translateCopy("Henüz yok", language) : `%${trust.seller.score}`} />
+                {memberLabel ? <DeskAboutRow icon="calendar-check-outline" label={translateCopy("Üyelik", language)} value={memberLabel} /> : null}
+                {seller.city ? <DeskAboutRow icon="map-marker-outline" label={translateCopy("Konum", language)} value={seller.city} /> : null}
+              </View>
+            </View>
+
+            {/* Ziyaretçi yalnız KAZANILMIŞ rozetleri görür; mağaza sahibi neleri kazanabileceğini de görür. */}
+            {mobileBadges.length > 0 || (seller.expertiseCategories?.length ?? 0) > 0 ? (
+              <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 10, padding: 16 }}>
+                {mobileBadges.length > 0 ? <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>{translateCopy("Doğrulama & rozetler", language)}</Text> : null}
+                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 7 }}>
+                  {mobileBadges.map((b) => (
+                    <View key={b.label} style={{ alignItems: "center", backgroundColor: b.on ? b.tint : colors.surfaceAlt, borderRadius: 999, flexDirection: "row", gap: 5, opacity: b.on ? 1 : 0.55, paddingHorizontal: 10, paddingVertical: 6 }}>
+                      <MaterialCommunityIcons name={b.on ? b.icon : "lock-outline"} size={13} color={b.on ? b.color : colors.subtle} />
+                      <Text style={{ color: b.on ? b.color : colors.subtle, fontSize: 11.5, fontWeight: "800" }}>{b.label}</Text>
+                    </View>
+                  ))}
+                </View>
+                {seller.expertiseCategories && seller.expertiseCategories.length > 0 ? (
+                  <View style={mobileBadges.length > 0 ? { borderTopColor: colors.line, borderTopWidth: 1, gap: 7, marginTop: 2, paddingTop: 10 } : { gap: 7 }}>
+                    <Text style={{ color: colors.ink, fontSize: 13.5, fontWeight: "900" }}>{translateCopy("Uzmanlık alanları", language)}</Text>
+                    <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 7 }}>
+                      {seller.expertiseCategories.map((cat) => (
+                        <View key={cat} style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 999, flexDirection: "row", gap: 5, paddingHorizontal: 10, paddingVertical: 6 }}>
+                          <MaterialCommunityIcons name="star-four-points-outline" size={12} color={colors.primaryDark} />
+                          <Text style={{ color: colors.primaryDark, fontSize: 11.5, fontWeight: "800" }}>{translateCopy(cat, language)}</Text>
+                        </View>
+                      ))}
+                    </View>
                   </View>
                 ) : null}
               </View>
             ) : null}
-          </View>
-        </View>
 
-        {/* Güven sinyalleri (masaüstü paritesi): eskiden mobilde yanıt oranı ve satıcı güven
-            puanı HİÇ yoktu → ziyaretçi en kritik güven metriklerini göremiyordu. */}
-        <View style={{ flexDirection: "row", gap: 8 }}>
-          <Metric label={translateCopy("Satış", language)} value={`${seller.successfulSales}`} />
-          <Metric label={t("activeListing")} value={`${activeListings.length}`} />
-          <Metric label={translateCopy("Takipçi", language)} value={`${seller.followerCount}`} />
-        </View>
-        {/* Değeri olmayan ölçüm kutusu çizilmez (2026-11-15): yeni mağazada "Puan —" ve "Satıcı güveni: Henüz yok"
-            kutuları boş bir mağaza izlenimi veriyordu. Hiçbiri yoksa satırın tamamı kalkar. */}
-        {ratingValue != null || seller.responseRate > 0 || !!activityLabel || trust?.seller.score != null ? (
-          <View style={{ flexDirection: "row", gap: 8 }}>
-            {ratingValue != null ? <Metric label={translateCopy("Puan", language)} value={ratingText} /> : null}
-            {seller.responseRate > 0 ? <Metric label={translateCopy("Yanıt oranı", language)} value={`%${seller.responseRate}`} /> : activityLabel ? <Metric label={translateCopy("Aktiflik", language)} value={translateCopy(activityLabel, language)} /> : null}
-            {trust?.seller.score != null ? <Metric label={translateCopy("Satıcı güveni", language)} value={`%${trust.seller.score}`} /> : null}
-          </View>
-        ) : null}
-        {!isOwnStore ? (
-          <Pressable onPress={handleFollow} accessibilityRole="button" style={{ alignItems: "center", backgroundColor: following ? colors.surfaceAlt : colors.primary, borderColor: colors.primary, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 8, justifyContent: "center", paddingVertical: 12 }}>
-            <MaterialCommunityIcons name={following ? "account-heart" : "account-heart-outline"} size={18} color={following ? colors.primary : "#FFFFFF"} />
-            <Text style={{ color: following ? colors.primary : "#FFFFFF", fontSize: 14, fontWeight: "900" }}>{translateCopy(following ? "Takiptesin" : "Takip Et", language)}</Text>
-          </Pressable>
-        ) : null}
-
-        {hasPartnerActivity ? (
-          <View style={{ backgroundColor: colors.primarySoft, borderRadius: 10, gap: 8, padding: 12 }}>
-            <View style={{ alignItems: "center", flexDirection: "row", gap: 7 }}>
-              <MaterialCommunityIcons name="handshake-outline" size={16} color={colors.primaryDark} />
-              <Text style={{ color: colors.ink, fontSize: 14, fontWeight: "900" }}>{translateCopy("Ortak karnesi", language)}</Text>
-            </View>
-            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-              <PartnerScoreCell value={`${partnerBroughtSales}`} label={translateCopy("Getirdiği satış", language)} />
-              <PartnerScoreCell value={`${partnerActiveCount}`} label={translateCopy("Aktif ortaklık", language)} />
-              <PartnerScoreCell value={money(partnerEarned)} label={translateCopy("Kazandırdığı komisyon", language)} />
-              <PartnerScoreCell value={trust?.partner.score == null ? "Henüz yok" : `%${trust.partner.score}`} label={translateCopy("Ortak güveni", language)} />
-            </View>
-          </View>
-        ) : null}
-
-        {/* Birincil aksiyon TAM GENİŞLİK: "Mağazaya mesaj gönder" uzun etiketti ve iki
-            sütunlu satırda yarıya sıkışıp "Mağazaya mesaj ..." diye kırpılıyordu. */}
-        <View style={{ gap: 8 }}>
-          {isOwnStore ? (
-            <PrimaryButton href="/create" icon="store-plus-outline">{translateCopy("Yeni ilan aç", language)}</PrimaryButton>
-          ) : (
-            <PrimaryButton icon="message-text-outline" onPress={messageSeller}>{translateCopy("Mağazaya mesaj gönder", language)}</PrimaryButton>
-          )}
-          <View style={{ flexDirection: "row", gap: 8 }}>
-            <View style={{ flex: 1 }}>
-              <PrimaryButton href={isOwnStore ? "/(tabs)/seller" : "/(tabs)/partner"} tone="secondary" icon={isOwnStore ? "storefront-outline" : "handshake-outline"}>
-                {isOwnStore ? translateCopy("Satıcı paneli", language) : translateCopy("Ortaklık ürünleri", language)}
-              </PrimaryButton>
-            </View>
-            {/* Profili paylaş (mobil) — native paylaşım tabakası / web panoya. */}
-            <Pressable accessibilityRole="button" accessibilityLabel={translateCopy("Profili paylaş", language)} onPress={() => void shareStore()} style={({ pressed }) => ({ alignItems: "center", borderColor: colors.line, borderRadius: 10, borderWidth: 1, justifyContent: "center", opacity: pressed ? 0.7 : 1, paddingHorizontal: 14 })}>
-              <MaterialCommunityIcons name="share-variant-outline" size={19} color={colors.muted} />
-            </Pressable>
-            {/* Şikayet et (mobil) — masaüstü sidebar'daki güvenlik aksiyonunun karşılığı. */}
-            {!isOwnStore ? (
-              <Pressable accessibilityRole="button" accessibilityLabel={translateCopy("Satıcıyı şikayet et", language)} onPress={() => void handleReportSeller()} style={({ pressed }) => ({ alignItems: "center", borderColor: colors.line, borderRadius: 10, borderWidth: 1, justifyContent: "center", opacity: pressed ? 0.7 : 1, paddingHorizontal: 14 })}>
-                <MaterialCommunityIcons name="flag-outline" size={19} color={colors.muted} />
-              </Pressable>
-            ) : null}
-            {!isOwnStore && seller ? (
-              <Pressable accessibilityRole="button" accessibilityLabel={translateCopy(isUserBlocked(seller.id) ? "Engeli kaldır" : "Kullanıcıyı engelle", language)} onPress={() => handleToggleBlock()} style={({ pressed }) => ({ alignItems: "center", backgroundColor: isUserBlocked(seller.id) ? colors.accentSoft : "transparent", borderColor: isUserBlocked(seller.id) ? colors.accent : colors.line, borderRadius: 10, borderWidth: 1, justifyContent: "center", opacity: pressed ? 0.7 : 1, paddingHorizontal: 14 })}>
-                <MaterialCommunityIcons name={isUserBlocked(seller.id) ? "account-check-outline" : "account-cancel-outline"} size={19} color={isUserBlocked(seller.id) ? colors.accent : colors.muted} />
-              </Pressable>
-            ) : null}
-          </View>
-        </View>
-        {/* Numarayı Göster (mobil, Sahibinden tarzı) */}
-        {!isOwnStore ? (
-          revealedPhone ? (
-            <Pressable onPress={() => void openUrlSafe(`tel:${trPhoneIntl(revealedPhone)}`)} style={{ alignItems: "center", backgroundColor: colors.successSoft, borderColor: colors.success, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 8, justifyContent: "center", marginTop: 8, paddingVertical: 12 }}><MaterialCommunityIcons name="phone" size={18} color={colors.success} /><Text selectable style={{ color: colors.success, fontSize: 15, fontWeight: "900" }}>{revealedPhone}</Text></Pressable>
-          ) : (
-            <Pressable onPress={() => void revealPhone()} style={{ alignItems: "center", borderColor: colors.primary, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 8, justifyContent: "center", marginTop: 8, paddingVertical: 12 }}><MaterialCommunityIcons name="phone-outline" size={18} color={colors.primaryDark} /><Text style={{ color: colors.primaryDark, fontSize: 14, fontWeight: "800" }}>{revealingPhone ? "…" : translateCopy("Numarayı Göster", language)}</Text></Pressable>
-          )
-        ) : null}
-      </View>
-
-      {/* Doğrulama rozetleri (mobil). Ziyaretçi yalnız KAZANILMIŞ rozetleri görür; altı kilitli gri rozet mağazayı
-          "hiçbir şeyi yok" gibi gösteriyordu. Mağaza sahibi neleri kazanabileceğini görsün diye hepsini görür.
-          Gösterilecek rozet de uzmanlık da yoksa kutu hiç çizilmez. */}
-      {mobileBadges.length > 0 || (seller.expertiseCategories?.length ?? 0) > 0 ? (
-      <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 8, borderWidth: 1, gap: 8, padding: 12 }}>
-        {mobileBadges.length > 0 ? <Text style={{ color: colors.ink, fontSize: 14, fontWeight: "900" }}>{translateCopy("Doğrulama & rozetler", language)}</Text> : null}
-        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 7 }}>
-          {mobileBadges.map((b) => (
-            <View key={b.label} style={{ alignItems: "center", backgroundColor: b.on ? b.tint : colors.surfaceAlt, borderRadius: 999, flexDirection: "row", gap: 5, opacity: b.on ? 1 : 0.55, paddingHorizontal: 10, paddingVertical: 6 }}>
-              <MaterialCommunityIcons name={b.on ? b.icon : "lock-outline"} size={13} color={b.on ? b.color : colors.subtle} />
-              <Text style={{ color: b.on ? b.color : colors.subtle, fontSize: 11.5, fontWeight: "800" }}>{b.label}</Text>
-            </View>
-          ))}
-        </View>
-        {seller.expertiseCategories && seller.expertiseCategories.length > 0 ? (
-          <View style={mobileBadges.length > 0 ? { borderTopColor: colors.line, borderTopWidth: 1, gap: 7, marginTop: 2, paddingTop: 10 } : { gap: 7 }}>
-            <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "900" }}>{translateCopy("Uzmanlık alanları", language)}</Text>
-            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 7 }}>
-              {seller.expertiseCategories.map((cat) => (
-                <View key={cat} style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 999, flexDirection: "row", gap: 5, paddingHorizontal: 10, paddingVertical: 6 }}>
-                  <MaterialCommunityIcons name="star-four-points-outline" size={12} color={colors.primaryDark} />
-                  <Text style={{ color: colors.primaryDark, fontSize: 11.5, fontWeight: "800" }}>{translateCopy(cat, language)}</Text>
+            {hasPartnerActivity ? (
+              <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 10, padding: 16 }}>
+                <View style={{ alignItems: "center", flexDirection: "row", gap: 7 }}>
+                  <MaterialCommunityIcons name="handshake-outline" size={17} color={colors.primaryDark} />
+                  <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>{translateCopy("Ortak karnesi", language)}</Text>
                 </View>
-              ))}
-            </View>
+                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+                  <PartnerScoreCell value={`${partnerBroughtSales}`} label={translateCopy("Getirdiği satış", language)} />
+                  <PartnerScoreCell value={`${partnerActiveCount}`} label={translateCopy("Aktif ortaklık", language)} />
+                  <PartnerScoreCell value={money(partnerEarned)} label={translateCopy("Kazandırdığı komisyon", language)} />
+                  <PartnerScoreCell value={trust?.partner.score == null ? translateCopy("Henüz yok", language) : `%${trust.partner.score}`} label={translateCopy("Ortak güveni", language)} />
+                </View>
+              </View>
+            ) : null}
+
+            {activeListings.some((l) => l.partnershipMode !== "invite") && !isOwnStore ? (
+              <Pressable onPress={() => { setFilter("partner"); pickMobileTab("listings"); }} accessibilityRole="button" style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 16, flexDirection: "row", gap: 12, opacity: pressed ? 0.8 : 1, padding: 16 })}>
+                <MaterialCommunityIcons name="handshake-outline" size={24} color={colors.primaryDark} />
+                <View style={{ flex: 1, gap: 2 }}>
+                  <Text style={{ color: colors.ink, fontSize: 14.5, fontWeight: "900" }}>{translateCopy("Bu mağazanın ürünlerini sat, komisyon kazan", language)}</Text>
+                  <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600" }}>{translateCopy("Ortaklığa açık ürünleri gör", language)}</Text>
+                </View>
+                <MaterialCommunityIcons name="chevron-right" size={22} color={colors.primaryDark} />
+              </Pressable>
+            ) : null}
+          </>
+        ) : null}
+
+        {mobileTab === "reviews" ? (
+          <View style={{ gap: 10 }}>
+            {reviewStats.count > 0 ? <RatingSummary stats={reviewStats} language={language} /> : null}
+            {reviewCount > 1 ? <ReviewSortBar value={reviewSort} onChange={setReviewSort} language={language} /> : null}
+            {reviewsAboutSeller.length === 0 ? (
+              reviewPager.loading || reviewPager.error ? null : <EmptyState title={translateCopy("Henüz değerlendirme yok", language)} body={translateCopy("Değerlendirmeler yalnızca tamamlanmış bir satışın taraflarınca yazılabilir.", language)} />
+            ) : (
+              reviewsAboutSeller.map((r) => (
+                <ReviewCard key={r.id} review={r} reviewerName={r.reviewerName ?? findUser(r.reviewerId)?.name} isSeller={isOwnStore} authed={isAuthed} onPatch={patchReview} onRemove={removeFetched} isMine={r.reviewerId === currentUser.id} onEdit={editReview} onDelete={deleteReview} onReport={reportReview} language={language} />
+              ))
+            )}
+            <ReviewLoadMore hasMore={reviewPager.hasMore} loading={reviewPager.loading || reviewPager.loadingMore} error={reviewPager.error} onLoadMore={reviewPager.loadMore} onRetry={reviewPager.retry} language={language} />
           </View>
         ) : null}
-      </View>
-      ) : null}
 
-      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-        <StoreFilterChip active={filter === "active"} icon="check-circle-outline" label="Aktif" onPress={() => setFilter("active")} />
-        <StoreFilterChip active={filter === "partner"} icon="handshake-outline" label="Ortaklığa açık" onPress={() => setFilter("partner")} />
-        <StoreFilterChip active={filter === "all"} icon="view-grid-outline" label="Tümü" onPress={() => setFilter("all")} />
-      </View>
-      <ScrollView style={{ flexGrow: 0 }} horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
-        <StoreFilterChip active={storeSort === "store"} icon="storefront-outline" label="Mağaza sırası" onPress={() => setStoreSort("store")} />
-                    <StoreFilterChip active={storeSort === "new"} icon="clock-outline" label="En yeni" onPress={() => setStoreSort("new")} />
-        <StoreFilterChip active={storeSort === "priceAsc"} icon="sort-ascending" label="En düşük fiyat" onPress={() => setStoreSort("priceAsc")} />
-        <StoreFilterChip active={storeSort === "priceDesc"} icon="sort-descending" label="En yüksek fiyat" onPress={() => setStoreSort("priceDesc")} />
-      </ScrollView>
-      <StoreCategoryBar categories={storeCategories} value={catFilter} onChange={setCatFilter} total={filteredByStatus.length} language={language} />
-
-      <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
-        <Text selectable style={{ color: colors.ink, flex: 1, fontSize: 19, fontWeight: "900" }}>
-          {translateCopy("Mağaza ürünleri", language)}
-        </Text>
-        <Text selectable style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "900" }}>
-          {sellerListings.length} {t("results")}
-        </Text>
-      </View>
-
-      {sellerListings.length === 0 ? (
-        <EmptyState title={translateCopy("Ürün yok", language)} body={isOwnStore ? translateCopy("İlk ilanını açınca mağazana ve ana pazara otomatik düşer.", language) : translateCopy("Bu mağazada şu an görünür ürün yok.", language)} />
-      ) : (
-        <View style={{ alignItems: "flex-start", flexDirection: "row", flexWrap: "wrap", gap: gridGap }}>
-          {sellerListings.map((listing, index) => (
-            <ListingCard key={listing.id} listing={listing} owner={seller} width={cardWidth} eager={index < 4} />
-          ))}
-        </View>
-      )}
-
-      {/* Politikalar (mobil) — masaüstü sekmesinin karşılığı; ilanlardan derlenir. */}
-      {activeListings.length > 0 ? (
-        <View style={{ gap: 10, marginTop: 4 }}>
-          <Text selectable style={{ color: colors.ink, fontSize: 19, fontWeight: "900" }}>
-            {translateCopy("Mağaza politikaları", language)}
-          </Text>
-          <StorePolicies listings={activeListings} language={language} />
-        </View>
-      ) : null}
-
-      {/* Yorumlar (mobil) — güven sinyali masaüstündeki gibi görünür. */}
-      <View style={{ gap: 10, marginTop: 4 }}>
-        <Text selectable style={{ color: colors.ink, fontSize: 19, fontWeight: "900" }}>
-          {translateCopy("Satıcı yorumları", language)} {reviewCount ? `(${reviewCount})` : ""}
-        </Text>
-        {reviewStats.count > 0 ? <RatingSummary stats={reviewStats} language={language} /> : null}
-        {reviewCount > 1 ? <ReviewSortBar value={reviewSort} onChange={setReviewSort} language={language} /> : null}
-        {reviewsAboutSeller.length === 0 ? (
-          reviewPager.loading || reviewPager.error ? null : <EmptyState title={translateCopy("Henüz değerlendirme yok", language)} body={translateCopy("Değerlendirmeler yalnızca tamamlanmış bir satışın taraflarınca yazılabilir.", language)} />
-        ) : (
-          // Mobilde de paylaşılan ReviewCard: satıcı yanıtı + faydalı oyu masaüstüyle eşit (eskiden
-          // mobil satır bunları HİÇ göstermiyordu → satıcı yanıtları mobil ziyaretçiye görünmezdi).
-          reviewsAboutSeller.map((r) => (
-            <ReviewCard key={r.id} review={r} reviewerName={r.reviewerName ?? findUser(r.reviewerId)?.name} isSeller={isOwnStore} authed={isAuthed} onPatch={patchReview} onRemove={removeFetched} isMine={r.reviewerId === currentUser.id} onEdit={editReview} onDelete={deleteReview} onReport={reportReview} language={language} />
-          ))
-        )}
-        <ReviewLoadMore hasMore={reviewPager.hasMore} loading={reviewPager.loading || reviewPager.loadingMore} error={reviewPager.error} onLoadMore={reviewPager.loadMore} onRetry={reviewPager.retry} language={language} />
+        {mobileTab === "policies" ? <StorePolicies listings={activeListings} language={language} /> : null}
       </View>
     </ScrollView>
     </KeyboardAvoidingView>
+  );
+}
+
+function MetaBit({ icon, text, strong }: { icon: keyof typeof MaterialCommunityIcons.glyphMap; text: string; strong?: boolean }) {
+  return (
+    <View style={{ alignItems: "center", flexDirection: "row", gap: 4 }}>
+      <MaterialCommunityIcons name={icon} size={13} color={strong ? colors.primaryDark : colors.muted} />
+      <Text style={{ color: strong ? colors.primaryDark : colors.muted, fontSize: 12, fontWeight: "700" }}>{text}</Text>
+    </View>
+  );
+}
+
+function MobileStat({ value, label, last }: { value: string; label: string; last?: boolean }) {
+  return (
+    <View style={{ alignItems: "center", borderRightColor: colors.line, borderRightWidth: last ? 0 : 1, flex: 1, gap: 2, minWidth: 0 }}>
+      <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 17, fontVariant: ["tabular-nums"], fontWeight: "900" }}>{value}</Text>
+      <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 11.5, fontWeight: "700" }}>{label}</Text>
+    </View>
+  );
+}
+
+function SquareAction({ icon, label, onPress, active }: { icon: keyof typeof MaterialCommunityIcons.glyphMap; label: string; onPress: () => void; active?: boolean }) {
+  return (
+    <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress} style={({ pressed }) => ({ alignItems: "center", backgroundColor: active ? colors.accentSoft : colors.surface, borderColor: active ? colors.accent : colors.line, borderRadius: 12, borderWidth: 1, justifyContent: "center", minHeight: 44, opacity: pressed ? 0.7 : 1, width: 44 })}>
+      <MaterialCommunityIcons name={icon} size={19} color={active ? colors.accent : colors.muted} />
+    </Pressable>
+  );
+}
+
+/** Mağaza sahibinin kısa yolları (ikon + kısa etiket). Bağlantı varsa router ile gider. */
+function IconAction({ icon, label, href, onPress }: { icon: keyof typeof MaterialCommunityIcons.glyphMap; label: string; href?: string; onPress?: () => void }) {
+  const router = useRouter();
+  return (
+    <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={() => { if (onPress) onPress(); else if (href) router.push(href as never); }} style={({ pressed }) => ({ alignItems: "center", borderColor: colors.line, borderRadius: 12, borderWidth: 1, flex: 1, gap: 4, justifyContent: "center", minHeight: 58, minWidth: 0, opacity: pressed ? 0.7 : 1, paddingHorizontal: 4 })}>
+      <MaterialCommunityIcons name={icon} size={19} color={colors.primaryDark} />
+      <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 11.5, fontWeight: "800" }}>{label}</Text>
+    </Pressable>
+  );
+}
+
+function StoreSearchBox({ value, onChange, language, width }: { value: string; onChange: (v: string) => void; language: "tr" | "en"; width?: number }) {
+  return (
+    <View style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 6, minHeight: 42, paddingLeft: 13, paddingRight: 6, width }}>
+      <MaterialCommunityIcons name="magnify" size={18} color={colors.muted} />
+      <TextInput
+        value={value}
+        onChangeText={onChange}
+        placeholder={translateCopy("Mağazada ara", language)}
+        placeholderTextColor={colors.subtle}
+        returnKeyType="search"
+        accessibilityLabel={translateCopy("Mağazada ara", language)}
+        // 16px: iOS Safari odaklanınca sayfayı yakınlaştırmasın (bkz. mobil-web tuzakları).
+        style={{ color: colors.ink, flex: 1, fontSize: 16, fontWeight: "600", minWidth: 0, paddingVertical: 8, outlineStyle: "none" } as never}
+      />
+      {value ? (
+        <Pressable onPress={() => onChange("")} accessibilityRole="button" accessibilityLabel={translateCopy("Aramayı temizle", language)} hitSlop={8} style={{ padding: 4 }}>
+          <MaterialCommunityIcons name="close-circle" size={17} color={colors.subtle} />
+        </Pressable>
+      ) : null}
+    </View>
+  );
+}
+
+function StoreSortButton({ value, open, onToggle, language, compact }: { value: StoreSort; open: boolean; onToggle: () => void; language: "tr" | "en"; compact?: boolean }) {
+  const current = SORT_OPTIONS.find((o) => o.key === value) ?? SORT_OPTIONS[0];
+  return (
+    <Pressable onPress={onToggle} accessibilityRole="button" accessibilityState={{ expanded: open }} accessibilityLabel={`${translateCopy("Sırala", language)}: ${translateCopy(current.label, language)}`} style={({ pressed }) => ({ alignItems: "center", backgroundColor: open ? colors.primarySoft : colors.surface, borderColor: open ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 6, minHeight: 42, opacity: pressed ? 0.75 : 1, paddingHorizontal: 13 })}>
+      <MaterialCommunityIcons name="sort" size={17} color={colors.primaryDark} />
+      <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 13, fontWeight: "800" }}>{compact ? translateCopy("Sırala", language) : translateCopy(current.label, language)}</Text>
+      <MaterialCommunityIcons name={open ? "chevron-up" : "chevron-down"} size={16} color={colors.muted} />
+    </Pressable>
+  );
+}
+
+function StoreSortPanel({ value, onPick, language, narrow }: { value: StoreSort; onPick: (s: StoreSort) => void; language: "tr" | "en"; narrow?: boolean }) {
+  return (
+    <View style={{ ...(narrow ? { alignSelf: "flex-end" as const, width: 260 } : null), backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 14, borderWidth: 1, overflow: "hidden" }}>
+      {SORT_OPTIONS.map((o, i) => {
+        const on = o.key === value;
+        return (
+          <Pressable key={o.key} onPress={() => onPick(o.key)} accessibilityRole="button" accessibilityState={{ selected: on }} style={({ pressed }) => ({ alignItems: "center", backgroundColor: on ? colors.primarySoft : pressed ? colors.surfaceAlt : colors.surface, borderTopColor: colors.line, borderTopWidth: i === 0 ? 0 : 1, flexDirection: "row", gap: 10, minHeight: 46, paddingHorizontal: 14 })}>
+            <MaterialCommunityIcons name={o.icon} size={17} color={on ? colors.primaryDark : colors.muted} />
+            <Text style={{ color: on ? colors.primaryDark : colors.ink, flex: 1, fontSize: 14, fontWeight: on ? "900" : "700" }}>{translateCopy(o.label, language)}</Text>
+            {on ? <MaterialCommunityIcons name="check" size={18} color={colors.primaryDark} /> : null}
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+}
+
+function StoreResultLine({ count, query, onClear, isOwnStore, language }: { count: number; query: string; onClear: () => void; isOwnStore: boolean; language: "tr" | "en" }) {
+  const router = useRouter();
+  return (
+    <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
+      <Text style={{ color: colors.muted, flex: 1, fontSize: 13, fontWeight: "800" }}>
+        {query.trim() ? `"${query.trim()}" — ${count} ${translateCopy("ürün", language)}` : `${count} ${translateCopy("ürün", language)}`}
+      </Text>
+      {query.trim() ? (
+        <Pressable onPress={onClear} accessibilityRole="button"><Text style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Temizle", language)}</Text></Pressable>
+      ) : isOwnStore ? (
+        <Pressable onPress={() => router.push("/magaza-sirasi")} accessibilityRole="button" style={{ alignItems: "center", flexDirection: "row", gap: 4 }}>
+          <MaterialCommunityIcons name="swap-vertical" size={15} color={colors.primaryDark} />
+          <Text style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Sırayı düzenle", language)}</Text>
+        </Pressable>
+      ) : null}
+    </View>
+  );
+}
+
+function StoreLoadMore({ hidden, onPress, language }: { hidden: number; onPress: () => void; language: "tr" | "en" }) {
+  if (hidden <= 0) return null;
+  return (
+    <Pressable onPress={onPress} accessibilityRole="button" style={({ pressed }) => ({ alignItems: "center", alignSelf: "center", backgroundColor: colors.surface, borderColor: colors.primary, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 7, marginTop: 4, minHeight: 44, opacity: pressed ? 0.75 : 1, paddingHorizontal: 22 })}>
+      <MaterialCommunityIcons name="chevron-down" size={18} color={colors.primaryDark} />
+      <Text style={{ color: colors.primaryDark, fontSize: 13.5, fontWeight: "900" }}>{translateCopy("Daha fazla göster", language)} ({hidden})</Text>
+    </Pressable>
   );
 }
 

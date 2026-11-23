@@ -384,5 +384,16 @@ export const profileDict: Record<string, string> = {
   "süren teklif": "active offers",
   "Verdiğin teklifler": "Offers you made",
   "Takip ettiğin satıcıların yeni ilanları": "New listings from sellers you follow",
-  "Instagram kullanıcı adı (doğrulama için)": "Instagram username (for verification)"
+  "Instagram kullanıcı adı (doğrulama için)": "Instagram username (for verification)",
+
+  // app/store/[id].tsx — mağaza sayfası 2026-11-23 (arama, sıralama, mobil sekmeler)
+  "Mağazada ara": "Search this store",
+  "Yeni mağaza": "New store",
+  "Profil & kapak": "Profile & cover",
+  "Sırayı düzenle": "Edit order",
+  "Mağaza sırası": "Store order",
+  "Bu mağazanın ürünlerini sat, komisyon kazan": "Sell this store's products, earn commission",
+  "Ortaklığa açık ürünleri gör": "See products open to partners",
+  "Bu mağazada aramana uyan ürün bulunamadı. Farklı bir kelime dene.": "No products in this store match your search. Try a different word.",
+  "Bu satıcı henüz bir açıklama eklememiş.": "This seller hasn't added a description yet."
 };
