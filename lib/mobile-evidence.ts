@@ -13,7 +13,10 @@ export async function uploadEvidence(photo: EvidencePhoto, userId: string, bucke
   if(Platform.OS!=="web"){
     // UYGULAMA: baytlar doğrudan görsel işleyiciden alınır. Yerel dosyayı fetch ile okumak bazı ortamlarda
     // dosya yerine "File not found" metnini döndürüyor ve bu metin ek diye yükleniyordu (bkz. live-service).
-    const image=await manipulateAsync(uri,[],{compress:0.9,format:SaveFormat.JPEG,base64:true});
+    // Yeni telefonların 24–48 MP fotoğrafı 5 MB sınırını aşıyordu → uzun kenar en çok 2048 px.
+    const probe=await manipulateAsync(uri,[],{});
+    const big=Math.max(probe.width,probe.height)>2048;
+    const image=await manipulateAsync(probe.uri,big?[{resize:probe.width>=probe.height?{width:2048}:{height:2048}}]:[],{compress:0.85,format:SaveFormat.JPEG,base64:true});
     if(!image.base64)throw new Error("Görsel okunamadı.");
     buffer=decode(image.base64);mime="image/jpeg";
     const head=new Uint8Array(buffer.slice(0,2));

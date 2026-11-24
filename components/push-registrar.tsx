@@ -17,6 +17,23 @@ export function PushRegistrar() {
   const store=useStore(),router=useRouter(),storeRef=useRef(store),handled=useRef("");storeRef.current=store;
   const signedInUserId=store.isAuthenticated?store.currentUser.id:"";
   useEffect(()=>{setPushPreferences(store.isAuthenticated?store.currentUser.preferences||{}:{notify_all_off:true});},[store.isAuthenticated,store.currentUser.preferences]);
+  // Arka plandan dönünce mesaj/bildirimleri tazele: gerçek zamanlı bağlantının yeniden kurulmasını
+  // (onlarca saniye sürebilir) beklemeden yeni mesajlar görünsün. En sık 30 sn'de bir.
+  useEffect(()=>{
+    if(Platform.OS==="web")return;
+    let last=Date.now();
+    const sub=AppState.addEventListener("change",s=>{
+      if(s!=="active"||!storeRef.current.isAuthenticated||Date.now()-last<30000)return;
+      last=Date.now();void storeRef.current.refreshUserData().catch(()=>{});
+    });
+    return()=>sub.remove();
+  },[]);
+  // Uygulama simgesindeki sayı (sunucu push'ta gönderir) okundukça/çıkışta güncellensin; yoksa hiç sıfırlanmaz.
+  const unread=store.isAuthenticated&&store.accountLoaded?store.notifications.filter(n=>!n.read).length:0;
+  useEffect(()=>{
+    if(Platform.OS==="web"||Constants.executionEnvironment==="storeClient")return;
+    void import("expo-notifications").then(N=>N.setBadgeCountAsync(Math.min(unread,99))).catch(()=>{});
+  },[unread]);
   useEffect(()=>{
     if(Platform.OS==="web"||Constants.executionEnvironment==="storeClient")return;
     let alive=true,remove:(()=>void)|undefined;
@@ -45,7 +62,7 @@ export function PushRegistrar() {
       }
       function receive(response:import("expo-notifications").NotificationResponse){const id=response.notification.request.identifier;if(handled.current===id)return;handled.current=id;void open((response.notification.request.content.data??{}) as Record<string,unknown>);}
       const subscription=Notifications.addNotificationResponseReceivedListener(receive);remove=()=>subscription.remove();
-      const last=await Notifications.getLastNotificationResponseAsync();if(last&&alive)receive(last);
+      const last=await Notifications.getLastNotificationResponseAsync();if(last&&alive){receive(last);/* yeniden yüklemede aynı dokunuş tekrar açılmasın */try{await Notifications.clearLastNotificationResponseAsync?.();}catch{/* eski sürüm */}}
     }).catch(()=>{});
     return()=>{alive=false;remove?.();};
   },[router]);

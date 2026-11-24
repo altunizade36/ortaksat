@@ -26,6 +26,17 @@ export async function registerForPush(): Promise<void> {
     const Device = await import("expo-device");
     if (!Device.isDevice) return; // emülatörde push token alınamaz
 
+    // Android 13+: kanal İZİNDEN ÖNCE kurulmalı (yoksa izin penceresi çıkmayabilir). Yüksek önem → açılır bildirim.
+    if (Platform.OS === "android") {
+      await Notifications.setNotificationChannelAsync("default", {
+        name: "OrtakSat",
+        importance: Notifications.AndroidImportance.HIGH,
+        vibrationPattern: [0, 200, 120, 200],
+        lightColor: "#0645C9",
+        showBadge: true
+      });
+    }
+
     const existing = await Notifications.getPermissionsAsync();
     let status = existing.status;
     if (status !== "granted") {
@@ -33,13 +44,6 @@ export async function registerForPush(): Promise<void> {
       status = req.status;
     }
     if (status !== "granted") return;
-
-    if (Platform.OS === "android") {
-      await Notifications.setNotificationChannelAsync("default", {
-        name: "OrtakSat",
-        importance: Notifications.AndroidImportance.DEFAULT
-      });
-    }
 
     const tokenResp = await Notifications.getExpoPushTokenAsync({ projectId });
     const token = tokenResp.data;
