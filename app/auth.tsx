@@ -237,11 +237,9 @@ export default function AuthScreen() {
     authOperation.current = true;
     setLoading(true);
     try {
-      const { ok, error } = await authAttempt(() => signInWithGoogle(acceptedAll));
+      await authAttempt(() => signInWithGoogle(acceptedAll));
       // Başarılıysa tarayıcı Google'a yönlenir (geri dönüş otomatik). Başarısızsa hata authError'da.
-      if (!ok && error) {
-        Alert.alert(language === "en" ? "Could not continue with Google" : "Google ile giriş yapılamadı", translateCopy(error, language));
-      }
+      // Hata ekranda satır içi gösterilir (authError); ayrıca Alert açılmaz (giriş ekranı kuralı).
     } catch {
       const m = translateCopy("Google ile bağlantı kurulamadı. Lütfen tekrar dene.", language);
       setFormError(m);
@@ -263,11 +261,9 @@ export default function AuthScreen() {
     authOperation.current = true;
     setLoading(true);
     try {
-      const { ok, error } = await authAttempt(() => signInWithApple(acceptedAll));
+      await authAttempt(() => signInWithApple(acceptedAll));
       // Başarılıysa oturum açılır (yönlendirme aşağıdaki isAuthenticated etkisinde). Başarısızsa hata authError'da.
-      if (!ok && error) {
-        Alert.alert(language === "en" ? "Could not continue with Apple" : "Apple ile giriş yapılamadı", translateCopy(error, language));
-      }
+      // Hata ekranda satır içi gösterilir (authError); ayrıca Alert açılmaz (giriş ekranı kuralı).
     } catch {
       const m = translateCopy("Apple ile bağlantı kurulamadı. Lütfen tekrar dene.", language);
       setFormError(m);

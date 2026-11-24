@@ -256,7 +256,9 @@ function translateAuthError(msg?: string | null): string | undefined {
   if (m.includes("email link is invalid") || m.includes("otp") && m.includes("invalid")) return "Doğrulama bağlantısı/kodu geçersiz. Yeniden dene.";
   if (m.includes("network") || m.includes("failed to fetch")) return "Bağlantı sorunu. İnternetini kontrol edip tekrar dene.";
   if (m.includes("provider") && m.includes("not enabled")) return "Bu giriş yöntemi henüz etkin değil.";
-  return msg; // bilinmeyen mesaj — olduğu gibi (nadiren İngilizce görünebilir)
+  // Bilinmeyen mesaj: Türkçe harf içeriyorsa (zaten bizim metnimiz) aynen, yoksa genel Türkçe mesaj —
+  // kullanıcıya/incelemeciye ham İngilizce sunucu hatası gösterilmez.
+  return /[çğıöşüÇĞİÖŞÜ]/.test(msg) ? msg : "İşlem tamamlanamadı. Lütfen tekrar dene.";
 }
 
 type AppStore = {
@@ -1661,8 +1663,8 @@ export function StoreProvider({ children }: PropsWithChildren) {
           // Sağlayıcı Supabase'de etkin değilse anlaşılır mesaj göster.
           setAuthError(
             /provider.*not enabled|not enabled|unsupported/i.test(error.message)
-              ? "Google ile giriş henüz etkin değil. Yönetici panelinden Google sağlayıcısını açın."
-              : error.message
+              ? "Google ile giriş şu anda kullanılamıyor. E-posta ile devam edebilirsin."
+              : translateAuthError(error.message) ?? "Google ile bağlantı kurulamadı, lütfen tekrar dene."
           );
           return false;
         }
@@ -1744,7 +1746,7 @@ export function StoreProvider({ children }: PropsWithChildren) {
         } catch (e) {
           await clearOAuthConsent();
           // Kullanıcı Apple penceresini kapattı → sessiz.
-          if ((e as { code?: string } | null)?.code === "ERR_REQUEST_CANCELED") return false;
+          if ((e as { code?: string } | null)?.code === "ERR_REQUEST_CANCELED") { setAuthError(undefined); return false; }
           setAuthError("Apple ile bağlantı kurulamadı, lütfen tekrar dene.");
           return false;
         }

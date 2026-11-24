@@ -110,6 +110,9 @@ export function MobileAuthLanding({ mode, onModeChange, onEmail, onGoogle, onApp
           <View style={{ alignItems: "center", flexDirection: "row", gap: 12, marginBottom: 14 }}><View style={{ backgroundColor: "#DCE6F5", flex: 1, height: 1 }} /><Text style={{ color: "#667085", fontSize: 12.5, fontWeight: "700" }}>{tr("veya")}</Text><View style={{ backgroundColor: "#DCE6F5", flex: 1, height: 1 }} /></View>
           {/* Kayıt sekmesinde yasal onay kutusu formun içindedir; giriş sekmesinde Google için burada gösterilir. */}
           {mode === "login" ? <View ref={consentRef} collapsable={false} style={{ marginBottom: 12 }}>{consent}</View> : null}
+          {/* Kayıt sekmesinde onay kutusu formun içinde (yukarıda) kalır: düğmenin hemen üstünde ne yapılacağını söyle,
+              yoksa Apple/Google'a basınca "hiçbir şey olmadı" sanılıyordu (mağaza incelemesi riski). */}
+          {mode === "register" && !accepted ? <Text accessibilityRole="alert" style={[s.legal, { marginBottom: 10 }]}>{tr("Apple veya Google ile devam etmek için önce yukarıdaki yasal onay kutusunu işaretle.")}</Text> : null}
           {socialButtons}
         </View> : null}
       </> : <>
