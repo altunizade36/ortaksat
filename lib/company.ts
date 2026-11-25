@@ -5,15 +5,17 @@
  * ad-soyad, adres, e-posta, telefon; varsa MERSİS, vergi dairesi/no, KEP) erişilebilir olmalıdır.
  * KVKK md. 10 uyarınca veri sorumlusunun kimliği de aydınlatma metninde yer almalıdır.
  *
- * ŞU AN BOŞ: bu bilgileri yalnız işletme sahibi verebilir; UYDURMA DEĞER YAZILMAZ (sahte veri yasağı).
- * Boş alanlar sitede HİÇ gösterilmez. Sahibi bilgileri verdiğinde yalnız bu dosya doldurulur;
+ * KARAR (kurucu, 25 Kasım 2026): tanıtıcı olarak YALNIZ marka adı ("OrtakSat") ve destek e-postası gösterilir.
+ * Kurucunun adı-soyadı, adresi ve telefonu güvenlik gerekçesiyle YAYIMLANMAZ; şirket kurulmadığı için MERSİS,
+ * vergi no ve KEP yoktur. Bu alanları doldurma, kullanıcıya yeniden sorma. UYDURMA DEĞER YAZILMAZ (sahte veri
+ * yasağı). Boş alanlar sitede HİÇ gösterilmez. İleride şirket kurulursa yalnız bu dosya doldurulur;
  * İletişim sayfası ve KVKK Aydınlatma Metni kendiliğinden günceller.
  */
 import { SUPPORT_EMAIL } from "@/lib/contact";
 
 export const COMPANY = {
-  /** Ticaret unvanı ya da (şahıs işletmesi / birey ise) ad-soyad. */
-  legalName: "",
+  /** Tanıtıcı ad. Şirket yok → marka adı; "Unvan" diye değil "Platform" diye gösterilir (tescilli unvan izlenimi vermesin). */
+  legalName: "OrtakSat",
   /** Tebligata elverişli açık adres. */
   address: "",
   /** İletişim telefonu. */
@@ -34,7 +36,7 @@ export type CompanyRow = { label: string; value: string };
 export function companyIdentityRows(): CompanyRow[] {
   const rows: CompanyRow[] = [];
   const add = (label: string, value: string) => { if (value.trim()) rows.push({ label, value: value.trim() }); };
-  add("Unvan", COMPANY.legalName);
+  add("Platform", COMPANY.legalName);
   add("Adres", COMPANY.address);
   add("Telefon", COMPANY.phone);
   add("MERSİS No", COMPANY.mersis);
@@ -44,7 +46,7 @@ export function companyIdentityRows(): CompanyRow[] {
   return rows;
 }
 
-/** Yasal tanıtıcı bilgiler girilmiş mi? (unvan + adres asgari koşul) */
+/** Tanıtıcı blok gösterilsin mi? (ad varsa; adres artık koşul değil — yukarıdaki karar) */
 export function hasCompanyIdentity(): boolean {
-  return Boolean(COMPANY.legalName.trim() && COMPANY.address.trim());
+  return Boolean(COMPANY.legalName.trim());
 }
