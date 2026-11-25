@@ -1,5 +1,5 @@
 import { Link, type Href } from "expo-router";
-import Head from "expo-router/head";
+import Head from "@/components/head";
 import { type ReactNode } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 

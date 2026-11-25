@@ -2,7 +2,7 @@ import { MaterialCommunityIcons } from "@/components/icons";
 import { ListingQuotaBar, useListingQuota } from "@/components/listing-limit";
 import * as Clipboard from "expo-clipboard";
 import * as ImagePicker from "expo-image-picker";
-import Head from "expo-router/head";
+import Head from "@/components/head";
 import { useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Platform, Pressable, ScrollView, Text, TextInput, View } from "react-native";

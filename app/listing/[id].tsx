@@ -7,7 +7,7 @@ import { isMobileApp } from "@/lib/mobile-app";
 import { MobileListingDetail } from "@/components/mobile/listing-detail";
 import { MaterialCommunityIcons } from "@/components/icons";
 import { type Href, useLocalSearchParams, useRouter } from "expo-router";
-import Head from "expo-router/head";
+import Head from "@/components/head";
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, Text, TextInput, View, useWindowDimensions, type ViewInstance } from "react-native";
 

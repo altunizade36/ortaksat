@@ -1,6 +1,6 @@
 import { CompactFooter } from "@/components/compact-footer";
 import { isMobileApp } from "@/lib/mobile-app";
-import Head from "expo-router/head";
+import Head from "@/components/head";
 import { useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import { ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, View } from "react-native";

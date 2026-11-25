@@ -4,7 +4,7 @@ import { HorizontalScroll } from "@/components/horizontal-scroll";
 import { MobileCatalogue } from "@/components/mobile/catalogue";
 import { MaterialCommunityIcons } from "@/components/icons";
 import { Link, useLocalSearchParams, useRouter, type Href } from "expo-router";
-import Head from "expo-router/head";
+import Head from "@/components/head";
 import { useEffect, useMemo, useState } from "react";
 import { Pressable, ScrollView, Text, TextInput, View, useWindowDimensions } from "react-native";
 

@@ -1,7 +1,7 @@
 import { MaterialCommunityIcons } from "@/components/icons";
 import { listingInCategoryNode, listingRootNode } from "@/lib/category-match";
 import { Link, useLocalSearchParams, useRouter, type Href } from "expo-router";
-import Head from "expo-router/head";
+import Head from "@/components/head";
 import { useEffect, useMemo, useState } from "react";
 import { Pressable, ScrollView, Text, View, useWindowDimensions } from "react-native";
 

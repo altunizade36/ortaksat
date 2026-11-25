@@ -7,7 +7,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Link, useRouter, type Href } from "expo-router";
 import { Mascot } from "@/components/brand/Mascot";
 import { useLocalSearchParams } from "expo-router";
-import Head from "expo-router/head";
+import Head from "@/components/head";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { NativeScrollEvent, NativeSyntheticEvent, Platform, Pressable, RefreshControl, ScrollView, Text, TextInput, View, useWindowDimensions } from "react-native";
 

@@ -1,5 +1,5 @@
 import { usePathname } from "expo-router";
-import Head from "expo-router/head";
+import Head from "@/components/head";
 
 import { useStore } from "@/lib/use-store";
 

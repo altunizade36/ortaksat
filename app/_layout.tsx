@@ -2,7 +2,7 @@
 import "@/lib/install-fast-intl";
 import { isMobileApp } from "@/lib/mobile-app";
 import { MobileDrawerProvider } from "@/components/mobile/drawer";
-import Head from "expo-router/head";
+import Head from "@/components/head";
 import { Stack } from "expo-router/stack";
 import { usePathname } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";

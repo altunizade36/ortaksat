@@ -15,7 +15,7 @@ import { MobileDiscovery } from "@/components/mobile/discovery";
 import { ExploreMosaic } from "@/components/explore-mosaic";
 import { MaterialCommunityIcons } from "@/components/icons";
 import { Link, useLocalSearchParams, useRouter } from "expo-router";
-import Head from "expo-router/head";
+import Head from "@/components/head";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Modal, NativeScrollEvent, NativeSyntheticEvent, Platform, Pressable, RefreshControl, ScrollView, Text, TextInput, View, useWindowDimensions, type ScrollViewInstance } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";

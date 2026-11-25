@@ -3,7 +3,7 @@ import { listingInCategoryNode, listingRootNode } from "@/lib/category-match";
 import { MobileCategories } from "@/components/mobile/categories";
 import { MaterialCommunityIcons } from "@/components/icons";
 import { Link, useRouter, type Href } from "expo-router";
-import Head from "expo-router/head";
+import Head from "@/components/head";
 
 // /kategori/[slug] route'una tip-güvenli kısa yol (typed-routes üreteci yeni route'u
 // yakalayana kadar cast; runtime'da route mevcut ve çalışıyor).

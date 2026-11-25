@@ -1,4 +1,4 @@
-import Head from "expo-router/head";
+import Head from "@/components/head";
 
 /**
  * Sayfa SEO başlığı/açıklaması — tek satırda benzersiz title + description +

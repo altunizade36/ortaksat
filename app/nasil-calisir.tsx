@@ -1,6 +1,6 @@
 import { MaterialCommunityIcons } from "@/components/icons";
 import { Link } from "expo-router";
-import Head from "expo-router/head";
+import Head from "@/components/head";
 import { useState, type ReactNode } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 

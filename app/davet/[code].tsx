@@ -1,6 +1,6 @@
 import { MaterialCommunityIcons } from "@/components/icons";
 import { useLocalSearchParams } from "expo-router";
-import Head from "expo-router/head";
+import Head from "@/components/head";
 import { useEffect, useState } from "react";
 import { ScrollView, Text, View } from "react-native";
 
