@@ -64,3 +64,6 @@ _*.mjs
 dist-check-*/
 
 .vercel/
+
+# Apple anahtar dosyaları (asla depoya girmez)
+*.p8

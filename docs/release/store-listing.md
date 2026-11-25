@@ -72,7 +72,7 @@ OrtakSat is a marketplace where you open your product to **affiliate selling**. 
 ## 8. Kategori & Yaş
 - **Birincil kategori:** Alışveriş / Shopping (App Store), Alışveriş / Shopping (Play)
 - **İkincil:** İş / Business
-- **Yaş sınırı:** 4+ (App Store) / Everyone (Play) — kullanıcı içeriği moderasyonlu; küfür/yetişkin içerik yasak.
+- **Yaş sınırı:** 18+ (App Store; Kullanım Şartları hesap için 18 yaş koşulu aradığından mağaza derecelendirmesi buna göre seçildi) / Play: içerik derecelendirme anketi doldurulurken hedef kitle 18 yaş ve üzeri seçilir — kullanıcı içeriği denetlenir; küfür/yetişkin içerik yasak.
 
 ## 9. Gizlilik & Veri (App Store Privacy + Play Data Safety)
 Uygulamanın topladığı veriler (dürüst beyan, 16 Kasım 2026 kod denetimine göre; 25 Kasım 2026: kurumsal hesap satırı eklendi):

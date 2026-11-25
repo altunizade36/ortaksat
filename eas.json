@@ -39,7 +39,13 @@
   },
   "submit": {
     "production": {
-      "ios": {},
+      "ios": {
+        "ascAppId": "6839320320",
+        "appleTeamId": "25VU23W2Q3",
+        "ascApiKeyPath": "C:/Users/altun/.ortaksat-keys/AuthKey_ZAAZ4C3NLL.p8",
+        "ascApiKeyId": "ZAAZ4C3NLL",
+        "ascApiKeyIssuerId": "89f3c3c5-4303-43fe-b799-dbf72adefff2"
+      },
       "android": {
         "track": "internal"
       }
