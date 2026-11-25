@@ -24,6 +24,9 @@ type Props = {
   error?: string | null;
   form?: ReactNode;
   formTitle?: string;
+  /** Kurumsal hesap açma formu açık mı (sosyal giriş gösterilmez; alt bağlantılar buna göre değişir). */
+  business?: boolean;
+  onBusinessChange?: (business: boolean) => void;
   onBack?: () => void;
   showTabs?: boolean;
 };
@@ -32,12 +35,13 @@ const messages = ["Ürününü paylaş, ortak bul,", "Ücretsiz ilan ver, birlik
 // SOSYAL GİRİŞ. App Store kuralı 4.8: üçüncü taraf girişi (Google) sunan iOS uygulaması "Apple ile Giriş"i de
 // sunmak ZORUNDA → iOS'ta Apple her zaman görünür (yerel pencere). Web ve Android'de Apple tarayıcı yönlendirmesiyle
 // çalışır ve yalnız sunucuda kurulum bitince (platform_settings.apple_web_login) görünür → `apple` özelliği.
-// Apple varken Apple (siyah, üstte) ve Google ALT ALTA iki tam genişlik düğmedir; yoksa yalnız Google. Apple düğmesinin
-// yazısı Apple'ın izin verdiği kalıplardan biri olmalı ("Apple ile Devam Et"); yalnız "Apple" yazan düğme tasarım
-// kuralına uymaz (mağaza incelemesi 4.8). Çalışmayan "Yakında" düğmeleri mağaza incelemesinde ret sebebidir; ekleme.
+// DÜZEN: Google (solda) ve Apple (sağda) YAN YANA iki eşit, beyaz, çerçeveli düğme; çok dar ekranda alt alta; Apple
+// yoksa Google tek başına tam genişlik. Apple düğmesi Apple'ın izin verdiği "beyaz zemin + siyah logo + çerçeve"
+// biçimindedir ve yazısı izinli kalıplardandır ("Apple ile giriş yap" / "Apple ile kaydol"); yalnız "Apple" yazan
+// düğme kurala uymaz. Çalışmayan "Yakında" düğmeleri mağaza incelemesinde ret sebebidir; ekleme.
 const socialLogin = true;
 
-export function MobileAuthLanding({ mode, onModeChange, onEmail, onGoogle, onApple, apple = Platform.OS === "ios", onSkip, consent, accepted, busy, error, form, formTitle, onBack, showTabs = true }: Props) {
+export function MobileAuthLanding({ mode, onModeChange, onEmail, onGoogle, onApple, apple = Platform.OS === "ios", onSkip, consent, accepted, busy, error, form, formTitle, business = false, onBusinessChange, onBack, showTabs = true }: Props) {
   const scrollRef = useRef<ScrollViewInstance>(null);
   const consentRef = useRef<ViewInstance>(null);
   const scrollY = useRef(0);
@@ -75,10 +79,30 @@ export function MobileAuthLanding({ mode, onModeChange, onEmail, onGoogle, onApp
     onApple?.();
   }
   const appleLogin = apple && !!onApple;
-  // SOSYAL GİRİŞ DÜĞMELERİ: Apple varsa Apple (siyah, üstte) + Google (beyaz) alt alta; yoksa yalnız Google.
-  const socialButtons = <View style={appleLogin ? undefined : { flexDirection: "row", gap: 10 }}>
-    {appleLogin ? <Pressable accessibilityRole="button" accessibilityLabel={tr("Apple ile devam et")} disabled={busy} accessibilityState={{ disabled: busy, busy }} onPress={continueWithApple} style={[s.button, s.apple, { opacity: busy ? 0.6 : 1 }]}><Icon name="apple" size={24} color="white" /><Text style={[s.buttonText, { color: "white" }]}>{tr("Apple ile Devam Et")}</Text></Pressable> : null}
-    <Pressable accessibilityRole="button" accessibilityLabel={tr("Google ile devam et")} disabled={busy} accessibilityState={{ disabled: busy, busy }} onPress={continueWithGoogle} style={[s.button, appleLogin ? null : s.half, { opacity: busy ? 0.6 : 1 }]}><GoogleMark /><Text style={s.buttonText}>{tr(busy ? "Bağlanıyor…" : "Google ile devam et")}</Text></Pressable>
+  // SOSYAL GİRİŞ DÜĞMELERİ: yazı kipine göre değişir (giriş: "… ile giriş yap", hesap açma: "… ile kaydol").
+  const panelWidth = Math.min(440, (tablet ? width * 0.48 : width) - (tablet ? 80 : 44));
+  const stackSocial = appleLogin && panelWidth < 316;
+  const googleLabel = mode === "register" ? "Google ile kaydol" : "Google ile giriş yap";
+  const appleLabel = mode === "register" ? "Apple ile kaydol" : "Apple ile giriş yap";
+  const socialText = { fontSize: appleLogin ? 13.5 : 15, fontWeight: "600" as const, color: "#1F2937", flexShrink: 1 };
+  const socialButtons = <View style={{ flexDirection: stackSocial ? "column" : "row", gap: stackSocial ? 0 : 10 }}>
+    <Pressable accessibilityRole="button" accessibilityLabel={tr(googleLabel)} disabled={busy} accessibilityState={{ disabled: busy, busy }} onPress={continueWithGoogle} style={[s.button, s.social, !stackSocial && s.half, { opacity: busy ? 0.6 : 1 }]}><GoogleMark /><Text numberOfLines={1} style={socialText}>{tr(googleLabel)}</Text></Pressable>
+    {appleLogin ? <Pressable accessibilityRole="button" accessibilityLabel={tr(appleLabel)} disabled={busy} accessibilityState={{ disabled: busy, busy }} onPress={continueWithApple} style={[s.button, s.social, !stackSocial && s.half, { opacity: busy ? 0.6 : 1 }]}><Icon name="apple" size={23} color="#000000" /><Text numberOfLines={1} style={socialText}>{tr(appleLabel)}</Text></Pressable> : null}
+  </View>;
+  // ALT GEÇİŞLER (sekme yerine): girişte "Henüz hesabın yok mu? → Hesap aç"; hesap açmada kurumsal/bireysel + giriş.
+  const switchLink = (lead: string, label: string, onPress: () => void) => <View style={s.switchRow}>
+    <Text style={s.switchLead}>{tr(lead)}</Text>
+    <Pressable accessibilityRole="link" accessibilityLabel={tr(label)} disabled={busy} onPress={onPress} hitSlop={8} style={s.switchLinkWrap}><Text style={s.switchLink}>{tr(label)}</Text><Icon name="chevron-right" size={19} color="#0645C9" /></Pressable>
+  </View>;
+  const switcher = !showTabs ? null : mode === "login" ? <View style={s.switchBlock}>
+    <Text style={s.switchTitle}>{tr("Henüz hesabın yok mu?")}</Text>
+    <Pressable accessibilityRole="button" accessibilityLabel={tr("Hesap aç")} disabled={busy} onPress={() => { onBusinessChange?.(false); onModeChange("register"); }} style={s.outline}><Text style={s.outlineText}>{tr("Hesap aç")}</Text></Pressable>
+  </View> : <View style={s.switchBlock}>
+    {onBusinessChange ? business
+      ? switchLink("Kendi adına ilan vereceksen", "Bireysel hesap aç", () => onBusinessChange(false))
+      : switchLink("Mağaza açmak için", "Kurumsal hesap aç", () => onBusinessChange(true)) : null}
+    <View style={s.switchRule} />
+    {switchLink("Zaten hesabın var mı?", "Giriş yap", () => { onBusinessChange?.(false); onModeChange("login"); })}
   </View>;
   return <ScrollView ref={scrollRef} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" onScroll={event => { scrollY.current = event.nativeEvent.contentOffset.y; }} scrollEventThrottle={16} style={s.screen} contentContainerStyle={{ flexGrow: 1 }}>
     <View testID="auth-responsive-frame" style={{ flexGrow: 1, width: "100%", maxWidth: 1440, alignSelf: "center", flexDirection: tablet ? "row" : "column", minHeight: tablet ? Math.max(height, 680) : undefined }}>
@@ -102,21 +126,21 @@ export function MobileAuthLanding({ mode, onModeChange, onEmail, onGoogle, onApp
     <View testID="auth-panel" style={[s.sheet, { paddingBottom: Math.max(insets.bottom, 24) }, tablet && { flex: 1, minWidth: 0, justifyContent: "center", marginTop: 0, borderRadius: 0, paddingHorizontal: 40, paddingVertical: 48 }]}>
       <View testID="auth-panel-content" style={{ width: "100%", maxWidth: 440, alignSelf: "center" }}>
       {form && onBack ? <Pressable accessibilityRole="button" accessibilityLabel={tr(Platform.OS === "web" ? "Girişe dön" : "Diğer giriş seçenekleri")} disabled={busy} onPress={onBack} style={{ flexDirection: "row", alignItems: "center", gap: 5, minHeight: 44, alignSelf: "flex-start", marginBottom: 8 }}><Icon name="chevron-left" size={21} color="#002D92"/><Text style={{ fontSize: 13, color: "#002D92", fontWeight: "600" }}>{tr(Platform.OS === "web" ? "Girişe dön" : "Diğer giriş seçenekleri")}</Text></Pressable> : null}
-      <Text accessibilityRole="header" style={s.title}>{tr(formTitle || (mode === "register" ? "Aramıza katıl" : "OrtakSat’a hoş geldin"))}</Text>
-      <Text style={s.subtitle}>{tr(!showTabs ? "E-posta adresini gir; şifreni yenilemek için doğrulama kodu gönderelim." : mode === "register" ? "Ücretsiz hesabını oluştur. İlan ver veya satışa katkı sağlayarak komisyon kazan." : "İlanlarını ve ortaklıklarını tek hesaptan yönet.")}</Text>
-      {showTabs && <View accessibilityRole="tablist" style={s.tabs}>{(["login", "register"] as const).map((tab) => <Pressable key={tab} accessibilityRole="tab" accessibilityState={{ selected: mode === tab }} disabled={busy} onPress={() => onModeChange(tab)} style={[s.tab, mode === tab && s.activeTab]}><Text style={[s.tabText, mode === tab && { color: "#002D92" }]}>{tr(tab === "login" ? "Giriş Yap" : "Hesap Oluştur")}</Text></Pressable>)}</View>}
+      <Text accessibilityRole="header" style={s.title}>{tr(formTitle || (mode === "register" ? (business ? "Kurumsal hesap aç" : "Hesap aç") : "Giriş yap"))}</Text>
+      <Text style={s.subtitle}>{tr(!showTabs ? "E-posta adresini gir; şifreni yenilemek için doğrulama kodu gönderelim." : mode === "register" ? (business ? "İşletmen için ücretsiz hesap aç; mağazanı kur, ürünlerini tek tek, toplu ya da XML ile yükle." : "Ücretsiz hesabını oluştur. İlan ver veya satışa katkı sağlayarak komisyon kazan.") : "İlanlarını ve ortaklıklarını tek hesaptan yönet.")}</Text>
       {form ? <>
         <View style={{ gap: 14 }}>{form}</View>
-        {/* UYGULAMA: e-posta formunun ALTINDA Google ile devam (web'de aynı blok formun içinde çizilir). */}
-        {Platform.OS !== "web" && socialLogin && showTabs ? <View style={{ marginTop: 18 }}>
+        {/* E-posta formunun ALTINDA sosyal giriş (web + uygulama aynı). Kurumsal hesap formunda yok: işletme bilgileri gerekir. */}
+        {socialLogin && showTabs && !business ? <View style={{ marginTop: 18 }}>
           <View style={{ alignItems: "center", flexDirection: "row", gap: 12, marginBottom: 14 }}><View style={{ backgroundColor: "#DCE6F5", flex: 1, height: 1 }} /><Text style={{ color: "#667085", fontSize: 12.5, fontWeight: "700" }}>{tr("veya")}</Text><View style={{ backgroundColor: "#DCE6F5", flex: 1, height: 1 }} /></View>
           {/* Kayıt sekmesinde yasal onay kutusu formun içindedir; giriş sekmesinde Google için burada gösterilir. */}
           {mode === "login" ? <View ref={consentRef} collapsable={false} style={{ marginBottom: 12 }}>{consent}</View> : null}
           {/* Kayıt sekmesinde onay kutusu formun içinde (yukarıda) kalır: düğmenin hemen üstünde ne yapılacağını söyle,
               yoksa Apple/Google'a basınca "hiçbir şey olmadı" sanılıyordu (mağaza incelemesi riski). */}
-          {mode === "register" && !accepted ? <Text accessibilityRole="alert" style={[s.legal, { marginBottom: 10 }]}>{tr("Apple veya Google ile devam etmek için önce yukarıdaki yasal onay kutusunu işaretle.")}</Text> : null}
+          {mode === "register" && !accepted ? <Text accessibilityRole="alert" style={[s.legal, { marginBottom: 10 }]}>{tr(appleLogin ? "Google veya Apple ile kaydolmak için önce yukarıdaki yasal onay kutusunu işaretle." : "Google ile kaydolmak için önce yukarıdaki yasal onay kutusunu işaretle.")}</Text> : null}
           {socialButtons}
         </View> : null}
+        {switcher}
       </> : <>
       <Pressable accessibilityRole="button" accessibilityLabel={tr("E-posta ile devam et")} disabled={busy} onPress={onEmail} style={[s.button, s.email]}><Icon name="email" size={25} color="white" /><Text style={[s.buttonText, { color: "white" }]}>{tr("E-posta ile devam et")}</Text></Pressable>
       {/* Yasal onay kutusu yalnız sosyal giriş için gerekir (e-posta kaydı onayı kendi formunda alır). */}
@@ -126,6 +150,7 @@ export function MobileAuthLanding({ mode, onModeChange, onEmail, onGoogle, onApp
       </> : null}
       {error ? <Text accessibilityRole="alert" style={s.error}>{tr(error)}</Text> : null}
       {socialLogin && !accepted && <Text style={s.legal}>{tr("Sosyal giriş için önce yukarıdaki yasal onay kutusunu işaretle.")}</Text>}
+      {switcher}
       </>}
       <Text style={s.copyright}>© 2026 OrtakSat</Text>
       </View>
@@ -146,5 +171,7 @@ const s = StyleSheet.create({
   screen: { flex: 1, backgroundColor: "white" }, skip: { position: "absolute", right: 19, zIndex: 2, flexDirection: "row", alignItems: "center", minHeight: 44 }, skipText: { color: "#101827", fontSize: 14 }, intro: { alignItems: "center", paddingHorizontal: 20 }, slogan: { color: "#0F172A", fontWeight: "700", fontSize: 21, marginTop: 3 }, subSlogan: { color: "#0F172A", fontSize: 20, marginTop: 1 },
   features: { flexDirection: "row", justifyContent: "center", gap: 9, marginTop: 18 }, feature: { alignItems: "center", width: 86 }, featureIcon: { width: 50, height: 50, borderRadius: 25, alignItems: "center", justifyContent: "center" }, featureText: { marginTop: 5, textAlign: "center", fontSize: 12, fontWeight: "600", lineHeight: 16, color: "#101827" },
   message: { position: "absolute", bottom: 34, alignSelf: "center", backgroundColor: "#FFFFFFDE", borderRadius: 40, flexDirection: "row", gap: 11, alignItems: "center", paddingHorizontal: 19, paddingVertical: 9 }, messageIcon: { width: 31, height: 31, borderRadius: 16, backgroundColor: "#0040BB", alignItems: "center", justifyContent: "center" }, messageText: { fontSize: 13, lineHeight: 18, color: "#172033" }, dots: { position: "absolute", bottom: 18, alignSelf: "center", flexDirection: "row", gap: 9 }, dot: { width: 9, height: 9, borderRadius: 5, backgroundColor: "#FFFFFFCC" },
-  sheet: { backgroundColor: "white", borderTopLeftRadius: 30, borderTopRightRadius: 30, paddingHorizontal: 22, paddingTop: 25, marginTop: -12 }, tabs: { flexDirection: "row", marginBottom: 17, borderBottomWidth: 1, borderColor: "#DCE6F5" }, tab: { flex: 1, alignItems: "center", paddingVertical: 11, borderBottomWidth: 3, borderColor: "transparent", marginBottom: -1 }, activeTab: { borderColor: "#0645C9" }, tabText: { fontSize: 15, fontWeight: "700", color: "#667085" }, button: { borderRadius: 15, minHeight: 52, borderWidth: 1, borderColor: "#DCE6F5", flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 14, marginBottom: 8, paddingHorizontal: 10, paddingVertical: 9, backgroundColor: "#FFFFFF", boxShadow: "0px 3px 8px #09275E12" }, email: { backgroundColor: "#0645C9", borderColor: "#0645C9" }, apple: { backgroundColor: "#000000", borderColor: "#000000" }, half: { flex: 1, minWidth: 0, gap: 10 }, buttonText: { fontSize: 15, fontWeight: "600", color: "#09275E" }, legal: { color: "#667085", fontSize: 11, lineHeight: 17, textAlign: "center", marginTop: 8, marginBottom: 12 }, legalLink: { color: "#0645C9", fontWeight: "600" }, error: { color: "#B42318", fontSize: 12, lineHeight: 18, textAlign: "center", marginVertical: 5 },
+  sheet: { backgroundColor: "white", borderTopLeftRadius: 30, borderTopRightRadius: 30, paddingHorizontal: 22, paddingTop: 25, marginTop: -12 }, button: { borderRadius: 15, minHeight: 52, borderWidth: 1, borderColor: "#DCE6F5", flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 14, marginBottom: 8, paddingHorizontal: 10, paddingVertical: 9, backgroundColor: "#FFFFFF", boxShadow: "0px 3px 8px #09275E12" }, email: { backgroundColor: "#0645C9", borderColor: "#0645C9" }, social: { borderColor: "#D0D5DD", borderRadius: 10, minHeight: 50, gap: 9 }, half: { flex: 1, minWidth: 0 },
+  switchBlock: { marginTop: 22, gap: 12 }, switchTitle: { color: "#1F2937", fontSize: 16, fontWeight: "700", textAlign: "center" }, outline: { minHeight: 50, borderRadius: 10, borderWidth: 1.5, borderColor: "#0645C9", alignItems: "center", justifyContent: "center", backgroundColor: "#FFFFFF" }, outlineText: { color: "#0645C9", fontSize: 15.5, fontWeight: "700" },
+  switchRow: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", justifyContent: "center", columnGap: 7, minHeight: 32 }, switchLead: { color: "#344054", fontSize: 14.5 }, switchLinkWrap: { flexDirection: "row", alignItems: "center", minHeight: 32 }, switchLink: { color: "#0645C9", fontSize: 14.5, fontWeight: "700" }, switchRule: { height: 1, backgroundColor: "#E4E7EC" }, buttonText: { fontSize: 15, fontWeight: "600", color: "#09275E" }, legal: { color: "#667085", fontSize: 11, lineHeight: 17, textAlign: "center", marginTop: 8, marginBottom: 12 }, legalLink: { color: "#0645C9", fontWeight: "600" }, error: { color: "#B42318", fontSize: 12, lineHeight: 18, textAlign: "center", marginVertical: 5 },
 });

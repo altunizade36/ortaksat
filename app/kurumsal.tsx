@@ -1,3 +1,4 @@
+import { useStore } from "@/lib/use-store";
 import { MaterialCommunityIcons } from "@/components/icons";
 import { Link } from "expo-router";
 import Head from "expo-router/head";
@@ -51,6 +52,7 @@ const faqLd = JSON.stringify({
 });
 
 export default function CorporateLandingPage() {
+  const { isAuthenticated } = useStore();
   const isWideWeb = useIsWideWeb();
   const { language } = useLanguage();
   const title = translateCopy("Kurumsal Satıcılar — XML ile Toplu İlan ve Komisyonlu Satış Ağı | OrtakSat", language);
@@ -89,6 +91,12 @@ export default function CorporateLandingPage() {
                 <Text style={{ color: colors.primaryDark, fontSize: 15, fontWeight: "900" }}>{translateCopy("Kataloğunu Yükle", language)}</Text>
               </Pressable>
             </Link>
+            {!isAuthenticated ? <Link href={"/auth?mode=register&tur=kurumsal" as never} asChild>
+              <Pressable accessibilityRole="link" style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.12)", borderColor: "rgba(255,255,255,0.5)", borderRadius: 12, borderWidth: 1.5, flexDirection: "row", gap: 8, minHeight: 48, paddingHorizontal: 22 }}>
+                <MaterialCommunityIcons name="domain" size={18} color="#FFFFFF" />
+                <Text style={{ color: "#FFFFFF", fontSize: 15, fontWeight: "900" }}>{translateCopy("Kurumsal Hesap Aç", language)}</Text>
+              </Pressable>
+            </Link> : null}
             <Pressable accessibilityRole="link" onPress={() => void openUrlSafe(mailto)} style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.12)", borderColor: "rgba(255,255,255,0.5)", borderRadius: 12, borderWidth: 1.5, flexDirection: "row", gap: 8, minHeight: 48, paddingHorizontal: 22 }}>
               <MaterialCommunityIcons name="email-outline" size={18} color="#FFFFFF" />
               <Text style={{ color: "#FFFFFF", fontSize: 15, fontWeight: "900" }}>{translateCopy("Bize Yaz", language)}</Text>

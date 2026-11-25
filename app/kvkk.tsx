@@ -31,6 +31,7 @@ const SECTIONS: Section[] = [
     title: "İşlenen Kişisel Veriler",
     bullets: [
       "Kimlik ve iletişim: ad-soyad, e-posta, (varsa) telefon numarası.",
+      "Kurumsal hesap açarsan: işletme/mağaza adı, işletme türü, il, faaliyet alanı, yetkilinin adı-soyadı ve isteğe bağlı işletme telefonu (vergi ya da T.C. kimlik numarası istenmez).",
       "Hesap ve işlem verileri: ilanlar, mesajlar, favoriler, ortaklık ve komisyon kayıtları, değerlendirmeler.",
       "İşlem güvenliği: IP adresi, cihaz/tarayıcı bilgisi, oturum ve log kayıtları.",
       "Konum: ilan için seçtiğin il ve ilçe, isteğe bağlı mahalle / köy bilgisi; görüntüleme düzeyi ilan ayarından seçilir."
@@ -61,7 +62,7 @@ const SECTIONS: Section[] = [
       "Supabase (sunucular AB / İrlanda): veritabanı, kimlik doğrulama, dosya depolama.",
       "Resend (ABD): doğrulama ve bildirim e-postalarının gönderimi.",
       "Google: yalnızca \"Google ile giriş\"i seçersen kimlik doğrulama.",
-      "Apple: yalnızca iOS uygulamasında \"Apple ile giriş\"i seçersen kimlik doğrulama.",
+      "Apple: yalnızca \"Apple ile giriş\"i seçersen kimlik doğrulama.",
       "Yalnızca çerez tercihlerinde izin verirsen: Vercel Web Analytics (ziyaret istatistikleri) ve etkinleştirildiği dönemlerde Meta Pixel (reklam ölçümü)."
     ]
   },
@@ -88,5 +89,5 @@ const SECTIONS: Section[] = [
 ];
 
 export default function KvkkScreen() {
-  return <LegalDoc title="KVKK Aydınlatma Metni" path="/kvkk" updated="13 Kasım 2026" intro="Kişisel verilerinin nasıl işlendiğini, haklarını ve başvuru yollarını incele." seoDescription="OrtakSat KVKK bilgilendirmesi ve kişisel veri başvuru yolları." sections={[...SECTIONS.map(s => ({ heading: s.title, paragraphs: s.body ? [s.body] : [], bullets: s.bullets })), { heading: "Başvuru ve Yanıt Süreci", paragraphs: [`Bilgi, düzeltme, silme ve diğer kişisel veri taleplerinizi ${SUPPORT_EMAIL} adresine, sistemimizde kayıtlı e-posta adresiniz üzerinden iletebilirsiniz. Talebinizi açıkça belirtin; hesabın size ait olduğunun doğrulanması gerekebilir. Başvurunuz en kısa sürede ve en geç 30 gün içinde ücretsiz olarak sonuçlandırılır; ayrıca maliyet doğuran işlemlerde Kişisel Verileri Koruma Kurulu'nun belirlediği tarife uygulanabilir.`, "Başvuruda şifre, ödeme kartı bilgisi veya gereksiz kimlik belgesi göndermeyin. Başvurunuzun reddedilmesi, yanıtın yetersiz olması ya da süresinde yanıt verilmemesi hâlinde, yanıtı öğrendiğiniz tarihten itibaren 30 ve her hâlde başvuru tarihinden itibaren 60 gün içinde Kişisel Verileri Koruma Kurulu'na şikâyette bulunabilirsiniz."] }]} />;
+  return <LegalDoc title="KVKK Aydınlatma Metni" path="/kvkk" updated="25 Kasım 2026" intro="Kişisel verilerinin nasıl işlendiğini, haklarını ve başvuru yollarını incele." seoDescription="OrtakSat KVKK bilgilendirmesi ve kişisel veri başvuru yolları." sections={[...SECTIONS.map(s => ({ heading: s.title, paragraphs: s.body ? [s.body] : [], bullets: s.bullets })), { heading: "Başvuru ve Yanıt Süreci", paragraphs: [`Bilgi, düzeltme, silme ve diğer kişisel veri taleplerinizi ${SUPPORT_EMAIL} adresine, sistemimizde kayıtlı e-posta adresiniz üzerinden iletebilirsiniz. Talebinizi açıkça belirtin; hesabın size ait olduğunun doğrulanması gerekebilir. Başvurunuz en kısa sürede ve en geç 30 gün içinde ücretsiz olarak sonuçlandırılır; ayrıca maliyet doğuran işlemlerde Kişisel Verileri Koruma Kurulu'nun belirlediği tarife uygulanabilir.`, "Başvuruda şifre, ödeme kartı bilgisi veya gereksiz kimlik belgesi göndermeyin. Başvurunuzun reddedilmesi, yanıtın yetersiz olması ya da süresinde yanıt verilmemesi hâlinde, yanıtı öğrendiğiniz tarihten itibaren 30 ve her hâlde başvuru tarihinden itibaren 60 gün içinde Kişisel Verileri Koruma Kurulu'na şikâyette bulunabilirsiniz."] }]} />;
 }

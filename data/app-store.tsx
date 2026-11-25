@@ -197,6 +197,28 @@ type SaleFromLeadInput = {
 };
 
 const LEGAL_CONSENT_VERSION = "2026-06-11";
+
+/** Kurumsal hesap açarken alınan beyan bilgileri (vergi/TC kimlik numarası toplanmaz). */
+export type BusinessSignup = { name: string; type: "sahis" | "sirket"; contactName: string; city?: string; activity?: string; phone?: string };
+const BUSINESS_CONTRACT_VERSION = "2026-11-25";
+/** İşletme kaydını yazar (yalnız sahibi yazabilir — RLS). Hata kaydı engellemez; il, profilde de görünsün diye ayrıca yazılır. */
+async function saveBusinessAccount(userId: string, business?: BusinessSignup | null): Promise<void> {
+  if (!supabase || !business || typeof business.name !== "string" || !business.name.trim()) return;
+  const clean = (value: unknown, max: number) => (typeof value === "string" && value.trim() ? value.trim().slice(0, max) : null);
+  await supabase.from("business_accounts").upsert({
+    user_id: userId,
+    business_name: business.name.trim().slice(0, 120),
+    business_type: business.type === "sirket" ? "sirket" : "sahis",
+    contact_name: (clean(business.contactName, 120) ?? business.name.trim()).slice(0, 120),
+    city: clean(business.city, 60),
+    activity: clean(business.activity, 80),
+    phone: clean(business.phone, 24),
+    contract_version: BUSINESS_CONTRACT_VERSION,
+    updated_at: new Date().toISOString()
+  }, { onConflict: "user_id" }).then(() => undefined, () => undefined);
+  const city = clean(business.city, 60);
+  if (city) await supabase.from("profiles").update({ city }).eq("id", userId).then(() => undefined, () => undefined);
+}
 const LEGAL_DOCUMENT_TYPES = ["privacy", "terms", "kvkk", "seller_rules"] as const;
 
 // Auth e-postalarındaki (kayıt / şifre sıfırlama / kod tekrar) ve OAuth'taki dönüş adresi — TEK KAYNAK.
@@ -317,7 +339,8 @@ type AppStore = {
   emailVerified: boolean;
   isSuspended: boolean;
   signInWithEmail: (email: string, password: string) => Promise<boolean>;
-  signUpWithEmail: (input: { email: string; password: string; name: string; legalAccepted: boolean }) => Promise<boolean>;
+  /** `business` verilirse KURUMSAL hesap açılır: profil adı işletme adıdır, beyan bilgileri business_accounts'a yazılır. */
+  signUpWithEmail: (input: { email: string; password: string; name: string; legalAccepted: boolean; business?: BusinessSignup }) => Promise<boolean>;
   resetPasswordWithEmail: (email: string) => Promise<boolean>;
   updatePasswordWithEmail: (password: string) => Promise<boolean>;
   resetPasswordWithCode: (email: string, code: string, newPassword: string) => Promise<boolean>;
@@ -1559,7 +1582,10 @@ export function StoreProvider({ children }: PropsWithChildren) {
               full_name: displayName,
               legal_terms_accepted: true,
               legal_accepted_at: legalAcceptedAt,
-              legal_version: LEGAL_CONSENT_VERSION
+              legal_version: LEGAL_CONSENT_VERSION,
+              // Kurumsal hesap: beyan bilgileri hesap verisinde de durur → e-posta kodu açıkken (oturum sonradan
+              // gelir) kod doğrulanınca aynı bilgiler buradan okunup kaydedilir.
+              ...(input.business ? { account_type: "kurumsal", business: input.business } : {})
             },
             // Web'de doğrulama linki tarayıcıya (siteye) dönmeli; native şemaya
             // (ortaksat://) sabitlenirse mobil-web kullanıcısı e-postadaki linki
@@ -1577,6 +1603,7 @@ export function StoreProvider({ children }: PropsWithChildren) {
           setUsers((items) => [profile, ...items.filter((item) => item.id !== profile.id)]);
           void ensureProfile(profile)
             .then(() => Promise.all(LEGAL_DOCUMENT_TYPES.map((documentType) => recordLegalConsentLive(profile.id, documentType))))
+            .then(() => saveBusinessAccount(profile.id, input.business))
             .catch(() => {});
           void logActivity("sign_up", { userId: profile.id });
         } else if (data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
@@ -1802,6 +1829,7 @@ export function StoreProvider({ children }: PropsWithChildren) {
         const displayName = (data.session.user.user_metadata?.full_name as string) || cleanEmail;
         const profile = userFromAuth(data.session.user.id, data.session.user.phone, displayName);
         await ensureProfile(profile);
+        void saveBusinessAccount(profile.id, data.session.user.user_metadata?.business as BusinessSignup | undefined);
         setAuthUser(profile);
         setUsers((items) => [profile, ...items.filter((item) => item.id !== profile.id)]);
         setPendingVerifyEmail(null);

@@ -21,6 +21,7 @@ export const PRIVACY_SECTIONS: PrivacySection[] = [
     bullets: [
       "Hesap bilgileri: e-posta adresi, ad-soyad/görünen ad, şifre (şifrelenmiş saklanır).",
       "İsteğe bağlı profil: telefon numarası, kısa açıklama (bio), sosyal medya kullanıcı adı, konum (il/ilçe).",
+      "Kurumsal hesap bilgileri: kurumsal hesap açarsanız işletme/mağaza adı, işletme türü, bulunduğu il, faaliyet alanı, yetkilinin adı-soyadı ve isteğe bağlı işletme telefonu. Vergi kimlik numarası ve T.C. kimlik numarası istenmez; işletme kaydını yalnızca siz ve yetkili OrtakSat personeli görür.",
       "İçerik verileri: yayınladığınız ilanlar, fotoğraflar, ortaklık başvuruları, mesajlar, talepler, yorumlar ve komisyon kayıtları.",
       "Kimlik/telefon doğrulama durumu (yalnızca 'doğrulandı/doğrulanmadı' bilgisi).",
       "Teknik veriler: cihaz/oturum bilgileri, IP tabanlı genel konum, kullanım günlükleri (güvenlik ve hata takibi için).",
@@ -63,7 +64,7 @@ export const PRIVACY_SECTIONS: PrivacySection[] = [
       "Resend — işlemsel/bildirim e-postalarının gönderimi.",
       "Expo (Expo Push), Apple Push Notification service ve Firebase Cloud Messaging — yalnızca mobil uygulamada anlık bildirime izin verirseniz bildirim iletimi.",
       "Google — yalnızca 'Google ile giriş' seçilirse kimlik doğrulama.",
-      "Apple — yalnızca iOS uygulamasında 'Apple ile giriş' seçilirse kimlik doğrulama.",
+      "Apple — yalnızca 'Apple ile giriş' seçilirse kimlik doğrulama.",
       "Meta (Facebook / Instagram) Pixel — yalnızca etkinleştirildiği dönemlerde ve yalnızca 'Pazarlama' iznini verirsen reklam ölçümü."
     ]
   },

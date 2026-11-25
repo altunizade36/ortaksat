@@ -28,9 +28,9 @@ test("kayıt tamamlanır → kod ekranı gelir (takılmaz) + hesap DB'de oluşur
   await page.waitForTimeout(300);
   await page.screenshot({ path: "e2e-artifacts/register-filled.png", fullPage: true });
 
-  // Gönder düğmesi web'de "Kayıt ol" (sekme "Hesap Oluştur"); eski yazı "Kayıt Ol" da kabul edilir.
+  // Gönder düğmesi: "E-posta ile hesap aç".
   const t0 = Date.now();
-  await page.getByText(/^(Kayıt ol|Kayıt Ol)$/).last().click();
+  await page.getByText("E-posta ile hesap aç", { exact: true }).last().click();
 
   // Autoconfirm AÇIK (mailer_autoconfirm=true): kayıt session'ı ANINDA döndürür → otomatik giriş
   // → /hosgeldin veya / yönlendirmesi (KOD EKRANI YOK, e-posta yok, hiçbir limite takılmaz).

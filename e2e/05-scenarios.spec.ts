@@ -13,7 +13,7 @@ async function login(page: Page, email: string) {
   await page.waitForTimeout(1500);
   await page.getByPlaceholder(/eposta|@/i).first().fill(email);
   await page.getByPlaceholder(/şifre/i).first().fill(PW);
-  await page.getByText("Giriş Yap", { exact: true }).last().click();
+  await page.getByText("E-posta ile giriş yap", { exact: true }).last().click();
   await page.waitForTimeout(4000);
 }
 

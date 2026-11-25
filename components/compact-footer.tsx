@@ -34,7 +34,7 @@ export function CompactFooter() {
   // Aynı bağlantılar Menü → "Yasal ve Destek" altında; mağaza incelemesi için gereken hesap silme Hesap Ayarları'nda.
   if (isMobileApp) return null;
   return <View style={{ alignSelf: "center", flexShrink: 0, marginTop: "auto", paddingTop: 14, width: nestedMobile && mounted && width > 0 ? width : "100%" }}>
-    <View testID="compact-footer" accessibilityLabel={translateCopy("Bilgi ve yasal bağlantılar", language)} style={{ alignItems: "center", alignSelf: "stretch", backgroundColor: "#F1F4FC", borderTopColor: colors.primary, borderTopWidth: 2, flexGrow: 0, flexShrink: 0, gap: 2, justifyContent: "center", minHeight: nestedMobile ? 112 : 96, paddingHorizontal: 16, paddingVertical: 10 }}>
+    <View testID="compact-footer" accessibilityLabel={translateCopy("Bilgi ve yasal bağlantılar", language)} style={{ alignItems: "center", alignSelf: "stretch", backgroundColor: "#F1F4FC", borderTopColor: colors.primary, borderTopWidth: 2, flexGrow: 0, flexShrink: 0, gap: 2, justifyContent: "center", minHeight: nestedMobile ? 132 : 112, paddingHorizontal: 16, paddingVertical: 10 }}>
       <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", justifyContent: "center", maxWidth: 860 }}>
         {links.map((link, index) => <View key={link.href as string} style={{ alignItems: "center", flexDirection: "row" }}>
           {index > 0 ? <Text importantForAccessibility="no" accessibilityElementsHidden style={{ color: "#9AABD0", fontSize: 11 }}>·</Text> : null}
@@ -45,6 +45,8 @@ export function CompactFooter() {
           <Pressable testID="footer-cookie-preferences" accessibilityRole="button" onPress={openCookiePreferences} style={{ justifyContent: "center", minHeight: 36, paddingHorizontal: 9 }}><Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "700", textAlign: "center" }}>{translateCopy("Çerez Tercihleri", language)}</Text></Pressable>
         </View> : null}
       </View>
+      {/* Aracı platform bilgilendirmesi (kendi metnimiz): ilan içeriğinin sorumlusu ve para akışı tek cümlede. */}
+      <Text style={{ color: colors.muted, fontSize: 11, lineHeight: 16, marginTop: 4, maxWidth: 760, textAlign: "center" }}>{translateCopy("OrtakSat aracı bir ilan platformudur. İlanların içeriğinden ve doğruluğundan ilanı veren kullanıcı sorumludur; satış, ödeme ve teslimat taraflar arasında gerçekleşir.", language)}</Text>
       <Text style={{ color: colors.muted, fontSize: 11, marginTop: 1, textAlign: "center" }}>© 2026 OrtakSat</Text>
     </View>
   </View>;

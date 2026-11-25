@@ -16,8 +16,7 @@ async function loginViaUI(page: Page, email: string, password: string) {
   await page.waitForTimeout(1500);
   await page.getByPlaceholder(/eposta|e-posta|@/i).first().fill(email);
   await page.getByPlaceholder(/şifre/i).first().fill(password);
-  // "Giriş Yap" — sekme + buton; gönder butonu SON eşleşme.
-  await page.getByText("Giriş Yap", { exact: true }).last().click();
+  await page.getByText("E-posta ile giriş yap", { exact: true }).last().click();
   // Giriş sonrası ana sayfaya/hoşgeldin'e yönlenir.
   await page.waitForTimeout(4000);
 }

@@ -21,6 +21,9 @@ import { hasSeenWelcome, markWelcomeSeen } from "@/lib/onboarding";
 import { setRememberSession } from "@/lib/supabase";
 import { useStore } from "@/lib/use-store";
 import { passwordStrength } from "@/lib/validation";
+import { MobileSelect } from "@/components/mobile/ui";
+import { TR_PROVINCES } from "@/lib/cities";
+import { categoryTree } from "@/lib/category-tree";
 
 type AuthMode = "login" | "register" | "reset";
 
@@ -28,13 +31,23 @@ export default function AuthScreen() {
   const { language } = useLanguage();
   const router = useRouter();
   const mobileAccess = useMobileAccess();
-  const params = useLocalSearchParams<{ redirect?: string; mode?: string }>();
+  const params = useLocalSearchParams<{ redirect?: string; mode?: string; tur?: string }>();
   const { authAttempt, authError, currentUser, isAuthenticated, pendingVerifyEmail, clearPendingVerify, verifyEmailCode, resendEmailCode, resetPasswordWithEmail, resetPasswordWithCode, signInWithEmail, signInWithGoogle, signInWithApple, signUpWithEmail, platformSettings } = useStore();
   // Apple ile giriş: iOS uygulamasında yerel pencere (her zaman); web ve Android'de tarayıcı yönlendirmesi,
   // sunucuda Services ID kurulunca açılır (platform_settings.apple_web_login, scripts/setup-apple-web-login.py).
   const appleAvailable = Platform.OS === "ios" || platformSettings.appleWebLogin;
   const [mode, setMode] = useState<AuthMode>("login");
   useEffect(() => { if (params.mode === "register" || params.mode === "login" || params.mode === "reset") setMode(params.mode); }, [params.mode]);
+  // KURUMSAL HESAP: /auth?mode=register&tur=kurumsal. Aynı kayıt akışı + işletme beyan bilgileri (vergi/TC kimlik
+  // numarası istenmez: platform fatura kesmez, para tutmaz). Profil adı işletme adı olur.
+  const [business, setBusiness] = useState(false);
+  useEffect(() => { if (params.tur === "kurumsal") { setBusiness(true); setMode("register"); } }, [params.tur]);
+  const [businessName, setBusinessName] = useState("");
+  const [businessType, setBusinessType] = useState<"sahis" | "sirket">("sahis");
+  const [businessCity, setBusinessCity] = useState("");
+  const [businessActivity, setBusinessActivity] = useState("");
+  const [businessPhone, setBusinessPhone] = useState("");
+  const isBusiness = business && mode === "register";
   // E-posta + şifre alanları HER platformda doğrudan görünür (eskiden uygulamada önce "E-posta ile devam et"e
   // basmak gerekiyordu; kullanıcı giriş alanlarını, "Şifremi unuttum"u ve hesap oluşturmayı bulamıyordu).
   const [emailFormOpen, setEmailFormOpen] = useState(true);
@@ -310,6 +323,19 @@ export default function AuthScreen() {
   async function register() {
     if (loading || authOperation.current) return; // çift-dokunuş koruması → iki signUp çağrısı + "zaten hesap var" flaşı önlenir
     setFormError(null);
+    if (isBusiness && businessName.trim().length < 2) {
+      setFormError(translateCopy("İşletme ya da mağaza adını gir.", language));
+      return;
+    }
+    if (isBusiness && !businessCity) {
+      setFormError(translateCopy("İşletmenin bulunduğu ili seç.", language));
+      return;
+    }
+    const phoneDigits = businessPhone.replace(/\D/g, "");
+    if (isBusiness && businessPhone.trim() && (phoneDigits.length < 10 || phoneDigits.length > 13)) {
+      setFormError(translateCopy("Telefon numarasını alan koduyla birlikte gir ya da boş bırak.", language));
+      return;
+    }
     if (!firstName.trim() || !lastName.trim() || !cleanEmail) {
       // Yalnızca GERÇEKTEN eksik alanları söyle (eskiden e-posta dolu olsa bile
       // "Ad, soyad ve e-posta gerekli" diyordu → kullanıcı "ama e-postayı yazdım" diye şaşırıyordu).
@@ -336,7 +362,7 @@ export default function AuthScreen() {
       return;
     }
     if (!allAccepted) {
-      const msg = language === "en" ? "You must accept KVKK, privacy, terms of use, and seller/partner rules." : "KVKK, gizlilik, kullanım şartları ve satıcı/ortak kurallarını kabul etmelisin.";
+      const msg = language === "en" ? "Tick the legal consent box to continue." : "Devam etmek için yasal onay kutusunu işaretle.";
       setFormError(msg);
       return;
     }
@@ -346,7 +372,12 @@ export default function AuthScreen() {
     authOperation.current = true;
     setLoading(true);
     try {
-      const { ok, error } = await authAttempt(() => signUpWithEmail({ email: cleanEmail, password, name: fullName, legalAccepted: acceptedAll }));
+      const { ok, error } = await authAttempt(() => signUpWithEmail({
+        email: cleanEmail, password, legalAccepted: acceptedAll,
+        // Kurumsal hesapta görünen ad işletme adıdır; yetkilinin adı yalnız işletme kaydında durur.
+        name: isBusiness ? businessName.trim() : fullName,
+        business: isBusiness ? { name: businessName.trim(), type: businessType, contactName: fullName, city: businessCity, activity: businessActivity || undefined, phone: businessPhone.trim() || undefined } : undefined
+      }));
       // Akış kendini yönetir: oturum açıldıysa (doğrulama kapalı) effect /hosgeldin'e
       // yönlendirir; kod gerekiyorsa pendingVerifyEmail set olur ve kod ekranı gelir.
       // Başarısızsa authError formda gösterilir; hiçbir mesaj yoksa da net bir uyarı ver.
@@ -356,7 +387,7 @@ export default function AuthScreen() {
       } else {
         setPassword(""); setConfirmPassword("");
         // Meta Pixel: kayıt tamamlandı (reklam dönüşümü). fbq yoksa sessiz no-op.
-        metaTrack("CompleteRegistration", { content_name: "email_signup", status: true });
+        metaTrack("CompleteRegistration", { content_name: isBusiness ? "business_signup" : "email_signup", status: true });
       }
     } catch {
       const m = language === "en" ? "Connection error. Please try again." : "Bağlantı hatası. Lütfen tekrar dene.";
@@ -380,10 +411,11 @@ export default function AuthScreen() {
       </Pressable>
       <Text style={{ color: colors.muted, flex: 1, fontSize: 12.5, lineHeight: 19 }}>
         {/* KVKK: aydınlatma metni "kabul" edilmez, OKUNUR; kabul edilenler sözleşme ve kurallardır. Bu yüzden iki ayrı ifade. */}
-        <Text onPress={() => setOpenDocKey("kullanim")} style={linkStyle}>{translateCopy("Kullanım Şartları", language)}</Text>{" "}{translateCopy("ile", language)}{" "}
+        <Text onPress={() => setOpenDocKey(isBusiness ? "kurumsal" : "hesap")} style={linkStyle}>{translateCopy(isBusiness ? "Kurumsal Hesap Sözleşmesi" : "Bireysel Hesap Sözleşmesi", language)}</Text>{", "}
+        <Text onPress={() => setOpenDocKey("kullanim")} style={linkStyle}>{translateCopy("Kullanım Şartları", language)}</Text>{" "}{translateCopy("ve", language)}{" "}
         <Text onPress={() => setOpenDocKey("ilan")} style={linkStyle}>{translateCopy("İlan Kuralları", language)}</Text>{translateCopy("’nı kabul ediyorum;", language)}{" "}
         <Text onPress={() => setOpenDocKey("kvkk")} style={linkStyle}>{translateCopy("KVKK Aydınlatma Metni", language)}</Text>{" "}{translateCopy("ile", language)}{" "}
-        <Text onPress={() => setOpenDocKey("gizlilik")} style={linkStyle}>{translateCopy("Gizlilik Politikası", language)}</Text>{translateCopy("’nı okudum. 18 yaşından büyüğüm.", language)}
+        <Text onPress={() => setOpenDocKey("gizlilik")} style={linkStyle}>{translateCopy("Gizlilik Politikası", language)}</Text>{translateCopy(isBusiness ? "’nı okudum. İşletme adına işlem yapmaya yetkiliyim." : "’nı okudum. 18 yaşından büyüğüm.", language)}
       </Text>
       </View>
       {consentHint && <Text accessibilityLiveRegion="polite" style={{ color: colors.primaryDark, fontSize: 12, lineHeight: 18, fontWeight: "700" }}>{translateCopy("Devam etmek için önce bu kutuyu işaretle.", language)}</Text>}
@@ -398,22 +430,11 @@ export default function AuthScreen() {
     />
   );
 
-  // Temiz alt sözleşme satırı (sahibinden'deki gibi): mavi altı-çizili linkler.
-  const legalFooter = (
-    <Text style={{ color: colors.subtle, fontSize: 11.5, lineHeight: 17, textAlign: "center" }}>
-      <Text onPress={() => setOpenDocKey("kullanim")} style={linkStyle}>{translateCopy("Kullanım Şartları", language)}</Text>
-      {"   ·   "}
-      <Text onPress={() => setOpenDocKey("kvkk")} style={linkStyle}>{translateCopy("KVKK Aydınlatma Metni", language)}</Text>
-      {"   ·   "}
-      <Text onPress={() => setOpenDocKey("gizlilik")} style={linkStyle}>{translateCopy("Gizlilik Politikası", language)}</Text>
-    </Text>
-  );
-
   // Beni Hatırla (giriş): işaretli değilse tarayıcı kapanınca oturum silinir.
   const rememberCheck = (
-    <Pressable onPress={() => setRememberMe((v) => !v)} accessibilityRole="checkbox" accessibilityLabel={translateCopy("Beni hatırla", language)} accessibilityState={{ checked: rememberMe }} {...({ role: "checkbox", "aria-checked": rememberMe, "aria-label": translateCopy("Beni hatırla", language) } as Record<string, unknown>)} style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
+    <Pressable onPress={() => setRememberMe((v) => !v)} accessibilityRole="checkbox" accessibilityLabel={translateCopy("Oturum açık kalsın", language)} accessibilityState={{ checked: rememberMe }} {...({ role: "checkbox", "aria-checked": rememberMe, "aria-label": translateCopy("Oturum açık kalsın", language) } as Record<string, unknown>)} style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
       <MaterialCommunityIcons name={rememberMe ? "checkbox-marked" : "checkbox-blank-outline"} size={19} color={rememberMe ? colors.primary : colors.muted} />
-      <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "700" }}>{translateCopy("Beni hatırla", language)}</Text>
+      <Text style={{ color: colors.ink, fontSize: 13.5, fontWeight: "500" }}>{translateCopy("Oturum açık kalsın", language)}</Text>
     </Pressable>
   );
 
@@ -476,10 +497,28 @@ export default function AuthScreen() {
   }
 
   const emailForm = <>
+    {isBusiness ? <>
+      <Field label="İşletme / mağaza adı" value={businessName} onChangeText={setBusinessName} placeholder="Mağazanda görünecek ad" />
+      <View style={{ gap: 6 }}>
+        <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "700" }}>{translateCopy("İşletme türü", language)}</Text>
+        <View accessibilityRole="radiogroup" style={{ flexDirection: "row", flexWrap: "wrap", columnGap: 18, rowGap: 6 }}>
+          {([["sahis", "Şahıs işletmesi"], ["sirket", "Limited veya anonim şirket"]] as const).map(([value, label]) => <Pressable key={value} accessibilityRole="radio" accessibilityState={{ checked: businessType === value }} accessibilityLabel={translateCopy(label, language)} onPress={() => setBusinessType(value)} style={{ alignItems: "center", flexDirection: "row", gap: 7, minHeight: 40 }}>
+            <MaterialCommunityIcons name={businessType === value ? "radiobox-marked" : "radiobox-blank"} size={21} color={businessType === value ? colors.primary : colors.muted} />
+            <Text style={{ color: colors.ink, fontSize: 14 }}>{translateCopy(label, language)}</Text>
+          </Pressable>)}
+        </View>
+      </View>
+      {/* MobileSelect flex:1 taşır → satır kabı içinde (sütunda flex yükseklik olur, alan şişer). */}
+      <View style={{ flexDirection: "row", gap: 12 }}>
+        <MobileSelect label={translateCopy("İl", language)} value={businessCity} placeholder={translateCopy("Seçiniz", language)} options={TR_PROVINCES} onChange={setBusinessCity} />
+        <MobileSelect label={translateCopy("Faaliyet alanı", language)} value={businessActivity} placeholder={translateCopy("Seçiniz", language)} options={BUSINESS_ACTIVITIES} onChange={setBusinessActivity} />
+      </View>
+    </> : null}
     {mode === "register" ? <View style={{ flexDirection: "row", gap: 12 }}>
-      <View style={{ flex: 1, minWidth: 0 }}><Field label="Ad" value={firstName} onChangeText={setFirstName} placeholder="Ayşe" /></View>
-      <View style={{ flex: 1, minWidth: 0 }}><Field label="Soyad" value={lastName} onChangeText={setLastName} placeholder="Demir" /></View>
+      <View style={{ flex: 1, minWidth: 0 }}><Field label={isBusiness ? "Yetkili adı" : "Ad"} value={firstName} onChangeText={setFirstName} placeholder="Ayşe" /></View>
+      <View style={{ flex: 1, minWidth: 0 }}><Field label={isBusiness ? "Yetkili soyadı" : "Soyad"} value={lastName} onChangeText={setLastName} placeholder="Demir" /></View>
     </View> : null}
+    {isBusiness ? <Field label="İşletme telefonu (isteğe bağlı)" value={businessPhone} onChangeText={(v) => setBusinessPhone(v.replace(/[^0-9+ ()-]/g, "").slice(0, 20))} placeholder="0212 000 00 00" phone /> : null}
     <Field label="E-posta" value={email} onChangeText={setEmail} keyboardType="email-address" placeholder="ornek@eposta.com" />
     {mode !== "reset" ? <Field label="Şifre" value={password} onChangeText={setPassword} secureTextEntry placeholder={mode === "register" ? "Güçlü bir şifre oluştur" : "Şifreni gir"} toggleSecure secureVisible={showPassword} onToggleSecure={() => setShowPassword(v => !v)} onSubmitEditing={mode === "login" ? login : undefined} passwordAutoComplete={mode === "register" ? "new-password" : "current-password"} /> : null}
     {mode === "register" && password.length > 0 ? <PasswordStrengthMeter password={password}/> : null}
@@ -495,26 +534,22 @@ export default function AuthScreen() {
       <PasswordStrengthMeter password={newPassword}/>
     </> : null}
     {formError || authError ? <Text accessibilityRole="alert" style={{ color: colors.accent, fontSize: 13, lineHeight: 19 }}>{formError || authError}</Text> : null}
-    <PrimaryButton disabled={loading} onPress={mode === "login" ? login : mode === "register" ? register : resetSent ? doResetWithCode : sendResetCode}>{translateCopy(loading ? "Lütfen bekle…" : mode === "login" ? (Platform.OS === "web" ? "E-posta ile giriş yap" : "Giriş Yap") : mode === "register" ? (Platform.OS === "web" ? "Kayıt ol" : "Hesap Oluştur") : resetSent ? "Kodu doğrula ve şifreyi güncelle" : "Sıfırlama kodu gönder", language)}</PrimaryButton>
+    <PrimaryButton disabled={loading} onPress={mode === "login" ? login : mode === "register" ? register : resetSent ? doResetWithCode : sendResetCode}>{translateCopy(loading ? "Lütfen bekle…" : mode === "login" ? "E-posta ile giriş yap" : mode === "register" ? (isBusiness ? "Kurumsal hesap aç" : "E-posta ile hesap aç") : resetSent ? "Kodu doğrula ve şifreyi güncelle" : "Sıfırlama kodu gönder", language)}</PrimaryButton>
     {mode === "reset" && resetSent ? <PrimaryButton disabled={loading} tone="secondary" onPress={sendResetCode}>{translateCopy("Kodu tekrar gönder", language)}</PrimaryButton> : null}
-    {Platform.OS === "web" && mode !== "reset" ? <View style={{ gap: 10, borderTopWidth: 1, borderTopColor: colors.line, paddingTop: 16 }}>
-      {mode === "login" ? legalChecks : null}
-      {appleAvailable ? <Pressable accessibilityRole="button" accessibilityLabel={translateCopy("Apple ile devam et", language)} disabled={loading} onPress={loginWithApple} style={{ minHeight: 48, borderRadius: 12, backgroundColor: "#000000", flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 10, paddingHorizontal: 16, opacity: loading ? 0.6 : 1 }}><MaterialCommunityIcons name="apple" size={22} color="#FFFFFF" /><Text style={{ color: "#FFFFFF", fontSize: 15, fontWeight: "700" }}>{translateCopy("Apple ile Devam Et", language)}</Text></Pressable> : null}
-      <PrimaryButton tone="secondary" disabled={loading} onPress={loginWithGoogle}>Google ile devam et</PrimaryButton>
-      {consentHint ? <Text accessibilityRole="alert" style={{ color: colors.accent, fontSize: 13 }}>{translateCopy(appleAvailable ? "Apple veya Google ile devam etmek için yasal onay kutusunu işaretle." : "Google ile devam etmek için yasal onay kutusunu işaretle.", language)}</Text> : null}
-    </View> : null}
-    {/* Uygulamada aynı bağlantılar Google onay satırında zaten var → alt satır yalnız web'de. */}
-    {Platform.OS === "web" ? <View style={{ marginTop: 8 }}>{legalFooter}</View> : null}
   </>;
   // Android: "height" davranışı klavye kapandıktan sonra altta boş bir şerit bırakıyordu (gerçek cihazda görüldü) → "padding".
   return <KeyboardAvoidingView behavior={Platform.OS === "web" ? undefined : "padding"} style={{ flex: 1 }}>
     {seoHead}
     <MobileAuthLanding mode={mode === "register" ? "register" : "login"} onModeChange={setMode} onEmail={() => setEmailFormOpen(true)} onGoogle={loginWithGoogle} onApple={loginWithApple} apple={appleAvailable} onSkip={() => mobileAccess.skip(skipTarget)} consent={legalChecks} accepted={acceptedAll} busy={loading} error={formError || authError}
-      form={emailFormOpen || mode === "reset" ? emailForm : undefined} formTitle={mode === "reset" ? "Şifreni yenile" : Platform.OS === "web" && emailFormOpen ? mode === "register" ? "Hesabını oluştur" : "E-posta ile giriş yap" : undefined} showTabs={mode !== "reset"}
+      form={emailFormOpen || mode === "reset" ? emailForm : undefined} formTitle={mode === "reset" ? "Şifreni yenile" : undefined} showTabs={mode !== "reset"}
+      business={isBusiness} onBusinessChange={(next) => { setBusiness(next); setFormError(null); setAcceptedAll(false); }}
       onBack={mode === "reset" ? () => setMode("login") : undefined}/>
     {legalModal}
   </KeyboardAvoidingView>;
 }
+
+// Kurumsal hesapta "Faaliyet alanı": site kategorilerinin kökleri (ayrı bir liste tutulmaz, kategoriyle birlikte güncellenir).
+const BUSINESS_ACTIVITIES: string[] = categoryTree.map((node) => node.label).filter((label) => label !== "Arayanlar");
 
 function Field({
   label,
@@ -528,6 +563,7 @@ function Field({
   onToggleSecure,
   onSubmitEditing,
   code,
+  phone,
   passwordAutoComplete
 }: {
   label: string;
@@ -541,6 +577,7 @@ function Field({
   onToggleSecure?: () => void;
   onSubmitEditing?: () => void;
   code?: boolean;
+  phone?: boolean;
   passwordAutoComplete?: "current-password" | "new-password";
 }) {
   const { language } = useLanguage();
@@ -556,7 +593,7 @@ function Field({
         <TextInput
           value={value}
           onChangeText={onChangeText}
-          keyboardType={code ? "number-pad" : keyboardType}
+          keyboardType={code ? "number-pad" : phone ? "phone-pad" : keyboardType}
           autoCapitalize={isEmail || secureTextEntry || code ? "none" : "words"}
           autoCorrect={!isEmail && !code && !secureTextEntry}
           autoComplete={code ? "sms-otp" : isEmail ? "email" : secureTextEntry ? (pwAc === "new-password" ? "password-new" : "password") : "off"}
