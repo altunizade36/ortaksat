@@ -29,6 +29,7 @@
     },
     "android": {
       "package": "com.ortaksat.app",
+      "googleServicesFile": "./google-services.json",
       "versionCode": 1,
       "adaptiveIcon": {
         "backgroundColor": "#FFFFFF",

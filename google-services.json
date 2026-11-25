@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "63552696651",
+    "project_id": "mypay-57d2d",
+    "storage_bucket": "mypay-57d2d.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:63552696651:android:d4bba7579df75056b778ce",
+        "android_client_info": {
+          "package_name": "com.ortaksat.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBZCEPcKeVVzyHwnB7hjC7l5kuE-qbEAoQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
