@@ -75,12 +75,13 @@ OrtakSat is a marketplace where you open your product to **affiliate selling**. 
 - **Yaş sınırı:** 4+ (App Store) / Everyone (Play) — kullanıcı içeriği moderasyonlu; küfür/yetişkin içerik yasak.
 
 ## 9. Gizlilik & Veri (App Store Privacy + Play Data Safety)
-Uygulamanın topladığı veriler (dürüst beyan, 16 Kasım 2026 kod denetimine göre):
+Uygulamanın topladığı veriler (dürüst beyan, 16 Kasım 2026 kod denetimine göre; 25 Kasım 2026: kurumsal hesap satırı eklendi):
 
 | Veri | Amaç | Kimlikle bağlı? | Zorunlu mu? |
 |---|---|---|---|
 | E-posta adresi, ad | Hesap, giriş, iletişim | Evet | Evet |
 | Telefon numarası | Satıcıyla iletişim, doğrulama | Evet | Hayır |
+| Kurumsal hesap bilgileri (işletme adı, türü, il, faaliyet alanı, yetkili adı; isteğe bağlı işletme telefonu) | Kurumsal hesabın açılması | Evet | Yalnız kurumsal hesapta |
 | Fotoğraf ve video (kullanıcının seçtiği) | İlan, profil, mesaj eki, şikâyet kanıtı | Evet | Hayır |
 | Konum (kesin) | Yakındaki ilanlar, ilan konumu, sohbette konum paylaşımı — yalnız kullanıcı dokununca | Evet | Hayır |
 | Mesajlar, ilanlar, yorumlar | Hizmetin işlevi | Evet | — |
