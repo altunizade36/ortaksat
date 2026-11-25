@@ -1631,7 +1631,7 @@ export function StoreProvider({ children }: PropsWithChildren) {
       // şablonunda {{ .Token }} bulunmalı ki link değil KOD gitsin.)
       async resetPasswordWithCode(email, code, newPassword) {
         if (!supabase) { setAuthError("Kod ile sıfırlama yalnızca canlı modda çalışır."); return false; }
-        if (newPassword.length < 6) { setAuthError("Yeni şifre en az 6 karakter olmalı."); return false; }
+        if (newPassword.length < 8) { setAuthError("Yeni şifre en az 8 karakter olmalı."); return false; }
         const cleanEmail = email.trim().toLowerCase();
         const token = code.replace(/\D/g, "");
         if (token.length < 6) { setAuthError("6 haneli kodu eksiksiz gir."); return false; }

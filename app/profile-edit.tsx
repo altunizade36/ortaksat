@@ -23,6 +23,7 @@ import { changePasswordLive, uploadProfileAvatar, uploadProfileCover } from "@/l
 import { CoverField } from "@/components/cover-field";
 import { actionLabel, fetchLoginHistory, type LoginEvent } from "@/lib/security-history";
 import { useStore } from "@/lib/use-store";
+import { supabase } from "@/lib/supabase";
 import { passwordStrength } from "@/lib/validation";
 import { isMobileApp } from "@/lib/mobile-app";
 import { MobileProfileEditor } from "@/components/mobile/profile-editor";
@@ -76,6 +77,20 @@ function ProfileEditScreenInner() {
   // Şifre değiştir (mevcut şifre + yeni + tekrar). Güvenlik: Supabase mevcut
   // şifreyi ister; ayrıca web'de Alert no-op olduğu için satır-içi mesaj gösteririz.
   const [pwCurrent, setPwCurrent] = useState("");
+  // Google/Apple ile açılan hesapta OrtakSat şifresi yoktur: "mevcut şifre" istemek kullanıcıyı çıkmaza sokar
+  // (sunucu mevcut şifreyi zorunlu tutar). Böyle hesapta şifre alanları yerine giriş yöntemi açıklanır.
+  const [socialOnly, setSocialOnly] = useState<string | null>(null);
+  useEffect(() => {
+    let alive = true;
+    void supabase?.auth.getUser().then(({ data }) => {
+      const ids = data.user?.identities ?? [];
+      if (!alive || !ids.length || ids.some((i) => i.provider === "email")) return;
+      const names = [...new Set(ids.map((i) => (i.provider === "google" ? "Google" : i.provider === "apple" ? "Apple" : "")).filter(Boolean))];
+      setSocialOnly(names.join(" / ") || "Giriş sağlayıcın");
+    }).catch(() => undefined);
+    return () => { alive = false; };
+  }, [currentUser.id]);
+  const socialNotice = socialOnly ? <Text style={{ color: colors.muted, fontSize: 13, lineHeight: 19 }}>{translateCopy(`Bu hesapta OrtakSat şifresi yok; ${socialOnly} hesabınla giriş yapıyorsun. Şifren ve iki adımlı doğrulaman o hesabın güvenlik ayarlarından yönetilir.`, language)}</Text> : null;
   const [pwNew, setPwNew] = useState("");
   const [pwNew2, setPwNew2] = useState("");
   const [pwSaving, setPwSaving] = useState(false);
@@ -378,6 +393,7 @@ function ProfileEditScreenInner() {
               <View style={{ gap: 16 }}>
                 <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 14, padding: 22 }}>
                   <Text style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>{translateCopy("Şifre değiştir", language)}</Text>
+                  {socialNotice ?? <>
                   <DeskField label={translateCopy("Mevcut şifren", language)} value={pwCurrent} onChangeText={setPwCurrent} icon="lock-outline" secure />
                   <View style={{ flexDirection: "row", gap: 14 }}>
                     <View style={{ flex: 1 }}><DeskField label={translateCopy("Yeni şifre (güçlü olmalı)", language)} value={pwNew} onChangeText={setPwNew} icon="lock-reset" secure /></View>
@@ -388,6 +404,7 @@ function ProfileEditScreenInner() {
                   <Pressable disabled={pwSaving} onPress={() => void changePassword()} style={{ alignItems: "center", alignSelf: "flex-start", backgroundColor: colors.primary, borderRadius: 10, opacity: pwSaving ? 0.6 : 1, paddingHorizontal: 22, paddingVertical: 12 }}>
                     <Text style={{ color: "#FFFFFF", fontSize: 13.5, fontWeight: "900" }}>{pwSaving ? translateCopy("Güncelleniyor…", language) : translateCopy("Şifreyi güncelle", language)}</Text>
                   </Pressable>
+                  </>}
                 </View>
                 <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 12, padding: 22 }}>
                   <View style={{ alignItems: "flex-start", flexDirection: "row", gap: 10 }}>
@@ -581,12 +598,14 @@ function ProfileEditScreenInner() {
           <>
             <Card>
               <SectionTitle title={translateCopy("Hesap güvenliği", language)} />
+              {socialNotice ?? <>
               <DeskField icon="lock-outline" label={translateCopy("Mevcut şifren", language)} secure value={pwCurrent} onChangeText={setPwCurrent} placeholder={translateCopy("Şu anki şifren", language)} />
               <DeskField icon="lock-reset" label={translateCopy("Yeni şifre (güçlü olmalı)", language)} secure value={pwNew} onChangeText={setPwNew} placeholder={translateCopy("Büyük/küçük harf, rakam, özel karakter", language)} />
               <PasswordStrengthMeter password={pwNew} />
               <DeskField icon="lock-check-outline" label={translateCopy("Yeni şifre (tekrar)", language)} secure value={pwNew2} onChangeText={setPwNew2} placeholder={translateCopy("Tekrar", language)} />
               {pwMsg ? <Text style={{ color: pwMsg.tone === "ok" ? colors.success : colors.accent, fontSize: 12.5, fontWeight: "800" }}>{pwMsg.text}</Text> : null}
               <PrimaryButton icon="key-outline" tone="secondary" disabled={pwSaving} onPress={() => void changePassword()}>{pwSaving ? translateCopy("Güncelleniyor", language) : translateCopy("Şifreyi güncelle", language)}</PrimaryButton>
+              </>}
             </Card>
             <LoginHistoryCard compact history={loginHistory} loading={historyLoading} isLive={isLiveAccount} onRefresh={() => void loadHistory()} onSignOutAll={() => void signOutEverywhere()} signingOutAll={signingOutAll} />
           </>
