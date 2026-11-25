@@ -429,7 +429,7 @@ function ProfileEditScreenInner() {
                 <ToggleRow icon="email-outline" label="E-posta bildirimleri" desc="Talep, satış, komisyon ve mesaj olayları e-postana düşer." value={emailNotif} busy={emailBusy} onValueChange={toggleEmailNotif} />
                 <View style={{ alignItems: "flex-start", flexDirection: "row", gap: 10 }}>
                   <MaterialCommunityIcons name="bell-ring-outline" size={18} color={colors.muted} style={{ marginTop: 1 }} />
-                  <Text style={{ color: colors.muted, flex: 1, fontSize: 12.5, fontWeight: "600", lineHeight: 18 }}>{translateCopy("Önemli hareketler ayrıca uygulama içinde anlık bildirim olarak da gösterilir. SMS/WhatsApp yakında.", language)}</Text>
+                  <Text style={{ color: colors.muted, flex: 1, fontSize: 12.5, fontWeight: "600", lineHeight: 18 }}>{translateCopy("Önemli hareketler ayrıca uygulama içinde anlık bildirim olarak da gösterilir.", language)}</Text>
                 </View>
                 {/* Dil seçici GİZLİ: uygulama şimdilik yalnız Türkçe (i18n açılışta "tr" sabit,
                     tercih kalıcı okunmuyordu → düğme ölüydü). EN çeviri kodda hazır; açılınca geri gelir. */}
@@ -614,7 +614,7 @@ function ProfileEditScreenInner() {
         <Card>
           <SectionTitle title={translateCopy("Bildirim & Uygulama", language)} />
           <ToggleRow icon="email-outline" label="E-posta bildirimleri" desc="Talep, satış, komisyon ve mesaj olayları e-postana düşer." value={emailNotif} busy={emailBusy} onValueChange={toggleEmailNotif} />
-          <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600", lineHeight: 17 }}>{translateCopy("Önemli hareketler ayrıca uygulama içinde anlık bildirim olarak da gösterilir. SMS/WhatsApp yakında.", language)}</Text>
+          <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600", lineHeight: 17 }}>{translateCopy("Önemli hareketler ayrıca uygulama içinde anlık bildirim olarak da gösterilir.", language)}</Text>
           {/* Dil seçici GİZLİ: uygulama şimdilik yalnız Türkçe (yukarıdaki masaüstü nota bakınız). */}
         </Card>
 

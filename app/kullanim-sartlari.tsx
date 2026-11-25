@@ -92,6 +92,18 @@ const SECTIONS: LegalSection[] = [
     ]
   },
   {
+    heading: "Sakıncalı İçeriğe ve Kötüye Kullanıma Sıfır Tolerans",
+    paragraphs: [
+      "OrtakSat, sakıncalı içeriğe ve platformu kötüye kullanan kullanıcılara tolerans göstermez. Müstehcen içerik, şiddeti veya nefreti öven ifadeler, küfür ve hakaret, taciz, tehdit, dolandırıcılık girişimi ve yasa dışı ürün ya da hizmet tanıtımı yasaktır."
+    ],
+    bullets: [
+      "Otomatik süzme: ilan, mesaj, yorum, soru-cevap ve profil metinleri gönderilirken sunucuda denetlenir; açık küfür ve hakaret içeren metinler kaydedilmez.",
+      "Şikâyet et: bir ilanı, kullanıcıyı, mağazayı, sohbeti ya da yorumu ilgili ekrandaki \"Şikâyet Et\" seçeneğiyle bize bildirebilirsiniz.",
+      "Engelle: rahatsız olduğunuz kullanıcıyı \"Engelle\" seçeneğiyle engelleyebilirsiniz; engellenen kullanıcı size mesaj gönderemez. Engeli Hesap Ayarları › Engellenenler ekranından kaldırabilirsiniz.",
+      "İnceleme süresi: şikâyetler en geç 24 saat içinde incelenir. İhlal tespit edilirse içerik kaldırılır ve içeriği sağlayan kullanıcının hesabı askıya alınır ya da kapatılır."
+    ]
+  },
+  {
     heading: "Uygulanacak Hukuk",
     paragraphs: [
       "Bu şartlar Türkiye Cumhuriyeti hukukuna tabidir. Uyuşmazlıklarda Türkiye mahkemeleri ve icra daireleri yetkilidir."
@@ -110,7 +122,7 @@ export default function KullanimSartlari() {
     <LegalDoc
       title="Kullanım Şartları"
       path="/kullanim-sartlari"
-      updated="13 Kasım 2026"
+      updated="25 Kasım 2026"
       seoDescription="OrtakSat Kullanım Şartları: aracı platform modeli, kullanıcı yükümlülükleri, ortaklık/komisyon kuralları, sorumluluk ve uygulanacak hukuk."
       intro="OrtakSat'ı kullanmadan önce lütfen bu şartları okuyun. Platform aracı bir hizmettir; satış, ödeme ve teslimat kullanıcılar arasındaki anlaşmalardan ibarettir."
       sections={SECTIONS}

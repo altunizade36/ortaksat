@@ -1,3 +1,4 @@
+import { isMobileApp } from "@/lib/mobile-app";
 import { MaterialCommunityIcons } from "@/components/icons";
 import { Link } from "expo-router";
 import Head from "expo-router/head";
@@ -112,8 +113,9 @@ export default function SafeShoppingGuidePage() {
               </View>
             ))}
           </View>
+          {!isMobileApp ? (
           <View style={{ borderTopColor: colors.line, borderTopWidth: 1, gap: 8, paddingTop: 12 }}>
-            <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Henüz sunmadığımız seviyeler (yakında):", language)}</Text>
+            <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Henüz sunmadığımız seviyeler:", language)}</Text>
             {VERIFICATION_ROADMAP.map((r) => (
               <View key={r.label} style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
                 <MaterialCommunityIcons name={r.icon as IconName} size={15} color={colors.subtle} />
@@ -122,6 +124,7 @@ export default function SafeShoppingGuidePage() {
             ))}
             <Text style={{ color: colors.subtle, fontSize: 11.5, fontWeight: "600", lineHeight: 16 }}>{translateCopy("Bu seviyeler henüz uygulanmadığından hiçbir satıcıya bu rozetler atanmaz.", language)}</Text>
           </View>
+          ) : null}
         </View>
 
         {/* Alıcı adımları */}

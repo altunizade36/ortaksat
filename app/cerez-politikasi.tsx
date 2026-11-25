@@ -132,7 +132,7 @@ const SECTIONS: LegalSection[] = [
   {
     heading: "Mobil Uygulama",
     paragraphs: [
-      "iOS ve Android uygulamalarımızda tarayıcı çerezi yoktur. Oturum bilgin cihazın güvenli depolama alanında şifreli olarak; tercihlerin, taslakların ve hızlı açılış için tutulan ilan önbelleği uygulamanın kendi alanında saklanır. Uygulamayı kaldırdığında bu kayıtlar silinir.",
+      "Mobil uygulamalarımızda tarayıcı çerezi yoktur. Oturum bilgin cihazın güvenli depolama alanında şifreli olarak; tercihlerin, taslakların ve hızlı açılış için tutulan ilan önbelleği uygulamanın kendi alanında saklanır. Uygulamayı kaldırdığında bu kayıtlar silinir.",
       "Uygulamada analitik veya reklam izleme yazılımı bulunmaz; bu yüzden uygulamada çerez bandı ve tercih paneli gösterilmez. İleride uygulamaya böyle bir araç eklenirse önce bu metin güncellenir ve iznin uygulama içinde ayrıca istenir."
     ]
   },
