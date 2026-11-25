@@ -577,7 +577,8 @@ export function StoreProvider({ children }: PropsWithChildren) {
     requireEmailVerification: false,
     maintenanceMode: false,
     announcement: "",
-    announcementActive: false
+    announcementActive: false,
+    appleWebLogin: false
   });
   // Katalog sayfalama (sunucu tarafli). mpOffsetRef = simdiye kadar cekilen
   // katalog ilan sayisi; hasMore = daha var mi; loadingMore = yukleme kilidi.
@@ -1184,7 +1185,8 @@ export function StoreProvider({ children }: PropsWithChildren) {
             requireEmailVerification: row.require_email_verification ?? false,
             maintenanceMode: row.maintenance_mode ?? false,
             announcement: row.announcement ?? "",
-            announcementActive: row.announcement_active ?? false
+            announcementActive: row.announcement_active ?? false,
+            appleWebLogin: row.apple_web_login === true
           });
         }
       )
@@ -1692,9 +1694,43 @@ export function StoreProvider({ children }: PropsWithChildren) {
       async signInWithApple(legalAccepted) {
         if (legalAccepted !== true) { setAuthError("Önce yasal metinleri kabul etmelisin."); return false; }
         if (!supabase) { setAuthError("Apple ile giriş yalnızca canlı (Supabase) modda çalışır."); return false; }
-        if (Platform.OS !== "ios") { setAuthError("Apple ile giriş yalnızca iPhone ve iPad uygulamasında kullanılabilir."); return false; }
         try { await prepareOAuthConsent(); }
         catch { setAuthError("Onay kaydedilemedi. Lütfen tekrar dene."); return false; }
+        // WEB + ANDROID: Apple'ın yerel penceresi yok → Google ile aynı tarayıcı yönlendirmesi (Supabase OAuth).
+        // Apple, ad/e-posta istendiğinde dönüşü POST ile Supabase'e yapar; Supabase oturumu redirectTo'ya taşır.
+        // Ad bu yolda da yalnız İLK yetkilendirmede gelir ve Supabase onu kullanıcı verisine yazar.
+        if (Platform.OS !== "ios") {
+          const isWebEnv = Platform.OS === "web";
+          const redirectTo = oauthRedirectUrl();
+          const { data, error } = await supabase.auth.signInWithOAuth({
+            provider: "apple",
+            options: { redirectTo, skipBrowserRedirect: !isWebEnv, scopes: "name email" }
+          });
+          if (error) {
+            await clearOAuthConsent();
+            setAuthError(
+              /provider.*not enabled|not enabled|unsupported/i.test(error.message)
+                ? "Apple ile giriş şu anda kullanılamıyor. E-posta ile devam edebilirsin."
+                : translateAuthError(error.message) ?? "Apple ile bağlantı kurulamadı, lütfen tekrar dene."
+            );
+            return false;
+          }
+          if (!isWebEnv) {
+            if (!data?.url) { await clearOAuthConsent(); setAuthError("Apple bağlantısı açılamadı, lütfen tekrar dene."); return false; }
+            try {
+              const res = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
+              if (res.type !== "success" || !res.url) { await clearOAuthConsent(); setAuthError(undefined); return false; } // iptal — sessiz
+              const ok = await handleSupabaseAuthUrl(res.url);
+              if (!ok) { await clearOAuthConsent(); setAuthError("Apple oturumu tamamlanamadı, lütfen tekrar dene."); return false; }
+            } catch {
+              await clearOAuthConsent();
+              setAuthError("Apple ile bağlantı kurulamadı, lütfen tekrar dene.");
+              return false;
+            }
+          }
+          setAuthError(undefined);
+          return true;
+        }
         try {
           const Apple = require("expo-apple-authentication") as typeof import("expo-apple-authentication");
           const Crypto = require("expo-crypto") as typeof import("expo-crypto");

@@ -15,6 +15,8 @@ type Props = {
   onEmail: () => void;
   onGoogle: () => void;
   onApple?: () => void;
+  /** Apple ile giriş düğmesi gösterilsin mi (iOS'ta her zaman; web/Android'de sunucu anahtarına bağlı). */
+  apple?: boolean;
   onSkip: () => void;
   consent: ReactNode;
   accepted: boolean;
@@ -27,16 +29,15 @@ type Props = {
 };
 const messages = ["Ürününü paylaş, ortak bul,", "Ücretsiz ilan ver, birlikte sat,", "Ortak ol, paylaş, kazan,"];
 
-// iOS SOSYAL GİRİŞ. App Store kuralı 4.8: üçüncü taraf girişi (Google) sunan iOS uygulaması
-// "Apple ile Giriş"i de sunmak ZORUNDA → iOS'ta ikisi BİRLİKTE gösterilir, Apple düğmesi üstte.
-// Apple girişi yalnız iOS'ta vardır (yerel pencere): iOS'ta Apple (üstte) ve Google ALT ALTA iki tam genişlik
-// düğmedir; Android'de yalnız Google görünür. Apple düğmesinin yazısı Apple'ın izin verdiği kalıplardan biri
-// olmalı ("Apple ile Devam Et"); yalnız "Apple" yazan düğme tasarım kuralına uymaz (mağaza incelemesi 4.8). Çalışmayan "Yakında" düğmeleri mağaza incelemesinde
-// ret sebebidir; ekleme.
-const appleLogin = Platform.OS === "ios";
+// SOSYAL GİRİŞ. App Store kuralı 4.8: üçüncü taraf girişi (Google) sunan iOS uygulaması "Apple ile Giriş"i de
+// sunmak ZORUNDA → iOS'ta Apple her zaman görünür (yerel pencere). Web ve Android'de Apple tarayıcı yönlendirmesiyle
+// çalışır ve yalnız sunucuda kurulum bitince (platform_settings.apple_web_login) görünür → `apple` özelliği.
+// Apple varken Apple (siyah, üstte) ve Google ALT ALTA iki tam genişlik düğmedir; yoksa yalnız Google. Apple düğmesinin
+// yazısı Apple'ın izin verdiği kalıplardan biri olmalı ("Apple ile Devam Et"); yalnız "Apple" yazan düğme tasarım
+// kuralına uymaz (mağaza incelemesi 4.8). Çalışmayan "Yakında" düğmeleri mağaza incelemesinde ret sebebidir; ekleme.
 const socialLogin = true;
 
-export function MobileAuthLanding({ mode, onModeChange, onEmail, onGoogle, onApple, onSkip, consent, accepted, busy, error, form, formTitle, onBack, showTabs = true }: Props) {
+export function MobileAuthLanding({ mode, onModeChange, onEmail, onGoogle, onApple, apple = Platform.OS === "ios", onSkip, consent, accepted, busy, error, form, formTitle, onBack, showTabs = true }: Props) {
   const scrollRef = useRef<ScrollViewInstance>(null);
   const consentRef = useRef<ViewInstance>(null);
   const scrollY = useRef(0);
@@ -73,7 +74,8 @@ export function MobileAuthLanding({ mode, onModeChange, onEmail, onGoogle, onApp
     showConsentIfMissing();
     onApple?.();
   }
-  // SOSYAL GİRİŞ DÜĞMELERİ: iOS'ta Apple (siyah, üstte) + Google (beyaz) alt alta; Android'de yalnız Google.
+  const appleLogin = apple && !!onApple;
+  // SOSYAL GİRİŞ DÜĞMELERİ: Apple varsa Apple (siyah, üstte) + Google (beyaz) alt alta; yoksa yalnız Google.
   const socialButtons = <View style={appleLogin ? undefined : { flexDirection: "row", gap: 10 }}>
     {appleLogin ? <Pressable accessibilityRole="button" accessibilityLabel={tr("Apple ile devam et")} disabled={busy} accessibilityState={{ disabled: busy, busy }} onPress={continueWithApple} style={[s.button, s.apple, { opacity: busy ? 0.6 : 1 }]}><Icon name="apple" size={24} color="white" /><Text style={[s.buttonText, { color: "white" }]}>{tr("Apple ile Devam Et")}</Text></Pressable> : null}
     <Pressable accessibilityRole="button" accessibilityLabel={tr("Google ile devam et")} disabled={busy} accessibilityState={{ disabled: busy, busy }} onPress={continueWithGoogle} style={[s.button, appleLogin ? null : s.half, { opacity: busy ? 0.6 : 1 }]}><GoogleMark /><Text style={s.buttonText}>{tr(busy ? "Bağlanıyor…" : "Google ile devam et")}</Text></Pressable>

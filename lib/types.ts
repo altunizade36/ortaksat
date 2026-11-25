@@ -252,6 +252,8 @@ export type PlatformSettings = {
   maintenanceMode: boolean;
   announcement: string;
   announcementActive: boolean;
+  /** Apple ile giriş web'de ve Android'de açık mı (sunucuda Services ID kurulunca true). iOS'tan bağımsız. */
+  appleWebLogin: boolean;
 };
 
 export type Message = {

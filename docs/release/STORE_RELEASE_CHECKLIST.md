@@ -17,7 +17,7 @@ Mağaza metinleri `docs/release/store-listing.md` dosyasında, görseller `store
 | Mağaza ekran görüntüleri | Play telefon, iPhone 6,9", iPad 13" — gerçek uygulamadan |
 | Yasal bağlantılar uygulamada | Menü → Yasal ve Gizlilik |
 | Şikâyet / engelleme | İlan, sohbet, mağaza, ortak vitrini ve yorumlarda var |
-| Apple ile giriş | iOS'ta Google ile birlikte gösteriliyor |
+| Apple ile giriş | iOS'ta Google ile birlikte gösteriliyor; web ve Android'de Services ID kurulunca açılır (aşağıda 5) |
 | Ödeme / uygulama içi satın alma | Yok (platform para almıyor) |
 | Reklam / izleme yazılımı | Uygulamada yok |
 | Anlık bildirim | Kod hazır; Android ve iOS anahtarları eksik (adım 3 ve 5) |
@@ -61,6 +61,7 @@ npx eas-cli submit --platform ios --profile production
 
 - Anlık bildirim anahtarı: ilk iOS derlemesinde Expo sorar, **Evet** de.
 - **Hesap silmede Apple bağlantısının iptali (kod HAZIR, canlıda):** girişte alınan kod saklanır, silme talebinde Apple'da iptal edilir. Yalnız anahtar eksik: Apple Developer → Keys → yeni anahtar ("Sign in with Apple" işaretli) → `.p8` indir, sonra `python scripts/deploy-apple-token.py AuthKey_XXXX.p8 <EKİP_KİMLİĞİ>`. Anahtar yokken işlev sessizce atlar.
+- **Apple ile giriş web sitesinde ve Android'de (kod HAZIR, sunucudan açılır):** Apple Developer → Identifiers → Services IDs → `com.ortaksat.web` oluştur, "Sign in with Apple" → Configure: Primary App ID `com.ortaksat.app`, Domains `akyzzdwbzgsnhdircuce.supabase.co`, Return URL `https://akyzzdwbzgsnhdircuce.supabase.co/auth/v1/callback`. Sonra `node scripts/setup-apple-web-login.mjs AuthKey_XXXX.p8 <EKİP_KİMLİĞİ> com.ortaksat.web` → düğme web'de ve Android'de yeniden derleme gerekmeden görünür. Gizli anahtar 180 gün geçerli; bitmeden betiği yeniden çalıştır (`--status` bitiş tarihini gösterir).
 - "E-postamı gizle" seçen kullanıcılara e-posta gidebilmesi için gönderen alan adını Apple hesabına kaydet.
 
 ## 6. Uygulama bağlantıları
@@ -96,10 +97,7 @@ Veri güvenliği / gizlilik beyanı için `store-listing.md` bölüm 9'daki tabl
 
 ## 9. Yayından hemen önce kaldırılacak deneme ayarları
 
-Giriş servisinde yalnız deneme için açık bırakılmış iki ayar var (Expo Go ile iPhone'da deneme yapabilmen için). Gerçek derleme telefonda çalıştığında kaldırılacak:
-
-- Apple giriş kimlik listesindeki `host.exp.Exponent`
-- Yönlendirme izin listesindeki `exp://…` adresleri
+**Tamamlandı (25 Kasım 2026):** Apple giriş kimlik listesinden `host.exp.Exponent` ve yönlendirme izin listesinden `exp://…` adresleri kaldırıldı. Artık Expo Go ile Apple/Google girişi denenemez; deneme gerçek derlemeyle yapılır.
 
 ## 10. Cihazda denenmesi gerekenler
 

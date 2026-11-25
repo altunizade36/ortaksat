@@ -29,7 +29,10 @@ export default function AuthScreen() {
   const router = useRouter();
   const mobileAccess = useMobileAccess();
   const params = useLocalSearchParams<{ redirect?: string; mode?: string }>();
-  const { authAttempt, authError, currentUser, isAuthenticated, pendingVerifyEmail, clearPendingVerify, verifyEmailCode, resendEmailCode, resetPasswordWithEmail, resetPasswordWithCode, signInWithEmail, signInWithGoogle, signInWithApple, signUpWithEmail } = useStore();
+  const { authAttempt, authError, currentUser, isAuthenticated, pendingVerifyEmail, clearPendingVerify, verifyEmailCode, resendEmailCode, resetPasswordWithEmail, resetPasswordWithCode, signInWithEmail, signInWithGoogle, signInWithApple, signUpWithEmail, platformSettings } = useStore();
+  // Apple ile giriş: iOS uygulamasında yerel pencere (her zaman); web ve Android'de tarayıcı yönlendirmesi,
+  // sunucuda Services ID kurulunca açılır (platform_settings.apple_web_login, scripts/setup-apple-web-login.py).
+  const appleAvailable = Platform.OS === "ios" || platformSettings.appleWebLogin;
   const [mode, setMode] = useState<AuthMode>("login");
   useEffect(() => { if (params.mode === "register" || params.mode === "login" || params.mode === "reset") setMode(params.mode); }, [params.mode]);
   // E-posta + şifre alanları HER platformda doğrudan görünür (eskiden uygulamada önce "E-posta ile devam et"e
@@ -496,8 +499,9 @@ export default function AuthScreen() {
     {mode === "reset" && resetSent ? <PrimaryButton disabled={loading} tone="secondary" onPress={sendResetCode}>{translateCopy("Kodu tekrar gönder", language)}</PrimaryButton> : null}
     {Platform.OS === "web" && mode !== "reset" ? <View style={{ gap: 10, borderTopWidth: 1, borderTopColor: colors.line, paddingTop: 16 }}>
       {mode === "login" ? legalChecks : null}
+      {appleAvailable ? <Pressable accessibilityRole="button" accessibilityLabel={translateCopy("Apple ile devam et", language)} disabled={loading} onPress={loginWithApple} style={{ minHeight: 48, borderRadius: 12, backgroundColor: "#000000", flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 10, paddingHorizontal: 16, opacity: loading ? 0.6 : 1 }}><MaterialCommunityIcons name="apple" size={22} color="#FFFFFF" /><Text style={{ color: "#FFFFFF", fontSize: 15, fontWeight: "700" }}>{translateCopy("Apple ile Devam Et", language)}</Text></Pressable> : null}
       <PrimaryButton tone="secondary" disabled={loading} onPress={loginWithGoogle}>Google ile devam et</PrimaryButton>
-      {consentHint ? <Text accessibilityRole="alert" style={{ color: colors.accent, fontSize: 13 }}>Google ile devam etmek için yasal onay kutusunu işaretle.</Text> : null}
+      {consentHint ? <Text accessibilityRole="alert" style={{ color: colors.accent, fontSize: 13 }}>{translateCopy(appleAvailable ? "Apple veya Google ile devam etmek için yasal onay kutusunu işaretle." : "Google ile devam etmek için yasal onay kutusunu işaretle.", language)}</Text> : null}
     </View> : null}
     {/* Uygulamada aynı bağlantılar Google onay satırında zaten var → alt satır yalnız web'de. */}
     {Platform.OS === "web" ? <View style={{ marginTop: 8 }}>{legalFooter}</View> : null}
@@ -505,7 +509,7 @@ export default function AuthScreen() {
   // Android: "height" davranışı klavye kapandıktan sonra altta boş bir şerit bırakıyordu (gerçek cihazda görüldü) → "padding".
   return <KeyboardAvoidingView behavior={Platform.OS === "web" ? undefined : "padding"} style={{ flex: 1 }}>
     {seoHead}
-    <MobileAuthLanding mode={mode === "register" ? "register" : "login"} onModeChange={setMode} onEmail={() => setEmailFormOpen(true)} onGoogle={loginWithGoogle} onApple={loginWithApple} onSkip={() => mobileAccess.skip(skipTarget)} consent={legalChecks} accepted={acceptedAll} busy={loading} error={formError || authError}
+    <MobileAuthLanding mode={mode === "register" ? "register" : "login"} onModeChange={setMode} onEmail={() => setEmailFormOpen(true)} onGoogle={loginWithGoogle} onApple={loginWithApple} apple={appleAvailable} onSkip={() => mobileAccess.skip(skipTarget)} consent={legalChecks} accepted={acceptedAll} busy={loading} error={formError || authError}
       form={emailFormOpen || mode === "reset" ? emailForm : undefined} formTitle={mode === "reset" ? "Şifreni yenile" : Platform.OS === "web" && emailFormOpen ? mode === "register" ? "Hesabını oluştur" : "E-posta ile giriş yap" : undefined} showTabs={mode !== "reset"}
       onBack={mode === "reset" ? () => setMode("login") : undefined}/>
     {legalModal}

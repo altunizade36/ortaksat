@@ -463,7 +463,8 @@ export async function loadPlatformSettings(): Promise<import("@/lib/types").Plat
     requireEmailVerification: data.require_email_verification ?? false,
     maintenanceMode: data.maintenance_mode ?? false,
     announcement: data.announcement ?? "",
-    announcementActive: data.announcement_active ?? false
+    announcementActive: data.announcement_active ?? false,
+    appleWebLogin: data.apple_web_login === true
   };
 }
 
