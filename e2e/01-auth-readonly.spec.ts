@@ -17,9 +17,9 @@ test("/auth render olur ve giriş/kayıt sekmeleri görünür", async ({ page })
 test("boş giriş → satır-içi uyarı (Round2 #4: sessiz kalmamalı)", async ({ page }) => {
   await page.goto("/auth", { waitUntil: "domcontentloaded" });
   await page.waitForTimeout(1500);
-  // "Giriş Yap" butonuna boş alanlarla bas.
-  const loginBtn = page.getByText(/^Giriş Yap$/).first();
-  await loginBtn.click().catch(() => {});
+  // "E-posta ile giriş yap" düğmesine boş alanlarla bas.
+  const loginBtn = page.getByText("E-posta ile giriş yap", { exact: true }).last();
+  await loginBtn.click();
   await page.waitForTimeout(1000);
   await page.screenshot({ path: "e2e-artifacts/auth-empty-login.png", fullPage: true });
   const body = (await page.locator("body").innerText()).toLowerCase();
@@ -58,7 +58,7 @@ test("yanlış giriş → Türkçe hata (İngilizce 'Invalid login credentials' 
   // Şifre alanını bul: placeholder "Şifreni gir"
   const pw = page.getByPlaceholder(/şifre/i).first();
   if (await pw.count()) await pw.fill("WrongPass123!");
-  await page.getByText(/^Giriş Yap$/).first().click().catch(() => {});
+  await page.getByText("E-posta ile giriş yap", { exact: true }).last().click();
   await page.waitForTimeout(4000);
   await page.screenshot({ path: "e2e-artifacts/auth-wrong-login.png", fullPage: true });
   const body = (await page.locator("body").innerText());
