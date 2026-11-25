@@ -21,7 +21,7 @@
  * yoksa web/Android Apple girişi "invalid_client" ile durur (iOS etkilenmez). Anahtar içeriği ekrana/depoya yazılmaz.
  */
 import { createPrivateKey, sign } from "node:crypto";
-import { readFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 import { basename, resolve } from "node:path";
 import process from "node:process";
 
@@ -66,17 +66,28 @@ function appleClientSecret(p8Pem, keyId, teamId, servicesId, days = 180) {
   return { jwt: `${header}.${payload}.${b64url(signature)}`, exp };
 }
 
+// Yönetim API'si gizli anahtarı geri VERMEZ (yalnız özetini döndürür) → bitiş tarihi oradan okunamaz.
+// Bu yüzden kurulumda bitiş tarihi depoya yazılır (docs/release/apple-web-login.json; gizli bilgi içermez) ve
+// asıl sınama giriş servisine sorularak yapılır: Apple'a yönlendiriyor mu, hangi kimlikle?
+const RECORD = resolve(process.cwd(), "docs/release/apple-web-login.json");
+
 async function status() {
   const cfg = await call("/config/auth");
   const [row] = await sql("select apple_web_login from public.platform_settings where id = 1");
-  const secret = cfg.external_apple_secret || "";
-  let expiry = "yok / JWT değil (web/Android için geçersiz)";
-  if (secret.split(".").length === 3) {
-    try { expiry = new Date(JSON.parse(Buffer.from(secret.split(".")[1], "base64url").toString()).exp * 1000).toISOString().slice(0, 10); } catch { /* yut */ }
-  }
+  let record = null;
+  try { record = JSON.parse(readFileSync(RECORD, "utf8")); } catch { /* henüz kurulmamış */ }
+  let redirect = "sınanamadı";
+  try {
+    const res = await fetch(`${ENV.EXPO_PUBLIC_SUPABASE_URL}/auth/v1/authorize?provider=apple&redirect_to=${encodeURIComponent("https://www.ortaksat.com/auth")}`, {
+      redirect: "manual", headers: { apikey: ENV.EXPO_PUBLIC_SUPABASE_ANON_KEY || ENV.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY }
+    });
+    const location = res.headers.get("location") || "";
+    redirect = location.startsWith("https://appleid.apple.com/") ? `Apple'a yönlendiriyor (${new URL(location).searchParams.get("client_id")})` : `yönlendirmiyor (HTTP ${res.status})`;
+  } catch { /* ağ hatası */ }
   console.log("Apple sağlayıcısı etkin :", cfg.external_apple_enabled);
   console.log("İstemci kimlikleri      :", cfg.external_apple_client_id);
-  console.log("Gizli anahtar bitişi    :", expiry);
+  console.log("Giriş servisi sınaması  :", redirect);
+  console.log("Gizli anahtar bitişi    :", record?.secretExpires ? `${record.secretExpires} (anahtar ${record.keyId})` : "kayıt yok");
   console.log("Web/Android düğmesi     :", row?.apple_web_login ? "AÇIK" : "kapalı");
 }
 
@@ -102,5 +113,6 @@ await call("/config/auth", "PATCH", {
   external_apple_secret: jwt
 });
 await setFlag(true);
+writeFileSync(RECORD, JSON.stringify({ servicesId, teamId, keyId, secretExpires: new Date(exp * 1000).toISOString().slice(0, 10), configuredAt: new Date().toISOString().slice(0, 10) }, null, 2) + "\n");
 console.log(`Tamam: Apple ile giriş web ve Android'de açıldı. Gizli anahtar ${new Date(exp * 1000).toISOString().slice(0, 10)} tarihinde biter — öncesinde bu betiği yeniden çalıştır.`);
 await status();

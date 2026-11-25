@@ -1,3 +1,4 @@
+import { storeAppleWebRefreshToken } from "@/lib/apple-token";
 import * as Linking from "expo-linking";
 
 import { supabase } from "@/lib/supabase";
@@ -16,10 +17,13 @@ export async function handleSupabaseAuthUrl(url: string) {
   const refreshToken = params.get("refresh_token");
   if (!accessToken || !refreshToken) return false;
 
-  const { error } = await supabase.auth.setSession({
+  const { data, error } = await supabase.auth.setSession({
     access_token: accessToken,
     refresh_token: refreshToken
   });
+  // Apple ile (tarayıcı yönlendirmesiyle) girildiyse dönüş adresindeki Apple yenileme belirteci saklanır:
+  // hesap silinirken Apple bağlantısı iptal edilebilsin. Beklenmez, hata girişi etkilemez.
+  if (!error) void storeAppleWebRefreshToken(params.get("provider_refresh_token"), data.session?.user?.identities);
   return !error;
 }
 

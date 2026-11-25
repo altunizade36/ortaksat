@@ -35,7 +35,7 @@ const messages = ["Ürününü paylaş, ortak bul,", "Ücretsiz ilan ver, birlik
 // SOSYAL GİRİŞ. App Store kuralı 4.8: üçüncü taraf girişi (Google) sunan iOS uygulaması "Apple ile Giriş"i de
 // sunmak ZORUNDA → iOS'ta Apple her zaman görünür (yerel pencere). Web ve Android'de Apple tarayıcı yönlendirmesiyle
 // çalışır ve yalnız sunucuda kurulum bitince (platform_settings.apple_web_login) görünür → `apple` özelliği.
-// DÜZEN: Google (solda) ve Apple (sağda) YAN YANA iki eşit, beyaz, çerçeveli düğme; çok dar ekranda alt alta; Apple
+// DÜZEN: Google (solda) ve Apple (sağda) YAN YANA iki eşit, beyaz, çerçeveli düğme; telefonda alt alta; Apple
 // yoksa Google tek başına tam genişlik. Apple düğmesi Apple'ın izin verdiği "beyaz zemin + siyah logo + çerçeve"
 // biçimindedir ve yazısı izinli kalıplardandır ("Apple ile giriş yap" / "Apple ile kaydol"); yalnız "Apple" yazan
 // düğme kurala uymaz. Çalışmayan "Yakında" düğmeleri mağaza incelemesinde ret sebebidir; ekleme.
@@ -81,10 +81,11 @@ export function MobileAuthLanding({ mode, onModeChange, onEmail, onGoogle, onApp
   const appleLogin = apple && !!onApple;
   // SOSYAL GİRİŞ DÜĞMELERİ: yazı kipine göre değişir (giriş: "… ile giriş yap", hesap açma: "… ile kaydol").
   const panelWidth = Math.min(440, (tablet ? width * 0.48 : width) - (tablet ? 80 : 44));
-  const stackSocial = appleLogin && panelWidth < 316;
+  // Telefonda (panel < 400) iki düğme yan yana sığmıyor: "Google ile giriş yap" kırpılıyordu → alt alta tam genişlik.
+  const stackSocial = appleLogin && panelWidth < 400;
   const googleLabel = mode === "register" ? "Google ile kaydol" : "Google ile giriş yap";
   const appleLabel = mode === "register" ? "Apple ile kaydol" : "Apple ile giriş yap";
-  const socialText = { fontSize: appleLogin ? 13.5 : 15, fontWeight: "600" as const, color: "#1F2937", flexShrink: 1 };
+  const socialText = { fontSize: appleLogin && !stackSocial ? 14 : 15, fontWeight: "600" as const, color: "#1F2937", flexShrink: 1 };
   const socialButtons = <View style={{ flexDirection: stackSocial ? "column" : "row", gap: stackSocial ? 0 : 10 }}>
     <Pressable accessibilityRole="button" accessibilityLabel={tr(googleLabel)} disabled={busy} accessibilityState={{ disabled: busy, busy }} onPress={continueWithGoogle} style={[s.button, s.social, !stackSocial && s.half, { opacity: busy ? 0.6 : 1 }]}><GoogleMark /><Text numberOfLines={1} style={socialText}>{tr(googleLabel)}</Text></Pressable>
     {appleLogin ? <Pressable accessibilityRole="button" accessibilityLabel={tr(appleLabel)} disabled={busy} accessibilityState={{ disabled: busy, busy }} onPress={continueWithApple} style={[s.button, s.social, !stackSocial && s.half, { opacity: busy ? 0.6 : 1 }]}><Icon name="apple" size={23} color="#000000" /><Text numberOfLines={1} style={socialText}>{tr(appleLabel)}</Text></Pressable> : null}

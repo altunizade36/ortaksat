@@ -17,11 +17,11 @@ Mağaza metinleri `docs/release/store-listing.md` dosyasında, görseller `store
 | Mağaza ekran görüntüleri | Play telefon, iPhone 6,9", iPad 13" — gerçek uygulamadan |
 | Yasal bağlantılar uygulamada | Menü → Yasal ve Gizlilik |
 | Şikâyet / engelleme | İlan, sohbet, mağaza, ortak vitrini ve yorumlarda var |
-| Apple ile giriş | iOS'ta Google ile birlikte gösteriliyor; web ve Android'de Services ID kurulunca açılır (aşağıda 5) |
+| Apple ile giriş | iOS (yerel pencere), web ve Android (tarayıcı yönlendirmesi) açık |
 | Ödeme / uygulama içi satın alma | Yok (platform para almıyor) |
 | Reklam / izleme yazılımı | Uygulamada yok |
 | Anlık bildirim | Kod hazır; Android ve iOS anahtarları eksik (adım 3 ve 5) |
-| Uygulama bağlantıları (linkin uygulamada açılması) | Alan adı dosyalarında iki değer eksik (adım 6) |
+| Uygulama bağlantıları (linkin uygulamada açılması) | iOS tamam; Android için SHA-256 parmak izi eksik (adım 6) |
 
 ## 2. Hesaplar (senin açman gerekiyor)
 
@@ -60,16 +60,16 @@ npx eas-cli submit --platform ios --profile production
 ## 5. iOS'a özgü kalanlar (Apple hesabından sonra)
 
 - Anlık bildirim anahtarı: ilk iOS derlemesinde Expo sorar, **Evet** de.
-- **Hesap silmede Apple bağlantısının iptali (kod HAZIR, canlıda):** girişte alınan kod saklanır, silme talebinde Apple'da iptal edilir. Yalnız anahtar eksik: Apple Developer → Keys → yeni anahtar ("Sign in with Apple" işaretli) → `.p8` indir, sonra `python scripts/deploy-apple-token.py AuthKey_XXXX.p8 <EKİP_KİMLİĞİ>`. Anahtar yokken işlev sessizce atlar.
-- **Apple ile giriş web sitesinde ve Android'de (kod HAZIR, sunucudan açılır):** Apple Developer → Identifiers → Services IDs → `com.ortaksat.web` oluştur, "Sign in with Apple" → Configure: Primary App ID `com.ortaksat.app`, Domains `akyzzdwbzgsnhdircuce.supabase.co`, Return URL `https://akyzzdwbzgsnhdircuce.supabase.co/auth/v1/callback`. Sonra `node scripts/setup-apple-web-login.mjs AuthKey_XXXX.p8 <EKİP_KİMLİĞİ> com.ortaksat.web` → düğme web'de ve Android'de yeniden derleme gerekmeden görünür. Gizli anahtar 180 gün geçerli; bitmeden betiği yeniden çalıştır (`--status` bitiş tarihini gösterir).
+- **Hesap silmede Apple bağlantısının iptali — TAMAM (25 Kasım 2026):** anahtar kuruldu; iOS girişinde alınan kod, web/Android girişinde dönen belirteç saklanır ve silme talebinde Apple'da iptal edilir.
+- **Apple ile giriş web sitesinde ve Android'de — AÇIK (25 Kasım 2026):** Services ID `com.ortaksat.web`. Gizli anahtar **24 Mayıs 2027**'de biter; öncesinde `node scripts/setup-apple-web-login.mjs <AuthKey_….p8> 25VU23W2Q3 com.ortaksat.web` yeniden çalıştırılır (`--status` durumu gösterir). `.p8` dosyasını güvenli bir yerde sakla: Apple yeniden indirmeye izin vermez. Android uygulamasında düğmenin görünmesi için bu tarihten sonra alınmış bir derleme gerekir.
 - "E-postamı gizle" seçen kullanıcılara e-posta gidebilmesi için gönderen alan adını Apple hesabına kaydet.
 
 ## 6. Uygulama bağlantıları
 
-Paylaşılan ilan linkinin uygulamada açılması için iki değer gerekiyor; bana ilettiğinde dosyaları güncellerim:
+Paylaşılan ilan linkinin uygulamada açılması için Android tarafında bir değer kaldı; ilettiğinde dosyayı güncellerim:
 
 - **Android:** Play Console → Uygulama bütünlüğü → Uygulama imzalama → SHA-256 parmak izi → `public/.well-known/assetlinks.json`
-- **iOS:** Apple Developer → Üyelik → Ekip Kimliği → `public/.well-known/apple-app-site-association`
+- **iOS:** TAMAM — Ekip Kimliği `apple-app-site-association` dosyasına yazıldı.
 
 ## 7. Mağaza girişleri
 

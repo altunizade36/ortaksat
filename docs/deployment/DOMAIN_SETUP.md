@@ -24,7 +24,7 @@ Yerel taslak:
 
 `public/.well-known/apple-app-site-association`
 
-`REPLACE_TEAM_ID.com.ortaksat.app` değeri Apple Developer Team ID ile güncellenmeli.
+`25VU23W2Q3.com.ortaksat.app` değeri Apple Developer Team ID ile güncellenmeli.
 
 ## Link Yapısı
 

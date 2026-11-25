@@ -1,4 +1,4 @@
-import { storeAppleAuthorizationCode } from "@/lib/apple-token";
+import { storeAppleAuthorizationCode, storeAppleWebRefreshToken } from "@/lib/apple-token";
 import { validateListingTitle } from "@/lib/listing-title";
 import { clearOAuthConsent, prepareOAuthConsent, recordExplicitOAuthConsent } from "@/lib/oauth-consent";
 import { hasProfilePhoto } from "@/lib/profile-photo";
@@ -1008,6 +1008,9 @@ export function StoreProvider({ children }: PropsWithChildren) {
       if (user) {
         setEmailVerified(Boolean(user.email_confirmed_at));
         if (user.app_metadata?.provider === "google" || user.app_metadata?.provider === "apple") void recordExplicitOAuthConsent(user.id);
+        // Web: Apple'dan dönüşte giriş servisi Apple yenileme belirtecini yalnız bu ilk olayda verir → sakla
+        // (hesap silinirken Apple bağlantısı iptal edilir). Google girişinde gönderilmez (son kimliğe bakılır).
+        if (event === "SIGNED_IN" && session?.provider_refresh_token) void storeAppleWebRefreshToken(session.provider_refresh_token, user.identities);
         // authReady loadProfile bitince (authUser set) → AuthRequired flaşı olmaz (getSession ile aynı).
         void loadProfile(user.id, user.phone, user.user_metadata?.full_name, user.user_metadata?.avatar_url || user.user_metadata?.picture)
           .catch((e) => console.warn("loadProfile failed", e));
