@@ -6,9 +6,11 @@ import { Platform, Pressable, ScrollView, Text, View, useWindowDimensions } from
 import { colors } from "@/components/colors";
 import { MaterialCommunityIcons } from "@/components/icons";
 import { onOpenCookiePreferences, readCookieConsent, saveCookieConsent } from "@/lib/cookie-consent";
+import { adsConfigured } from "@/lib/ads-config";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { metaPixelEnabled } from "@/lib/meta-pixel";
 import { isMobileApp } from "@/lib/mobile-app";
+import { useStore } from "@/lib/use-store";
 
 /**
  * ÇEREZ BANDI + ÇEREZ TERCİHLERİ PANELİ (yalnız web; uygulamada çerez yok).
@@ -47,6 +49,10 @@ const BAND_BG = "rgba(7,24,66,0.97)";
 export function CookieConsent() {
   const { language } = useLanguage();
   const { width } = useWindowDimensions();
+  const { platformSettings } = useStore();
+  // Yan reklam alanları açıkken (lib/ads-config.ts + sunucu anahtarı) "Hedefleme ve Reklam" izni gerçekten bir şeyi yönetir.
+  const adsActive = adsConfigured && platformSettings.adsEnabled === true;
+  const marketingActive = metaPixelEnabled || adsActive;
   const tr = useCallback((value: string) => translateCopy(value, language), [language]);
   const [mode, setMode] = useState<"hidden" | "banner" | "preferences">("hidden");
   const [analytics, setAnalytics] = useState(false);
@@ -94,7 +100,7 @@ export function CookieConsent() {
   if (Platform.OS !== "web" || isMobileApp || mode === "hidden") return null;
 
   const decide = (choice: { analytics: boolean; marketing: boolean }) => {
-    saveCookieConsent({ analytics: choice.analytics, marketing: metaPixelEnabled ? choice.marketing : false });
+    saveCookieConsent({ analytics: choice.analytics, marketing: marketingActive ? choice.marketing : false });
     setMode("hidden");
   };
   const rejectAll = () => decide({ analytics: false, marketing: false });
@@ -117,7 +123,9 @@ export function CookieConsent() {
           style={{ alignSelf: "center", gap: narrow ? 10 : 12, maxWidth: 1280, paddingHorizontal: narrow ? 12 : 24, paddingVertical: narrow ? 12 : 16, width: "100%" }}
         >
           <Text style={{ color: "#FFFFFF", fontSize: narrow ? 12.5 : 13.5, lineHeight: narrow ? 18 : 20 }}>
-            {metaPixelEnabled
+            {adsActive
+              ? tr("OrtakSat'ın çalışması için zorunlu kayıtları kullanırız. İzin verirsen ziyaret ve sayfa hızı istatistikleri için analitik araçlarını, reklam göstermek ve reklamları ölçmek için de reklam çerezlerini çalıştırırız. İzin vermezsen bunlar tarayıcına hiç yüklenmez.")
+              : metaPixelEnabled
               ? tr("OrtakSat'ın çalışması için zorunlu kayıtları kullanırız. İzin verirsen ziyaret ve sayfa hızı istatistikleri için analitik araçlarını, reklamlarımızın etkisini ölçmek için de reklam ölçümü çerezlerini çalıştırırız. İzin vermezsen bunlar tarayıcına hiç yüklenmez.")
               : tr("OrtakSat'ın çalışması için zorunlu kayıtları kullanırız. İzin verirsen ziyaret ve sayfa hızı istatistikleri için analitik araçlarını da çalıştırırız. İzin vermezsen bunlar tarayıcına hiç yüklenmez.")}
             {narrow ? " " : null}
@@ -199,16 +207,24 @@ export function CookieConsent() {
         tr("Vercel Speed Insights: sayfa hızı ölçümü.")
       ]
     },
-    metaPixelEnabled
+    marketingActive
       ? {
           key: "marketing",
           title: tr("Hedefleme ve Reklam"),
           toggle: { value: marketing, onChange: setMarketing },
-          paragraphs: [
-            tr("Reklam kampanyalarımızın işe yarayıp yaramadığını ölçmek için kullanılır. İzin verirsen cihazına reklam ölçümü çerezleri yerleştirilir ve ziyaret bilgilerin yurt dışındaki reklam sağlayıcısına iletilir."),
-            tr("İzin vermezsen bu araç tarayıcına hiç yüklenmez; iznini geri aldığında araç durdurulur ve çerezleri silinir.")
-          ],
-          items: [tr("Meta (Facebook / Instagram) Pixel: _fbp ve _fbc çerezleri, yaklaşık 90 gün.")]
+          paragraphs: adsActive
+            ? [
+                tr("Geniş ekranda sayfanın yan boşluklarında reklam göstermek ve reklamların işe yarayıp yaramadığını ölçmek için kullanılır. İzin verirsen cihazına reklam çerezleri yerleştirilir ve ziyaret bilgilerin yurt dışındaki reklam sağlayıcısına iletilir; sağlayıcı sana ilgi alanına göre reklam gösterebilir."),
+                tr("İzin vermezsen bu araçlar tarayıcına hiç yüklenmez ve sana reklam gösterilmez; iznini geri aldığında araçlar durdurulur ve çerezleri silinir.")
+              ]
+            : [
+                tr("Reklam kampanyalarımızın işe yarayıp yaramadığını ölçmek için kullanılır. İzin verirsen cihazına reklam ölçümü çerezleri yerleştirilir ve ziyaret bilgilerin yurt dışındaki reklam sağlayıcısına iletilir."),
+                tr("İzin vermezsen bu araç tarayıcına hiç yüklenmez; iznini geri aldığında araç durdurulur ve çerezleri silinir.")
+              ],
+          items: [
+            ...(adsActive ? [tr("Google AdSense (reklam gösterimi): __gads, __gpi ve __eoi çerezleri ile Google'ın kendi alan adlarındaki reklam çerezleri, en fazla 13 ay.")] : []),
+            ...(metaPixelEnabled ? [tr("Meta (Facebook / Instagram) Pixel: _fbp ve _fbc çerezleri, yaklaşık 90 gün.")] : [])
+          ]
         }
       : {
           key: "marketing",

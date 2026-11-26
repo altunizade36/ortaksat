@@ -256,6 +256,8 @@ export type PlatformSettings = {
   appleWebLogin: boolean;
   /** Web sitesinde "App Store'dan indir" bağlantıları görünsün mü (scripts/app-link.py). Uygulamanın içinde hiç çizilmez. */
   iosAppLink: boolean;
+  /** Web sitesinde yan reklam alanları açık mı (scripts/ads.py). Kimlikler lib/ads-config.ts; uygulamada reklam yok. */
+  adsEnabled: boolean;
 };
 
 export type Message = {

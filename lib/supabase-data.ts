@@ -465,7 +465,8 @@ export async function loadPlatformSettings(): Promise<import("@/lib/types").Plat
     announcement: data.announcement ?? "",
     announcementActive: data.announcement_active ?? false,
     appleWebLogin: data.apple_web_login === true,
-    iosAppLink: data.ios_app_link === true
+    iosAppLink: data.ios_app_link === true,
+    adsEnabled: data.ads_enabled === true
   };
 }
 

@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { AppStoreMobileBanner, AppStoreTopStrip } from "@/components/app-store-link";
 import { colors } from "@/components/colors";
+import { SideAdRails } from "@/components/side-ads";
 import { PressLink } from "@/components/ui";
 import { GlobalSearchBar } from "@/components/global-search-bar";
 import { MobileNavMenu } from "@/components/mobile-nav-menu";
@@ -110,6 +111,8 @@ export function AppHeader() {
           })}
           <View style={{ flex: 1, minWidth: 8 }} />
         </View>
+        {/* Yan reklam alanları: yalnız çok geniş ekranda, içeriğin dışındaki boşlukta (anahtar kapalıyken hiçbir şey çizmez). */}
+        <SideAdRails />
       </View>
     );
   }

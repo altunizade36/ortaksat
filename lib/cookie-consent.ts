@@ -46,7 +46,7 @@ export function readCookieConsent(): CookieConsent | null {
 }
 
 /** Reklam ölçümünün bıraktığı birinci-taraf çerezleri (rıza geri alınınca silinir). */
-const MARKETING_COOKIES = ["_fbp", "_fbc"];
+const MARKETING_COOKIES = ["_fbp", "_fbc", "__gads", "__gpi", "__eoi"];
 
 function clearMarketingCookies(): void {
   try {
@@ -80,6 +80,14 @@ export function saveCookieConsent(choice: { analytics: boolean; marketing: boole
   // Yeni verilen izinler için betikleri hemen yükle (yenileme gerekmez).
   try { (window as unknown as { __osConsent?: (c: CookieConsent) => void }).__osConsent?.(next); } catch { /* sessiz */ }
   return next;
+}
+
+/** Tercih kaydedildiğinde haber verir (ör. reklam alanı izin verilince yenilemeden yüklenir). */
+export function onCookieConsentChange(listener: (consent: CookieConsent) => void): () => void {
+  if (!onWeb()) return () => {};
+  const handler = (event: Event) => { const detail = (event as CustomEvent<CookieConsent>).detail; if (detail) listener(detail); };
+  window.addEventListener(CHANGE_EVENT, handler);
+  return () => window.removeEventListener(CHANGE_EVENT, handler);
 }
 
 /** Alt bilgideki "Çerez Tercihleri" bağlantısı bunu çağırır. */
