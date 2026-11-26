@@ -1,3 +1,4 @@
+import { AppStoreMenuRow } from "@/components/app-store-link";
 import { useState } from "react";
 import { Link, type Href } from "expo-router";
 import { Pressable, Text, View } from "react-native";
@@ -54,6 +55,7 @@ export function WebAccountMenu({ onNavigate }: { onNavigate?: () => void }) {
       <Text accessibilityRole="header" numberOfLines={2} style={{ fontSize: 20, fontWeight: "800", color: colors.ink }}>{isAuthenticated ? currentUser.name : tr("OrtakSat’a hoş geldin")}</Text>
       <Text style={{ fontSize: 13, lineHeight: 20, color: colors.muted }}>{tr("İlan ver, satış ortağı bul veya alıcı yönlendirerek komisyon kazan.")}</Text>
       {!isAuthenticated ? <View style={{ flexDirection: "row", gap: 8 }}>{[{ label: "Giriş yap", href: "/auth" }, { label: "Kayıt ol", href: "/auth?mode=register" }].map((entry, index) => <Link key={entry.label} href={entry.href as Href} asChild><Pressable onPress={onNavigate} style={{ flex: 1, minHeight: 44, alignItems: "center", justifyContent: "center", borderRadius: 10, borderWidth: 1, borderColor: colors.primary, backgroundColor: index ? colors.surface : colors.primary }}><Text style={{ color: index ? colors.primaryDark : "#FFFFFF", fontWeight: "700", fontSize: 14 }}>{tr(entry.label)}</Text></Pressable></Link>)}</View> : null}
+      <AppStoreMenuRow />
     </View>
     <View><Text style={{ color: colors.muted, fontSize: 12, fontWeight: "700", marginBottom: 7 }}>{tr("KEŞFET VE KAZAN")}</Text>{discover.map(item)}</View>
     {isAuthenticated ? <View><Text style={{ color: colors.muted, fontSize: 12, fontWeight: "700", marginBottom: 7 }}>{tr("HESABIM")}</Text>{account.map(item)}{["admin", "super_admin", "moderator"].includes(currentUser.role ?? "") ? item({ label: "Yönetim paneli", href: "/admin", icon: "shield-crown-outline" }) : null}</View> : null}

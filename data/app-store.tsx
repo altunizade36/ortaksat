@@ -601,7 +601,8 @@ export function StoreProvider({ children }: PropsWithChildren) {
     maintenanceMode: false,
     announcement: "",
     announcementActive: false,
-    appleWebLogin: false
+    appleWebLogin: false,
+    iosAppLink: false
   });
   // Katalog sayfalama (sunucu tarafli). mpOffsetRef = simdiye kadar cekilen
   // katalog ilan sayisi; hasMore = daha var mi; loadingMore = yukleme kilidi.
@@ -1212,7 +1213,8 @@ export function StoreProvider({ children }: PropsWithChildren) {
             maintenanceMode: row.maintenance_mode ?? false,
             announcement: row.announcement ?? "",
             announcementActive: row.announcement_active ?? false,
-            appleWebLogin: row.apple_web_login === true
+            appleWebLogin: row.apple_web_login === true,
+            iosAppLink: row.ios_app_link === true
           });
         }
       )

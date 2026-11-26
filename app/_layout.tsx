@@ -1,4 +1,5 @@
 // İLK içe aktarma olmalı: uygulamada (Hermes) yerel-ayar çağrılarının hızlı yollarını diğer modüller çalışmadan kurar.
+import { AppStoreSmartBanner } from "@/components/app-store-link";
 import "@/lib/install-fast-intl";
 import { isMobileApp } from "@/lib/mobile-app";
 import { MobileDrawerProvider } from "@/components/mobile/drawer";
@@ -129,6 +130,7 @@ function RootStack({ onShown }: { onShown?: () => void }) {
         <meta name="description" content="OrtakSat: ürünlerini ortak sat, komisyon kazan. Emlak, vasıta, elektronik ve daha fazlası. Aracı platform — ödeme ve teslimat taraflar arasında gerçekleşir." />
       </Head>
       <GlobalSeo />
+      <AppStoreSmartBanner />
       <Stack
         screenOptions={{
           contentStyle: { backgroundColor: colors.background },

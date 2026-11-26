@@ -254,6 +254,8 @@ export type PlatformSettings = {
   announcementActive: boolean;
   /** Apple ile giriş web'de ve Android'de açık mı (sunucuda Services ID kurulunca true). iOS'tan bağımsız. */
   appleWebLogin: boolean;
+  /** Web sitesinde "App Store'dan indir" bağlantıları görünsün mü (scripts/app-link.py). Uygulamanın içinde hiç çizilmez. */
+  iosAppLink: boolean;
 };
 
 export type Message = {

@@ -1,6 +1,7 @@
 import { Link, type Href } from "expo-router";
 import { Platform, Pressable, Text, View, useWindowDimensions } from "react-native";
 
+import { AppStoreFooterRow } from "@/components/app-store-link";
 import { colors } from "@/components/colors";
 import { openCookiePreferences } from "@/lib/cookie-consent";
 import { translateCopy, useLanguage } from "@/lib/i18n";
@@ -35,6 +36,8 @@ export function CompactFooter() {
   if (isMobileApp) return null;
   return <View style={{ alignSelf: "center", flexShrink: 0, marginTop: "auto", paddingTop: 14, width: nestedMobile && mounted && width > 0 ? width : "100%" }}>
     <View testID="compact-footer" accessibilityLabel={translateCopy("Bilgi ve yasal bağlantılar", language)} style={{ alignItems: "center", alignSelf: "stretch", backgroundColor: "#F1F4FC", borderTopColor: colors.primary, borderTopWidth: 2, flexGrow: 0, flexShrink: 0, gap: 2, justifyContent: "center", minHeight: nestedMobile ? 132 : 112, paddingHorizontal: 16, paddingVertical: 10 }}>
+      {/* Uygulama bağlantısı: sunucu anahtarı kapalıyken hiçbir şey çizmez (bkz. components/app-store-link.tsx). */}
+      <AppStoreFooterRow compact={nestedMobile} />
       <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", justifyContent: "center", maxWidth: 860 }}>
         {links.map((link, index) => <View key={link.href as string} style={{ alignItems: "center", flexDirection: "row" }}>
           {index > 0 ? <Text importantForAccessibility="no" accessibilityElementsHidden style={{ color: "#9AABD0", fontSize: 11 }}>·</Text> : null}
