@@ -1,4 +1,4 @@
-import { AppStoreAuthRow } from "@/components/app-store-link";
+import { AppStoreAuthHero, useAppStoreAuthExtra } from "@/components/app-store-link";
 import type { ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
 import { Image } from "expo-image";
@@ -63,9 +63,11 @@ export function MobileAuthLanding({ mode, onModeChange, onEmail, onGoogle, onApp
   if (nativeViewport.current.width !== width) nativeViewport.current = { width, height };
   else nativeViewport.current.height = Math.max(nativeViewport.current.height, height);
   const compactNative = Platform.OS !== "web" && !tablet && nativeViewport.current.height < 760;
+  // Web: uygulama rozeti sloganın altında durur; form açıkken kısa sahne rozet kadar uzar (uygulamada hep 0).
+  const storeExtra = useAppStoreAuthExtra();
   const sceneHeight = Platform.OS !== "web" && !tablet
     ? form ? 180 : Math.max(300, Math.min(400, width * 1.02, nativeViewport.current.height * 0.44))
-    : form ? 150 : Math.max(340, Math.min(480, width * 1.12));
+    : form ? 150 + storeExtra : Math.max(340, Math.min(480, width * 1.12));
   function showConsentIfMissing() {
     if (!accepted) consentRef.current?.measureInWindow((_x, y) => {
       scrollRef.current?.scrollTo({ y: Math.max(0, scrollY.current + y - insets.top - 20), animated: true });
@@ -118,6 +120,9 @@ export function MobileAuthLanding({ mode, onModeChange, onEmail, onGoogle, onApp
       <View style={[s.intro, { paddingTop: insets.top + (tablet ? 70 : form ? 22 : compactNative ? 24 : 42) }]}>
         <MobileBrand size={Math.min(tablet ? 54 : 44, sceneWidth * 0.12)} />
         <Text style={s.slogan}>{tr("Al, Sat, Ortak Ol")}</Text>{!(Platform.OS === "web" && form && !tablet) ? <Text style={s.subSlogan}>{tr("Herkes Kazansın.")}</Text> : null}
+        {/* Web: uygulama indirme rozeti ÜSTTE (anahtar kapalıyken ve uygulamanın içinde hiçbir şey çizmez).
+            Formsuz telefon görünümünde sahne dolu olduğundan çizilmez (web'de form hep açıktır). */}
+        {form || tablet ? <AppStoreAuthHero wide={tablet} /> : null}
         {!form && <View style={s.features}>
           {([{ icon: "tag", color: "#003AB3", bg: "#E5F0FFCC", text: "Ücretsiz\nİlan Ver" }, { icon: "account-group", color: "#003AB3", bg: "#DCE6F5CC", text: "Ürününü Ortak\nSatışa Aç" }, { icon: "chart-bar", color: "#7552D7", bg: "#E6DFF9CC", text: "Daha Fazla\nKişiye Ulaş" }] as const).map((f) => <View key={f.icon} style={s.feature}><View style={[s.featureIcon, { backgroundColor: f.bg }]}><Icon name={f.icon} size={29} color={f.color} /></View><Text style={s.featureText}>{tr(f.text)}</Text></View>)}
         </View>}
@@ -154,8 +159,6 @@ export function MobileAuthLanding({ mode, onModeChange, onEmail, onGoogle, onApp
       {socialLogin && !accepted && <Text style={s.legal}>{tr("Sosyal giriş için önce yukarıdaki yasal onay kutusunu işaretle.")}</Text>}
       {switcher}
       </>}
-      {/* Web: uygulama indirme rozeti (sunucu anahtarı kapalıyken ve uygulamanın içinde hiçbir şey çizmez). */}
-      <AppStoreAuthRow />
       <Text style={s.copyright}>© 2026 OrtakSat</Text>
       </View>
     </View>
