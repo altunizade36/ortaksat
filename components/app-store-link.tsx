@@ -9,6 +9,7 @@ import { useStore } from "@/lib/use-store";
 /**
  * WEB SİTESİNDE "uygulamayı indir" bağlantıları (yalnız tarayıcıda; uygulamanın içinde hiçbiri çizilmez).
  *
+ * Yerler: alt bilgi, telefon menüsü, giriş / hesap açma ekranı, iPhone Safari üst bandı.
  * Hepsi sunucudaki `platform_settings.ios_app_link` anahtarına bağlıdır: kapalıyken hiçbir şey görünmez.
  * Açma / kapama: `python scripts/app-link.py ac|kapat|durum` (yeniden yayın gerekmez).
  *
@@ -60,6 +61,16 @@ export function AppStoreFooterRow({ compact }: { compact: boolean }) {
       <Image source={{ uri: "/app-store-qr.svg" }} accessibilityLabel="App Store sayfasının kare kodu" style={{ backgroundColor: "#FFFFFF", borderColor: colors.line, borderRadius: 8, borderWidth: 1, height: 64, width: 64 }} />
       <Text style={{ color: colors.muted, fontSize: 11, lineHeight: 15, maxWidth: 120 }}>Telefonunun kamerasıyla okut, uygulamayı indir.</Text>
     </View> : null}
+  </View>;
+}
+
+/** Giriş / hesap açma ekranının altında (yalnız web): ince çizgi, kısa yazı ve ortalanmış rozet. */
+export function AppStoreAuthRow() {
+  const { visible } = useAppStoreLink();
+  if (!visible) return null;
+  return <View testID="auth-app-store" style={{ alignItems: "center", borderTopColor: "#DCE6F5", borderTopWidth: 1, gap: 6, marginTop: 20, paddingTop: 16 }}>
+    <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "700", textAlign: "center" }}>OrtakSat iPhone ve iPad’de de yanında</Text>
+    <AppStoreBadge />
   </View>;
 }
 

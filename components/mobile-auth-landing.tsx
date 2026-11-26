@@ -1,3 +1,4 @@
+import { AppStoreAuthRow } from "@/components/app-store-link";
 import type { ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
 import { Image } from "expo-image";
@@ -153,6 +154,8 @@ export function MobileAuthLanding({ mode, onModeChange, onEmail, onGoogle, onApp
       {socialLogin && !accepted && <Text style={s.legal}>{tr("Sosyal giriş için önce yukarıdaki yasal onay kutusunu işaretle.")}</Text>}
       {switcher}
       </>}
+      {/* Web: uygulama indirme rozeti (sunucu anahtarı kapalıyken ve uygulamanın içinde hiçbir şey çizmez). */}
+      <AppStoreAuthRow />
       <Text style={s.copyright}>© 2026 OrtakSat</Text>
       </View>
     </View>
