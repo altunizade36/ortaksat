@@ -1,3 +1,4 @@
+import { BUSINESS_CONTRACT_VERSION } from "@/lib/business-account";
 import { storeAppleAuthorizationCode, storeAppleWebRefreshToken } from "@/lib/apple-token";
 import { validateListingTitle } from "@/lib/listing-title";
 import { clearOAuthConsent, prepareOAuthConsent, recordExplicitOAuthConsent } from "@/lib/oauth-consent";
@@ -200,7 +201,6 @@ const LEGAL_CONSENT_VERSION = "2026-06-11";
 
 /** Kurumsal hesap açarken alınan beyan bilgileri (vergi/TC kimlik numarası toplanmaz). */
 export type BusinessSignup = { name: string; type: "sahis" | "sirket"; contactName: string; city?: string; activity?: string; phone?: string };
-const BUSINESS_CONTRACT_VERSION = "2026-11-25";
 /** İşletme kaydını yazar (yalnız sahibi yazabilir — RLS). Hata kaydı engellemez; il, profilde de görünsün diye ayrıca yazılır. */
 async function saveBusinessAccount(userId: string, business?: BusinessSignup | null): Promise<void> {
   if (!supabase || !business || typeof business.name !== "string" || !business.name.trim()) return;

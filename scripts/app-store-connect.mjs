@@ -125,9 +125,50 @@ async function setReviewAccount(file) {
   console.log(`İnceleme demo hesabı yazıldı: ${email} (şifre gösterilmez), giriş gerekli: evet`);
 }
 
+// Yayındaki sürümün üstüne yeni sürüm kaydı açar (metinler ve görseller önceki sürümden kopyalanır), "Yenilikler" metnini yazar.
+async function newVersion(versionString, whatsNew) {
+  const versions = (await api(`/v1/apps/${APP_ID}/appStoreVersions?filter[platform]=IOS&limit=10`)).data;
+  let version = versions.find((v) => v.attributes.versionString === versionString);
+  if (!version) {
+    version = (await api("/v1/appStoreVersions", "POST", { data: { type: "appStoreVersions", attributes: { platform: "IOS", versionString, releaseType: "AFTER_APPROVAL" }, relationships: { app: { data: { type: "apps", id: APP_ID } } } } })).data;
+    console.log(`Sürüm ${versionString} açıldı (onaylanınca kendiliğinden yayımlanır).`);
+  } else console.log(`Sürüm ${versionString} zaten var: ${version.attributes.appStoreState}`);
+  if (whatsNew) {
+    const loc = await localization(version.id);
+    await api(`/v1/appStoreVersionLocalizations/${loc.id}`, "PATCH", { data: { type: "appStoreVersionLocalizations", id: loc.id, attributes: { whatsNew } } });
+    console.log(`Yenilikler metni yazıldı (${loc.attributes.locale}).`);
+  }
+}
+
+// Derlemeyi sürüme bağlar ve sürümü incelemeye gönderir. Derleme henüz işlenmediyse hata verip çıkar (yeniden çalıştır).
+async function submitForReview(versionString, buildNumber) {
+  const versions = (await api(`/v1/apps/${APP_ID}/appStoreVersions?filter[platform]=IOS&limit=10`)).data;
+  const version = versions.find((v) => v.attributes.versionString === versionString);
+  if (!version) throw new Error(`Sürüm ${versionString} yok; önce "yeni-surum".`);
+  const builds = (await api(`/v1/builds?filter[app]=${APP_ID}&filter[version]=${buildNumber}&limit=5`)).data;
+  const build = builds[0];
+  if (!build) throw new Error(`Derleme ${buildNumber} App Store Connect'e henüz ulaşmadı.`);
+  if (build.attributes.processingState !== "VALID") throw new Error(`Derleme ${buildNumber} henüz hazır değil: ${build.attributes.processingState}`);
+  if (build.attributes.usesNonExemptEncryption == null) {
+    await api(`/v1/builds/${build.id}`, "PATCH", { data: { type: "builds", id: build.id, attributes: { usesNonExemptEncryption: false } } });
+  }
+  await api(`/v1/appStoreVersions/${version.id}/relationships/build`, "PATCH", { data: { type: "builds", id: build.id } });
+  console.log(`Derleme ${buildNumber} sürüm ${versionString}'e bağlandı.`);
+  const open = (await api(`/v1/reviewSubmissions?filter[app]=${APP_ID}&filter[platform]=IOS&filter[state]=READY_FOR_REVIEW`)).data;
+  const submission = open[0] ?? (await api("/v1/reviewSubmissions", "POST", { data: { type: "reviewSubmissions", attributes: { platform: "IOS" }, relationships: { app: { data: { type: "apps", id: APP_ID } } } } })).data;
+  const items = (await api(`/v1/reviewSubmissions/${submission.id}/items?limit=20`)).data;
+  if (!items.length) {
+    await api("/v1/reviewSubmissionItems", "POST", { data: { type: "reviewSubmissionItems", relationships: { reviewSubmission: { data: { type: "reviewSubmissions", id: submission.id } }, appStoreVersion: { data: { type: "appStoreVersions", id: version.id } } } } });
+  }
+  const sent = (await api(`/v1/reviewSubmissions/${submission.id}`, "PATCH", { data: { type: "reviewSubmissions", id: submission.id, attributes: { submitted: true } } })).data;
+  console.log(`İncelemeye gönderildi: ${sent.attributes.state}`);
+}
+
 const [command, ...rest] = process.argv.slice(2);
 try {
   if (command === "durum") await status();
+  else if (command === "yeni-surum" && rest[0]) await newVersion(rest[0], rest[1]);
+  else if (command === "gonder" && rest[0] && rest[1]) await submitForReview(rest[0], rest[1]);
   else if (command === "gorseller") await uploadScreenshots(rest.includes("--degistir"));
   else if (command === "inceleme-hesabi" && rest[0]) await setReviewAccount(rest[0]);
   else { console.error("Kullanım: node scripts/app-store-connect.mjs durum | gorseller [--degistir] | inceleme-hesabi <dosya>"); process.exit(1); }

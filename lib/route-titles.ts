@@ -32,6 +32,7 @@ const EXACT: Record<string, string> = {
   "/toplu-ilan": "Toplu İlan Yükle",
   "/magaza-sirasi": "Mağaza Sırası",
   "/engellenenler": "Engellenen Kullanıcılar",
+  "/kurumsal-bilgiler": "Kurumsal Hesap Bilgileri",
   "/menu": "Menü",
   "/admin": "Yönetim Paneli",
   "/auth": "Giriş Yap",

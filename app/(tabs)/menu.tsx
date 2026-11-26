@@ -80,7 +80,7 @@ function MenuScreenInner() {
         ...(top.children ?? []).map((c: CategoryNode) => ({ label: c.label, href: landing(c.slug) }))
       ]
     }));
-    return [partnerGroup, ...(isMobileApp ? [{ title: "Hesap ve Yardım", icon: "account-cog-outline" as const, children: [{ label: "Hesap Ayarları", href: "/account-settings" as Href }, { label: "Yardım Merkezi", href: "/sss" as Href }, { label: "Destek Taleplerim", href: "/support" as Href }] }] : []), ...catGroups];
+    return [partnerGroup, ...(isMobileApp ? [{ title: "Hesap ve Yardım", icon: "account-cog-outline" as const, children: [{ label: "Hesap Ayarları", href: "/account-settings" as Href }, { label: "Hesap Güvenliği", href: "/account-security" as Href }, { label: "Bildirim Ayarları", href: "/notification-settings" as Href }, { label: "Kurumsal Hesap Bilgileri", href: "/kurumsal-bilgiler" as Href }, { label: "Yardım Merkezi", href: "/sss" as Href }, { label: "Destek Taleplerim", href: "/support" as Href }, { label: "Şikâyetlerim", href: "/reports" as Href }, { label: "Sözleşmeler ve Gizlilik", href: "/legal" as Href }, { label: "İletişim", href: "/iletisim" as Href }, { label: "Hakkımızda", href: "/hakkimizda" as Href }] }] : []), ...catGroups];
   }, [categoryTree]);
 
   const visibleGroups = useMemo(() => {
