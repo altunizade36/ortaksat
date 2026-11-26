@@ -3,7 +3,6 @@ import { Link } from "expo-router";
 import { useEffect, useState } from "react";
 import { Pressable, Text, View, useWindowDimensions } from "react-native";
 
-import { AppStoreHeaderIcon } from "@/components/app-store-link";
 import { colors } from "@/components/colors";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { useStore } from "@/lib/use-store";
@@ -31,9 +30,6 @@ export function HeaderActions() {
     : 0;
   return (
     <View style={{ alignItems: "center", flexDirection: "row", gap: compact ? 4 : 6, zIndex: 2 }}>
-      {/* iPhone tarayıcısında "Uygulama" simgesi (anahtar kapalıyken çizilmez). 370 px altında logoyu kırptığı için
-          gösterilmez; 370–383 arası yazısız dar biçim. */}
-      {mounted && width >= 370 ? <AppStoreHeaderIcon tight={width < 384} /> : null}
       <Link href="/create" asChild>
         <Pressable
           accessibilityRole="link"

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Image, Linking, Platform, Pressable, Text, View } from "react-native";
 
 import { colors } from "@/components/colors";
@@ -9,17 +9,23 @@ import { useStore } from "@/lib/use-store";
 /**
  * WEB SİTESİNDE "uygulamayı indir" bağlantıları (yalnız tarayıcıda; uygulamanın içinde hiçbiri çizilmez).
  *
- * Yerler (kullanıcı "aşağı inmiyor insanlar" dedi → asıl yerler ÜSTTE): masaüstü gezinme çubuğunun sağ ucu,
- * telefonda logo satırının sağı, giriş / hesap açma ekranında sloganın altı, telefon menüsünün üst kartı,
- * iPhone Safari üst bandı; alt bilgi yalnız yedek.
+ * Yerler (kullanıcı: "aşağı inmiyor insanlar" + "düğmeye bas açılır estetik değil, globalde nasılsa"):
+ *  - masaüstü: başlığın üstünde ince, kapatılabilir şerit — simge, yazı, kare kod ve rozet DOĞRUDAN görünür
+ *    (açılır pencere / düğme YOK);
+ *  - iPhone / iPad tarayıcısı: başlığın üstünde alışılmış "uygulama bandı" (kapat · simge · ad · İndir);
+ *  - giriş / hesap açma ekranında sloganın altı, telefon menüsünün üst kartı; alt bilgi yalnız yedek.
  * Hepsi sunucudaki `platform_settings.ios_app_link` anahtarına bağlıdır: kapalıyken hiçbir şey görünmez.
  * Açma / kapama: `python scripts/app-link.py ac|kapat|durum` (yeniden yayın gerekmez).
  *
  * Android telefonda App Store bağlantısı işe yaramaz → orada gösterilmez. Rozet Apple'ın resmî Türkçe
  * rozetidir (public/app-store-badge-tr.svg); yeniden çizme, rengini değiştirme.
+ * Safari'nin kendi bandı (`apple-itunes-app` etiketi) bilerek KULLANILMIYOR: etiket çalışma anında eklenince
+ * çalıştığı doğrulanamadı ve kendi bandımızla üst üste binerdi.
  */
 export const APP_STORE_ID = "6839320320";
 export const APP_STORE_URL = `https://apps.apple.com/tr/app/id${APP_STORE_ID}`;
+const APP_ICON = "/apple-touch-icon.png";
+const STRIP_LINE = "#C9DCFA";
 
 type Device = "ios" | "android" | "other";
 function detectDevice(): Device {
@@ -40,70 +46,93 @@ export function useAppStoreLink(): { visible: boolean; device: Device } {
   return { visible: enabled && device !== null && device !== "android", device: device ?? "other" };
 }
 
+/**
+ * Üst şerit / bant kapatıldı mı. Kapatma bu tarayıcıda 14 gün hatırlanır (yalnız kişisel kolaylık; depolama
+ * kapalıysa her açılışta yeniden görünür). `null` = henüz okunmadı → hiçbir şey çizilmez (yanıp sönme olmasın).
+ */
+const CLOSE_KEY = "os-app-strip-closed";
+const CLOSE_MS = 14 * 24 * 60 * 60 * 1000;
+function useStripClosed(): [boolean | null, () => void] {
+  const [closed, setClosed] = useState<boolean | null>(null);
+  useEffect(() => {
+    let value = false;
+    try { const at = Number(window.localStorage.getItem(CLOSE_KEY) ?? 0); value = at > 0 && Date.now() - at < CLOSE_MS; } catch { /* depolama kapalı */ }
+    setClosed(value);
+  }, []);
+  const close = useCallback(() => {
+    setClosed(true);
+    try { window.localStorage.setItem(CLOSE_KEY, String(Date.now())); } catch { /* depolama kapalı */ }
+  }, []);
+  return [closed, close];
+}
+
 function openStore() {
   if (typeof window !== "undefined") window.open(APP_STORE_URL, "_blank", "noopener");
   else void Linking.openURL(APP_STORE_URL);
 }
+const storeLink = { href: APP_STORE_URL, hrefAttrs: { target: "_blank", rel: "noopener" } } as object;
+
+function AppIcon({ size }: { size: number }) {
+  return <Image source={{ uri: APP_ICON }} accessibilityIgnoresInvertColors style={{ backgroundColor: "#FFFFFF", borderColor: STRIP_LINE, borderRadius: Math.round(size * 0.24), borderWidth: 1, height: size, width: size }} />;
+}
 
 /** Apple'ın resmî rozeti. `height` 40 = Apple'ın önerdiği en küçük ekran boyu. */
 export function AppStoreBadge({ height = 40 }: { height?: number }) {
-  return <Pressable accessibilityRole="link" accessibilityLabel="OrtakSat'ı App Store'dan indir" onPress={openStore} {...({ href: APP_STORE_URL, hrefAttrs: { target: "_blank", rel: "noopener" } } as object)} style={{ minHeight: 44, justifyContent: "center" }}>
+  return <Pressable accessibilityRole="link" accessibilityLabel="OrtakSat'ı App Store'dan indir" onPress={openStore} {...storeLink} style={{ minHeight: 44, justifyContent: "center" }}>
     <Image source={{ uri: "/app-store-badge-tr.svg" }} accessibilityIgnoresInvertColors style={{ height, width: Math.round(height * 3.782) }} />
   </Pressable>;
 }
 
-/** Alt bilgideki satır: telefonda yalnız rozet; masaüstünde rozet + telefonla okutulacak kare kod. */
-export function AppStoreFooterRow({ compact }: { compact: boolean }) {
+/**
+ * MASAÜSTÜ: başlığın üstündeki ince şerit. Her şey doğrudan görünür: uygulama simgesi, tek cümle, telefonla
+ * okutulacak kare kod ve resmî rozet. Sağdaki çarpı şeridi kapatır.
+ */
+export function AppStoreTopStrip() {
   const { visible } = useAppStoreLink();
-  if (!visible) return null;
-  return <View testID="footer-app-store" style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: compact ? 10 : 14, justifyContent: "center", paddingBottom: 6, paddingTop: 2 }}>
-    <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "800", textAlign: "center" }}>OrtakSat iPhone ve iPad’de</Text>
-    <AppStoreBadge />
-    {!compact ? <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
-      <Image source={{ uri: "/app-store-qr.svg" }} accessibilityLabel="App Store sayfasının kare kodu" style={{ backgroundColor: "#FFFFFF", borderColor: colors.line, borderRadius: 8, borderWidth: 1, height: 64, width: 64 }} />
-      <Text style={{ color: colors.muted, fontSize: 11, lineHeight: 15, maxWidth: 120 }}>Telefonunun kamerasıyla okut, uygulamayı indir.</Text>
-    </View> : null}
+  const [closed, close] = useStripClosed();
+  if (!visible || closed !== false) return null;
+  return <View testID="top-app-store" style={{ backgroundColor: colors.primarySoft, borderBottomColor: STRIP_LINE, borderBottomWidth: 1, justifyContent: "center" }}>
+    <View style={{ alignItems: "center", alignSelf: "center", flexDirection: "row", gap: 12, justifyContent: "center", maxWidth: 1280, minHeight: 58, paddingHorizontal: 56, paddingVertical: 6, width: "100%" }}>
+      <AppIcon size={40} />
+      <View style={{ flexShrink: 1, gap: 1, minWidth: 0 }}>
+        <Text numberOfLines={1} style={{ color: colors.primaryDark, fontSize: 14.5, fontWeight: "900" }}>OrtakSat artık iPhone ve iPad’de</Text>
+        <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600" }}>Uygulamayı ücretsiz indir; ilanların ve ortaklıkların cebinde olsun.</Text>
+      </View>
+      <View style={{ backgroundColor: STRIP_LINE, height: 30, marginHorizontal: 10, width: 1 }} />
+      <Image source={{ uri: "/app-store-qr.svg" }} accessibilityLabel="App Store sayfasının kare kodu" style={{ backgroundColor: "#FFFFFF", borderRadius: 6, height: 46, width: 46 }} />
+      <Text style={{ color: colors.primaryDark, fontSize: 11.5, fontWeight: "700", lineHeight: 15 }}>Telefonunun{"\n"}kamerasıyla okut</Text>
+      <View style={{ width: 6 }} />
+      <AppStoreBadge />
+    </View>
+    <Pressable testID="top-app-store-close" accessibilityRole="button" accessibilityLabel="Uygulama şeridini kapat" onPress={close} style={{ alignItems: "center", bottom: 0, justifyContent: "center", position: "absolute", right: 10, top: 0, width: 40 }}>
+      <Icon name="close" size={18} color={colors.muted} />
+    </Pressable>
   </View>;
 }
 
 /**
- * Masaüstü üst gezinme çubuğunun sağ ucundaki mavi "Uygulamayı indir" düğmesi. Basınca küçük bir pencere açılır:
- * kare kod (telefonla okutulur) + resmî rozet. Masaüstünde uygulama kurulamadığı için asıl yol kare koddur.
+ * iPHONE / iPAD TARAYICISI: başlığın üstündeki alışılmış uygulama bandı — kapat · simge · ad · "İndir".
+ * Banda ya da düğmeye basınca App Store açılır (uygulama kuruluysa mağaza sayfasında "Aç" görünür).
  */
-export function AppStoreNavButton() {
-  const { visible } = useAppStoreLink();
-  const [open, setOpen] = useState(false);
-  if (!visible) return null;
-  return <View testID="nav-app-store" style={{ alignSelf: "center", position: "relative", zIndex: open ? 1000 : 1 }}>
-    <Pressable accessibilityRole="button" accessibilityLabel="OrtakSat uygulamasını indir" accessibilityState={{ expanded: open }} onPress={() => setOpen((value) => !value)} style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 999, flexDirection: "row", gap: 6, height: 32, paddingHorizontal: 13 }}>
-      <Icon name="cellphone-arrow-down" size={17} color="#FFFFFF" />
-      <Text numberOfLines={1} style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "800" }}>Uygulamayı indir</Text>
-    </Pressable>
-    {open ? <>
-      <Pressable accessibilityElementsHidden importantForAccessibility="no-hide-descendants" aria-hidden onPress={() => setOpen(false)} style={{ bottom: -3000, left: -3000, position: "absolute", right: -3000, top: -3000, zIndex: 900 }} />
-      <View testID="nav-app-store-panel" style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 10, overflow: "hidden", paddingBottom: 14, position: "absolute", right: 0, shadowColor: "#101828", shadowOffset: { width: 0, height: 16 }, shadowOpacity: 0.18, shadowRadius: 30, top: 40, width: 248, zIndex: 1000 }}>
-        <View style={{ alignSelf: "stretch", backgroundColor: colors.primary, paddingHorizontal: 14, paddingVertical: 11 }}>
-          <Text style={{ color: "#FFFFFF", fontSize: 14, fontWeight: "900", textAlign: "center" }}>OrtakSat iPhone ve iPad’de</Text>
-        </View>
-        <Image source={{ uri: "/app-store-qr.svg" }} accessibilityLabel="App Store sayfasının kare kodu" style={{ height: 132, width: 132 }} />
-        <Text style={{ color: colors.muted, fontSize: 12, lineHeight: 16, paddingHorizontal: 16, textAlign: "center" }}>Telefonunun kamerasıyla okut, uygulamayı indir.</Text>
-        <AppStoreBadge />
-      </View>
-    </> : null}
-  </View>;
-}
-
-/** Telefon tarayıcısında logo satırının sağındaki küçük "Uygulama" simgesi (yalnız iPhone / iPad). */
-export function AppStoreHeaderIcon({ tight = false }: { tight?: boolean }) {
+export function AppStoreMobileBanner() {
   const { visible, device } = useAppStoreLink();
-  if (!visible || device !== "ios") return null;
-  // `tight` (375 px ve altı): "Uygulama" yazısı logoyu 8 px kırpıyordu → yalnız daire, daha dar.
-  return <Pressable testID="header-app-store" accessibilityRole="link" accessibilityLabel="OrtakSat uygulamasını App Store'dan indir" onPress={openStore} {...({ href: APP_STORE_URL, hrefAttrs: { target: "_blank", rel: "noopener" } } as object)} style={{ alignItems: "center", gap: 1, justifyContent: "center", minHeight: 44, minWidth: tight ? 34 : 44 }}>
-    <View style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 999, height: tight ? 30 : 26, justifyContent: "center", width: tight ? 30 : 26 }}>
-      <Icon name="cellphone-arrow-down" size={tight ? 18 : 16} color="#FFFFFF" />
-    </View>
-    {!tight ? <Text numberOfLines={1} style={{ color: colors.primary, fontSize: 9.5, fontWeight: "800", lineHeight: 12 }}>Uygulama</Text> : null}
-  </Pressable>;
+  const [closed, close] = useStripClosed();
+  if (!visible || device !== "ios" || closed !== false) return null;
+  return <View testID="mobile-app-store" style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderBottomColor: STRIP_LINE, borderBottomWidth: 1, flexDirection: "row", minHeight: 60 }}>
+    <Pressable testID="mobile-app-store-close" accessibilityRole="button" accessibilityLabel="Uygulama bandını kapat" onPress={close} style={{ alignItems: "center", height: 60, justifyContent: "center", width: 40 }}>
+      <Icon name="close" size={18} color={colors.muted} />
+    </Pressable>
+    <Pressable accessibilityRole="link" accessibilityLabel="OrtakSat uygulamasını App Store'dan indir" onPress={openStore} {...storeLink} style={{ alignItems: "center", flex: 1, flexDirection: "row", gap: 10, minHeight: 60, minWidth: 0, paddingRight: 12 }}>
+      <AppIcon size={40} />
+      <View style={{ flex: 1, gap: 1, minWidth: 0 }}>
+        <Text numberOfLines={1} style={{ color: colors.primaryDark, fontSize: 14.5, fontWeight: "900" }}>OrtakSat</Text>
+        <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 12, fontWeight: "600" }}>App Store’da ücretsiz</Text>
+      </View>
+      <View style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 999, height: 32, justifyContent: "center", paddingHorizontal: 18 }}>
+        <Text style={{ color: "#FFFFFF", fontSize: 13.5, fontWeight: "900" }}>İndir</Text>
+      </View>
+    </Pressable>
+  </View>;
 }
 
 /**
@@ -128,6 +157,20 @@ export function useAppStoreAuthExtra(): number {
   return useAppStoreLink().visible ? 50 : 0;
 }
 
+/** Alt bilgideki satır (yedek): telefonda yalnız rozet; masaüstünde rozet + telefonla okutulacak kare kod. */
+export function AppStoreFooterRow({ compact }: { compact: boolean }) {
+  const { visible } = useAppStoreLink();
+  if (!visible) return null;
+  return <View testID="footer-app-store" style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: compact ? 10 : 14, justifyContent: "center", paddingBottom: 6, paddingTop: 2 }}>
+    <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "800", textAlign: "center" }}>OrtakSat iPhone ve iPad’de</Text>
+    <AppStoreBadge />
+    {!compact ? <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
+      <Image source={{ uri: "/app-store-qr.svg" }} accessibilityLabel="App Store sayfasının kare kodu" style={{ backgroundColor: "#FFFFFF", borderColor: colors.line, borderRadius: 8, borderWidth: 1, height: 64, width: 64 }} />
+      <Text style={{ color: colors.muted, fontSize: 11, lineHeight: 15, maxWidth: 120 }}>Telefonunun kamerasıyla okut, uygulamayı indir.</Text>
+    </View> : null}
+  </View>;
+}
+
 /** Telefon tarayıcısındaki menünün üst kartında: tek satırlık "uygulamayı indir" düğmesi (yalnız iPhone / iPad). */
 export function AppStoreMenuRow() {
   const { visible, device } = useAppStoreLink();
@@ -140,22 +183,4 @@ export function AppStoreMenuRow() {
     </View>
     <Icon name="chevron-right" size={20} color={colors.muted} />
   </Pressable>;
-}
-
-/**
- * iPhone / iPad Safari'nin kendi üst bandı ("Aç" ya da "Görüntüle"): sayfaya `apple-itunes-app` etiketi eklenince
- * Safari çizer; uygulama kuruluysa doğrudan açar. Anahtar kapalıyken etiket eklenmez. Kök düzende bir kez çizilir.
- */
-export function AppStoreSmartBanner() {
-  const { visible, device } = useAppStoreLink();
-  useEffect(() => {
-    if (!visible || device !== "ios" || typeof document === "undefined") return;
-    if (document.querySelector('meta[name="apple-itunes-app"]')) return;
-    const meta = document.createElement("meta");
-    meta.name = "apple-itunes-app";
-    meta.content = `app-id=${APP_STORE_ID}`;
-    document.head.appendChild(meta);
-    return () => { meta.remove(); };
-  }, [visible, device]);
-  return null;
 }

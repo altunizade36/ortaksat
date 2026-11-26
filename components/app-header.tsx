@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { Pressable, ScrollView, Text, useWindowDimensions, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { AppStoreNavButton } from "@/components/app-store-link";
+import { AppStoreMobileBanner, AppStoreTopStrip } from "@/components/app-store-link";
 import { colors } from "@/components/colors";
 import { PressLink } from "@/components/ui";
 import { GlobalSearchBar } from "@/components/global-search-bar";
@@ -51,6 +51,8 @@ export function AppHeader() {
     return (
       <View>
         <MaintenanceBanner />
+        {/* Uygulama şeridi: başlığın üstünde, kapatılabilir (sunucu anahtarı kapalıyken hiçbir şey çizmez). */}
+        <AppStoreTopStrip />
         {/* Tek temiz üst bar: [geri] · logo · arama · aksiyonlar */}
         <View style={{ alignItems: "center", backgroundColor: colors.surface, borderBottomColor: colors.line, borderBottomWidth: 1, flexDirection: "row", gap: 24, paddingHorizontal: 28, paddingVertical: 12, position: "relative", zIndex: 30 }}>
           {showDesktopBack ? (
@@ -107,8 +109,6 @@ export function AppHeader() {
             );
           })}
           <View style={{ flex: 1, minWidth: 8 }} />
-          {/* Sağ uç: "Uygulamayı indir" (sunucu anahtarı kapalıyken hiçbir şey çizmez). */}
-          <AppStoreNavButton />
         </View>
       </View>
     );
@@ -116,6 +116,9 @@ export function AppHeader() {
 
   // --- Mobile / native header --- (temiz beyaz üst bar; normal web sitesi görünümü)
   return (
+    <View>
+    {/* iPhone / iPad tarayıcısı: başlığın üstünde uygulama bandı (anahtar kapalıyken ve uygulamada çizilmez). */}
+    <AppStoreMobileBanner />
     <View
       style={{
         backgroundColor: colors.surface,
@@ -156,6 +159,7 @@ export function AppHeader() {
       <View testID="mobile-web-primary-nav" style={{ flexDirection: "row", borderTopWidth: 1, borderTopColor: colors.line, marginTop: 4 }}>
         {([{ href: "/explore", label: "Keşfet" }, { href: "/partner", label: "Ortak Satış" }, { href: "/kategoriler", label: "Kategoriler" }, { href: "/menu", label: "Menü" }] as const).map(item => <Link key={item.href} href={item.href} asChild><Pressable accessibilityRole="link" style={{ flex: 1, minHeight: 44, alignItems: "center", justifyContent: "center", borderBottomWidth: 2, borderBottomColor: pathname.startsWith(item.href) ? colors.primary : "transparent" }}><Text style={{ color: pathname.startsWith(item.href) ? colors.primaryDark : colors.muted, fontSize: 12, fontWeight: "700" }}>{translateCopy(item.label, language)}</Text></Pressable></Link>)}
       </View>
+    </View>
     </View>
   );
 }
