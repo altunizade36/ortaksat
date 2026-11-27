@@ -93,6 +93,7 @@
         "CAMERA"
       ],
       "blockedPermissions": [
+        "com.google.android.gms.permission.AD_ID",
         "android.permission.SYSTEM_ALERT_WINDOW",
         "android.permission.FOREGROUND_SERVICE",
         "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK",
