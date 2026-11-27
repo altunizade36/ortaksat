@@ -1,6 +1,7 @@
 ﻿import { supabase } from "@/lib/supabase";
 import { getDemoProductImageMeta } from "@/lib/demo-product-images";
 import { msgStamp } from "@/lib/format";
+import { nameInitial } from "@/lib/name-initial";
 import { noteThreadActivity } from "@/lib/inbox-model";
 import { displayText, repairTurkishText } from "@/lib/text";
 import type { CategorySuggestion, Conversation, Favorite, Lead, Listing, LocationSuggestion, Message, Notification, NotificationMeta, Order, Partnership, Report, Review, Sale, SuggestionStatus, User } from "@/lib/types";
@@ -204,14 +205,7 @@ export function mapSaleRow(row: Record<string, any>): Sale {
   };
 }
 
-function initials(name: string) {
-  return name
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toLocaleUpperCase("tr-TR"))
-    .join("");
-}
+const initials = nameInitial;
 
 function mapProfile(row: ProfileRow): User {
   const name = displayText(row.full_name, "OrtakSat kullanıcısı");
@@ -220,7 +214,7 @@ function mapProfile(row: ProfileRow): User {
     id: row.id,
     name,
     phone: row.phone ?? "",
-    avatar: row.avatar_url || initials(name) || "OS",
+    avatar: row.avatar_url || initials(name) || "O",
     bio: repairTurkishText(row.bio ?? ""),
     verifiedPhone: row.verified_phone,
     verifiedIdentity: row.verified_identity,

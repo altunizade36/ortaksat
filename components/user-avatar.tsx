@@ -2,18 +2,11 @@ import { Image } from "expo-image";
 import { useState } from "react";
 import { StyleSheet, Text, View, type StyleProp, type ViewStyle } from "react-native";
 import Svg, { Circle, Path } from "react-native-svg";
+import { nameInitial } from "@/lib/name-initial";
 import { hasProfilePhoto } from "@/lib/profile-photo";
 
-/** Ad soyaddan en çok iki baş harf ("Mehmet Fatih" → "MF"). Harf içermeyen ad boş döner. */
-export function nameInitials(name?: string | null): string {
-  return String(name ?? "")
-    .split(/\s+/)
-    .map((part) => Array.from(part.replace(/[^\p{L}\p{N}]/gu, ""))[0] ?? "")
-    .filter(Boolean)
-    .slice(0, 2)
-    .join("")
-    .toLocaleUpperCase("tr-TR");
-}
+/** Yalnız adın ilk harfi ("Osman Çelik" → "O"); bkz. lib/name-initial.ts. */
+export const nameInitials = nameInitial;
 
 /**
  * Kullanıcı simgesi: kendi fotoğrafı varsa o, yoksa AD BAŞ HARFLERİ (2026-11-14 kararı: hazır karakter yok —
@@ -24,7 +17,7 @@ export function nameInitials(name?: string | null): string {
 export function UserAvatar({ uri, name, size = 40, style, accessibilityLabel = "Profil fotoğrafı" }: { uri?: string | null; name?: string | null; size?: number; style?: StyleProp<ViewStyle>; accessibilityLabel?: string }) {
   const [failedUri, setFailedUri] = useState<string | null>(null);
   const photo = hasProfilePhoto(uri) && failedUri !== uri;
-  const fromUri = uri && !hasProfilePhoto(uri) && !/[/:.]/.test(uri) && Array.from(uri.trim()).length <= 3 ? uri.trim().toLocaleUpperCase("tr-TR") : "";
+  const fromUri = uri && !hasProfilePhoto(uri) && !/[/:.]/.test(uri) && Array.from(uri.trim()).length <= 3 ? nameInitial(uri) : "";
   const initials = nameInitials(name) || fromUri;
   return <View accessibilityLabel={accessibilityLabel} style={[{ width: size, height: size, borderRadius: size / 2, overflow: "hidden", backgroundColor: initials ? "#DCE8FF" : "#FFFFFF", alignItems: "center", justifyContent: "center" }, style]}>
     {initials
