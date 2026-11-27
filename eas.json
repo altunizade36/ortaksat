@@ -18,6 +18,9 @@
     "preview": {
       "extends": "base",
       "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_PUSH_ON_EMULATOR": "1"
+      },
       "ios": {
         "simulator": false,
         "resourceClass": "m-medium"

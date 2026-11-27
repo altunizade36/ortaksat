@@ -24,7 +24,8 @@ export async function registerForPush(): Promise<void> {
     // Dinamik import: web bundle'ına expo-notifications girmesin.
     const Notifications = await import("expo-notifications");
     const Device = await import("expo-device");
-    if (!Device.isDevice) return; // emülatörde push token alınamaz
+    // Emülatörde kayıt yapılmaz; yalnız test (preview) derlemesinde EXPO_PUBLIC_PUSH_ON_EMULATOR=1 ile açılır (FCM denemesi için).
+    if (!Device.isDevice && process.env.EXPO_PUBLIC_PUSH_ON_EMULATOR !== "1") return; // emülatörde push token alınamaz
 
     // Android 13+: kanal İZİNDEN ÖNCE kurulmalı (yoksa izin penceresi çıkmayabilir). Yüksek önem → açılır bildirim.
     if (Platform.OS === "android") {
